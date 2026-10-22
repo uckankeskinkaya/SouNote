@@ -19,6 +19,21 @@ object Backup {
     private val PARTS = listOf("library.json", "docs", "ink")
     private const val MARKER = "sounote-yedek.txt"
 
+    /** Kütüphanenin o anki hali için kısa bir iz: değişmediyse otomatik yedek tekrar alınmaz. */
+    fun fingerprint(context: Context): String {
+        var count = 0
+        var size = 0L
+        var latest = 0L
+        for (part in PARTS) {
+            File(context.filesDir, part).walkTopDown().filter { it.isFile }.forEach {
+                count++
+                size += it.length()
+                latest = maxOf(latest, it.lastModified())
+            }
+        }
+        return "$count-$size-$latest"
+    }
+
     fun write(context: Context, out: OutputStream) {
         val root = context.filesDir
         ZipOutputStream(BufferedOutputStream(out, 64 * 1024)).use { zip ->

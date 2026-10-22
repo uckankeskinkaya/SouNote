@@ -54,6 +54,9 @@ sealed class RenderTask {
     }
 }
 
+/** PDF'teki bağlantı: web adresi ([uri]) ya da belge içinde bir sayfa ([page]). Alanlar sayfa noktası. */
+class PageLink(val rects: List<RectF>, val uri: Uri?, val page: Int?)
+
 /** Aramada bulunan bir eşleşme: sayfa ve (birden çok satıra yayılabilen) alanları, sayfa noktası. */
 class SearchHit(val page: Int, val rects: List<RectF>)
 
@@ -94,6 +97,8 @@ class PdfRenderThread(
 
         /** Belgeyi kapatmayı gerektirmeyen hata (ör. form alanı yazılamadı). */
         fun onOperationFailed(error: Throwable) {}
+
+        fun onLinks(page: Int, links: List<PageLink>) {}
     }
 
     private val thread = HandlerThread("sounote-pdf").apply { start() }
@@ -232,6 +237,21 @@ class PdfRenderThread(
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun detectForms(renderer: PdfRenderer): Boolean =
         runCatching { renderer.pdfFormType != PdfRenderer.PDF_FORM_TYPE_NONE }.getOrDefault(false)
+
+    /** Sayfadaki bağlantıları okur (Android 15+); sonuç [Listener.onLinks] ile gelir. */
+    fun requestLinks(page: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
+        handler.post {
+            val r = pdf ?: return@post
+            val links = runCatching { r.openPage(page).use { readLinks(it) } }.getOrNull() ?: return@post
+            if (links.isNotEmpty()) main.post { if (!closed) listener.onLinks(page, links) }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun readLinks(page: PdfRenderer.Page): List<PageLink> =
+        page.linkContents.map { PageLink(it.bounds.map(::RectF), it.uri, null) } +
+            page.gotoLinks.map { PageLink(it.bounds.map(::RectF), null, it.destination.pageNumber) }
 
     @Volatile
     private var searchGeneration = 0

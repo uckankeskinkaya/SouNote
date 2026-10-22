@@ -2,7 +2,13 @@ package com.sounote.app
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +21,7 @@ import com.sounote.app.data.FolderListing
 import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
 import com.sounote.app.data.UserFolder
+import com.sounote.app.ink.ContentPainter
 import com.sounote.app.ink.Images
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkStore
@@ -118,6 +125,177 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
         }
+    }
+
+    // ---- Kaynağı kaybolan notlu belgeler ----
+
+    /** Bağlı klasördeki kaynağı silinmiş/bağlantısı kaldırılmış ama notları olan belgeler. */
+    var orphans by mutableStateOf<List<DocRef>>(emptyList())
+        private set
+
+    fun adoptOrphan(doc: DocRef) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { repo.adoptCopy(doc) }
+            refresh()
+        }
+    }
+
+    fun deleteOrphan(doc: DocRef) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                repo.deleteCopy(doc.id)
+                store.delete(doc.id)
+            }
+            refresh()
+        }
+    }
+
+    // ---- Görüntüleyici: tam ekran, sayfayı resim olarak paylaş ----
+
+    var fullScreen by mutableStateOf(false)
+        private set
+
+    fun toggleFullScreen() {
+        fullScreen = !fullScreen
+    }
+
+    /** Sayfayı notlarıyla birlikte PNG olarak hazırlar (WhatsApp vb. ile göndermek için). */
+    fun exportPageImage(doc: DocRef, page: Int, onReady: (File) -> Unit) {
+        if (exporting) return
+        val content = openInk?.ink?.content(page) ?: PageContent.EMPTY
+        viewModelScope.launch {
+            exporting = true
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val source = repo.resolveForOpen(doc).uri
+                    val dir = File(app.cacheDir, "exports").apply { mkdirs() }
+                    val name = doc.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(60)
+                    val target = File(dir, "$name - sayfa ${page + 1}.png")
+                    LibraryRepository.openFileDescriptor(app, source).use { pfd ->
+                        PdfRenderer(pfd).use { r ->
+                            r.openPage(page).use { p ->
+                                val scale = (2400f / maxOf(p.width, p.height)).coerceIn(1f, 4f)
+                                val bmp = Bitmap.createBitmap(
+                                    (p.width * scale).toInt(), (p.height * scale).toInt(), Bitmap.Config.ARGB_8888,
+                                )
+                                bmp.eraseColor(android.graphics.Color.WHITE)
+                                p.render(bmp, null, Matrix().apply { setScale(scale, scale) }, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                val canvas = Canvas(bmp)
+                                canvas.scale(scale, scale)
+                                ContentPainter(store.imagesDir(doc.id)).draw(canvas, content)
+                                target.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                            }
+                        }
+                    }
+                    target
+                }
+            }
+            exporting = false
+            result.onSuccess(onReady).onFailure {
+                ErrorLog.record("Sayfa resmi oluşturulamadı", it)
+                message = "Sayfa resmi oluşturulamadı"
+            }
+        }
+    }
+
+    // ---- Otomatik yedek ----
+
+    /** Otomatik yedeğin yazıldığı klasör (SAF ağacı); null = kapalı. */
+    var autoBackupFolder by mutableStateOf(prefs.getString("autoBackupTree", null))
+        private set
+
+    fun enableAutoBackup(tree: Uri) {
+        val resolver = getApplication<Application>().contentResolver
+        try {
+            resolver.takePersistableUriPermission(
+                tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        } catch (e: Exception) {
+            ErrorLog.record("Yedek klasörü izni alınamadı", e)
+            message = "Bu klasöre yazılamıyor"
+            return
+        }
+        prefs.edit().putString("autoBackupTree", tree.toString()).remove("autoBackupFp").apply()
+        autoBackupFolder = tree.toString()
+        runAutoBackup(force = true)
+    }
+
+    fun disableAutoBackup() {
+        autoBackupFolder?.let { t ->
+            runCatching {
+                getApplication<Application>().contentResolver.releasePersistableUriPermission(
+                    Uri.parse(t),
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
+        }
+        prefs.edit().remove("autoBackupTree").apply()
+        autoBackupFolder = null
+    }
+
+    fun lastAutoBackup() = prefs.getLong("autoBackupTime", 0L)
+
+    /** Günde bir, sadece kütüphane değiştiyse. */
+    private fun maybeAutoBackup() {
+        if (autoBackupFolder == null) return
+        if (System.currentTimeMillis() - lastAutoBackup() < AUTO_BACKUP_INTERVAL_MS) return
+        runAutoBackup(force = false)
+    }
+
+    private var autoBackupRunning = false
+
+    /**
+     * İki dosya dönüşümlü yazılır (…-1.zip, …-2.zip): yazarken bir şey olursa bile
+     * diğeri sağlam bir yedek olarak kalır.
+     */
+    fun runAutoBackup(force: Boolean) {
+        val tree = autoBackupFolder?.let(Uri::parse) ?: return
+        if (autoBackupRunning) return
+        autoBackupRunning = true
+        viewModelScope.launch {
+            val app = getApplication<Application>()
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val fp = Backup.fingerprint(app)
+                    if (!force && fp == prefs.getString("autoBackupFp", null)) return@runCatching false
+                    val slot = 1 - prefs.getInt("autoBackupSlot", 1)
+                    val uri = findOrCreate(tree, "SouNote-otomatik-yedek-${slot + 1}.zip")
+                    app.contentResolver.openOutputStream(uri, "wt")?.use { Backup.write(app, it) }
+                        ?: error("Yedek dosyası açılamadı")
+                    prefs.edit()
+                        .putString("autoBackupFp", fp)
+                        .putInt("autoBackupSlot", slot)
+                        .putLong("autoBackupTime", System.currentTimeMillis())
+                        .apply()
+                    true
+                }
+            }
+            autoBackupRunning = false
+            result.onSuccess { if (it && force) message = "Otomatik yedek alındı" }
+                .onFailure {
+                    ErrorLog.record("Otomatik yedek alınamadı", it)
+                    message = "Otomatik yedek alınamadı"
+                }
+        }
+    }
+
+    private fun findOrCreate(tree: Uri, name: String): Uri {
+        val resolver = getApplication<Application>().contentResolver
+        val rootId = DocumentsContract.getTreeDocumentId(tree)
+        val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, rootId)
+        resolver.query(
+            children,
+            arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            null, null, null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                if (c.getString(1) == name) return DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0))
+            }
+        }
+        return DocumentsContract.createDocument(resolver, DocumentsContract.buildDocumentUriUsingTree(tree, rootId), "application/zip", name)
+            ?: error("Yedek dosyası oluşturulamadı")
     }
 
     // ---- Yedekleme ----
@@ -256,6 +434,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun open(doc: DocRef) {
         prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis()).apply()
         viewModelScope.launch {
+            withContext(Dispatchers.IO) { repo.rememberLinked(doc) }
             val (resolved, content) = withContext(Dispatchers.IO) { repo.resolveForOpen(doc) to store.load(doc.id) }
             bookmarks = withContext(Dispatchers.IO) { store.loadBookmarks(doc.id) }
             attachInk(resolved, content)
@@ -377,6 +556,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeDoc() {
+        fullScreen = false
         viewModelScope.launch {
             saveJob?.cancel()
             flushInk()
@@ -443,6 +623,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             rootFolders = roots
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             if (currentFolder != null && userFolders.none { it.id == currentFolder }) currentFolder = null
+            orphans = withContext(Dispatchers.IO) { runCatching { repo.orphanedCopies() }.getOrDefault(emptyList()) }
+            if (openDoc == null) maybeAutoBackup()
             loaded = true
             path.lastOrNull()?.let { loadListing(it) }
         }
@@ -571,5 +753,6 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
         private const val TAG = "LibraryViewModel"
         private const val SAVE_DELAY_MS = 800L
+        private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
     }
 }

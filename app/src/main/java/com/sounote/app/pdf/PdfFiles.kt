@@ -3,12 +3,15 @@ package com.sounote.app.pdf
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import android.util.LruCache
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.LibraryRepository
+import com.sounote.app.ink.ContentPainter
+import com.sounote.app.ink.InkStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -25,7 +28,10 @@ object PdfFiles {
     }
 }
 
-/** Kütüphane kapakları: ilk sayfanın küçük görüntüsü. Bellekte + cacheDir/thumbs altında diskte tutulur. */
+/**
+ * Kütüphane kapakları: ilk sayfanın küçük görüntüsü (üzerindeki notlarla).
+ * Bellekte + cacheDir/thumbs altında diskte tutulur; PDF ya da ilk sayfanın notları değişince yenilenir.
+ */
 object Thumbnails {
     private const val WIDTH = 360
 
@@ -34,12 +40,13 @@ object Thumbnails {
     }
     private val permits = Semaphore(2)
 
-    private fun key(doc: DocRef) = "${doc.id}_${doc.lastModified}"
+    private fun key(context: Context, doc: DocRef) =
+        "${doc.id}_${doc.lastModified}_${InkStore(context).pageStamp(doc.id, 0)}"
 
-    fun cached(doc: DocRef): Bitmap? = memory.get(key(doc))
+    fun cached(context: Context, doc: DocRef): Bitmap? = memory.get(key(context, doc))
 
     suspend fun load(context: Context, doc: DocRef): Bitmap? = withContext(Dispatchers.IO) {
-        val key = key(doc)
+        val key = key(context, doc)
         memory.get(key)?.let { return@withContext it }
         val file = File(File(context.cacheDir, "thumbs").apply { mkdirs() }, "$key.jpg")
         val bitmap = (if (file.exists()) BitmapFactory.decodeFile(file.path) else null)
@@ -59,6 +66,14 @@ object Thumbnails {
                     Bitmap.createBitmap(WIDTH, height, Bitmap.Config.ARGB_8888).also { bmp ->
                         bmp.eraseColor(Color.WHITE)
                         page.render(bmp, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        val store = InkStore(context)
+                        val content = store.loadPage(doc.id, 0)
+                        if (!content.isEmpty) {
+                            val c = Canvas(bmp)
+                            val s = WIDTH.toFloat() / page.width
+                            c.scale(s, s)
+                            ContentPainter(store.imagesDir(doc.id)).draw(c, content)
+                        }
                     }
                 }
             }

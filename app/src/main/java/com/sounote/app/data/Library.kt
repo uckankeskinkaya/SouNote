@@ -190,6 +190,52 @@ class LibraryRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Bağlı klasördeki belgenin adını ve kaynağını not et (docs/<id>.json). Kaynak dosya sonradan
+     * silinir ya da klasör bağlantısı kaldırılırsa notlu kopya kütüphanede yine bulunabilsin diye.
+     */
+    fun rememberLinked(doc: DocRef) {
+        if (doc.imported) return
+        val meta = File(docsDir, "${doc.id}.json")
+        if (meta.exists()) return
+        runCatching { meta.writeText(JSONObject().put("title", doc.title).put("source", doc.uri.toString()).toString()) }
+    }
+
+    /** Kaynağı artık bulunamayan (silinmiş/bağlantısı kaldırılmış) ama notlu kopyası olan belgeler. */
+    fun orphanedCopies(): List<DocRef> {
+        val metas = docsDir.listFiles { f -> f.name.endsWith(".json") } ?: return emptyList()
+        val adopted = synchronized(lock) { imported.map { it.id }.toSet() }
+        return metas.mapNotNull { meta ->
+            val id = meta.name.removeSuffix(".json")
+            val copy = fileFor(id)
+            if (id in adopted || !copy.exists()) return@mapNotNull null
+            val json = runCatching { JSONObject(meta.readText()) }.getOrNull() ?: return@mapNotNull null
+            val source = Uri.parse(json.optString("source"))
+            val exists = runCatching {
+                context.contentResolver.query(source, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                    ?.use { it.moveToFirst() } == true
+            }.getOrDefault(false)
+            if (exists) null else DocRef(id, json.optString("title", "Belge"), Uri.fromFile(copy), copy.lastModified(), imported = false)
+        }
+    }
+
+    /** Kaynağı kaybolan notlu kopyayı normal içe aktarılmış belge yap. */
+    fun adoptCopy(doc: DocRef) {
+        synchronized(lock) {
+            if (imported.none { it.id == doc.id }) {
+                imported += ImportedEntry(doc.id, doc.title, System.currentTimeMillis())
+                save()
+            }
+        }
+        File(docsDir, "${doc.id}.json").delete()
+    }
+
+    /** Bağlı klasör belgesinin kopyasını siler (notlar ayrıca silinmeli). */
+    fun deleteCopy(id: String) {
+        fileFor(id).delete()
+        File(docsDir, "$id.json").delete()
+    }
+
     /** Açarken: bağlı klasördeki belgenin kopyası varsa onu kullan (notlar ona göre). */
     fun resolveForOpen(doc: DocRef): DocRef {
         if (doc.imported) return doc

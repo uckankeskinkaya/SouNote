@@ -3,6 +3,14 @@
 package com.sounote.app.ui
 
 import android.content.Intent
+import android.app.Activity
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.graphics.RectF
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -105,7 +113,21 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var searching by remember { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
     var insertAfterCurrent by remember { mutableStateOf(false) }
-    val loader = remember(doc.uri, vm.docVersion) { PageThumbLoader(context, doc.uri) }
+    var goToPageDialog by remember { mutableStateOf(false) }
+    val darkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    // Tam ekran: sistem çubukları da gizlenir, kaydırınca geçici olarak görünür.
+    val activity = context as? Activity
+    DisposableEffect(vm.fullScreen, activity) {
+        val window = activity?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
+        if (vm.fullScreen) {
+            controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller?.hide(WindowInsetsCompat.Type.systemBars())
+        }
+        onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
+    }
+    val loader = remember(doc.uri, vm.docVersion) { PageThumbLoader(context, doc.uri, vm.imagesDir(doc)) }
     DisposableEffect(loader) { onDispose { loader.close() } }
 
     fun showHit() {
@@ -171,24 +193,40 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         }
     }
 
-    fun share(file: File) {
+    fun share(file: File, mime: String = "application/pdf") {
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
         val send = Intent(Intent.ACTION_SEND).apply {
-            type = "application/pdf"
+            type = mime
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(send, "PDF'i paylaş"))
+        context.startActivity(Intent.createChooser(send, "Paylaş"))
+    }
+
+    val fullScreenButtons: @Composable () -> Unit = {
+        IconButton(onClick = { vm.toggleFullScreen() }) {
+            Icon(painterResource(R.drawable.ic_fullscreen_exit), contentDescription = "Tam ekrandan çık")
+        }
+        IconButton(onClick = { ink.undo() }, enabled = canUndo) {
+            Icon(painterResource(R.drawable.ic_undo), contentDescription = "Geri al")
+        }
+        IconButton(onClick = { ink.redo() }, enabled = canRedo) {
+            Icon(painterResource(R.drawable.ic_redo), contentDescription = "İleri al")
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (!vm.fullScreen) TopAppBar(
                 title = {
                     Column {
                         Text(doc.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         page?.let { (p, n) ->
-                            Text("Sayfa ${p + 1} / $n", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                "Sayfa ${p + 1} / $n  ▾",
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.clickable { goToPageDialog = true },
+                            )
                         }
                     }
                 },
@@ -253,6 +291,27 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Tam ekran") },
+                                onClick = {
+                                    moreMenu = false
+                                    vm.toggleFullScreen()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Bu sayfayı resim olarak paylaş") },
+                                onClick = {
+                                    moreMenu = false
+                                    page?.let { (p, _) -> vm.exportPageImage(doc, p) { share(it, "image/png") } }
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sayfaya git…") },
+                                onClick = {
+                                    moreMenu = false
+                                    goToPageDialog = true
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Bu sayfadan sonra boş sayfa ekle") },
                                 onClick = {
@@ -336,6 +395,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 onInsertImage = {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
+                leading = if (vm.fullScreen) fullScreenButtons else null,
             )
             Row(Modifier.weight(1f).fillMaxWidth()) {
             val pageInfo = page
@@ -376,10 +436,16 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onTextBoxRequest = { p, box, isNew -> editingText = Triple(p, box, isNew) }
                                 onFormFieldRequest = { editingField = it }
                                 onUndoGesture = { this.ink.undo() }
+                                onRedoGesture = { this.ink.redo() }
+                                onOpenLink = { uri ->
+                                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                        .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                }
                                 onFormSaved = { currentVm.showMessage("Form kaydedildi") }
                                 formSaveTarget = currentVm.formSaveTarget(doc)
                                 imagesDir = currentVm.imagesDir(doc)
                                 twoPage = currentVm.twoPage
+                                setDarkTheme(darkTheme)
                                 onSelectionChanged = { n, clip ->
                                     selCount = n
                                     hasClip = clip
@@ -396,6 +462,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             val v = container.pdfView
                             v.tools = tools
                             v.twoPage = vm.twoPage
+                            v.setDarkTheme(darkTheme)
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
@@ -408,6 +475,35 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             }
             }
         }
+    }
+
+    if (goToPageDialog) {
+        val count = page?.second ?: 0
+        var text by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { goToPageDialog = false },
+            title = { Text("Sayfaya git") },
+            text = {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { v -> text = v.filter { it.isDigit() }.take(5) },
+                    singleLine = true,
+                    label = { Text("Sayfa (1–$count)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Go),
+                    keyboardActions = KeyboardActions(onGo = {
+                        text.toIntOrNull()?.let { view?.goToPage(it - 1) }
+                        goToPageDialog = false
+                    }),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    text.toIntOrNull()?.let { view?.goToPage(it - 1) }
+                    goToPageDialog = false
+                }) { Text("Git") }
+            },
+            dismissButton = { TextButton(onClick = { goToPageDialog = false }) { Text("Vazgeç") } },
+        )
     }
 
     if (insertAfterCurrent) {

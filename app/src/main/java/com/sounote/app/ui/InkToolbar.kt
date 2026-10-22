@@ -88,6 +88,8 @@ fun InkToolbar(
     onChange: (ToolState) -> Unit,
     selection: SelectionUi,
     onInsertImage: () -> Unit,
+    /** Tam ekranda üst çubuk gizlenince gereken düğmeler (çık, geri al, ileri al) buraya gelir. */
+    leading: (@Composable () -> Unit)? = null,
 ) {
     // Renk seçici açıkken seçilen rengin hangi araca gideceği
     var picker by remember { mutableStateOf<Tool?>(null) }
@@ -95,6 +97,10 @@ fun InkToolbar(
     Surface(tonalElevation = 2.dp) {
         Column {
             ToolbarRow {
+                if (leading != null) {
+                    leading()
+                    Separator()
+                }
                 ToolChip("Kalem", state.tool == Tool.PEN, vector = Icons.Default.Edit) {
                     onChange(state.copy(tool = Tool.PEN))
                 }

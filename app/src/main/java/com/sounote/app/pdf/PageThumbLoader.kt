@@ -12,10 +12,9 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.util.LruCache
 import com.sounote.app.data.LibraryRepository
-import com.sounote.app.ink.InkTool
+import com.sounote.app.ink.ContentPainter
 import com.sounote.app.ink.PageContent
-import com.sounote.app.ink.StrokeRenderer
-import com.sounote.app.ink.TextBoxes
+import java.io.File
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -23,13 +22,13 @@ import kotlin.coroutines.resume
  * Sayfa paneli için küçük sayfa görüntüleri (notlar dahil). Kendi PdfRenderer'ı ve iş parçacığı var;
  * böylece büyük görüntüleyiciyi yavaşlatmaz.
  */
-class PageThumbLoader(context: Context, private val uri: Uri) {
+class PageThumbLoader(context: Context, private val uri: Uri, imagesDir: File?) {
     private val appContext = context.applicationContext
     private val thread = HandlerThread("sounote-thumbs").apply { start() }
     private val handler = Handler(thread.looper)
     private var pfd: ParcelFileDescriptor? = null
     private var pdf: PdfRenderer? = null
-    private val renderer = StrokeRenderer()
+    private val painter = ContentPainter(imagesDir)
 
     @Volatile
     private var closed = false
@@ -71,9 +70,7 @@ class PageThumbLoader(context: Context, private val uri: Uri) {
                 val c = Canvas(bmp)
                 val s = WIDTH.toFloat() / page.width
                 c.scale(s, s)
-                content.strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) renderer.draw(c, it) }
-                content.texts.forEach { TextBoxes.draw(c, it) }
-                content.strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) renderer.draw(c, it) }
+                painter.draw(c, content)
             }
             bmp
         }

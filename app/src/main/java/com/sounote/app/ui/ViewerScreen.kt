@@ -1,6 +1,31 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.sounote.app.ui
 
 import android.content.Intent
+import android.graphics.RectF
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star as OutlinedStar
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import com.sounote.app.pdf.PageThumbLoader
+import com.sounote.app.pdf.SearchHit
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -72,6 +97,45 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var hasClip by remember { mutableStateOf(false) }
     val currentVm by rememberUpdatedState(vm)
     val snackbar = remember { SnackbarHostState() }
+    var searchOpen by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var hits by remember { mutableStateOf<List<SearchHit>>(emptyList()) }
+    var hitIndex by remember { mutableStateOf(0) }
+    var searching by remember { mutableStateOf(false) }
+    var moreMenu by remember { mutableStateOf(false) }
+    var insertAfterCurrent by remember { mutableStateOf(false) }
+    val loader = remember(doc.uri, vm.docVersion) { PageThumbLoader(context, doc.uri) }
+    DisposableEffect(loader) { onDispose { loader.close() } }
+
+    fun showHit() {
+        val byPage = hits.groupBy { it.page }.mapValues { e -> e.value.flatMap { it.rects } }
+        val current = hits.getOrNull(hitIndex)
+        view?.setSearchHighlights(byPage, current?.let { it.page to it.rects })
+        current?.let { h ->
+            val r = RectF(h.rects.first())
+            h.rects.forEach { r.union(it) }
+            view?.scrollToRect(h.page, r)
+        }
+    }
+
+    fun runSearch() {
+        val q = query.trim()
+        if (q.isEmpty()) return
+        searching = true
+        view?.search(q) { result ->
+            searching = false
+            hits = result
+            hitIndex = 0
+            showHit()
+            if (result.isEmpty()) currentVm.showMessage("\"$q\" bulunamadı")
+        }
+    }
+
+    fun closeSearch() {
+        searchOpen = false
+        hits = emptyList()
+        view?.setSearchHighlights(emptyMap(), null)
+    }
 
     LaunchedEffect(vm.message) {
         vm.message?.let {
@@ -131,6 +195,22 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { vm.togglePagePanel() }) {
+                        Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
+                    }
+                    IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
+                        Icon(Icons.Default.Search, contentDescription = "Ara")
+                    }
+                    page?.let { (p, _) ->
+                        val marked = p in vm.bookmarks
+                        IconButton(onClick = { vm.toggleBookmark(doc, p) }) {
+                            Icon(
+                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                contentDescription = "Yer imi",
+                                tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
+                            )
+                        }
+                    }
                     IconButton(onClick = { ink.undo() }, enabled = canUndo) {
                         Icon(painterResource(R.drawable.ic_undo), contentDescription = "Geri al")
                     }
@@ -165,12 +245,79 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             )
                         }
                     }
+                    Box {
+                        IconButton(onClick = { moreMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
+                        }
+                        DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Bu sayfadan sonra boş sayfa ekle") },
+                                onClick = {
+                                    moreMenu = false
+                                    insertAfterCurrent = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Yatayda çift sayfa") },
+                                trailingIcon = { Checkbox(checked = vm.twoPage, onCheckedChange = null) },
+                                onClick = {
+                                    moreMenu = false
+                                    vm.updateTwoPage(!vm.twoPage)
+                                },
+                            )
+                        }
+                    }
                 },
             )
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
+            if (vm.pagesBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (searchOpen) {
+                Surface(tonalElevation = 2.dp) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            singleLine = true,
+                            placeholder = { Text("PDF'te ara") },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { runSearch() }),
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (searching) {
+                            CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.5.dp)
+                        } else if (hits.isNotEmpty()) {
+                            Text("${hitIndex + 1} / ${hits.size}", style = MaterialTheme.typography.labelLarge)
+                        }
+                        IconButton(onClick = {
+                            if (hits.isNotEmpty()) {
+                                hitIndex = (hitIndex - 1 + hits.size) % hits.size
+                                showHit()
+                            }
+                        }, enabled = hits.isNotEmpty()) {
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Önceki")
+                        }
+                        IconButton(onClick = {
+                            if (hits.isNotEmpty()) {
+                                hitIndex = (hitIndex + 1) % hits.size
+                                showHit()
+                            }
+                        }, enabled = hits.isNotEmpty()) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Sonraki")
+                        }
+                        TextButton(onClick = { runSearch() }) { Text("Ara") }
+                        IconButton(onClick = { closeSearch() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Kapat")
+                        }
+                    }
+                }
+            }
             InkToolbar(
                 state = tools,
                 onChange = vm::updateTools,
@@ -187,7 +334,25 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
             )
-            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds(), contentAlignment = Alignment.Center) {
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+            val pageInfo = page
+            if (vm.pagePanelOpen && pageInfo != null) {
+                PagePanel(
+                    pageCount = pageInfo.second,
+                    currentPage = pageInfo.first,
+                    bookmarks = vm.bookmarks,
+                    ink = ink,
+                    loader = loader,
+                    actions = PageActions(
+                        onGoTo = { view?.goToPage(it) },
+                        onInsert = { at, t -> vm.insertBlankPage(doc, at, t) },
+                        onDelete = { vm.deletePage(doc, it) },
+                        onMove = { from, to -> vm.movePage(doc, from, to) },
+                        onToggleBookmark = { vm.toggleBookmark(doc, it) },
+                    ),
+                )
+            }
+            Box(Modifier.weight(1f).fillMaxHeight().clipToBounds(), contentAlignment = Alignment.Center) {
                 val message = error
                 if (message != null) {
                     Text(message, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
@@ -206,6 +371,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onFormSaved = { currentVm.showMessage("Form kaydedildi") }
                                 formSaveTarget = currentVm.formSaveTarget(doc)
                                 imagesDir = currentVm.imagesDir(doc)
+                                twoPage = currentVm.twoPage
                                 onSelectionChanged = { n, clip ->
                                     selCount = n
                                     hasClip = clip
@@ -218,6 +384,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         },
                         update = {
                             it.tools = tools
+                            it.twoPage = vm.twoPage
                             if (it.ink !== ink) it.ink = ink
                         },
                         onRelease = {
@@ -228,7 +395,19 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     )
                 }
             }
+            }
         }
+    }
+
+    if (insertAfterCurrent) {
+        TemplateDialog(
+            title = "Bu sayfadan sonra boş sayfa",
+            onPick = { t ->
+                insertAfterCurrent = false
+                vm.insertBlankPage(doc, (page?.first ?: 0) + 1, t)
+            },
+            onDismiss = { insertAfterCurrent = false },
+        )
     }
 
     editingText?.let { (p, box, isNew) ->

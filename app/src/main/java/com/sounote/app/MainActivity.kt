@@ -61,7 +61,8 @@ private fun SouNoteApp(vm: LibraryViewModel) {
     val doc = vm.openDoc
     if (doc != null) {
         BackHandler { vm.closeDoc() }
-        key(doc.id) {
+        // Sayfa eklenip silinince PDF değişir: görüntüleyici baştan kurulur.
+        key(doc.id, vm.docVersion) {
             ViewerScreen(doc, vm)
         }
     } else {

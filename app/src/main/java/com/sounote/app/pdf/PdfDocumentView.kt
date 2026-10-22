@@ -117,6 +117,18 @@ class PdfDocumentView(context: Context) : View(context) {
 
     // Yerleşim (belge koordinatı)
     private var fitWidth = 0f
+    private var pageLefts = FloatArray(0)
+    private var pageWidths = FloatArray(0)
+    private var columnWidth = 0f
+    private var columns = 1
+
+    /** Yatayda iki sayfa yan yana. Dikey tutulunca her zaman tek sayfa. */
+    var twoPage = false
+        set(value) {
+            if (field == value) return
+            field = value
+            relayout(initial = false)
+        }
     private var pageTops = FloatArray(0)
     private var pageHeights = FloatArray(0)
     private var contentHeight = 0f
@@ -323,17 +335,32 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         fitWidth = width.toFloat()
+        columns = if (twoPage && width > height) 2 else 1
+        columnWidth = if (columns == 2) (fitWidth - pageGap * 3) / 2f else fitWidth
         pageTops = FloatArray(n)
         pageHeights = FloatArray(n)
+        pageLefts = FloatArray(n)
+        pageWidths = FloatArray(n)
         var y = pageGap
-        for (i in 0 until n) {
-            val s = pageSizes[i]
-            pageTops[i] = y
-            pageHeights[i] = fitWidth * s.height / s.width
-            y += pageHeights[i] + pageGap
+        var i = 0
+        while (i < n) {
+            // Bir satırda 1 ya da 2 sayfa; satır yüksekliği en uzun sayfa kadar.
+            var rowHeight = 0f
+            for (c in 0 until columns) {
+                val k = i + c
+                if (k >= n) break
+                val s = pageSizes[k]
+                pageTops[k] = y
+                pageWidths[k] = columnWidth
+                pageLefts[k] = if (columns == 2) pageGap + c * (columnWidth + pageGap) else 0f
+                pageHeights[k] = columnWidth * s.height / s.width
+                rowHeight = max(rowHeight, pageHeights[k])
+            }
+            y += rowHeight + pageGap
+            i += columns
         }
         contentHeight = y
-        val newBaseWidth = min(fitWidth, MAX_BASE_WIDTH).toInt()
+        val newBaseWidth = min(columnWidth, MAX_BASE_WIDTH).toInt()
         if (newBaseWidth != baseWidthPx) {
             baseWidthPx = newBaseWidth
             baseCache.evictAll()
@@ -361,18 +388,82 @@ class PdfDocumentView(context: Context) : View(context) {
         return lo
     }
 
+    /** Aynı satırdaki ilk sayfa (çift sayfa düzeninde soldaki). */
+    private fun rowStart(i: Int): Int {
+        var k = i
+        while (k > 0 && pageTops[k - 1] == pageTops[k]) k--
+        return k
+    }
+
+    /** Ekran noktasının üstündeki (ya da en yakın) sayfa. */
+    private fun pageAtScreen(sx: Float, sy: Float): Int {
+        val i = pageAt((sy + offsetY) / zoom)
+        if (columns == 1) return i
+        val docX = (sx + offsetX) / zoom
+        val first = rowStart(i)
+        return if (i > first && docX < pageLefts[i] - pageGap / 2f) first else i
+    }
+
     private fun visibleRange(): IntRange {
         if (pageTops.isEmpty()) return IntRange.EMPTY
-        val first = pageAt(offsetY / zoom)
+        val first = rowStart(pageAt(offsetY / zoom))
         val last = pageAt((offsetY + height) / zoom)
         return first..last
     }
 
     private fun pageScreenRect(i: Int, out: RectF): RectF {
-        val left = -offsetX
+        val left = pageLefts[i] * zoom - offsetX
         val top = pageTops[i] * zoom - offsetY
-        out.set(left, top, left + fitWidth * zoom, top + pageHeights[i] * zoom)
+        out.set(left, top, left + pageWidths[i] * zoom, top + pageHeights[i] * zoom)
         return out
+    }
+
+    val pageCount get() = pageSizes.size
+
+    /** Sayfaya atla (sayfa paneli, yer imleri). */
+    fun goToPage(page: Int) {
+        if (pageTops.isEmpty()) return
+        val p = page.coerceIn(0, pageTops.size - 1)
+        scroller.forceFinished(true)
+        offsetY = (pageTops[p] - pageGap) * zoom
+        clampOffsets()
+        onViewportChanged()
+        scheduleDetail()
+    }
+
+    /** Sayfadaki bir alanı (sayfa noktası) görünür yap: arama sonucuna gitmek için. */
+    fun scrollToRect(page: Int, rect: RectF) {
+        if (pageTops.isEmpty() || page !in pageTops.indices) return
+        scroller.forceFinished(true)
+        val s = pageWidths[page] * zoom / pageSizes[page].width
+        val cy = pageTops[page] * zoom + rect.centerY() * s
+        val cx = pageLefts[page] * zoom + rect.centerX() * s
+        offsetY = cy - height * 0.4f
+        if (fitWidth * zoom > width) offsetX = cx - width / 2f
+        clampOffsets()
+        onViewportChanged()
+        scheduleDetail()
+    }
+
+    /** Arama sonuçlarını sayfada vurgula; [current] o anki sonuç. */
+    fun setSearchHighlights(hits: Map<Int, List<RectF>>, current: Pair<Int, List<RectF>>?) {
+        searchHits = hits
+        currentHit = current
+        invalidate()
+    }
+
+    /** PDF'te metin arar (Android 15+). Sonuç ana iş parçacığında gelir. */
+    fun search(query: String, onResult: (List<SearchHit>) -> Unit) {
+        val r = renderer
+        if (r == null) onResult(emptyList()) else r.search(query, onResult)
+    }
+
+    private var searchHits: Map<Int, List<RectF>> = emptyMap()
+    private var currentHit: Pair<Int, List<RectF>>? = null
+    private val searchPaint = Paint().apply { color = Color.argb(90, 255, 200, 0) }
+    private val currentHitPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.rgb(255, 120, 0)
     }
 
     private fun minMaxX(): Pair<Float, Float> {
@@ -405,7 +496,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun onViewportChanged() {
         invalidate()
         if (pageTops.isEmpty()) return
-        val page = pageAt((offsetY + height / 2f) / zoom)
+        val page = rowStart(pageAt((offsetY + height / 2f) / zoom))
         if (page != currentPage) {
             currentPage = page
             onPageChanged?.invoke(page, pageTops.size)
@@ -416,7 +507,7 @@ class PdfDocumentView(context: Context) : View(context) {
     // ---- Çizim istekleri ----
 
     /** Ekranda sayfa ne kadar büyük görünüyor / temel bitmap ne kadar büyük. 1'den büyükse bulanıklaşır. */
-    private fun needsDetail() = baseWidthPx > 0 && fitWidth * zoom > baseWidthPx * 1.1f
+    private fun needsDetail() = baseWidthPx > 0 && columnWidth * zoom > baseWidthPx * 1.1f
 
     private fun requestRender() {
         val r = renderer ?: return
@@ -461,7 +552,7 @@ class PdfDocumentView(context: Context) : View(context) {
         val visRight = min(page.right, width.toFloat())
         val visBottom = min(page.bottom, height.toFloat())
         if (visRight <= visLeft || visBottom <= visTop) return null
-        val pageWidthPx = fitWidth * zoom
+        val pageWidthPx = pageWidths[i] * zoom
         val region = RectF(
             (visLeft - page.left) / page.width(),
             (visTop - page.top) / page.height(),
@@ -531,7 +622,8 @@ class PdfDocumentView(context: Context) : View(context) {
         val content = ink.content(page)
         val strokes = content.strokes
         val active = current?.takeIf { inputPage == page }
-        val showOverlay = (tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)) ||
+        val hits = searchHits[page]
+        val showOverlay = hits != null || (tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)) ||
             (tools.tool == Tool.LASSO && selection?.page == page)
         if (content.isEmpty && active == null && !showOverlay) return
         val scale = r.width() / pageSizes[page].width
@@ -563,6 +655,11 @@ class PdfDocumentView(context: Context) : View(context) {
                     canvas.drawRect(f.rect, formBorderPaint)
                 }
             }
+        }
+        hits?.forEach { canvas.drawRect(it, searchPaint) }
+        currentHit?.takeIf { it.first == page }?.second?.forEach {
+            currentHitPaint.strokeWidth = 2f * density / scale
+            canvas.drawRect(it, currentHitPaint)
         }
         selection?.takeIf { it.page == page && tools.tool == Tool.LASSO }?.let { sel ->
             Selections.bounds(content, sel, boundsRect)
@@ -647,7 +744,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private fun beginBoxPinch(fx: Float, fy: Float) {
         if (pageTops.isEmpty()) return
-        val page = pageAt((fy + offsetY) / zoom)
+        val page = pageAtScreen(fx, fy)
         val px = toPageX(page, fx)
         val py = toPageY(page, fy)
         val pad = PINCH_PAD_DP * density / pageScale(page)
@@ -901,8 +998,8 @@ class PdfDocumentView(context: Context) : View(context) {
     // ---- Çizim / silme ----
 
     /** Ekran noktası → sayfa noktası (PDF birimi). */
-    private fun pageScale(page: Int) = fitWidth * zoom / pageSizes[page].width
-    private fun toPageX(page: Int, sx: Float) = (sx + offsetX) / pageScale(page)
+    private fun pageScale(page: Int) = pageWidths[page] * zoom / pageSizes[page].width
+    private fun toPageX(page: Int, sx: Float) = (sx + offsetX - pageLefts[page] * zoom) / pageScale(page)
     private fun toPageY(page: Int, sy: Float) = (sy + offsetY - pageTops[page] * zoom) / pageScale(page)
 
     private fun beginInput(event: MotionEvent, idx: Int, fromStylus: Boolean, erase: Boolean) {
@@ -911,7 +1008,7 @@ class PdfDocumentView(context: Context) : View(context) {
         drawPointerId = event.getPointerId(idx)
         inputFromStylus = fromStylus
         erasing = erase
-        inputPage = pageAt((y + offsetY) / zoom)
+        inputPage = pageAtScreen(x, y)
         predictedCount = 0
         requestUnbufferedDispatch(event)
         scroller.forceFinished(true)
@@ -1052,7 +1149,7 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun eraseAlong(ax: Float, ay: Float, bx: Float, by: Float) {
-        val page = pageAt((by + offsetY) / zoom)
+        val page = pageAtScreen(bx, by)
         val strokes = ink.strokes(page)
         if (strokes.isEmpty()) return
         val r = tools.eraserSizeDp * density / pageScale(page)
@@ -1092,7 +1189,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun textDown(x: Float, y: Float) {
         textDownX = x
         textDownY = y
-        textPage = pageAt((y + offsetY) / zoom)
+        textPage = pageAtScreen(x, y)
         dragMoved = false
         val px = toPageX(textPage, x)
         val py = toPageY(textPage, y)
@@ -1162,7 +1259,7 @@ class PdfDocumentView(context: Context) : View(context) {
     /** Dokunulan yerde form alanı varsa onu, metin kutusu varsa onu düzenle; yoksa yeni kutu aç. */
     private fun textTap(x: Float, y: Float) {
         if (pageTops.isEmpty()) return
-        val page = pageAt((y + offsetY) / zoom)
+        val page = pageAtScreen(x, y)
         val px = toPageX(page, x)
         val py = toPageY(page, y)
         val pageW = pageSizes[page].width.toFloat()
@@ -1283,7 +1380,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
         // Yeni lasso
         selMode = SelMode.LASSO
-        lassoPage = pageAt((y + offsetY) / zoom)
+        lassoPage = pageAtScreen(x, y)
         lassoCount = 0
         addLassoPoint(x, y)
     }

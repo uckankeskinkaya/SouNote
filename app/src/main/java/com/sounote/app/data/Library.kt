@@ -122,6 +122,24 @@ class LibraryRepository(private val context: Context) {
         return if (copy.exists()) doc.copy(uri = Uri.fromFile(copy), lastModified = copy.lastModified()) else doc
     }
 
+    /** Uygulama içinde oluşturulan yeni PDF (ör. boş defter): [write] dosyayı yazar. */
+    fun createDocument(title: String, write: (File) -> Unit): DocRef {
+        val id = UUID.randomUUID().toString()
+        val target = fileFor(id)
+        try {
+            write(target)
+        } catch (e: Exception) {
+            target.delete()
+            throw e
+        }
+        val addedAt = System.currentTimeMillis()
+        synchronized(lock) {
+            imported += ImportedEntry(id, title, addedAt)
+            save()
+        }
+        return DocRef(id, title, Uri.fromFile(target), target.lastModified(), imported = true)
+    }
+
     fun rename(id: String, title: String) = synchronized(lock) {
         imported.find { it.id == id }?.let {
             it.title = title

@@ -18,7 +18,9 @@ import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkStore
 import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.ToolState
+import com.sounote.app.pdf.PageTemplate
 import com.sounote.app.pdf.PdfExporter
+import com.sounote.app.pdf.PdfPages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -156,8 +158,122 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun open(doc: DocRef) {
         viewModelScope.launch {
             val (resolved, content) = withContext(Dispatchers.IO) { repo.resolveForOpen(doc) to store.load(doc.id) }
+            bookmarks = withContext(Dispatchers.IO) { store.loadBookmarks(doc.id) }
             attachInk(resolved, content)
             openDoc = resolved
+        }
+    }
+
+    // ---- Sayfalar: ekleme, silme, taşıma, yer imleri ----
+
+    /** Sayfa yapısı değişince artar; görüntüleyici PDF'i yeniden açar. */
+    var docVersion by mutableStateOf(0)
+        private set
+
+    var pagesBusy by mutableStateOf(false)
+        private set
+
+    var bookmarks by mutableStateOf<Set<Int>>(emptySet())
+        private set
+
+    var pagePanelOpen by mutableStateOf(false)
+        private set
+
+    fun togglePagePanel() {
+        pagePanelOpen = !pagePanelOpen
+    }
+
+    var twoPage by mutableStateOf(prefs.getBoolean("twoPage", false))
+        private set
+
+    fun updateTwoPage(on: Boolean) {
+        twoPage = on
+        prefs.edit().putBoolean("twoPage", on).apply()
+    }
+
+    fun toggleBookmark(doc: DocRef, page: Int) {
+        val next = if (page in bookmarks) bookmarks - page else bookmarks + page
+        bookmarks = next
+        viewModelScope.launch(Dispatchers.IO) { runCatching { store.saveBookmarks(doc.id, next) } }
+    }
+
+    fun insertBlankPage(doc: DocRef, at: Int, template: PageTemplate) =
+        changePages(doc, focusPage = at, "Sayfa eklenemedi") { file ->
+            PdfPages.insertBlank(getApplication(), file, at, template)
+            ({ i: Int -> if (i >= at) i + 1 else i })
+        }
+
+    fun deletePage(doc: DocRef, at: Int) =
+        changePages(doc, focusPage = (at - 1).coerceAtLeast(0), "Sayfa silinemedi") { file ->
+            PdfPages.delete(getApplication(), file, at)
+            ({ i: Int -> if (i == at) null else if (i > at) i - 1 else i })
+        }
+
+    fun movePage(doc: DocRef, from: Int, to: Int) =
+        changePages(doc, focusPage = to, "Sayfa taşınamadı") { file ->
+            PdfPages.move(getApplication(), file, from, to)
+            ({ i: Int ->
+                when {
+                    i == from -> to
+                    from < to && i in (from + 1)..to -> i - 1
+                    from > to && i in to until from -> i + 1
+                    else -> i
+                }
+            })
+        }
+
+    /**
+     * PDF'in sayfa yapısını değiştirir: önce notlar kaydedilir, belge uygulama içine kopyalanır,
+     * PDF düzenlenir, sonra notlar, yer imleri ve son sayfa yeni numaralara taşınır.
+     * [edit] PDF'i değiştirip eski sayfa → yeni sayfa eşlemesini döndürür.
+     */
+    private fun changePages(doc: DocRef, focusPage: Int, error: String, edit: (File) -> (Int) -> Int?) {
+        if (pagesBusy) return
+        viewModelScope.launch {
+            pagesBusy = true
+            saveJob?.cancel()
+            flushInk()
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    repo.ensureCopy(doc)
+                    val map = edit(repo.docFile(doc.id))
+                    store.remapPages(doc.id, map)
+                    val marks = store.loadBookmarks(doc.id).mapNotNull(map).toSet()
+                    store.saveBookmarks(doc.id, marks)
+                    Triple(repo.resolveForOpen(doc), store.load(doc.id), marks)
+                }
+            }
+            pagesBusy = false
+            result.onSuccess { (resolved, content, marks) ->
+                bookmarks = marks
+                saveLastPage(doc, focusPage)
+                attachInk(resolved, content)
+                openDoc = resolved
+                docVersion++
+            }.onFailure {
+                Log.e(TAG, error, it)
+                message = "$error: ${it.message ?: it.javaClass.simpleName}"
+            }
+        }
+    }
+
+    /** Boş defter: şablonlu A4 sayfalardan oluşan yeni bir PDF olarak kütüphaneye eklenir ve açılır. */
+    fun createNotebook(title: String, template: PageTemplate) {
+        viewModelScope.launch {
+            busy = true
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    repo.createDocument(title.trim().ifEmpty { "Defter" }) { file ->
+                        PdfPages.createNotebook(getApplication(), file, template, pages = 1)
+                    }
+                }
+            }
+            busy = false
+            imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+            result.onSuccess { open(it) }.onFailure {
+                Log.e(TAG, "Defter oluşturulamadı", it)
+                message = "Defter oluşturulamadı"
+            }
         }
     }
 

@@ -679,7 +679,14 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             val ok = uris.size - failed
+            val resolver = getApplication<Application>().contentResolver
+            val word = uris.any { u ->
+                val type = runCatching { resolver.getType(u) }.getOrNull().orEmpty()
+                "word" in type || "officedocument" in type ||
+                    u.toString().endsWith(".docx", true) || u.toString().endsWith(".doc", true)
+            }
             message = when {
+                word && ok == 0 -> "Word dosyası doğrudan açılmaz. Önce Word ya da WPS'te \"PDF olarak kaydet\" de, sonra PDF'i içe aktar."
                 failed == 0 && ok == 1 -> null
                 failed == 0 -> "$ok PDF içe aktarıldı"
                 ok == 0 -> "PDF açılamadı. Dosya bozuk ya da şifreli olabilir."

@@ -88,6 +88,8 @@ class PdfContainer(context: Context) : FrameLayout(context) {
 
     init {
         addView(pdfView, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        // Belge açıkken ekran kararmasın (okurken/yazarken).
+        keepScreenOn = true
     }
 
     fun setLowLatency(on: Boolean) {

@@ -94,6 +94,7 @@ import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderRef
 import com.sounote.app.pdf.PageTemplate
 import com.sounote.app.pdf.Thumbnails
+import com.sounote.app.ink.InkStore
 
 @Composable
 fun LibraryScreen(vm: LibraryViewModel) {
@@ -108,6 +109,10 @@ fun LibraryScreen(vm: LibraryViewModel) {
         uri?.let(vm::backup)
     }
     var restoreUri by remember { mutableStateOf<Uri?>(null) }
+    var autoBackupDialog by remember { mutableStateOf(false) }
+    val autoBackupPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri?.let(vm::enableAutoBackup)
+    }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         restoreUri = uri
     }
@@ -124,6 +129,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var movingDoc by remember { mutableStateOf<DocRef?>(null) }
     var movingFolder by remember { mutableStateOf<UserFolder?>(null) }
     var searching by remember { mutableStateOf(false) }
+    var deletingOrphan by remember { mutableStateOf<DocRef?>(null) }
     val context = LocalContext.current
     var crash by remember { mutableStateOf(ErrorLog.pendingCrash()) }
 
@@ -217,6 +223,13 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                     more = false
                                     val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
                                     backupLauncher.launch("SouNote-yedek-$date.zip")
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(if (vm.autoBackupFolder != null) "Otomatik yedek: açık" else "Otomatik yedek…") },
+                                onClick = {
+                                    more = false
+                                    autoBackupDialog = true
                                 },
                             )
                             DropdownMenuItem(
@@ -341,7 +354,30 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) })
                         }
                     }
-                    if (folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty()) {
+                    if (folder == null && vm.orphans.isNotEmpty()) {
+                        fullWidth {
+                            Column {
+                                SectionTitle("Kaynağı bulunamayan notlu belgeler")
+                                Text(
+                                    "Bağlı klasördeki dosyası silinmiş ya da klasör bağlantısı kaldırılmış; notların burada duruyor. " +
+                                        "Basılı tutup \"Kütüphaneye al\" diyebilirsin.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                        items(vm.orphans, key = { "o" + it.id }) { doc ->
+                            DocCard(
+                                doc,
+                                onClick = { vm.open(doc) },
+                                menu = { d ->
+                                    DropdownMenuItem(text = { Text("Kütüphaneye al") }, onClick = { d(); vm.adoptOrphan(doc) })
+                                    DropdownMenuItem(text = { Text("Sil") }, onClick = { d(); deletingOrphan = doc })
+                                },
+                            )
+                        }
+                    }
+                    if (folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty()) {
                         fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder, onNewNotebook = { newNotebook = true }) }
                     } else if (folder != null && subfolders.isEmpty() && docs.isEmpty()) {
                         fullWidth {
@@ -432,6 +468,55 @@ fun LibraryScreen(vm: LibraryViewModel) {
                 vm.moveFolder(f, target)
             },
             onDismiss = { movingFolder = null },
+        )
+    }
+    deletingOrphan?.let { doc ->
+        AlertDialog(
+            onDismissRequest = { deletingOrphan = null },
+            title = { Text("Silinsin mi?") },
+            text = { Text("\"${doc.title}\" ve üzerindeki notlar kalıcı olarak silinecek.") },
+            confirmButton = { TextButton(onClick = { vm.deleteOrphan(doc); deletingOrphan = null }) { Text("Sil") } },
+            dismissButton = { TextButton(onClick = { deletingOrphan = null }) { Text("Vazgeç") } },
+        )
+    }
+    if (autoBackupDialog) {
+        val enabled = vm.autoBackupFolder != null
+        AlertDialog(
+            onDismissRequest = { autoBackupDialog = false },
+            title = { Text("Otomatik yedek") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Açıkken bütün kütüphane günde bir (değişiklik olduysa) seçtiğin klasöre yedeklenir. " +
+                            "İki dosya dönüşümlü yazılır, biri her zaman sağlam kalır. Drive gibi bir bulut klasörü seçersen tablet bozulsa da notların kurtulur.",
+                    )
+                    if (enabled) {
+                        val last = vm.lastAutoBackup()
+                        Text(
+                            if (last > 0) "Son yedek: " + SimpleDateFormat("d MMMM yyyy HH:mm", TR).format(Date(last)) else "Henüz yedek alınmadı",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (enabled) {
+                    TextButton(onClick = { vm.runAutoBackup(force = true); autoBackupDialog = false }) { Text("Şimdi yedekle") }
+                } else {
+                    TextButton(onClick = { autoBackupPicker.launch(null); autoBackupDialog = false }) { Text("Klasör seç") }
+                }
+            },
+            dismissButton = {
+                Row {
+                    if (enabled) {
+                        TextButton(onClick = { vm.disableAutoBackup(); autoBackupDialog = false }) { Text("Kapat") }
+                        TextButton(onClick = { autoBackupPicker.launch(null); autoBackupDialog = false }) { Text("Klasörü değiştir") }
+                    } else {
+                        TextButton(onClick = { autoBackupDialog = false }) { Text("Vazgeç") }
+                    }
+                }
+            },
         )
     }
     crash?.let { report ->
@@ -786,7 +871,9 @@ private fun CardTitle(text: String) {
 @Composable
 private fun Thumbnail(doc: DocRef) {
     val context = LocalContext.current
-    val bitmap by produceState<Bitmap?>(Thumbnails.cached(doc), doc.id, doc.lastModified) {
+    // İlk sayfanın notları değişince kapak da yenilensin.
+    val inkStamp = InkStore(context).pageStamp(doc.id, 0)
+    val bitmap by produceState<Bitmap?>(Thumbnails.cached(context, doc), doc.id, doc.lastModified, inkStamp) {
         if (value == null) value = Thumbnails.load(context, doc)
     }
     val bmp = bitmap

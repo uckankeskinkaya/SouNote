@@ -100,6 +100,12 @@ class PdfDocumentView(context: Context) : View(context) {
     /** İki parmakla dokununca geri al. */
     var onUndoGesture: (() -> Unit)? = null
 
+    /** Üç parmakla dokununca ileri al. */
+    var onRedoGesture: (() -> Unit)? = null
+
+    /** PDF'teki web bağlantısına dokunuldu. */
+    var onOpenLink: ((Uri) -> Unit)? = null
+
     /** Doldurulan formun yazılacağı dosya (belgenin uygulama içindeki kopyası). */
     var formSaveTarget: File? = null
 
@@ -165,8 +171,8 @@ class PdfDocumentView(context: Context) : View(context) {
     private val scroller = OverScroller(context)
     private var zoomAnimator: ValueAnimator? = null
 
-    private val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-    private val backgroundColor = if (night) Color.rgb(0x1E, 0x1F, 0x22) else Color.rgb(0xE6, 0xE7, 0xEA)
+    private var night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    private var backgroundColor = if (night) Color.rgb(0x1E, 0x1F, 0x22) else Color.rgb(0xE6, 0xE7, 0xEA)
     private val pagePaint = Paint().apply { color = Color.WHITE }
     private val borderPaint = Paint().apply {
         style = Paint.Style.STROKE
@@ -175,6 +181,19 @@ class PdfDocumentView(context: Context) : View(context) {
     }
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val pageRect = RectF()
+
+    /** Uygulama teması (sistemden bağımsız seçilebildiği için dışarıdan verilir). */
+    fun setDarkTheme(dark: Boolean) {
+        if (dark == night) return
+        night = dark
+        backgroundColor = if (dark) Color.rgb(0x1E, 0x1F, 0x22) else Color.rgb(0xE6, 0xE7, 0xEA)
+        borderPaint.color = if (dark) Color.rgb(0x3A, 0x3B, 0x40) else Color.rgb(0xC8, 0xC9, 0xCE)
+        invalidate()
+    }
+
+    // PDF bağlantıları
+    private val links = HashMap<Int, List<PageLink>>()
+    private val linksRequested = HashSet<Int>()
     private val tmpRect = RectF()
 
     // Mürekkep
@@ -233,7 +252,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private var tapCandidate = false
     private var tapStartTime = 0L
     private var tapMaxPointers = 0
-    private val tapStart = FloatArray(4)
+    private val tapStart = FloatArray(6)
 
     private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(200, 33, 110, 230) }
 
@@ -285,6 +304,10 @@ class PdfDocumentView(context: Context) : View(context) {
 
         override fun onOperationFailed(error: Throwable) {
             onOperationError?.invoke(error)
+        }
+
+        override fun onLinks(page: Int, links: List<PageLink>) {
+            this@PdfDocumentView.links[page] = links
         }
     }
 
@@ -546,6 +569,7 @@ class PdfDocumentView(context: Context) : View(context) {
         if (hasForms && tools.tool == Tool.TEXT) {
             for (i in visible) if (formRequested.add(i)) r.requestFormFields(i)
         }
+        for (i in visible) if (linksRequested.add(i)) r.requestLinks(i)
         // 4) Komşu sayfaları önceden hazırla
         for (i in max(0, visible.first - 1)..min(n - 1, visible.last + 2)) {
             if (i !in visible && baseCache[i] == null) add(RenderTask.Base(i, baseWidthPx))
@@ -817,6 +841,19 @@ class PdfDocumentView(context: Context) : View(context) {
                 minX.toInt(), maxX.toInt(), minY.toInt(), maxY.toInt(),
             )
             postInvalidateOnAnimation()
+            return true
+        }
+
+        override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+            // Kalem/fosforlu/silgideyken parmakla dokunulan bağlantıyı aç (yazı ve seçim araçları dokunmayı kendisi kullanır).
+            if (tools.fingerDraw || tools.tool == Tool.TEXT || tools.tool == Tool.LASSO) return false
+            if (pageTops.isEmpty()) return false
+            val page = pageAtScreen(e.x, e.y)
+            val px = toPageX(page, e.x)
+            val py = toPageY(page, e.y)
+            val link = links[page]?.firstOrNull { l -> l.rects.any { it.contains(px, py) } } ?: return false
+            link.page?.let { goToPage(it) }
+            link.uri?.let { onOpenLink?.invoke(it) }
             return true
         }
 
@@ -1680,27 +1717,33 @@ class PdfDocumentView(context: Context) : View(context) {
             }
             MotionEvent.ACTION_POINTER_DOWN -> {
                 tapMaxPointers = maxOf(tapMaxPointers, event.pointerCount)
-                if (event.pointerCount == 2) {
-                    tapCandidate = true
-                    tapStartTime = event.eventTime
-                    for (i in 0..1) {
-                        tapStart[i * 2] = event.getX(i)
-                        tapStart[i * 2 + 1] = event.getY(i)
+                when (event.pointerCount) {
+                    2 -> {
+                        tapCandidate = true
+                        tapStartTime = event.eventTime
                     }
-                } else {
-                    tapCandidate = false
+                    3 -> {}
+                    else -> tapCandidate = false
+                }
+                // Her parmağın başlangıç yeri (hareket ederse dokunma sayılmaz)
+                for (i in 0 until minOf(event.pointerCount, 3)) {
+                    tapStart[i * 2] = event.getX(i)
+                    tapStart[i * 2 + 1] = event.getY(i)
                 }
             }
             MotionEvent.ACTION_MOVE -> if (tapCandidate && event.pointerCount >= 2) {
-                for (i in 0..1) {
+                for (i in 0 until minOf(event.pointerCount, 3)) {
                     if (kotlin.math.hypot(event.getX(i) - tapStart[i * 2], event.getY(i) - tapStart[i * 2 + 1]) > touchSlop) {
                         tapCandidate = false
                     }
                 }
             }
             MotionEvent.ACTION_UP -> {
-                if (tapCandidate && tapMaxPointers == 2 && event.eventTime - tapStartTime < TWO_FINGER_TAP_MS) {
-                    onUndoGesture?.invoke()
+                if (tapCandidate && event.eventTime - tapStartTime < MULTI_TAP_MS) {
+                    when (tapMaxPointers) {
+                        2 -> onUndoGesture?.invoke()
+                        3 -> onRedoGesture?.invoke()
+                    }
                 }
                 tapCandidate = false
             }
@@ -1770,7 +1813,7 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val PALM_WINDOW_MS = 400L
         private const val PREDICTION_MS = 16L
         private const val MIN_POINT_DISTANCE_PX = 0.75f
-        private const val TWO_FINGER_TAP_MS = 300L
+        private const val MULTI_TAP_MS = 350L
         private const val HOLD_MS = 550L
         private const val PINCH_PAD_DP = 24f
         private const val HANDLE_DP = 5f

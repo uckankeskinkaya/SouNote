@@ -35,6 +35,16 @@ class InkStore(context: Context) {
         return result
     }
 
+    /** Tek sayfanın notları (kütüphane kapağı için). */
+    fun loadPage(docId: String, page: Int): PageContent {
+        val f = File(dir(docId), "$page.bin")
+        if (!f.exists()) return PageContent.EMPTY
+        return runCatching { read(f) }.getOrDefault(PageContent.EMPTY)
+    }
+
+    /** Sayfa notlarının son değişme zamanı (yoksa 0): önbellek anahtarı için. */
+    fun pageStamp(docId: String, page: Int) = File(dir(docId), "$page.bin").lastModified()
+
     fun save(docId: String, page: Int, content: PageContent) {
         val d = dir(docId)
         val file = File(d, "$page.bin")

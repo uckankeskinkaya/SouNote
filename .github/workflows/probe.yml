@@ -1,0 +1,23 @@
+name: API keşfi (geçici)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/probe.yml"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: graphics-core
+        run: |
+          mkdir g && cd g
+          curl -sSfL -o g.aar https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-core/1.0.4/graphics-core-1.0.4.aar
+          unzip -q g.aar
+          JAR=$ANDROID_HOME/platforms/android-35/android.jar
+          ls $ANDROID_HOME/platforms
+          for c in androidx.graphics.lowlatency.CanvasFrontBufferedRenderer 'androidx.graphics.lowlatency.CanvasFrontBufferedRenderer$Callback'; do
+            echo "=================== $c"
+            javap -classpath classes.jar "$c" || true
+          done
+          curl -sSf https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-core/1.0.4/graphics-core-1.0.4.pom | grep -A3 "<dependency>" | head -40

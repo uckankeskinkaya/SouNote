@@ -9,15 +9,27 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.RenderNode
 import android.net.Uri
+import android.os.Build
+import android.os.SystemClock
 import android.util.LruCache
 import android.util.Size
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.MotionPredictor
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.OverScroller
+import com.sounote.app.ink.Eraser
+import com.sounote.app.ink.EraserMode
+import com.sounote.app.ink.InkDocument
+import com.sounote.app.ink.InkTool
+import com.sounote.app.ink.StrokeBuilder
+import com.sounote.app.ink.StrokeRenderer
+import com.sounote.app.ink.Tool
+import com.sounote.app.ink.ToolState
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -31,11 +43,24 @@ import kotlin.math.min
  *
  * Çizim üç katmanlı: önizleme (hızlı kaydırma için), temel (tam sayfa) ve detay
  * (yakınlaştırınca görünen kısım ekran çözünürlüğünde, hareket bitince çizilir).
+ * Mürekkep en üstte, sayfa başına bir RenderNode olarak (vektör, her yakınlaştırmada net).
+ *
+ * Giriş: kalem çizer/siler. Parmak kaydırır; "parmakla çiz" açıksa tek parmak çizer,
+ * iki parmak kaydırır. Kalem ekrana yakınken parmak dokunuşları yok sayılır (avuç içi).
  */
 class PdfDocumentView(context: Context) : View(context) {
 
     var onPageChanged: ((page: Int, pageCount: Int) -> Unit)? = null
     var onError: ((Throwable) -> Unit)? = null
+
+    var ink: InkDocument = InkDocument()
+        set(value) {
+            field = value
+            discardInkNodes()
+            invalidate()
+        }
+
+    var tools: ToolState = ToolState()
 
     private val density = resources.displayMetrics.density
     private val pageGap = 12f * density
@@ -70,7 +95,6 @@ class PdfDocumentView(context: Context) : View(context) {
     private val details = HashMap<Int, Detail>()
 
     // Hareket
-    private var touching = false
     private var scaledThisGesture = false
     private var detailAllowed = false
     private val scroller = OverScroller(context)
@@ -87,6 +111,35 @@ class PdfDocumentView(context: Context) : View(context) {
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val pageRect = RectF()
     private val tmpRect = RectF()
+
+    // Mürekkep
+    private val strokeRenderer = StrokeRenderer()
+    private val inkNodes = HashMap<Int, RenderNode>()
+    private val eraserPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.5f * density
+        color = Color.argb(160, 90, 90, 90)
+    }
+
+    // Çizim girişi
+    private var drawPointerId = -1
+    private var inputFromStylus = false
+    private var erasing = false
+    private var inputPage = -1
+    private var current: StrokeBuilder? = null
+    private var eraserX = 0f
+    private var eraserY = 0f
+    private var lastEraseX = 0f
+    private var lastEraseY = 0f
+    private var lastStylusTime = Long.MIN_VALUE / 2
+    private var ignoringFingers = false
+    private var multiTouch = false
+    private var fingerGestureActive = false
+    private val predictor: MotionPredictor? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) MotionPredictor(context) else null
+    private var predicted = FloatArray(3 * 16)
+    private var predictedCount = 0
+    private var drawScratch = FloatArray(0)
 
     private val renderListener = object : PdfRenderThread.Listener {
         override fun onOpened(pageSizes: List<Size>) {
@@ -125,6 +178,12 @@ class PdfDocumentView(context: Context) : View(context) {
         baseCache.evictAll()
         previewCache.evictAll()
         details.clear()
+        discardInkNodes()
+    }
+
+    private fun discardInkNodes() {
+        inkNodes.values.forEach { it.discardDisplayList() }
+        inkNodes.clear()
     }
 
     // ---- Yerleşim ----
@@ -336,8 +395,59 @@ class PdfDocumentView(context: Context) : View(context) {
                 )
                 canvas.drawBitmap(d.bitmap, null, tmpRect, bitmapPaint)
             }
+            drawInk(canvas, i, r)
             canvas.drawRect(r, borderPaint)
         }
+        if (erasing && drawPointerId != -1) {
+            canvas.drawCircle(eraserX, eraserY, tools.eraserSizeDp * density, eraserPaint)
+        }
+    }
+
+    private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
+        val strokes = ink.strokes(page)
+        val active = current?.takeIf { inputPage == page }
+        if (strokes.isEmpty() && active == null) return
+        val scale = r.width() / pageSizes[page].width
+        canvas.save()
+        canvas.clipRect(r)
+        canvas.translate(r.left, r.top)
+        canvas.scale(scale, scale)
+        if (strokes.isNotEmpty()) {
+            if (canvas.isHardwareAccelerated) {
+                canvas.drawRenderNode(inkNode(page))
+            } else {
+                strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
+                strokes.forEach { if (it.tool == InkTool.PEN) strokeRenderer.draw(canvas, it) }
+            }
+        }
+        if (active != null) {
+            // Kalemin gideceği tahmin edilen noktaları da ekle: gecikme daha az hissedilir.
+            val n = active.count + predictedCount
+            if (drawScratch.size < n * 3) drawScratch = FloatArray(n * 3 * 2)
+            System.arraycopy(active.points, 0, drawScratch, 0, active.count * 3)
+            System.arraycopy(predicted, 0, drawScratch, active.count * 3, predictedCount * 3)
+            strokeRenderer.draw(canvas, active.tool, active.color, active.width, active.pressureSensitive, drawScratch, n)
+        }
+        canvas.restore()
+    }
+
+    /** Sayfanın kayıtlı çizgileri bir kez kaydedilir, her karede sadece tekrar oynatılır. */
+    private fun inkNode(page: Int): RenderNode = inkNodes.getOrPut(page) {
+        val size = pageSizes[page]
+        RenderNode("ink$page").apply {
+            setPosition(0, 0, size.width, size.height)
+            val c = beginRecording()
+            val strokes = ink.strokes(page)
+            // Fosforlu altta, kalem üstte.
+            strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
+            strokes.forEach { if (it.tool == InkTool.PEN) strokeRenderer.draw(c, it) }
+            endRecording()
+        }
+    }
+
+    private fun pageChanged(page: Int) {
+        inkNodes.remove(page)?.discardDisplayList()
+        invalidate()
     }
 
     // ---- Dokunma ----
@@ -354,6 +464,7 @@ class PdfDocumentView(context: Context) : View(context) {
         override fun onDown(e: MotionEvent): Boolean = true
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+            if (tools.fingerDraw && !multiTouch) return false
             offsetX += distanceX
             offsetY += distanceY
             clampOffsets()
@@ -362,7 +473,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-            if (scaledThisGesture) return false
+            if (scaledThisGesture || (tools.fingerDraw && !multiTouch)) return false
             val (minX, maxX) = minMaxX()
             val (minY, maxY) = minMaxY()
             scroller.fling(
@@ -375,6 +486,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onDoubleTap(e: MotionEvent): Boolean {
+            if (tools.fingerDraw) return false
             val target = if (zoom < 1.5f) DOUBLE_TAP_ZOOM else 1f
             animateZoom(target, e.x, e.y)
             return true
@@ -383,13 +495,97 @@ class PdfDocumentView(context: Context) : View(context) {
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Kalem şimdilik bir şey yapmaz; 3. adımda çizim için kullanılacak.
-        val tool = event.getToolType(0)
-        if (tool == MotionEvent.TOOL_TYPE_STYLUS || tool == MotionEvent.TOOL_TYPE_ERASER) return true
+        if (pageTops.isEmpty()) return true
+        if ((drawPointerId != -1 && inputFromStylus) || stylusIndex(event) >= 0) {
+            handleStylus(event)
+        } else {
+            handleFingers(event)
+        }
+        return true
+    }
+
+    override fun onHoverEvent(event: MotionEvent): Boolean {
+        if (isStylusTool(event.getToolType(0))) lastStylusTime = event.eventTime
+        return super.onHoverEvent(event)
+    }
+
+    private fun isStylusTool(type: Int) =
+        type == MotionEvent.TOOL_TYPE_STYLUS || type == MotionEvent.TOOL_TYPE_ERASER
+
+    private fun stylusIndex(event: MotionEvent): Int {
+        for (i in 0 until event.pointerCount) if (isStylusTool(event.getToolType(i))) return i
+        return -1
+    }
+
+    private fun handleStylus(event: MotionEvent) {
+        lastStylusTime = event.eventTime
+        if (fingerGestureActive) cancelFingerGesture(event)
+        if (drawPointerId != -1 && !inputFromStylus) cancelInput()
 
         when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                val idx = event.actionIndex
+                if (drawPointerId == -1 && isStylusTool(event.getToolType(idx))) {
+                    val erase = tools.tool == Tool.ERASER ||
+                        event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER ||
+                        (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
+                    beginInput(event, idx, fromStylus = true, erase = erase)
+                }
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val idx = event.findPointerIndex(drawPointerId)
+                if (idx >= 0) moveInput(event, idx)
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                if (event.getPointerId(event.actionIndex) == drawPointerId) {
+                    moveInput(event, event.actionIndex)
+                    endInput()
+                }
+            }
+            MotionEvent.ACTION_CANCEL -> cancelInput()
+        }
+    }
+
+    private fun handleFingers(event: MotionEvent) {
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_DOWN) {
+            // Kalem az önce ekrandaydı ya da üstünde duruyorsa bu dokunuş büyük ihtimalle avuç içi.
+            ignoringFingers = event.eventTime - lastStylusTime < PALM_WINDOW_MS
+            multiTouch = false
+        }
+        if (ignoringFingers) {
+            if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) ignoringFingers = false
+            return
+        }
+
+        if (tools.fingerDraw) {
+            when (action) {
+                MotionEvent.ACTION_DOWN -> beginInput(event, 0, fromStylus = false, erase = tools.tool == Tool.ERASER)
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    // İkinci parmak geldi: bu bir kaydırma/yakınlaştırma, yarım çizgiyi at.
+                    multiTouch = true
+                    if (drawPointerId != -1) cancelInput()
+                }
+                MotionEvent.ACTION_MOVE -> if (!multiTouch && drawPointerId != -1) {
+                    val idx = event.findPointerIndex(drawPointerId)
+                    if (idx >= 0) moveInput(event, idx)
+                }
+                MotionEvent.ACTION_UP -> if (drawPointerId != -1) {
+                    // Sistem avuç içi olarak işaretlediyse çizgiyi at.
+                    if ((event.flags and MotionEvent.FLAG_CANCELED) != 0) {
+                        cancelInput()
+                    } else {
+                        moveInput(event, 0)
+                        endInput()
+                    }
+                }
+                MotionEvent.ACTION_CANCEL -> cancelInput()
+            }
+        }
+
+        when (action) {
             MotionEvent.ACTION_DOWN -> {
-                touching = true
+                fingerGestureActive = true
                 scaledThisGesture = false
                 scroller.forceFinished(true)
                 zoomAnimator?.cancel()
@@ -399,14 +595,166 @@ class PdfDocumentView(context: Context) : View(context) {
         }
         scaleDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
-        when (event.actionMasked) {
+        when (action) {
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                touching = false
+                fingerGestureActive = false
                 if (scroller.isFinished) scheduleDetail()
             }
         }
-        return true
     }
+
+    private fun cancelFingerGesture(event: MotionEvent) {
+        val cancel = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_CANCEL }
+        scaleDetector.onTouchEvent(cancel)
+        gestureDetector.onTouchEvent(cancel)
+        cancel.recycle()
+        fingerGestureActive = false
+        scheduleDetail()
+    }
+
+    // ---- Çizim / silme ----
+
+    /** Ekran noktası → sayfa noktası (PDF birimi). */
+    private fun pageScale(page: Int) = fitWidth * zoom / pageSizes[page].width
+    private fun toPageX(page: Int, sx: Float) = (sx + offsetX) / pageScale(page)
+    private fun toPageY(page: Int, sy: Float) = (sy + offsetY - pageTops[page] * zoom) / pageScale(page)
+
+    private fun beginInput(event: MotionEvent, idx: Int, fromStylus: Boolean, erase: Boolean) {
+        val x = event.getX(idx)
+        val y = event.getY(idx)
+        drawPointerId = event.getPointerId(idx)
+        inputFromStylus = fromStylus
+        erasing = erase
+        inputPage = pageAt((y + offsetY) / zoom)
+        predictedCount = 0
+        requestUnbufferedDispatch(event)
+        scroller.forceFinished(true)
+        parent?.requestDisallowInterceptTouchEvent(true)
+
+        if (erase) {
+            eraserX = x
+            eraserY = y
+            lastEraseX = x
+            lastEraseY = y
+            eraseAlong(x, y, x, y)
+        } else {
+            val t = tools
+            val highlighter = t.tool == Tool.HIGHLIGHTER
+            current = StrokeBuilder(
+                tool = if (highlighter) InkTool.HIGHLIGHTER else InkTool.PEN,
+                color = if (highlighter) t.highlighterColor else t.penColor,
+                width = mmToPt(if (highlighter) t.highlighterWidthMm else t.penWidthMm),
+                pressureSensitive = fromStylus && !highlighter,
+            ).also { it.add(toPageX(inputPage, x), toPageY(inputPage, y), pressureOf(event, idx, null)) }
+            predictor?.record(event)
+        }
+        invalidate()
+    }
+
+    private fun moveInput(event: MotionEvent, idx: Int) {
+        if (erasing) {
+            for (h in 0 until event.historySize) {
+                eraseStep(event.getHistoricalX(idx, h), event.getHistoricalY(idx, h))
+            }
+            eraseStep(event.getX(idx), event.getY(idx))
+            invalidate()
+            return
+        }
+        val b = current ?: return
+        for (h in 0 until event.historySize) {
+            addPoint(b, event.getHistoricalX(idx, h), event.getHistoricalY(idx, h), event.getHistoricalPressure(idx, h))
+        }
+        addPoint(b, event.getX(idx), event.getY(idx), event.getPressure(idx))
+        updatePrediction(event)
+        invalidate()
+    }
+
+    private fun addPoint(b: StrokeBuilder, sx: Float, sy: Float, rawPressure: Float) {
+        val x = toPageX(inputPage, sx)
+        val y = toPageY(inputPage, sy)
+        val p = if (b.pressureSensitive) b.lastPressure * 0.5f + rawPressure.coerceIn(0f, 1f) * 0.5f else 1f
+        val minStep = MIN_POINT_DISTANCE_PX / pageScale(inputPage)
+        val dx = x - b.lastX
+        val dy = y - b.lastY
+        if (dx * dx + dy * dy < minStep * minStep) {
+            // Çok yakın nokta: yenisini ekleme, sadece son noktayı güncelle (basınç değişimi kaybolmasın).
+            if (b.count > 1) b.replaceLast(x, y, p)
+            return
+        }
+        b.add(x, y, p)
+    }
+
+    private fun pressureOf(event: MotionEvent, idx: Int, prev: Float?): Float =
+        if (inputFromStylus) event.getPressure(idx).coerceIn(0f, 1f).let { if (prev == null) it else prev * 0.5f + it * 0.5f } else 1f
+
+    private fun updatePrediction(event: MotionEvent) {
+        predictedCount = 0
+        val p = predictor ?: return
+        if (!inputFromStylus) return
+        p.record(event)
+        val b = current ?: return
+        val target = (SystemClock.uptimeMillis() + PREDICTION_MS) * 1_000_000L
+        val prediction = p.predict(target) ?: return
+        val n = minOf(prediction.historySize + 1, predicted.size / 3)
+        var k = 0
+        for (h in 0 until n) {
+            val px = if (h < prediction.historySize) prediction.getHistoricalX(0, h) else prediction.getX(0)
+            val py = if (h < prediction.historySize) prediction.getHistoricalY(0, h) else prediction.getY(0)
+            predicted[k * 3] = toPageX(inputPage, px)
+            predicted[k * 3 + 1] = toPageY(inputPage, py)
+            predicted[k * 3 + 2] = b.lastPressure
+            k++
+        }
+        predictedCount = k
+        prediction.recycle()
+    }
+
+    private fun eraseStep(x: Float, y: Float) {
+        eraserX = x
+        eraserY = y
+        eraseAlong(lastEraseX, lastEraseY, x, y)
+        lastEraseX = x
+        lastEraseY = y
+    }
+
+    private fun eraseAlong(ax: Float, ay: Float, bx: Float, by: Float) {
+        val page = pageAt((by + offsetY) / zoom)
+        val strokes = ink.strokes(page)
+        if (strokes.isEmpty()) return
+        val r = tools.eraserSizeDp * density / pageScale(page)
+        val x0 = toPageX(page, ax)
+        val y0 = toPageY(page, ay)
+        val x1 = toPageX(page, bx)
+        val y1 = toPageY(page, by)
+        val result = when (tools.eraserMode) {
+            EraserMode.STROKE -> Eraser.eraseStrokes(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
+            EraserMode.PRECISE -> Eraser.erasePrecise(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
+        } ?: return
+        ink.replace(page, result)
+        pageChanged(page)
+    }
+
+    private fun endInput() {
+        current?.let { b ->
+            ink.add(inputPage, b.build())
+            pageChanged(inputPage)
+        }
+        resetInput()
+    }
+
+    private fun cancelInput() {
+        resetInput()
+    }
+
+    private fun resetInput() {
+        current = null
+        drawPointerId = -1
+        erasing = false
+        predictedCount = 0
+        invalidate()
+    }
+
+    private fun mmToPt(mm: Float) = mm * 72f / 25.4f
 
     override fun computeScroll() {
         if (scroller.computeScrollOffset()) {
@@ -453,6 +801,9 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val MAX_ZOOM = 6f
         private const val DOUBLE_TAP_ZOOM = 2.5f
         private const val MAX_BASE_WIDTH = 2200f
+        private const val PALM_WINDOW_MS = 400L
+        private const val PREDICTION_MS = 16L
+        private const val MIN_POINT_DISTANCE_PX = 0.75f
 
         private fun baseCacheBytes(): Int {
             val third = Runtime.getRuntime().maxMemory() / 3

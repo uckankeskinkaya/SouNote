@@ -62,6 +62,8 @@ class LibraryRepository(private val context: Context) {
         val addedAt: Long,
         var folderId: String? = null,
         var tags: List<String> = emptyList(),
+        /** Çöp kutusuna atıldığı zaman; 0 = kütüphanede. */
+        var deletedAt: Long = 0L,
     )
     private class FolderEntry(val id: String, var name: String, var parentId: String?, var color: Int)
     private class LinkedEntry(val uri: String, val name: String)
@@ -85,8 +87,15 @@ class LibraryRepository(private val context: Context) {
         load()
     }
 
-    fun importedDocs(): List<DocRef> = synchronized(lock) {
-        imported.sortedByDescending { it.addedAt }.mapNotNull { e ->
+    fun importedDocs(): List<DocRef> = docsWhere { it.deletedAt == 0L }
+
+    /** Çöp kutusundaki belgeler (en son silinen başta). */
+    fun trashDocs(): List<DocRef> = docsWhere { it.deletedAt > 0L }
+
+    fun deletedAt(id: String): Long = synchronized(lock) { imported.find { it.id == id }?.deletedAt ?: 0L }
+
+    private fun docsWhere(filter: (ImportedEntry) -> Boolean): List<DocRef> = synchronized(lock) {
+        imported.filter(filter).sortedByDescending { maxOf(it.addedAt, it.deletedAt) }.mapNotNull { e ->
             val file = fileFor(e.id)
             if (file.exists()) {
                 DocRef(
@@ -286,11 +295,33 @@ class LibraryRepository(private val context: Context) {
         }
     }
 
+    /** Çöp kutusuna at: dosyalar durur, 30 gün içinde geri alınabilir. */
+    fun moveToTrash(id: String) = synchronized(lock) {
+        imported.find { it.id == id }?.let {
+            it.deletedAt = System.currentTimeMillis()
+            save()
+        }
+    }
+
+    fun restoreFromTrash(id: String) = synchronized(lock) {
+        imported.find { it.id == id }?.let {
+            it.deletedAt = 0L
+            save()
+        }
+    }
+
+    /** Kalıcı sil (PDF dosyası; notları çağıran siler). */
     fun delete(id: String) = synchronized(lock) {
         if (imported.removeAll { it.id == id }) {
             fileFor(id).delete()
             save()
         }
+    }
+
+    /** Çöpte [maxAgeMs]'den uzun duranların kimlikleri (kalıcı silinecekler). */
+    fun expiredTrash(maxAgeMs: Long): List<String> = synchronized(lock) {
+        val now = System.currentTimeMillis()
+        imported.filter { it.deletedAt > 0 && now - it.deletedAt > maxAgeMs }.map { it.id }
     }
 
     fun linkFolder(treeUri: Uri): FolderRef {
@@ -370,6 +401,7 @@ class LibraryRepository(private val context: Context) {
                         o.getString("id"), o.getString("title"), o.getLong("addedAt"),
                         o.optString("folder").ifEmpty { null },
                         if (tagArr == null) emptyList() else List(tagArr.length()) { k -> tagArr.getString(k) },
+                        o.optLong("deletedAt", 0L),
                     )
                 }
             }
@@ -399,7 +431,8 @@ class LibraryRepository(private val context: Context) {
             imported.forEach {
                 put(
                     JSONObject().put("id", it.id).put("title", it.title).put("addedAt", it.addedAt)
-                        .put("folder", it.folderId ?: "").put("tags", JSONArray(it.tags)),
+                        .put("folder", it.folderId ?: "").put("tags", JSONArray(it.tags))
+                        .put("deletedAt", it.deletedAt),
                 )
             }
         })

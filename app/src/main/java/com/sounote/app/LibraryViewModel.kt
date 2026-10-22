@@ -38,6 +38,7 @@ import com.sounote.app.ink.InkStore
 import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.ToolState
 import com.sounote.app.pdf.PageTemplate
+import com.sounote.app.pdf.PaperColor
 import com.sounote.app.pdf.PaperSize
 import com.sounote.app.pdf.PdfExporter
 import com.sounote.app.pdf.PdfPages
@@ -109,6 +110,50 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun updateTheme(mode: ThemeMode) {
         themeMode = mode
         prefs.edit().putString("theme", mode.name).apply()
+    }
+
+    /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */
+    var keyHandler: ((android.view.KeyEvent) -> Boolean)? = null
+
+    // ---- Uygulama kilidi: açılışta ve bir dakikadan uzun arka planda kalınca parmak izi / PIN ----
+
+    var appLock by mutableStateOf(prefs.getBoolean("appLock", false))
+        private set
+    var locked by mutableStateOf(appLock)
+        private set
+    private var backgroundSince = 0L
+
+    private fun deviceSecure() =
+        getApplication<Application>().getSystemService(android.app.KeyguardManager::class.java)?.isDeviceSecure == true
+
+    fun updateAppLock(on: Boolean) {
+        if (on && !deviceSecure()) {
+            message = "Önce cihazda ekran kilidi (PIN, desen ya da parmak izi) ayarla"
+            return
+        }
+        appLock = on
+        prefs.edit().putBoolean("appLock", on).apply()
+        message = if (on) "Uygulama kilidi açık" else "Uygulama kilidi kapalı"
+    }
+
+    fun onAppBackground() {
+        backgroundSince = System.currentTimeMillis()
+    }
+
+    fun onAppForeground() {
+        if (appLock && backgroundSince != 0L && System.currentTimeMillis() - backgroundSince > LOCK_AFTER_MS) locked = true
+        backgroundSince = 0L
+    }
+
+    fun unlocked() {
+        locked = false
+    }
+
+    /** Ekran kilidi sonradan kaldırıldıysa uygulama içeride kalmasın diye kilit de kapanır. */
+    fun lockUnavailable() {
+        locked = false
+        appLock = false
+        prefs.edit().putBoolean("appLock", false).apply()
     }
 
     fun lastOpened(doc: DocRef) = prefs.getLong("opened_${doc.id}", 0L)
@@ -244,11 +289,22 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     var recordings by mutableStateOf<List<Recording>>(emptyList())
         private set
 
+    private var recordingFile: String? = null
+
+    /** Kayıt sürüyorsa dosya adı ve kaydın şu anki anı (çizgileri kayda bağlamak için). */
+    fun currentRecording(): Pair<String, Long>? {
+        val f = recordingFile ?: return null
+        if (recordingSince == 0L) return null
+        return f to (System.currentTimeMillis() - recordingSince)
+    }
+
+    fun recordingFileFor(doc: DocRef, name: String) = File(AudioNotes.dir(getApplication(), doc.id), name)
+
     fun startRecording(doc: DocRef) {
         if (recorder != null) return
         try {
             val r = AudioRecorder(getApplication())
-            r.start(AudioNotes.dir(getApplication(), doc.id))
+            recordingFile = r.start(AudioNotes.dir(getApplication(), doc.id)).name
             recorder = r
             recordingSince = System.currentTimeMillis()
         } catch (e: Exception) {
@@ -261,6 +317,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         val r = recorder ?: return
         recorder = null
         recordingSince = 0L
+        recordingFile = null
         val saved = r.stop()
         message = if (saved != null) "Ses kaydı kaydedildi (⋮ → Ses kayıtları)" else "Ses kaydı boş, kaydedilmedi"
         doc?.let(::loadRecordings)
@@ -757,9 +814,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { runCatching { store.saveBookmarks(doc.id, next) } }
     }
 
+    /** Uygulamada oluşturulan defterin kâğıt rengi: araya eklenen sayfalar da aynı renkte olsun. */
+    private fun paperOf(doc: DocRef) =
+        enumValueOrNull<PaperColor>(prefs.getString("paper_${doc.id}", null)) ?: PaperColor.WHITE
+
     fun insertBlankPage(doc: DocRef, at: Int, template: PageTemplate) =
         changePages(doc, focusPage = at, "Sayfa eklenemedi") { file ->
-            PdfPages.insertBlank(getApplication(), file, at, template)
+            PdfPages.insertBlank(getApplication(), file, at, template, paperOf(doc))
             ({ i: Int -> if (i >= at) i + 1 else i })
         }
 
@@ -863,16 +924,20 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Boş defter: şablonlu A4 sayfalardan oluşan yeni bir PDF olarak kütüphaneye eklenir ve açılır. */
-    fun createNotebook(title: String, template: PageTemplate, size: PaperSize = PaperSize.A4, landscape: Boolean = false) {
+    fun createNotebook(
+        title: String, template: PageTemplate, size: PaperSize = PaperSize.A4, landscape: Boolean = false,
+        paper: PaperColor = PaperColor.WHITE,
+    ) {
         viewModelScope.launch {
             busy = true
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     repo.createDocument(title.trim().ifEmpty { "Defter" }, currentFolder) { file ->
-                        PdfPages.createNotebook(getApplication(), file, template, pages = 1, size = size, landscape = landscape)
+                        PdfPages.createNotebook(getApplication(), file, template, pages = 1, size = size, landscape = landscape, paper = paper)
                     }
                 }
             }
+            result.onSuccess { if (paper != PaperColor.WHITE) prefs.edit().putString("paper_${it.id}", paper.name).apply() }
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             result.onSuccess { open(it) }.onFailure {
@@ -958,6 +1023,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             if (currentFolder != null && userFolders.none { it.id == currentFolder }) currentFolder = null
             orphans = withContext(Dispatchers.IO) { runCatching { repo.orphanedCopies() }.getOrDefault(emptyList()) }
+            trash = withContext(Dispatchers.IO) {
+                repo.expiredTrash(TRASH_DAYS * 24L * 60 * 60 * 1000).forEach { purgeNow(it) }
+                repo.trashDocs()
+            }
             if (openDoc == null) maybeAutoBackup()
             loaded = true
             path.lastOrNull()?.let { loadListing(it) }
@@ -1062,16 +1131,54 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Silinen belge önce çöp kutusuna gider (30 gün). */
     fun delete(doc: DocRef) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                repo.delete(doc.id)
-                store.delete(doc.id)
-            }
+            withContext(Dispatchers.IO) { repo.moveToTrash(doc.id) }
             runCatching { ShortcutManagerCompat.removeDynamicShortcuts(getApplication(), listOf("doc_${doc.id}")) }
-            prefs.edit().remove(pageKey(doc)).apply()
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+            trash = withContext(Dispatchers.IO) { repo.trashDocs() }
+            message = "\"${doc.title}\" çöp kutusuna taşındı (⋮ → Çöp kutusu)"
         }
+    }
+
+    var trash by mutableStateOf<List<DocRef>>(emptyList())
+        private set
+
+    fun restoreFromTrash(doc: DocRef) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { repo.restoreFromTrash(doc.id) }
+            refresh()
+        }
+    }
+
+    /** Kalıcı sil: PDF, notlar, ses kayıtları, kartlar. */
+    fun purge(doc: DocRef) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { purgeNow(doc.id) }
+            prefs.edit().remove(pageKey(doc)).remove("study_${doc.id}").apply()
+            refresh()
+        }
+    }
+
+    fun emptyTrash() {
+        val ids = trash.map { it.id }
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { ids.forEach { purgeNow(it) } }
+            refresh()
+        }
+    }
+
+    private fun purgeNow(id: String) {
+        repo.delete(id)
+        store.delete(id)
+    }
+
+    fun trashDaysLeft(doc: DocRef): Int {
+        val at = repo.deletedAt(doc.id)
+        if (at == 0L) return TRASH_DAYS
+        val left = TRASH_DAYS - ((System.currentTimeMillis() - at) / (24L * 60 * 60 * 1000)).toInt()
+        return left.coerceAtLeast(0)
     }
 
     fun lastPage(doc: DocRef) = prefs.getInt(pageKey(doc), 0)
@@ -1098,5 +1205,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private const val TAG = "LibraryViewModel"
         private const val SAVE_DELAY_MS = 800L
         private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
+        const val TRASH_DAYS = 30
+        const val LOCK_AFTER_MS = 60_000L
     }
 }

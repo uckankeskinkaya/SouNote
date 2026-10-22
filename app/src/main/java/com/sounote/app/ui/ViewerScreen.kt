@@ -3,6 +3,7 @@
 package com.sounote.app.ui
 
 import android.content.Intent
+import android.view.KeyEvent
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
@@ -123,6 +124,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var pomodoroDialog by remember { mutableStateOf(false) }
     // Bilgi kartları
     var cardsDialog by remember { mutableStateOf(false) }
+    // Kayda bağlı çizgiye dokununca: (dosya adı, an, dokunma sayacı)
+    var audioPlay by remember { mutableStateOf<Triple<String, Long, Int>?>(null) }
     var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
     var textCardDialog by remember { mutableStateOf(false) }
     var study by remember { mutableStateOf<List<com.sounote.app.data.Card>?>(null) }
@@ -240,6 +243,37 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         context.startActivity(Intent.createChooser(send, "Paylaş"))
     }
 
+    fun printDoc() {
+        vm.export(doc) { file -> printPdf(context, file, doc.title) }
+    }
+
+    // Klavye kısayolları (klavyeli kılıf): geri al/ileri al, sayfa çevir, ara, yazdır.
+    DisposableEffect(vm, ink) {
+        vm.keyHandler = handler@{ e ->
+            val ctrl = e.isCtrlPressed
+            val current = page?.first ?: 0
+            when {
+                ctrl && e.keyCode == KeyEvent.KEYCODE_Z && !searchOpen -> {
+                    if (e.isShiftPressed) ink.redo() else ink.undo()
+                }
+                ctrl && e.keyCode == KeyEvent.KEYCODE_Y && !searchOpen -> ink.redo()
+                ctrl && e.keyCode == KeyEvent.KEYCODE_F -> searchOpen = true
+                ctrl && e.keyCode == KeyEvent.KEYCODE_P -> printDoc()
+                ctrl && e.keyCode == KeyEvent.KEYCODE_S -> {
+                    currentVm.flush()
+                    currentVm.showMessage("Kaydedildi")
+                }
+                e.keyCode == KeyEvent.KEYCODE_PAGE_DOWN -> view?.goToPage(current + 1)
+                e.keyCode == KeyEvent.KEYCODE_PAGE_UP -> view?.goToPage(current - 1)
+                ctrl && e.keyCode == KeyEvent.KEYCODE_MOVE_HOME -> view?.goToPage(0)
+                ctrl && e.keyCode == KeyEvent.KEYCODE_MOVE_END -> view?.goToPage(Int.MAX_VALUE)
+                else -> return@handler false
+            }
+            true
+        }
+        onDispose { vm.keyHandler = null }
+    }
+
     val fullScreenButtons: @Composable () -> Unit = {
         if (vm.recordingSince != 0L) {
             TextButton(onClick = { toggleRecording() }) {
@@ -341,6 +375,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onClick = {
                                     exportMenu = false
                                     exportDialog = true to true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Yazdır…") },
+                                onClick = {
+                                    exportMenu = false
+                                    printDoc()
                                 },
                             )
                         }
@@ -495,6 +536,17 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 leading = if (vm.fullScreen) fullScreenButtons else null,
                 onRevealTapes = { view?.setAllTapes(it) },
             )
+            audioPlay?.let { (name, ms, tapCount) ->
+                val f = vm.recordingFileFor(doc, name)
+                if (f.exists()) {
+                    AudioPlayerBar(f, ms, key = tapCount, onClose = { audioPlay = null })
+                } else {
+                    LaunchedEffect(name) {
+                        vm.showMessage("Bu nota bağlı kayıt silinmiş")
+                        audioPlay = null
+                    }
+                }
+            }
             Row(Modifier.weight(1f).fillMaxWidth()) {
             val pageInfo = page
             if (vm.pagePanelOpen && pageInfo != null) {
@@ -547,6 +599,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 imagesDir = currentVm.imagesDir(doc)
                                 twoPage = currentVm.twoPage
                                 setDarkTheme(darkTheme)
+                                recordingNow = { currentVm.currentRecording() }
+                                onPlayAudio = { file, ms ->
+                                    if (currentVm.recordingSince != 0L) {
+                                        currentVm.showMessage("Kayıt sürerken dinlenemez")
+                                    } else {
+                                        audioPlay = Triple(file, ms, (audioPlay?.third ?: 0) + 1)
+                                    }
+                                }
                                 onSelectionChanged = { n, clip ->
                                     selCount = n
                                     hasClip = clip

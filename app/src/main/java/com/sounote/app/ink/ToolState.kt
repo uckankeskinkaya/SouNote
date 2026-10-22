@@ -5,7 +5,16 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.pow
 
-enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER, STAMP }
+enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER, STAMP, SHAPE }
+
+/** Şekil aracının çizdiği şekil. */
+enum class ShapeKind(val symbol: String, val label: String) {
+    LINE("╱", "Çizgi"),
+    ARROW("→", "Ok"),
+    RECT("▭", "Dikdörtgen"),
+    ELLIPSE("◯", "Elips"),
+    TRIANGLE("△", "Üçgen"),
+}
 
 /** Kalem aracının türü: hangi çizgi türüyle kaydedileceği ve basınca tepki verip vermediği. */
 enum class PenType(
@@ -69,6 +78,7 @@ data class ToolState(
     val stampSymbol: String = STAMPS[0],
     val stampColor: Int = 0xFFD93025.toInt(),
     val stampSizePt: Float = 24f,
+    val shapeKind: ShapeKind = ShapeKind.RECT,
     val favorites: List<FavoritePen> = emptyList(),
     /** Renk seçiciden seçilmiş son renkler (en yenisi başta). */
     val customColors: List<Int> = emptyList(),
@@ -118,6 +128,7 @@ data class ToolState(
             .putString("stampSymbol", stampSymbol)
             .putInt("stampColor", stampColor)
             .putFloat("stampSizePt", stampSizePt)
+            .putString("shapeKind", shapeKind.name)
             .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
             .putFloat("textSizePt", textSizePt)
@@ -203,6 +214,7 @@ data class ToolState(
                 stampSymbol = prefs.getString("stampSymbol", null) ?: d.stampSymbol,
                 stampColor = prefs.getInt("stampColor", d.stampColor),
                 stampSizePt = prefs.getFloat("stampSizePt", d.stampSizePt),
+                shapeKind = enumOr(prefs.getString("shapeKind", null), d.shapeKind),
                 textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),

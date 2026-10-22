@@ -84,7 +84,7 @@ object Selections {
                 p[i * 3] = mx(p[i * 3])
                 p[i * 3 + 1] = my(p[i * 3 + 1])
             }
-            Stroke(s.tool, s.color, s.width * scale, s.pressureSensitive, p).also { newStrokes += it }
+            s.copy(width = s.width * scale, points = p).also { newStrokes += it }
         }
         val texts = c.texts.map { t ->
             if (t.id !in sel.textIds) t
@@ -109,7 +109,7 @@ object Selections {
                 p[i * 3] = x
                 p[i * 3 + 1] = y
             }
-            Stroke(s.tool, s.color, s.width, s.pressureSensitive, p).also { newStrokes += it }
+            s.copy(points = p).also { newStrokes += it }
         }
         val r = RectF()
         val texts = c.texts.map { t ->
@@ -132,7 +132,7 @@ object Selections {
         val newStrokes = HashSet<Stroke>()
         val strokes = c.strokes.map { s ->
             if (s !in sel.strokes) s
-            else Stroke(s.tool, color, s.width, s.pressureSensitive, s.points).also { newStrokes += it }
+            else s.copy(color = color).also { newStrokes += it }
         }
         val texts = c.texts.map { if (it.id in sel.textIds) it.copy(color = color) else it }
         return c.copy(strokes = strokes, texts = texts) to Selection(sel.page, newStrokes, sel.textIds, sel.imageIds)
@@ -159,7 +159,7 @@ object Selections {
                 p[i * 3] += dx
                 p[i * 3 + 1] += dy
             }
-            Stroke(s.tool, s.color, s.width, s.pressureSensitive, p)
+            s.copy(points = p)
         }
         val texts = clip.texts.map { it.copy(id = nextId++, x = it.x + dx, y = it.y + dy) }
         val images = clip.images.map { it.copy(id = nextId++, x = it.x + dx, y = it.y + dy) }

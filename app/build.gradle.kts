@@ -46,6 +46,10 @@ android {
         jvmTarget = "17"
     }
     packaging {
+        // Kod (dex) APK içinde sıkıştırılsın: sıkıştırılmamış dex tablete inerken bozuluyordu (CRC hatası, build-20..22).
+        dex {
+            useLegacyPackaging = true
+        }
         resources {
             // PDFBox'ın bağımlılıklarından gelen çakışan üst veri dosyaları
             excludes += setOf(

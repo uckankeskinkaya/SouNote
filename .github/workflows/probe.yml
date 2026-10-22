@@ -1,7 +1,9 @@
 name: API keşfi (geçici)
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/probe.yml"
 
 jobs:
   probe:

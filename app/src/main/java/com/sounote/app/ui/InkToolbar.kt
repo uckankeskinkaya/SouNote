@@ -193,13 +193,21 @@ private fun FavoriteChip(f: FavoritePen, active: Boolean, onClick: () -> Unit, o
             .padding(horizontal = 10.dp),
     ) {
         val dot = if (f.tool == Tool.HIGHLIGHTER) 14.dp else (4f + f.widthMm * 4f).coerceIn(5f, 16f).dp
+        // Beyaz zemin: koyu renkli kalem koyu temada da görünsün.
         Box(
-            Modifier
-                .size(width = if (f.tool == Tool.HIGHLIGHTER) 20.dp else dot, height = dot)
-                .background(Color(f.color), if (f.tool == Tool.HIGHLIGHTER) RoundedCornerShape(3.dp) else CircleShape),
-        )
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(width = 28.dp, height = 24.dp)
+                .background(Color.White, RoundedCornerShape(6.dp)),
+        ) {
+            Box(
+                Modifier
+                    .size(width = if (f.tool == Tool.HIGHLIGHTER) 20.dp else dot, height = dot)
+                    .background(Color(f.color), if (f.tool == Tool.HIGHLIGHTER) RoundedCornerShape(3.dp) else CircleShape),
+            )
+        }
         Text(
-            if (f.tool == Tool.PEN && f.penType != PenType.FOUNTAIN) "${mm(f.widthMm)} ${f.penType.label.take(1)}" else mm(f.widthMm),
+            if (f.tool == Tool.PEN && f.penType.short.isNotEmpty()) "${mm(f.widthMm)} ${f.penType.short}" else mm(f.widthMm),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(start = 6.dp),
         )
@@ -224,11 +232,7 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
                         Column {
                             Text(t.label, fontWeight = if (t == state.penType) FontWeight.Bold else null)
                             Text(
-                                when (t) {
-                                    PenType.FOUNTAIN -> "Bastırdıkça kalınlaşır"
-                                    PenType.BALLPOINT -> "Her zaman aynı kalınlık"
-                                    PenType.PENCIL -> "Yarı saydam, sabit kalınlık"
-                                },
+                                t.description,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -257,7 +261,7 @@ private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
             Column(Modifier.width(320.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    if (state.penType == PenType.FOUNTAIN) "Sadece dolma kalemde etkili" else "Dolma kalem seçince etkili olur",
+                    if (state.penType.usesPressure) "Dolma kalem ve fırçada etkili" else "Dolma kalem ya da fırça seçince etkili olur",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -405,7 +409,10 @@ private fun Swatch(c: Int, isSelected: Boolean, onClick: () -> Unit) {
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                 shape = CircleShape,
             )
-            .padding(4.dp)
+            .padding(3.dp)
+            // Beyaz halka: siyah/koyu renkler koyu temada da görünsün (sayfa da beyaz).
+            .background(Color.White, CircleShape)
+            .padding(2.dp)
             .background(Color(c), CircleShape)
             .clickable(onClick = onClick),
     )

@@ -14,6 +14,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -59,11 +60,14 @@ fun TextBoxDialog(
         title = { Text(if (isNew) "Yazı ekle" else "Yazıyı düzenle") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Yazı sayfada beyaz kâğıt üstünde duracak: burada da öyle göster, renkler kaybolmasın.
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it },
                     minLines = 3,
+                    placeholder = { Text("Buraya yaz…", color = Color(0xFF8A8F99)) },
                     textStyle = TextStyle(color = Color(color), fontSize = 18.sp),
+                    colors = paperFieldColors(Color(color)),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp).focusRequester(focus),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -93,6 +97,18 @@ fun TextBoxDialog(
     )
 }
 
+/** Beyaz "kâğıt" görünümlü yazı alanı: seçilen yazı rengi koyu temada da okunur. */
+@Composable
+private fun paperFieldColors(textColor: Color) = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.White,
+    unfocusedContainerColor = Color.White,
+    focusedTextColor = textColor,
+    unfocusedTextColor = textColor,
+    cursorColor = textColor,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = Color(0xFFC9CCD3),
+)
+
 /** PDF form metin alanını doldurma. */
 @Composable
 fun FormTextDialog(field: FormField, onSave: (String) -> Unit, onDismiss: () -> Unit) {
@@ -110,6 +126,7 @@ fun FormTextDialog(field: FormField, onSave: (String) -> Unit, onDismiss: () -> 
                 },
                 singleLine = !field.multiLine,
                 minLines = if (field.multiLine) 3 else 1,
+                colors = paperFieldColors(Color(0xFF1B1B1F)),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus),
             )
         },

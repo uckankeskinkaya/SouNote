@@ -5,7 +5,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Kayıtlı çizgi türü. Sıra diske yazıldığı için yeni tür sadece sona eklenir. */
-enum class InkTool { PEN, HIGHLIGHTER, PENCIL }
+enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED }
 
 /**
  * Tek bir çizgi. Koordinatlar sayfanın PDF noktası (1/72 inç) cinsinden; böylece
@@ -37,7 +37,7 @@ class Stroke(
         b.set(minX - pad, minY - pad, maxX + pad, maxY + pad)
     }
 
-    val maxHalfWidth get() = width * (if (pressureSensitive) StrokeRenderer.MAX_PRESSURE_FACTOR else 1f) / 2f
+    val maxHalfWidth get() = width * StrokeRenderer.maxFactor(tool, pressureSensitive) / 2f
 }
 
 /** Çizim sırasında noktaları biriktirir. */

@@ -76,6 +76,7 @@ class SelectionUi(
     val onPaste: () -> Unit,
     val onDelete: () -> Unit,
     val onDone: () -> Unit,
+    val onMakeCard: () -> Unit = {},
 )
 
 /**
@@ -124,6 +125,12 @@ fun InkToolbar(
                 ToolChip("Lazer", state.tool == Tool.LASER, drawable = R.drawable.ic_laser) {
                     onChange(state.copy(tool = Tool.LASER))
                 }
+                FilterChip(
+                    selected = state.tool == Tool.STAMP,
+                    onClick = { onChange(state.copy(tool = Tool.STAMP)) },
+                    label = { Text("Damga") },
+                    leadingIcon = { Text(state.stampSymbol, fontWeight = FontWeight.Bold) },
+                )
                 AssistChip(
                     onClick = onInsertImage,
                     label = { Text("Resim") },
@@ -147,6 +154,7 @@ fun InkToolbar(
                     Tool.TEXT -> TextOptions(state, onChange) { picker = Tool.TEXT }
                     Tool.LASSO -> SelectionOptions(state, selection) { picker = Tool.LASSO }
                     Tool.TAPE -> TapeOptions(state, onChange, onRevealTapes) { picker = Tool.TAPE }
+                    Tool.STAMP -> StampOptions(state, onChange) { picker = Tool.STAMP }
                     Tool.LASER -> Text(
                         "Sunum ve anlatım için: çizgi birkaç saniyede kaybolur, kaydedilmez.",
                         style = MaterialTheme.typography.bodySmall,
@@ -162,6 +170,7 @@ fun InkToolbar(
             Tool.HIGHLIGHTER -> state.highlighterColor
             Tool.TEXT -> state.textColor
             Tool.TAPE -> state.tapeColor
+            Tool.STAMP -> state.stampColor
             else -> state.penColor
         }
         ColorPickerDialog(
@@ -173,6 +182,7 @@ fun InkToolbar(
                         Tool.HIGHLIGHTER -> s.copy(highlighterColor = c)
                         Tool.TEXT -> s.copy(textColor = c)
                         Tool.TAPE -> s.copy(tapeColor = c)
+                        Tool.STAMP -> s.copy(stampColor = c)
                         Tool.LASSO -> s
                         else -> s.copy(penColor = c)
                     },
@@ -411,6 +421,41 @@ private fun EraserOptions(state: ToolState, onChange: (ToolState) -> Unit) {
 }
 
 @Composable
+private fun StampOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        ToolState.STAMPS.forEach { s ->
+            val selected = s == state.stampSymbol
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(34.dp)
+                    .border(
+                        if (selected) 2.dp else 1.dp,
+                        if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        RoundedCornerShape(8.dp),
+                    )
+                    .clickable { onChange(state.copy(stampSymbol = s)) },
+            ) {
+                Text(s, color = Color(state.stampColor), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
+    Palette(ToolState.PEN_COLORS, state.customColors, state.stampColor, { onChange(state.copy(stampColor = it)) }, onCustomColor)
+    Text("Boyut", style = MaterialTheme.typography.labelLarge)
+    Slider(
+        value = state.stampSizePt,
+        onValueChange = { onChange(state.copy(stampSizePt = it.roundToInt().toFloat())) },
+        valueRange = 10f..72f,
+        modifier = Modifier.width(160.dp),
+    )
+    Text(
+        "Dokunduğun yere koyar · Yazı ya da Seç aracıyla taşı/sil",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 private fun TapeOptions(
     state: ToolState,
     onChange: (ToolState) -> Unit,
@@ -466,6 +511,7 @@ private fun SelectionOptions(state: ToolState, sel: SelectionUi, onCustomColor: 
     Text("${sel.count} öğe seçili", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
     Text("Renk:", style = MaterialTheme.typography.labelLarge)
     Palette(ToolState.PEN_COLORS, state.customColors, selected = 0, onSelect = sel.onRecolor, onCustom = onCustomColor)
+    AssistChip(onClick = sel.onMakeCard, label = { Text("Karta çevir") })
     AssistChip(onClick = sel.onCopy, label = { Text("Kopyala") })
     if (sel.hasClipboard) AssistChip(onClick = sel.onPaste, label = { Text("Yapıştır") })
     AssistChip(

@@ -881,6 +881,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
+            if (tools.tool == Tool.STAMP && !tools.fingerDraw) placeStamp(e.x, e.y)
             if (tools.tool == Tool.TEXT && !tools.fingerDraw) textTap(e.x, e.y)
             if (tools.tool == Tool.LASSO && !tools.fingerDraw) clearSelection()
             return false
@@ -1092,6 +1093,11 @@ class PdfDocumentView(context: Context) : View(context) {
         scroller.forceFinished(true)
         parent?.requestDisallowInterceptTouchEvent(true)
 
+        if (tools.tool == Tool.STAMP && !erase) {
+            placeStamp(x, y)
+            drawPointerId = -1
+            return
+        }
         if (tools.tool == Tool.LASER) {
             erasing = false
             laserStart(x, y)
@@ -1137,7 +1143,7 @@ class PdfDocumentView(context: Context) : View(context) {
             snapped = false
             holdX = x
             holdY = y
-            useFront = fromStylus && frontInk?.available == true && FrontInk.supports(current!!.tool)
+            useFront = fromStylus && !inverted && frontInk?.available == true && FrontInk.supports(current!!.tool)
             frontDrawn = 0
             frontGeneration++
             if (useFront) pushFront() else predictor?.record(event)
@@ -1769,6 +1775,12 @@ class PdfDocumentView(context: Context) : View(context) {
         notifySelection()
     }
 
+    /** Seçimin bulunduğu sayfa ve alanı (bilgi kartı için). */
+    fun selectionRegion(): Pair<Int, RectF>? {
+        val sel = selection ?: return null
+        return sel.page to Selections.bounds(ink.content(sel.page), sel, RectF())
+    }
+
     fun copySelection() {
         val sel = selection ?: return
         clipboard = Selections.copy(ink.content(sel.page), sel)
@@ -1823,6 +1835,56 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private val imagePlaceholderPaint = Paint().apply { color = Color.argb(40, 120, 120, 120) }
+
+    // ---- Damga ----
+
+    /** Dokunulan yere damga (işaret) koy: kalın, renkli bir yazı kutusu olarak; taşınıp silinebilir. */
+    private fun placeStamp(x: Float, y: Float) {
+        if (pageTops.isEmpty()) return
+        val page = pageAtScreen(x, y)
+        val px = toPageX(page, x)
+        val py = toPageY(page, y)
+        val t = tools
+        val box = TextBox(
+            id = System.currentTimeMillis(),
+            x = px,
+            y = py,
+            width = t.stampSizePt * 3f,
+            fontSize = t.stampSizePt,
+            color = t.stampColor,
+            text = t.stampSymbol,
+            bold = true,
+        )
+        // İşaretin ortası dokunulan noktaya gelsin.
+        val b = TextBoxes.bounds(box, RectF())
+        val centered = box.copy(x = px - b.width() / 2, y = py - b.height() / 2)
+        val c = ink.content(page)
+        ink.commit(page, c.copy(texts = c.texts + centered))
+        performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+    }
+
+    // ---- Gece okuma: renkleri ters çevir ----
+
+    fun setInverted(on: Boolean) {
+        if (on == inverted) return
+        inverted = on
+        if (on) {
+            val m = android.graphics.ColorMatrix(
+                floatArrayOf(
+                    -1f, 0f, 0f, 0f, 255f,
+                    0f, -1f, 0f, 0f, 255f,
+                    0f, 0f, -1f, 0f, 255f,
+                    0f, 0f, 0f, 1f, 0f,
+                ),
+            )
+            setLayerType(LAYER_TYPE_HARDWARE, Paint().apply { colorFilter = android.graphics.ColorMatrixColorFilter(m) })
+        } else {
+            setLayerType(LAYER_TYPE_NONE, null)
+        }
+        invalidate()
+    }
+
+    private var inverted = false
 
     // ---- Ezber bandı ----
 

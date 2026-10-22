@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
+import android.graphics.RectF
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -18,6 +19,8 @@ import androidx.lifecycle.viewModelScope
 import com.sounote.app.data.AudioNotes
 import com.sounote.app.data.AudioRecorder
 import com.sounote.app.data.Backup
+import com.sounote.app.data.Card
+import com.sounote.app.data.Flashcards
 import com.sounote.app.data.Recording
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderListing
@@ -25,6 +28,9 @@ import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
 import com.sounote.app.data.NaturalOrder
 import com.sounote.app.data.UserFolder
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import com.sounote.app.ink.ContentPainter
 import com.sounote.app.ink.Images
 import com.sounote.app.ink.InkDocument
@@ -292,6 +298,94 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    // ---- Bilgi kartları ----
+
+    var cards by mutableStateOf<List<Card>>(emptyList())
+        private set
+
+    fun loadCards(doc: DocRef) {
+        viewModelScope.launch {
+            cards = withContext(Dispatchers.IO) { Flashcards.load(getApplication(), doc.id) }
+        }
+    }
+
+    private fun saveCards(doc: DocRef, next: List<Card>) {
+        cards = next
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { Flashcards.save(getApplication(), doc.id, next) }
+                .onFailure { ErrorLog.record("Kartlar kaydedilemedi", it) }
+        }
+    }
+
+    fun addTextCard(doc: DocRef, front: String, back: String, page: Int) {
+        saveCards(doc, cards + Card(System.currentTimeMillis(), front.trim(), null, back.trim(), page, due = System.currentTimeMillis()))
+        message = "Kart eklendi"
+    }
+
+    /** Sayfanın seçilen bölgesini (notlarıyla) görüntü olarak alıp kartın ön yüzü yapar. */
+    fun addRegionCard(doc: DocRef, page: Int, region: RectF, front: String, back: String) {
+        val content = openInk?.ink?.content(page) ?: PageContent.EMPTY
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val id = System.currentTimeMillis()
+                    val dir = Flashcards.imagesDir(app, doc.id).apply { mkdirs() }
+                    val name = "$id.png"
+                    LibraryRepository.openFileDescriptor(app, repo.resolveForOpen(doc).uri).use { pfd ->
+                        PdfRenderer(pfd).use { r ->
+                            r.openPage(page).use { p ->
+                                val rect = RectF(region).apply {
+                                    inset(-6f, -6f)
+                                    intersect(0f, 0f, p.width.toFloat(), p.height.toFloat())
+                                }
+                                val scale = (1200f / maxOf(rect.width(), rect.height())).coerceIn(1f, 4f)
+                                val bmp = Bitmap.createBitmap(
+                                    (rect.width() * scale).toInt().coerceAtLeast(1),
+                                    (rect.height() * scale).toInt().coerceAtLeast(1),
+                                    Bitmap.Config.ARGB_8888,
+                                )
+                                bmp.eraseColor(android.graphics.Color.WHITE)
+                                val m = Matrix().apply {
+                                    setScale(scale, scale)
+                                    postTranslate(-rect.left * scale, -rect.top * scale)
+                                }
+                                p.render(bmp, null, m, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                                val canvas = Canvas(bmp)
+                                canvas.concat(m)
+                                ContentPainter(store.imagesDir(doc.id)).draw(canvas, content)
+                                File(dir, name).outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                            }
+                        }
+                    }
+                    Card(id, front.trim(), name, back.trim(), page, due = System.currentTimeMillis())
+                }
+            }
+            result.onSuccess {
+                saveCards(doc, cards + it)
+                message = "Kart eklendi (⋮ → Bilgi kartları)"
+            }.onFailure {
+                ErrorLog.record("Kart oluşturulamadı", it)
+                message = "Kart oluşturulamadı"
+            }
+        }
+    }
+
+    fun reviewCard(doc: DocRef, card: Card, known: Boolean) {
+        val updated = Flashcards.review(card, known)
+        saveCards(doc, cards.map { if (it.id == card.id) updated else it })
+    }
+
+    fun deleteCard(doc: DocRef, card: Card) {
+        saveCards(doc, cards.filter { it.id != card.id })
+        card.frontImage?.let { name ->
+            viewModelScope.launch(Dispatchers.IO) { File(Flashcards.imagesDir(getApplication(), doc.id), name).delete() }
+        }
+    }
+
+    fun cardImage(doc: DocRef, card: Card): File? =
+        card.frontImage?.let { File(Flashcards.imagesDir(getApplication(), doc.id), it) }
 
     // ---- Kaynağı kaybolan notlu belgeler ----
 
@@ -601,12 +695,16 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis()).apply()
         studyPause()
         viewModelScope.launch {
+            // Başka belge açıkken (kısayol, hızlı not) önceki belgenin son notları kaybolmasın.
+            saveJob?.cancel()
+            flushInk()
             withContext(Dispatchers.IO) { repo.rememberLinked(doc) }
             val (resolved, content) = withContext(Dispatchers.IO) { repo.resolveForOpen(doc) to store.load(doc.id) }
             bookmarks = withContext(Dispatchers.IO) { store.loadBookmarks(doc.id) }
             attachInk(resolved, content)
             openDoc = resolved
             studyResume()
+            pushShortcut(doc)
         }
     }
 
@@ -631,6 +729,22 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     var twoPage by mutableStateOf(prefs.getBoolean("twoPage", false))
         private set
+
+    /** Gece okuma: görüntüleyicide renkler ters çevrilir. */
+    var nightReading by mutableStateOf(prefs.getBoolean("nightReading", false))
+        private set
+
+    fun toggleNightReading() {
+        nightReading = !nightReading
+        prefs.edit().putBoolean("nightReading", nightReading).apply()
+    }
+
+    /** Başka bir PDF'in bütün sayfalarını [at] konumuna ekler (notlar kayar). */
+    fun insertPdf(doc: DocRef, at: Int, source: Uri) =
+        changePages(doc, focusPage = at, "PDF eklenemedi") { file ->
+            val n = PdfPages.insertFrom(getApplication(), file, at, source)
+            ({ i: Int -> if (i >= at) i + n else i })
+        }
 
     fun updateTwoPage(on: Boolean) {
         twoPage = on
@@ -713,6 +827,38 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 ErrorLog.record(error, it)
                 message = "$error: ${it.message ?: it.javaClass.simpleName}"
             }
+        }
+    }
+
+    /** Hızlı not: tarihli, çizgili yeni defter açar (kısayoldan da). */
+    fun quickNote() {
+        val name = "Hızlı not " + java.text.SimpleDateFormat("d MMM HH:mm", java.util.Locale.forLanguageTag("tr")).format(java.util.Date())
+        createNotebook(name, PageTemplate.LINED)
+    }
+
+    /** Kısayoldan gelen belgeyi aç. */
+    fun openById(id: String) {
+        viewModelScope.launch {
+            val doc = withContext(Dispatchers.IO) { repo.importedDocs() }.find { it.id == id }
+            if (doc != null) open(doc) else message = "Belge bulunamadı"
+        }
+    }
+
+    /** Son açılan belgeyi uygulama simgesinin kısayollarına ekle. */
+    private fun pushShortcut(doc: DocRef) {
+        if (!doc.imported) return
+        runCatching {
+            val app = getApplication<Application>()
+            val intent = Intent(app, MainActivity::class.java)
+                .setAction(MainActivity.ACTION_OPEN_DOC)
+                .putExtra(MainActivity.EXTRA_DOC_ID, doc.id)
+            val info = ShortcutInfoCompat.Builder(app, "doc_${doc.id}")
+                .setShortLabel(doc.title.take(24).ifEmpty { "Belge" })
+                .setLongLabel(doc.title.take(48).ifEmpty { "Belge" })
+                .setIcon(IconCompat.createWithResource(app, R.drawable.ic_shortcut_doc))
+                .setIntent(intent)
+                .build()
+            ShortcutManagerCompat.pushDynamicShortcut(app, info)
         }
     }
 
@@ -922,6 +1068,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 repo.delete(doc.id)
                 store.delete(doc.id)
             }
+            runCatching { ShortcutManagerCompat.removeDynamicShortcuts(getApplication(), listOf("doc_${doc.id}")) }
             prefs.edit().remove(pageKey(doc)).apply()
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
         }

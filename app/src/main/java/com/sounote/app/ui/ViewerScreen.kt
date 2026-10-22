@@ -121,6 +121,15 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Dışa aktarma penceresi: (dosyaya mı kaydedilecek, açık mı)
     var exportDialog by remember { mutableStateOf(false to false) }
     var pomodoroDialog by remember { mutableStateOf(false) }
+    // Bilgi kartları
+    var cardsDialog by remember { mutableStateOf(false) }
+    var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
+    var textCardDialog by remember { mutableStateOf(false) }
+    var study by remember { mutableStateOf<List<com.sounote.app.data.Card>?>(null) }
+    LaunchedEffect(doc.id) { vm.loadCards(doc) }
+    val insertPdfPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.insertPdf(doc, (page?.first ?: 0) + 1, uri)
+    }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.startRecording(doc) else vm.showMessage("Ses kaydı için mikrofon izni gerekiyor")
     }
@@ -350,6 +359,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 },
                             )
                             DropdownMenuItem(
+                                text = { Text("Bilgi kartları (${vm.cards.size})") },
+                                onClick = {
+                                    moreMenu = false
+                                    cardsDialog = true
+                                },
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Çalışma sayacı (pomodoro)") },
                                 onClick = {
                                     moreMenu = false
@@ -382,6 +398,21 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onClick = {
                                     moreMenu = false
                                     insertAfterCurrent = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Başka PDF'ten sayfa ekle…") },
+                                onClick = {
+                                    moreMenu = false
+                                    insertPdfPicker.launch(arrayOf("application/pdf"))
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Gece okuma (renkleri ters çevir)") },
+                                trailingIcon = { Checkbox(checked = vm.nightReading, onCheckedChange = null) },
+                                onClick = {
+                                    moreMenu = false
+                                    vm.toggleNightReading()
                                 },
                             )
                             DropdownMenuItem(
@@ -456,6 +487,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     onPaste = { view?.paste() },
                     onDelete = { view?.deleteSelection() },
                     onDone = { view?.clearSelection() },
+                    onMakeCard = { makeCard = view?.selectionRegion() },
                 ),
                 onInsertImage = {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -532,6 +564,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             v.tools = tools
                             v.twoPage = vm.twoPage
                             v.setDarkTheme(darkTheme)
+                            v.setInverted(vm.nightReading)
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
@@ -540,6 +573,16 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    page?.let { (p, n) ->
+                        if (n > 3) {
+                            PageScrubber(
+                                page = p,
+                                pageCount = n,
+                                onScrub = { view?.goToPage(it) },
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
+                        }
+                    }
                 }
             }
             }
@@ -564,6 +607,57 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 }
             },
             onDismiss = { exportDialog = false to false },
+        )
+    }
+
+    makeCard?.let { (p, region) ->
+        MakeCardDialog(
+            fromRegion = true,
+            onSave = { front, back ->
+                vm.addRegionCard(doc, p, region, front, back)
+                makeCard = null
+                view?.clearSelection()
+            },
+            onDismiss = { makeCard = null },
+        )
+    }
+    if (textCardDialog) {
+        MakeCardDialog(
+            fromRegion = false,
+            onSave = { front, back ->
+                vm.addTextCard(doc, front, back, page?.first ?: -1)
+                textCardDialog = false
+            },
+            onDismiss = { textCardDialog = false },
+        )
+    }
+    if (cardsDialog) {
+        FlashcardsDialog(
+            cards = vm.cards,
+            image = { vm.cardImage(doc, it) },
+            onStudy = { all ->
+                val now = System.currentTimeMillis()
+                study = if (all) vm.cards else vm.cards.filter { it.due <= now }
+                cardsDialog = false
+            },
+            onNewText = {
+                cardsDialog = false
+                textCardDialog = true
+            },
+            onDelete = { vm.deleteCard(doc, it) },
+            onDismiss = { cardsDialog = false },
+        )
+    }
+    study?.let { list ->
+        StudyDialog(
+            cards = list,
+            image = { vm.cardImage(doc, it) },
+            onReview = { card, known -> vm.reviewCard(doc, card, known) },
+            onGoToPage = { p ->
+                study = null
+                view?.goToPage(p)
+            },
+            onDismiss = { study = null },
         )
     }
 

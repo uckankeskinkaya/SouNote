@@ -3,6 +3,22 @@
 package com.sounote.app.ui
 
 import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.RadioButton
+import com.sounote.app.data.NaturalOrder
+import com.sounote.app.data.UserFolder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -75,7 +91,6 @@ import com.sounote.app.data.FolderRef
 import com.sounote.app.pdf.PageTemplate
 import com.sounote.app.pdf.Thumbnails
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(vm: LibraryViewModel) {
     val snackbar = remember { SnackbarHostState() }
@@ -85,6 +100,13 @@ fun LibraryScreen(vm: LibraryViewModel) {
     val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let(vm::linkFolder)
     }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        uri?.let(vm::backup)
+    }
+    var restoreUri by remember { mutableStateOf<Uri?>(null) }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        restoreUri = uri
+    }
     val importPdf = { pickPdfs.launch(arrayOf("application/pdf")) }
     val linkFolder = { pickFolder.launch(null) }
 
@@ -92,6 +114,12 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var unlinking by remember { mutableStateOf<FolderRef?>(null) }
     var newNotebook by remember { mutableStateOf(false) }
+    var folderDialog by remember { mutableStateOf<UserFolder?>(null) }
+    var newFolder by remember { mutableStateOf(false) }
+    var deletingFolder by remember { mutableStateOf<UserFolder?>(null) }
+    var movingDoc by remember { mutableStateOf<DocRef?>(null) }
+    var movingFolder by remember { mutableStateOf<UserFolder?>(null) }
+    var searching by remember { mutableStateOf(false) }
 
     LaunchedEffect(vm.message) {
         vm.message?.let {
@@ -100,30 +128,53 @@ fun LibraryScreen(vm: LibraryViewModel) {
         }
     }
 
-    val inFolder = vm.path.isNotEmpty()
+    val inLinked = vm.path.isNotEmpty()
+    val folders = vm.userFolders
+    val folder = folders.find { it.id == vm.currentFolder }
+    val title = when {
+        inLinked -> vm.path.joinToString(" › ") { it.name }
+        folder != null -> generateSequence(folder) { f -> folders.find { it.id == f.parentId } }
+            .toList().asReversed().joinToString(" › ") { it.name }
+        else -> "SouNote"
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        if (inFolder) vm.path.joinToString(" › ") { it.name } else "SouNote",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
+                title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
-                    if (inFolder) {
+                    if (vm.canNavigateUp) {
                         IconButton(onClick = vm::navigateUp) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
                         }
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        searching = !searching
+                        if (!searching) vm.searchQuery = ""
+                    }) {
+                        Icon(Icons.Default.Search, contentDescription = "Ara")
+                    }
+                    var sortMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { sortMenu = true }) {
+                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Sırala")
+                        }
+                        DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                            LibraryViewModel.SortMode.entries.forEach { m ->
+                                DropdownMenuItem(
+                                    text = { Text(m.label) },
+                                    trailingIcon = { RadioButton(selected = vm.sortMode == m, onClick = null) },
+                                    onClick = { sortMenu = false; vm.updateSort(m) },
+                                )
+                            }
+                        }
+                    }
                     IconButton(onClick = vm::refresh) {
                         Icon(Icons.Default.Refresh, contentDescription = "Yenile")
                     }
-                    if (!inFolder) {
+                    if (!inLinked) {
                         var menu by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { menu = true }) {
@@ -131,8 +182,48 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { menu = false; newNotebook = true })
+                                DropdownMenuItem(text = { Text("Yeni klasör") }, onClick = { menu = false; newFolder = true })
                                 DropdownMenuItem(text = { Text("PDF içe aktar") }, onClick = { menu = false; importPdf() })
-                                DropdownMenuItem(text = { Text("Klasör bağla") }, onClick = { menu = false; linkFolder() })
+                                if (folder == null) {
+                                    DropdownMenuItem(text = { Text("Klasör bağla") }, onClick = { menu = false; linkFolder() })
+                                }
+                            }
+                        }
+                    }
+                    var more by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { more = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
+                        }
+                        DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Yedekle") },
+                                onClick = {
+                                    more = false
+                                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
+                                    backupLauncher.launch("SouNote-yedek-$date.zip")
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Yedekten geri yükle") },
+                                onClick = {
+                                    more = false
+                                    restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+                                },
+                            )
+                            HorizontalDivider()
+                            Text(
+                                "Tema",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                            LibraryViewModel.ThemeMode.entries.forEach { m ->
+                                DropdownMenuItem(
+                                    text = { Text(m.label) },
+                                    trailingIcon = { RadioButton(selected = vm.themeMode == m, onClick = null) },
+                                    onClick = { more = false; vm.updateTheme(m) },
+                                )
                             }
                         }
                     }
@@ -143,6 +234,29 @@ fun LibraryScreen(vm: LibraryViewModel) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (vm.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            if (searching) {
+                OutlinedTextField(
+                    value = vm.searchQuery,
+                    onValueChange = { vm.searchQuery = it },
+                    singleLine = true,
+                    placeholder = { Text("Belge ya da klasör ara") },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                )
+            }
+
+            val docMenu: @Composable (DocRef, () -> Unit) -> Unit = { doc, dismiss ->
+                DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
+                DropdownMenuItem(text = { Text("Klasöre taşı") }, onClick = { dismiss(); movingDoc = doc })
+                DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deleting = doc })
+            }
+            val folderMenu: @Composable (UserFolder, () -> Unit) -> Unit = { f, dismiss ->
+                DropdownMenuItem(text = { Text("Adı / rengi değiştir") }, onClick = { dismiss(); folderDialog = f })
+                DropdownMenuItem(text = { Text("Başka klasöre taşı") }, onClick = { dismiss(); movingFolder = f })
+                DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deletingFolder = f })
+            }
+            fun countIn(f: UserFolder) = vm.imported.count { it.folderId == f.id } + folders.count { it.parentId == f.id }
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(170.dp),
                 contentPadding = PaddingValues(20.dp),
@@ -150,39 +264,67 @@ fun LibraryScreen(vm: LibraryViewModel) {
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                if (inFolder) {
-                    val listing = vm.listing
-                    items(listing.folders, key = { "f" + it.documentId }) { folder ->
-                        FolderCard(folder, onClick = { vm.openFolder(folder) })
+                val query = vm.searchQuery.trim().lowercase(TR)
+                if (query.isNotEmpty()) {
+                    // Arama: bütün kendi klasörlerim ve belgeler (bağlı klasördeysek onun belgeleri de).
+                    val fs = folders.filter { it.name.lowercase(TR).contains(query) }
+                    val linkedDocs = if (inLinked) vm.listing.docs else emptyList()
+                    val ds = vm.sorted((vm.imported + linkedDocs).filter { it.title.lowercase(TR).contains(query) })
+                    if (fs.isNotEmpty()) {
+                        fullWidth { SectionTitle("Klasörler") }
+                        items(fs, key = { "u" + it.id }) { f ->
+                            UserFolderCard(f, countIn(f), onClick = { vm.searchQuery = ""; searching = false; vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                        }
                     }
-                    items(listing.docs, key = { it.id }) { doc ->
+                    if (ds.isNotEmpty()) {
+                        fullWidth { SectionTitle("Belgeler") }
+                        items(ds, key = { "s" + it.id }) { doc ->
+                            if (doc.imported) {
+                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) })
+                            } else {
+                                DocCard(doc, onClick = { vm.open(doc) })
+                            }
+                        }
+                    }
+                    if (fs.isEmpty() && ds.isEmpty()) fullWidth { Hint("Sonuç yok") }
+                } else if (inLinked) {
+                    val listing = vm.listing
+                    items(listing.folders, key = { "f" + it.documentId }) { f ->
+                        FolderCard(f, onClick = { vm.openFolder(f) })
+                    }
+                    items(vm.sorted(listing.docs), key = { it.id }) { doc ->
                         DocCard(doc, onClick = { vm.open(doc) })
                     }
                     if (listing.folders.isEmpty() && listing.docs.isEmpty()) {
                         fullWidth { Hint("Bu klasörde PDF yok. Dosya yöneticisinden buraya PDF atınca görünür.") }
                     }
                 } else {
-                    if (vm.rootFolders.isNotEmpty()) {
+                    if (folder == null && vm.rootFolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Bağlı klasörler") }
-                        items(vm.rootFolders, key = { "r" + it.treeUri }) { folder ->
-                            FolderCard(folder, onClick = { vm.openFolder(folder) }, onLongClick = { unlinking = folder })
+                        items(vm.rootFolders, key = { "r" + it.treeUri }) { f ->
+                            FolderCard(f, onClick = { vm.openFolder(f) }, onLongClick = { unlinking = f })
                         }
                     }
-                    if (vm.imported.isNotEmpty()) {
-                        fullWidth { SectionTitle("İçe aktarılanlar") }
-                        items(vm.imported, key = { it.id }) { doc ->
-                            DocCard(
-                                doc,
-                                onClick = { vm.open(doc) },
-                                menu = { dismiss ->
-                                    DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
-                                    DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deleting = doc })
-                                },
-                            )
+                    val subfolders = folders.filter { it.parentId == vm.currentFolder }.sortedWith(compareBy(NaturalOrder) { it.name })
+                    if (subfolders.isNotEmpty()) {
+                        fullWidth { SectionTitle("Klasörler") }
+                        items(subfolders, key = { "u" + it.id }) { f ->
+                            UserFolderCard(f, countIn(f), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
                         }
                     }
-                    if (vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty()) {
+                    val docs = vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
+                    if (docs.isNotEmpty()) {
+                        fullWidth { SectionTitle("Belgeler") }
+                        items(docs, key = { it.id }) { doc ->
+                            DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) })
+                        }
+                    }
+                    if (folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty()) {
                         fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder, onNewNotebook = { newNotebook = true }) }
+                    } else if (folder != null && subfolders.isEmpty() && docs.isEmpty()) {
+                        fullWidth {
+                            Hint("Bu klasör boş. + ile defter ya da PDF ekle; başka yerdeki belgelere basılı tutup \"Klasöre taşı\" de.")
+                        }
                     }
                 }
             }
@@ -217,15 +359,222 @@ fun LibraryScreen(vm: LibraryViewModel) {
             onDismiss = { newNotebook = false },
         )
     }
-    unlinking?.let { folder ->
+    if (newFolder) {
+        FolderDialog(
+            initial = null,
+            onSave = { name, color ->
+                newFolder = false
+                vm.createFolder(name, color)
+            },
+            onDismiss = { newFolder = false },
+        )
+    }
+    folderDialog?.let { f ->
+        FolderDialog(
+            initial = f,
+            onSave = { name, color ->
+                folderDialog = null
+                vm.updateFolder(f, name, color)
+            },
+            onDismiss = { folderDialog = null },
+        )
+    }
+    deletingFolder?.let { f ->
+        AlertDialog(
+            onDismissRequest = { deletingFolder = null },
+            title = { Text("\"${f.name}\" silinsin mi?") },
+            text = { Text("İçindeki belgeler ve klasörler silinmez, bir üst klasöre taşınır.") },
+            confirmButton = { TextButton(onClick = { vm.deleteFolder(f); deletingFolder = null }) { Text("Sil") } },
+            dismissButton = { TextButton(onClick = { deletingFolder = null }) { Text("Vazgeç") } },
+        )
+    }
+    movingDoc?.let { doc ->
+        MoveDialog(
+            title = "\"${doc.title}\" nereye taşınsın?",
+            folders = folders,
+            exclude = null,
+            onPick = { target ->
+                movingDoc = null
+                vm.moveDoc(doc, target)
+            },
+            onDismiss = { movingDoc = null },
+        )
+    }
+    movingFolder?.let { f ->
+        MoveDialog(
+            title = "\"${f.name}\" nereye taşınsın?",
+            folders = folders,
+            exclude = f.id,
+            onPick = { target ->
+                movingFolder = null
+                vm.moveFolder(f, target)
+            },
+            onDismiss = { movingFolder = null },
+        )
+    }
+    restoreUri?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { restoreUri = null },
+            title = { Text("Yedek geri yüklensin mi?") },
+            text = { Text("Şu anki kütüphane (belgeler, notlar, klasörler) yedektekiyle değiştirilecek. Emin değilsen önce şimdikini yedekle.") },
+            confirmButton = { TextButton(onClick = { vm.restore(uri); restoreUri = null }) { Text("Geri yükle") } },
+            dismissButton = { TextButton(onClick = { restoreUri = null }) { Text("Vazgeç") } },
+        )
+    }
+    unlinking?.let { f ->
         AlertDialog(
             onDismissRequest = { unlinking = null },
             title = { Text("Bağlantı kaldırılsın mı?") },
-            text = { Text("\"${folder.name}\" artık kütüphanede görünmeyecek. Klasördeki dosyalar silinmez.") },
-            confirmButton = { TextButton(onClick = { vm.unlinkFolder(folder); unlinking = null }) { Text("Kaldır") } },
+            text = { Text("\"${f.name}\" artık kütüphanede görünmeyecek. Klasördeki dosyalar silinmez.") },
+            confirmButton = { TextButton(onClick = { vm.unlinkFolder(f); unlinking = null }) { Text("Kaldır") } },
             dismissButton = { TextButton(onClick = { unlinking = null }) { Text("Vazgeç") } },
         )
     }
+}
+
+private val TR = Locale.forLanguageTag("tr")
+
+private val FOLDER_COLORS = listOf(
+    0xFF5B7FD6.toInt(), 0xFF3FA36B.toInt(), 0xFFE0893A.toInt(), 0xFFD65B7F.toInt(),
+    0xFF8E63CE.toInt(), 0xFF3AA6B9.toInt(), 0xFF8A8F99.toInt(), 0xFFC9A227.toInt(),
+)
+
+/** Kendi klasörüm: renkli kapak + ad + içindeki öğe sayısı. Basılı tutunca menü. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun UserFolderCard(
+    folder: UserFolder,
+    count: Int,
+    onClick: () -> Unit,
+    menu: @Composable (dismiss: () -> Unit) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = { open = true })) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.75f)
+                .clip(CardShape)
+                .background(Color(folder.color)),
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_folder),
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier.size(72.dp),
+            )
+            Text(
+                "$count",
+                color = Color.White,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
+            )
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) { menu { open = false } }
+        }
+        CardTitle(folder.name)
+    }
+}
+
+/** Yeni klasör ya da klasörü düzenle: ad + renk. */
+@Composable
+private fun FolderDialog(initial: UserFolder?, onSave: (String, Int) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(initial?.name ?: "") }
+    var color by remember { mutableStateOf(initial?.color ?: FOLDER_COLORS[0]) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (initial == null) "Yeni klasör" else "Klasörü düzenle") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    label = { Text("Ad") },
+                    placeholder = { Text("ör. Matematik") },
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FOLDER_COLORS.forEach { c ->
+                        Box(
+                            Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color(c))
+                                .border(
+                                    if (c == color) 3.dp else 0.dp,
+                                    MaterialTheme.colorScheme.onSurface,
+                                    CircleShape,
+                                )
+                                .clickable { color = c },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(name, color) }) { Text("Kaydet") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
+    )
+}
+
+/** Hedef klasör seçimi (ağaç görünümü). [exclude]: kendisi ve altı seçilemez (klasör taşırken). */
+@Composable
+private fun MoveDialog(
+    title: String,
+    folders: List<UserFolder>,
+    exclude: String?,
+    onPick: (String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // Ağacı düz listeye çevir: (klasör, derinlik)
+    val rows = remember(folders, exclude) {
+        val out = ArrayList<Pair<UserFolder, Int>>()
+        fun walk(parent: String?, depth: Int) {
+            folders.filter { it.parentId == parent && it.id != exclude }
+                .sortedWith(compareBy(NaturalOrder) { it.name })
+                .forEach {
+                    out += it to depth
+                    walk(it.id, depth + 1)
+                }
+        }
+        walk(null, 0)
+        out
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            LazyColumn(Modifier.heightIn(max = 400.dp)) {
+                item {
+                    TextButton(onClick = { onPick(null) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Ana sayfa", modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                items(rows, key = { it.first.id }) { (f, depth) ->
+                    TextButton(onClick = { onPick(f.id) }, modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(start = (depth * 20).dp),
+                        ) {
+                            Box(Modifier.size(14.dp).clip(CircleShape).background(Color(f.color)))
+                            Text(f.name, modifier = Modifier.padding(start = 10.dp))
+                        }
+                    }
+                }
+                if (rows.isEmpty()) {
+                    item {
+                        Text(
+                            "Henüz klasör yok. Kütüphanede + → Yeni klasör.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(12.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
+    )
 }
 
 /** Yeni boş defter: ad + sayfa şablonu. */

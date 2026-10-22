@@ -28,7 +28,7 @@ Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.n
 5. 🧪 Gelişmiş kalem: kalem türleri (dolma/tükenmez/kurşun/fırça/kaligrafi/kesik), favori kalemler, basınç hassasiyeti, şekil düzeltme (bekletince çizgi/daire/dikdörtgen/üçgen), düz fosforlu, tam renk seçici.
 6. 🧪 Düzenleme: lasso (taşı/boyutlandır/renk/kopyala-yapıştır/sil; parmakla sürükle, iki parmakla büyüt), resim ekleme (galeriden; ink/<belge>/img/).
 7. 🧪 Sayfalar: sayfa paneli (küçük resimler, ekle/sil/taşı), boş defter + şablonlar (düz/çizgili/kareli/noktalı), araya boş sayfa, yer imleri, PDF içinde arama (Android 15+), yatayda çift sayfa.
-8. Kütüphane: klasörler, arama/sıralama, yedekleme, karanlık mod.
+8. 🧪 Kütüphane: kendi klasörlerim (iç içe, renkli; belge/klasör taşı), arama, sıralama (son açılan/eklenen/ad), yedekle/geri yükle (zip: library.json + docs + ink), tema seçimi (sistem/açık/koyu).
 
 Teknik notlar:
 - Notlar sayfa noktası (PDF pt, sol üst köşe) cinsinden: filesDir/ink/<belgeId>/<sayfa>.bin (InkStore, ikili biçim).

@@ -68,7 +68,8 @@ private val Dark = darkColorScheme(
     surfaceContainerHighest = Color(0xFF34363B),
 )
 
+/** [dark] null ise sistem ayarı izlenir. */
 @Composable
-fun SouNoteTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, content = content)
+fun SouNoteTheme(dark: Boolean? = null, content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = if (dark ?: isSystemInDarkTheme()) Dark else Light, content = content)
 }

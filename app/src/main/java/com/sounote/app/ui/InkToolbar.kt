@@ -67,12 +67,28 @@ private val TR = Locale.forLanguageTag("tr")
 
 private fun mm(v: Float) = String.format(TR, "%.1f", v)
 
+/** Lasso seçimiyle ilgili durum ve işlemler. */
+class SelectionUi(
+    val count: Int,
+    val hasClipboard: Boolean,
+    val onRecolor: (Int) -> Unit,
+    val onCopy: () -> Unit,
+    val onPaste: () -> Unit,
+    val onDelete: () -> Unit,
+    val onDone: () -> Unit,
+)
+
 /**
  * Görüntüleyicinin üstündeki araç çubuğu.
  * Üst satır: araçlar, favori kalemler, parmakla çiz. Alt satır: seçili aracın ayarları.
  */
 @Composable
-fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
+fun InkToolbar(
+    state: ToolState,
+    onChange: (ToolState) -> Unit,
+    selection: SelectionUi,
+    onInsertImage: () -> Unit,
+) {
     // Renk seçici açıkken seçilen rengin hangi araca gideceği
     var picker by remember { mutableStateOf<Tool?>(null) }
 
@@ -91,6 +107,14 @@ fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
                 ToolChip("Yazı", state.tool == Tool.TEXT, drawable = R.drawable.ic_text) {
                     onChange(state.copy(tool = Tool.TEXT))
                 }
+                ToolChip("Seç", state.tool == Tool.LASSO, drawable = R.drawable.ic_lasso) {
+                    onChange(state.copy(tool = Tool.LASSO))
+                }
+                AssistChip(
+                    onClick = onInsertImage,
+                    label = { Text("Resim") },
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_image), null, Modifier.size(18.dp)) },
+                )
                 Separator()
                 Favorites(state, onChange)
                 Separator()
@@ -107,6 +131,7 @@ fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
                     Tool.HIGHLIGHTER -> HighlighterOptions(state, onChange) { picker = Tool.HIGHLIGHTER }
                     Tool.ERASER -> EraserOptions(state, onChange)
                     Tool.TEXT -> TextOptions(state, onChange) { picker = Tool.TEXT }
+                    Tool.LASSO -> SelectionOptions(state, selection) { picker = Tool.LASSO }
                 }
             }
         }
@@ -126,9 +151,11 @@ fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
                     when (target) {
                         Tool.HIGHLIGHTER -> s.copy(highlighterColor = c)
                         Tool.TEXT -> s.copy(textColor = c)
+                        Tool.LASSO -> s
                         else -> s.copy(penColor = c)
                     },
                 )
+                if (target == Tool.LASSO) selection.onRecolor(c)
                 picker = null
             },
             onDismiss = { picker = null },
@@ -351,6 +378,29 @@ private fun TextOptions(state: ToolState, onChange: (ToolState) -> Unit, onCusto
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+@Composable
+private fun SelectionOptions(state: ToolState, sel: SelectionUi, onCustomColor: () -> Unit) {
+    if (sel.count == 0) {
+        Text(
+            "Seçmek istediğin yerin etrafını kalemle çiz · seçimi sürükle: taşı · köşedeki nokta ya da iki parmak: büyüt/küçült",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (sel.hasClipboard) AssistChip(onClick = sel.onPaste, label = { Text("Yapıştır") })
+        return
+    }
+    Text("${sel.count} öğe seçili", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+    Text("Renk:", style = MaterialTheme.typography.labelLarge)
+    Palette(ToolState.PEN_COLORS, state.customColors, selected = 0, onSelect = sel.onRecolor, onCustom = onCustomColor)
+    AssistChip(onClick = sel.onCopy, label = { Text("Kopyala") })
+    if (sel.hasClipboard) AssistChip(onClick = sel.onPaste, label = { Text("Yapıştır") })
+    AssistChip(
+        onClick = sel.onDelete,
+        label = { Text("Sil", color = MaterialTheme.colorScheme.error) },
+    )
+    AssistChip(onClick = sel.onDone, label = { Text("Bitti") })
 }
 
 // ---- Ortak parçalar ----

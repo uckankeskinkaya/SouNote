@@ -2,6 +2,7 @@ package com.sounote.app.ui
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +47,7 @@ import com.sounote.app.LibraryViewModel
 import com.sounote.app.R
 import com.sounote.app.data.DocRef
 import com.sounote.app.ink.TextBox
+import com.sounote.app.ink.Tool
 import com.sounote.app.pdf.FormField
 import com.sounote.app.pdf.PdfDocumentView
 import java.io.File
@@ -66,6 +68,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var exportMenu by remember { mutableStateOf(false) }
     var pendingExport by remember { mutableStateOf<File?>(null) }
     val initialPage = remember(doc.id) { vm.lastPage(doc) }
+    var selCount by remember { mutableStateOf(0) }
+    var hasClip by remember { mutableStateOf(false) }
     val currentVm by rememberUpdatedState(vm)
     val snackbar = remember { SnackbarHostState() }
 
@@ -88,6 +92,16 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
         val file = pendingExport
         if (uri != null && file != null) vm.saveExportTo(file, uri)
+    }
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            vm.importImage(doc, uri) { file, w, h ->
+                // Eklenen resim seçili gelir: hemen taşınıp boyutlandırılabilsin.
+                vm.updateTools(vm.tools.copy(tool = Tool.LASSO))
+                view?.insertImage(file, w, h)
+            }
+        }
     }
 
     fun share(file: File) {
@@ -157,7 +171,22 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
-            InkToolbar(tools, vm::updateTools)
+            InkToolbar(
+                state = tools,
+                onChange = vm::updateTools,
+                selection = SelectionUi(
+                    count = selCount,
+                    hasClipboard = hasClip,
+                    onRecolor = { view?.recolorSelection(it) },
+                    onCopy = { view?.copySelection() },
+                    onPaste = { view?.paste() },
+                    onDelete = { view?.deleteSelection() },
+                    onDone = { view?.clearSelection() },
+                ),
+                onInsertImage = {
+                    imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+            )
             Box(Modifier.weight(1f).fillMaxWidth().clipToBounds(), contentAlignment = Alignment.Center) {
                 val message = error
                 if (message != null) {
@@ -176,6 +205,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onUndoGesture = { this.ink.undo() }
                                 onFormSaved = { currentVm.showMessage("Form kaydedildi") }
                                 formSaveTarget = currentVm.formSaveTarget(doc)
+                                imagesDir = currentVm.imagesDir(doc)
+                                onSelectionChanged = { n, clip ->
+                                    selCount = n
+                                    hasClip = clip
+                                }
                                 this.ink = ink
                                 this.tools = tools
                                 open(doc.uri, initialPage)

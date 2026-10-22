@@ -7,7 +7,9 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.RenderNode
 import android.net.Uri
@@ -28,7 +30,12 @@ import java.io.File
 import com.sounote.app.ink.Eraser
 import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.InkDocument
+import com.sounote.app.ink.Clip
+import com.sounote.app.ink.ImageItem
+import com.sounote.app.ink.Images
 import com.sounote.app.ink.InkTool
+import com.sounote.app.ink.Selection
+import com.sounote.app.ink.Selections
 import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.ShapeRecognizer
 import com.sounote.app.ink.TextBox
@@ -72,6 +79,7 @@ class PdfDocumentView(context: Context) : View(context) {
     var tools: ToolState = ToolState()
         set(value) {
             val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
+            if (field.tool == Tool.LASSO && value.tool != Tool.LASSO) clearSelection()
             field = value
             if (formsChanged) {
                 if (value.tool == Tool.TEXT) requestRender()
@@ -93,6 +101,12 @@ class PdfDocumentView(context: Context) : View(context) {
 
     /** Form doldurulup PDF yeniden yazıldığında. */
     var onFormSaved: (() -> Unit)? = null
+
+    /** Lasso seçimi değişti: seçili öğe sayısı ve yapıştırılacak bir şey olup olmadığı. */
+    var onSelectionChanged: ((count: Int, hasClipboard: Boolean) -> Unit)? = null
+
+    /** Belgeye eklenen resimlerin klasörü. */
+    var imagesDir: File? = null
 
     private val density = resources.displayMetrics.density
     private val pageGap = 12f * density
@@ -204,7 +218,11 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(200, 33, 110, 230) }
 
-    private val inkListener: (Int) -> Unit = { page -> pageChanged(page) }
+    private val inkListener: (Int) -> Unit = { page ->
+        pageChanged(page)
+        // Geri al/ileri al gibi dışarıdan gelen değişiklik seçimi geçersiz kılar.
+        if (!selfChange && selMode == SelMode.NONE && selection?.page == page) clearSelection()
+    }
     private val boundsRect = RectF()
 
     private val renderListener = object : PdfRenderThread.Listener {
@@ -501,13 +519,20 @@ class PdfDocumentView(context: Context) : View(context) {
         if (erasing && drawPointerId != -1) {
             canvas.drawCircle(eraserX, eraserY, tools.eraserSizeDp * density, eraserPaint)
         }
+        if (selMode == SelMode.LASSO && lassoCount > 1) {
+            lassoPath.rewind()
+            lassoPath.moveTo(lasso[0], lasso[1])
+            for (i in 1 until lassoCount) lassoPath.lineTo(lasso[i * 2], lasso[i * 2 + 1])
+            canvas.drawPath(lassoPath, lassoPaint)
+        }
     }
 
     private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
         val content = ink.content(page)
         val strokes = content.strokes
         val active = current?.takeIf { inputPage == page }
-        val showOverlay = tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)
+        val showOverlay = (tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)) ||
+            (tools.tool == Tool.LASSO && selection?.page == page)
         if (content.isEmpty && active == null && !showOverlay) return
         val scale = r.width() / pageSizes[page].width
         canvas.save()
@@ -518,6 +543,7 @@ class PdfDocumentView(context: Context) : View(context) {
             if (canvas.isHardwareAccelerated) {
                 canvas.drawRenderNode(inkNode(page))
             } else {
+                drawImages(canvas, page)
                 strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
                 ink.texts(page).forEach { TextBoxes.draw(canvas, it) }
                 strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
@@ -538,6 +564,15 @@ class PdfDocumentView(context: Context) : View(context) {
                 }
             }
         }
+        selection?.takeIf { it.page == page && tools.tool == Tool.LASSO }?.let { sel ->
+            Selections.bounds(content, sel, boundsRect)
+            val pad = 4f * density / scale
+            boundsRect.inset(-pad, -pad)
+            selectionPaint.strokeWidth = 1.5f * density / scale
+            selectionPaint.pathEffect = DashPathEffect(floatArrayOf(6f * density / scale, 4f * density / scale), 0f)
+            canvas.drawRect(boundsRect, selectionPaint)
+            canvas.drawCircle(boundsRect.right, boundsRect.bottom, HANDLE_DP * 1.4f * density / scale, handlePaint)
+        }
         if (active != null) {
             // Kalemin gideceği tahmin edilen noktaları da ekle: gecikme daha az hissedilir.
             val n = active.count + predictedCount
@@ -556,6 +591,7 @@ class PdfDocumentView(context: Context) : View(context) {
             setPosition(0, 0, size.width, size.height)
             val c = beginRecording()
             val strokes = ink.strokes(page)
+            drawImages(c, page)
             // Fosforlu altta, kalem üstte.
             strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
             ink.texts(page).forEach { TextBoxes.draw(c, it) }
@@ -575,12 +611,16 @@ class PdfDocumentView(context: Context) : View(context) {
         override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
             // Yazı aracında iki parmak bir yazının üstündeyse sayfa değil yazı büyür/küçülür.
             if (tools.tool == Tool.TEXT) beginBoxPinch(detector.focusX, detector.focusY)
+            // Seçimin üstünde iki parmak: seçim büyür/küçülür.
+            if (tools.tool == Tool.LASSO) beginSelectionPinch(detector.focusX, detector.focusY)
             return true
         }
 
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             scaledThisGesture = true
-            if (pinchBox != null) {
+            if (selMode == SelMode.PINCH) {
+                updateSelectionPinch(detector)
+            } else if (pinchBox != null) {
                 updateBoxPinch(detector)
             } else {
                 zoomAround(zoom * detector.scaleFactor, detector.focusX, detector.focusY)
@@ -589,6 +629,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onScaleEnd(detector: ScaleGestureDetector) {
+            if (selMode == SelMode.PINCH) selUp()
             if (pinchBox != null) {
                 recordGesture()
                 pinchBox = null
@@ -649,7 +690,8 @@ class PdfDocumentView(context: Context) : View(context) {
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             if (tools.fingerDraw && !multiTouch) return false
-            if (pinchBox != null) return true
+            if (pinchBox != null || selMode == SelMode.PINCH) return true
+            if (fingerSelecting && !multiTouch) return true
             offsetX += distanceX
             offsetY += distanceY
             clampOffsets()
@@ -658,7 +700,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-            if (scaledThisGesture || (tools.fingerDraw && !multiTouch)) return false
+            if (scaledThisGesture || (tools.fingerDraw && !multiTouch) || (fingerSelecting && !multiTouch)) return false
             val (minX, maxX) = minMaxX()
             val (minY, maxY) = minMaxY()
             scroller.fling(
@@ -672,6 +714,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             if (tools.tool == Tool.TEXT && !tools.fingerDraw) textTap(e.x, e.y)
+            if (tools.tool == Tool.LASSO && !tools.fingerDraw) clearSelection()
             return false
         }
 
@@ -711,7 +754,11 @@ class PdfDocumentView(context: Context) : View(context) {
         lastStylusTime = event.eventTime
         if (fingerGestureActive) cancelFingerGesture(event)
         if (drawPointerId != -1 && !inputFromStylus) {
-            if (textPage >= 0) textCancel() else cancelInput()
+            when {
+                selMode != SelMode.NONE -> selCancel()
+                textPage >= 0 -> textCancel()
+                else -> cancelInput()
+            }
         }
 
         when (event.actionMasked) {
@@ -724,6 +771,12 @@ class PdfDocumentView(context: Context) : View(context) {
                         textDown(event.getX(idx), event.getY(idx))
                         return
                     }
+                    if (tools.tool == Tool.LASSO && event.getToolType(idx) != MotionEvent.TOOL_TYPE_ERASER) {
+                        drawPointerId = event.getPointerId(idx)
+                        inputFromStylus = true
+                        selDown(event.getX(idx), event.getY(idx))
+                        return
+                    }
                     val erase = tools.tool == Tool.ERASER ||
                         event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER ||
                         (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
@@ -733,12 +786,18 @@ class PdfDocumentView(context: Context) : View(context) {
             MotionEvent.ACTION_MOVE -> {
                 val idx = event.findPointerIndex(drawPointerId)
                 if (idx >= 0) {
-                    if (textPage >= 0) textMove(event.getX(idx), event.getY(idx)) else moveInput(event, idx)
+                    when {
+                        selMode != SelMode.NONE -> selMove(event.getX(idx), event.getY(idx))
+                        textPage >= 0 -> textMove(event.getX(idx), event.getY(idx))
+                        else -> moveInput(event, idx)
+                    }
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 if (event.getPointerId(event.actionIndex) == drawPointerId) {
-                    if (textPage >= 0) {
+                    if (selMode != SelMode.NONE) {
+                        selUp()
+                    } else if (textPage >= 0) {
                         textUp()
                     } else {
                         moveInput(event, event.actionIndex)
@@ -746,7 +805,11 @@ class PdfDocumentView(context: Context) : View(context) {
                     }
                 }
             }
-            MotionEvent.ACTION_CANCEL -> if (textPage >= 0) textCancel() else cancelInput()
+            MotionEvent.ACTION_CANCEL -> when {
+                selMode != SelMode.NONE -> selCancel()
+                textPage >= 0 -> textCancel()
+                else -> cancelInput()
+            }
         }
     }
 
@@ -763,6 +826,8 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         trackTwoFingerTap(event)
+
+        if (tools.tool == Tool.LASSO && handleFingerSelection(event)) return
 
         if (tools.fingerDraw && tools.tool == Tool.TEXT) {
             when (action) {
@@ -1130,6 +1195,319 @@ class PdfDocumentView(context: Context) : View(context) {
         onTextBoxRequest?.invoke(page, box, true)
     }
 
+    // ---- Lasso: seç, taşı, büyüt/küçült ----
+
+    private enum class SelMode { NONE, LASSO, MOVE, SCALE, PINCH }
+
+    private var selMode = SelMode.NONE
+    private var selection: Selection? = null
+    private var clipboard: Clip? = null
+    private var selfChange = false
+    private var lasso = FloatArray(512)
+    private var lassoCount = 0
+    private var lassoPage = 0
+    private val lassoPath = Path()
+    private var selBase: PageContent? = null
+    private var selBaseSelection: Selection? = null
+    private var selDownX = 0f
+    private var selDownY = 0f
+    private var selMoved = false
+    private var selAnchorX = 0f
+    private var selAnchorY = 0f
+    private var selStartDist = 1f
+    private var selPinchScale = 1f
+    private var fingerSelecting = false
+    private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.argb(220, 33, 110, 230)
+    }
+    private val lassoPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 2f * density
+        color = Color.argb(220, 33, 110, 230)
+        pathEffect = DashPathEffect(floatArrayOf(8f * density, 6f * density), 0f)
+    }
+
+    private inline fun changing(block: () -> Unit) {
+        selfChange = true
+        try {
+            block()
+        } finally {
+            selfChange = false
+        }
+    }
+
+    private fun notifySelection() {
+        onSelectionChanged?.invoke(selection?.count ?: 0, clipboard != null)
+        invalidate()
+    }
+
+    fun clearSelection() {
+        if (selection == null) return
+        selection = null
+        notifySelection()
+    }
+
+    /** Seçimin sayfadaki alanı (dokunma payıyla), sayfa noktası. */
+    private fun selectionHit(sel: Selection, px: Float, py: Float): Boolean {
+        Selections.bounds(ink.content(sel.page), sel, boundsRect)
+        val pad = SELECTION_PAD_DP * density / pageScale(sel.page)
+        boundsRect.inset(-pad, -pad)
+        return boundsRect.contains(px, py)
+    }
+
+    private fun selDown(x: Float, y: Float) {
+        selDownX = x
+        selDownY = y
+        selMoved = false
+        parent?.requestDisallowInterceptTouchEvent(true)
+        selection?.let { sel ->
+            val px = toPageX(sel.page, x)
+            val py = toPageY(sel.page, y)
+            val b = Selections.bounds(ink.content(sel.page), sel, RectF())
+            val handleR = HANDLE_TOUCH_DP * density / pageScale(sel.page)
+            selMode = when {
+                kotlin.math.hypot(px - b.right, py - b.bottom) <= handleR -> SelMode.SCALE
+                selectionHit(sel, px, py) -> SelMode.MOVE
+                else -> SelMode.NONE
+            }
+            if (selMode != SelMode.NONE) {
+                selBase = ink.content(sel.page)
+                selBaseSelection = sel
+                selAnchorX = b.left
+                selAnchorY = b.top
+                selStartDist = kotlin.math.hypot(px - b.left, py - b.top).coerceAtLeast(4f)
+                return
+            }
+            clearSelection()
+        }
+        // Yeni lasso
+        selMode = SelMode.LASSO
+        lassoPage = pageAt((y + offsetY) / zoom)
+        lassoCount = 0
+        addLassoPoint(x, y)
+    }
+
+    private fun addLassoPoint(x: Float, y: Float) {
+        if (lassoCount * 2 + 2 > lasso.size) lasso = lasso.copyOf(lasso.size * 2)
+        lasso[lassoCount * 2] = x
+        lasso[lassoCount * 2 + 1] = y
+        lassoCount++
+    }
+
+    private fun selMove(x: Float, y: Float) {
+        when (selMode) {
+            SelMode.LASSO -> {
+                val lx = lasso[(lassoCount - 1) * 2]
+                val ly = lasso[(lassoCount - 1) * 2 + 1]
+                if (kotlin.math.hypot(x - lx, y - ly) > 2f * density) {
+                    addLassoPoint(x, y)
+                    invalidate()
+                }
+            }
+            SelMode.MOVE, SelMode.SCALE -> {
+                if (!selMoved && kotlin.math.hypot(x - selDownX, y - selDownY) < touchSlop) return
+                selMoved = true
+                val page = selBaseSelection?.page ?: return
+                if (selMode == SelMode.MOVE) {
+                    val s = pageScale(page)
+                    applySelectionTransform(1f, 0f, 0f, (x - selDownX) / s, (y - selDownY) / s)
+                } else {
+                    val d = kotlin.math.hypot(toPageX(page, x) - selAnchorX, toPageY(page, y) - selAnchorY)
+                    val f = (d / selStartDist).coerceIn(MIN_SELECTION_SCALE, MAX_SELECTION_SCALE)
+                    applySelectionTransform(f, selAnchorX, selAnchorY, 0f, 0f)
+                }
+            }
+            else -> {}
+        }
+    }
+
+    private fun applySelectionTransform(scale: Float, ax: Float, ay: Float, tx: Float, ty: Float) {
+        val base = selBase ?: return
+        val sel0 = selBaseSelection ?: return
+        val (content, sel) = Selections.transform(base, sel0, scale, ax, ay, tx, ty)
+        changing { ink.set(sel0.page, content) }
+        selection = sel
+    }
+
+    private fun selUp() {
+        when (selMode) {
+            SelMode.LASSO -> {
+                val page = lassoPage
+                val poly = FloatArray(lassoCount * 2)
+                for (i in 0 until lassoCount) {
+                    poly[i * 2] = toPageX(page, lasso[i * 2])
+                    poly[i * 2 + 1] = toPageY(page, lasso[i * 2 + 1])
+                }
+                val sel = Selections.select(page, ink.content(page), poly, lassoCount)
+                selection = if (sel.isEmpty) null else sel
+                notifySelection()
+            }
+            SelMode.MOVE, SelMode.SCALE, SelMode.PINCH -> {
+                val base = selBase
+                val sel0 = selBaseSelection
+                if (base != null && sel0 != null && (selMoved || selMode == SelMode.PINCH)) {
+                    ink.record(listOf(InkDocument.Change(sel0.page, base, ink.content(sel0.page))))
+                }
+                notifySelection()
+            }
+            SelMode.NONE -> {}
+        }
+        resetSelectionGesture()
+    }
+
+    private fun selCancel() {
+        if (selMode == SelMode.MOVE || selMode == SelMode.SCALE || selMode == SelMode.PINCH) {
+            // Yarım kalan taşımayı geri koy.
+            val base = selBase
+            val sel0 = selBaseSelection
+            if (base != null && sel0 != null) {
+                changing { ink.set(sel0.page, base) }
+                selection = sel0
+            }
+        }
+        resetSelectionGesture()
+        notifySelection()
+    }
+
+    private fun resetSelectionGesture() {
+        selMode = SelMode.NONE
+        lassoCount = 0
+        selBase = null
+        selBaseSelection = null
+        drawPointerId = -1
+        invalidate()
+    }
+
+    /** Parmakla seçim: parmakla çizme açıksa her şey; değilse seçimi sürüklemek. Olayı tükettiyse true. */
+    private fun handleFingerSelection(event: MotionEvent): Boolean {
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_DOWN) {
+            val sel = selection
+            fingerSelecting = tools.fingerDraw ||
+                (sel != null && selectionHit(sel, toPageX(sel.page, event.x), toPageY(sel.page, event.y)))
+            if (fingerSelecting) {
+                drawPointerId = event.getPointerId(0)
+                inputFromStylus = false
+                selDown(event.x, event.y)
+            }
+        }
+        if (!fingerSelecting) return false
+        when (action) {
+            MotionEvent.ACTION_MOVE -> if (event.pointerCount == 1 && selMode != SelMode.PINCH) selMove(event.x, event.y)
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                // İkinci parmak: yarım lasso/taşımayı bitir, iki parmak hareketine geç.
+                multiTouch = true
+                if (selMode == SelMode.LASSO) resetSelectionGesture() else if (selMode != SelMode.NONE) selUp()
+            }
+            MotionEvent.ACTION_UP -> {
+                if (selMode != SelMode.NONE && selMode != SelMode.PINCH) selUp()
+                fingerSelecting = false
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                selCancel()
+                fingerSelecting = false
+            }
+        }
+        // İki parmakla kaydırma/yakınlaştırma (sayfa ya da seçim) yine çalışsın.
+        scaleDetector.onTouchEvent(event)
+        gestureDetector.onTouchEvent(event)
+        return true
+    }
+
+    private var pinchFocusSelX = 0f
+    private var pinchFocusSelY = 0f
+
+    private fun beginSelectionPinch(fx: Float, fy: Float) {
+        val sel = selection ?: return
+        val px = toPageX(sel.page, fx)
+        val py = toPageY(sel.page, fy)
+        if (!selectionHit(sel, px, py)) return
+        selMode = SelMode.PINCH
+        selBase = ink.content(sel.page)
+        selBaseSelection = sel
+        selPinchScale = 1f
+        pinchFocusSelX = px
+        pinchFocusSelY = py
+    }
+
+    private fun updateSelectionPinch(d: ScaleGestureDetector) {
+        val page = selBaseSelection?.page ?: return
+        selPinchScale = (selPinchScale * d.scaleFactor).coerceIn(MIN_SELECTION_SCALE, MAX_SELECTION_SCALE)
+        val fx = toPageX(page, d.focusX)
+        val fy = toPageY(page, d.focusY)
+        applySelectionTransform(selPinchScale, pinchFocusSelX, pinchFocusSelY, fx - pinchFocusSelX, fy - pinchFocusSelY)
+    }
+
+    // ---- Seçim işlemleri (araç çubuğundan) ----
+
+    fun recolorSelection(color: Int) {
+        val sel = selection ?: return
+        val (content, newSel) = Selections.recolor(ink.content(sel.page), sel, color)
+        changing { ink.commit(sel.page, content) }
+        selection = newSel
+        notifySelection()
+    }
+
+    fun deleteSelection() {
+        val sel = selection ?: return
+        changing { ink.commit(sel.page, Selections.delete(ink.content(sel.page), sel)) }
+        selection = null
+        notifySelection()
+    }
+
+    fun copySelection() {
+        val sel = selection ?: return
+        clipboard = Selections.copy(ink.content(sel.page), sel)
+        notifySelection()
+    }
+
+    /** Kopyalananı şu an bakılan sayfaya yapıştırır; aynı sayfaysa biraz kaydırarak. */
+    fun paste() {
+        val clip = clipboard ?: return
+        val page = currentPage.coerceIn(0, pageTops.size - 1)
+        val offset = if (selection?.page == page) 16f else 0f
+        val (content, sel) = Selections.paste(page, ink.content(page), clip, offset, offset)
+        changing { ink.commit(page, content) }
+        selection = sel
+        notifySelection()
+    }
+
+    /** Resmi bakılan sayfanın ortasına, sayfa genişliğinin yarısı boyunda ekler ve seçer. */
+    fun insertImage(file: String, pixelWidth: Int, pixelHeight: Int) {
+        if (pageTops.isEmpty() || pixelWidth <= 0 || pixelHeight <= 0) return
+        val page = currentPage.coerceIn(0, pageTops.size - 1)
+        val pageW = pageSizes[page].width.toFloat()
+        val pageH = pageSizes[page].height.toFloat()
+        var w = pageW * 0.5f
+        var h = w * pixelHeight / pixelWidth
+        if (h > pageH * 0.6f) {
+            h = pageH * 0.6f
+            w = h * pixelWidth / pixelHeight
+        }
+        // Ekranın ortasına denk gelen sayfa noktası
+        val cx = toPageX(page, width / 2f).coerceIn(w / 2, pageW - w / 2)
+        val cy = toPageY(page, height / 2f).coerceIn(h / 2, pageH - h / 2)
+        val item = ImageItem(System.currentTimeMillis(), cx - w / 2, cy - h / 2, w, h, file)
+        val c = ink.content(page)
+        changing { ink.commit(page, c.copy(images = c.images + item)) }
+        selection = Selection(page, emptySet(), emptySet(), setOf(item.id))
+        notifySelection()
+    }
+
+    private fun drawImages(canvas: Canvas, page: Int) {
+        val images = ink.images(page)
+        if (images.isEmpty()) return
+        val dir = imagesDir ?: return
+        for (im in images) {
+            tmpRect.set(im.x, im.y, im.x + im.width, im.y + im.height)
+            val bmp = Images.get(File(dir, im.file)) { pageChanged(page) }
+            if (bmp != null) canvas.drawBitmap(bmp, null, tmpRect, bitmapPaint) else canvas.drawRect(tmpRect, imagePlaceholderPaint)
+        }
+    }
+
+    private val imagePlaceholderPaint = Paint().apply { color = Color.argb(40, 120, 120, 120) }
+
     // ---- İki parmakla dokununca geri al ----
 
     private fun trackTwoFingerTap(event: MotionEvent) {
@@ -1236,6 +1614,9 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val HANDLE_TOUCH_DP = 22f
         private const val MIN_FONT_PT = 4f
         private const val MAX_FONT_PT = 144f
+        private const val SELECTION_PAD_DP = 16f
+        private const val MIN_SELECTION_SCALE = 0.05f
+        private const val MAX_SELECTION_SCALE = 20f
         private const val HOLD_SLOP_DP = 3f
 
         private fun baseCacheBytes(): Int {

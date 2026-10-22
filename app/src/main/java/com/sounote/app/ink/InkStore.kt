@@ -18,6 +18,9 @@ class InkStore(context: Context) {
 
     private fun dir(docId: String) = File(root, docId)
 
+    /** Belgeye eklenen resimlerin klasörü (notlarla birlikte silinir). */
+    fun imagesDir(docId: String) = File(dir(docId), "img")
+
     fun load(docId: String): Map<Int, PageContent> {
         val files = dir(docId).listFiles { f -> f.name.endsWith(".bin") } ?: return emptyMap()
         val result = HashMap<Int, PageContent>()
@@ -76,6 +79,15 @@ class InkStore(context: Context) {
             out.writeInt(bytes.size)
             out.write(bytes)
         }
+        out.writeInt(c.images.size)
+        for (im in c.images) {
+            out.writeLong(im.id)
+            out.writeFloat(im.x)
+            out.writeFloat(im.y)
+            out.writeFloat(im.width)
+            out.writeFloat(im.height)
+            out.writeUTF(im.file)
+        }
     }
 
     private fun read(file: File): PageContent =
@@ -103,12 +115,16 @@ class InkStore(context: Context) {
                 inp.readFully(bytes)
                 TextBox(id, x, y, w, size, color, String(bytes, Charsets.UTF_8))
             }
-            PageContent(strokes, texts)
+            // Sürüm 1'de resim yoktu.
+            val images = if (version < 2) emptyList() else List(inp.readInt()) {
+                ImageItem(inp.readLong(), inp.readFloat(), inp.readFloat(), inp.readFloat(), inp.readFloat(), inp.readUTF())
+            }
+            PageContent(strokes, texts, images)
         }
 
     companion object {
         private const val TAG = "InkStore"
         private const val MAGIC = 0x534E5031 // "SNP1"
-        private const val VERSION = 1
+        private const val VERSION = 2
     }
 }

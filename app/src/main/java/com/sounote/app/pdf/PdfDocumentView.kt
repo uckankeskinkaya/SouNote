@@ -473,6 +473,9 @@ class PdfDocumentView(context: Context) : View(context) {
     // ---- Ekrana çizim ----
 
     override fun onDraw(canvas: Canvas) {
+        // Kendi alanının dışına taşma: Compose içinde tuval görünüme kırpılmıyor ve
+        // arka plan rengi araç çubuğunun üstünü boyuyordu.
+        canvas.clipRect(0f, 0f, width.toFloat(), height.toFloat())
         canvas.drawColor(backgroundColor)
         if (pageTops.isEmpty()) return
         for (i in visibleRange()) {

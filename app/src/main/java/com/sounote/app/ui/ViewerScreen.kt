@@ -34,6 +34,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -157,7 +158,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             InkToolbar(tools, vm::updateTools)
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds(), contentAlignment = Alignment.Center) {
                 val message = error
                 if (message != null) {
                     Text(message, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))

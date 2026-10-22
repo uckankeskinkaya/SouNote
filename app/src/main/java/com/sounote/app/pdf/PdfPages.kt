@@ -51,6 +51,39 @@ object PdfPages {
         doc.removePage(at)
     }
 
+    /** [at] sayfasının bir kopyasını hemen arkasına ekler. */
+    fun duplicate(context: Context, file: File, at: Int) = edit(context, file) { doc ->
+        val copy = doc.importPage(doc.getPage(at)) // sona eklenir
+        val last = doc.numberOfPages - 1
+        doc.removePage(last)
+        if (at + 1 >= doc.numberOfPages) doc.pages.add(copy) else doc.pages.insertBefore(copy, doc.getPage(at + 1))
+    }
+
+    /** PDF'in kendi içindekiler listesi (bölüm başlıkları → sayfa). */
+    class OutlineEntry(val title: String, val level: Int, val page: Int)
+
+    fun outline(context: Context, source: android.net.Uri): List<OutlineEntry> {
+        PDFBoxResourceLoader.init(context.applicationContext)
+        val doc = if (source.scheme == "file") {
+            PDDocument.load(File(requireNotNull(source.path)))
+        } else {
+            context.contentResolver.openInputStream(source)?.use { PDDocument.load(it) } ?: return emptyList()
+        }
+        return doc.use { d ->
+            val out = ArrayList<OutlineEntry>()
+            fun walk(node: com.tom_roush.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode, level: Int) {
+                for (item in node.children()) {
+                    if (out.size > 2000) return
+                    val page = runCatching { item.findDestinationPage(d)?.let { d.pages.indexOf(it) } }.getOrNull() ?: -1
+                    out += OutlineEntry(item.title?.trim().orEmpty().ifEmpty { "—" }, level, page)
+                    if (level < 6) walk(item, level + 1)
+                }
+            }
+            d.documentCatalog.documentOutline?.let { walk(it, 0) }
+            out
+        }
+    }
+
     /** [from] sayfasını [to] konumuna taşır (son hal sırasına göre). */
     fun move(context: Context, file: File, from: Int, to: Int) = edit(context, file) { doc ->
         val page = doc.getPage(from)

@@ -370,6 +370,11 @@ private fun HighlighterOptions(state: ToolState, onChange: (ToolState) -> Unit, 
         onClick = { onChange(state.copy(highlighterStraight = !state.highlighterStraight)) },
         label = { Text("Düz çizgi") },
     )
+    FilterChip(
+        selected = state.smartHighlighter,
+        onClick = { onChange(state.copy(smartHighlighter = !state.smartHighlighter)) },
+        label = { Text("Satıra oturt") },
+    )
 }
 
 @Composable

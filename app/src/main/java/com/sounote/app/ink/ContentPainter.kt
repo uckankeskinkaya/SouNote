@@ -23,7 +23,10 @@ class ContentPainter(private val imagesDir: File?) {
             for (im in content.images) {
                 val bmp: Bitmap = runCatching { BitmapFactory.decodeFile(File(dir, im.file).path) }.getOrNull() ?: continue
                 rect.set(im.x, im.y, im.x + im.width, im.y + im.height)
+                canvas.save()
+                if (im.rotation != 0f) canvas.rotate(im.rotation, rect.centerX(), rect.centerY())
                 canvas.drawBitmap(bmp, null, rect, bitmapPaint)
+                canvas.restore()
             }
         }
         content.strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }

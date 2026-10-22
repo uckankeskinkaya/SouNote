@@ -47,6 +47,8 @@ data class ToolState(
     val highlighterWidthMm: Float = 5f,
     /** Fosforlu her zaman düz çizgi çizer (altını çizmek için). */
     val highlighterStraight: Boolean = false,
+    /** Fosforluyu altındaki metin satırına oturt (Android 15+). */
+    val smartHighlighter: Boolean = true,
     val eraserMode: EraserMode = EraserMode.STROKE,
     /** Silgi yarıçapı, ekranda dp; yakınlaştırmadan bağımsız aynı boyutta görünür. */
     val eraserSizeDp: Float = 14f,
@@ -101,6 +103,7 @@ data class ToolState(
             .putInt("highlighterColor", highlighterColor)
             .putFloat("highlighterWidthMm", highlighterWidthMm)
             .putBoolean("highlighterStraight", highlighterStraight)
+            .putBoolean("smartHighlighter", smartHighlighter)
             .putString("eraserMode", eraserMode.name)
             .putFloat("eraserSizeDp", eraserSizeDp)
             .putBoolean("eraserHighlighterOnly", eraserHighlighterOnly)
@@ -179,6 +182,7 @@ data class ToolState(
                 highlighterColor = prefs.getInt("highlighterColor", d.highlighterColor),
                 highlighterWidthMm = prefs.getFloat("highlighterWidthMm", d.highlighterWidthMm),
                 highlighterStraight = prefs.getBoolean("highlighterStraight", d.highlighterStraight),
+                smartHighlighter = prefs.getBoolean("smartHighlighter", d.smartHighlighter),
                 eraserMode = enumOr(prefs.getString("eraserMode", null), d.eraserMode),
                 eraserSizeDp = prefs.getFloat("eraserSizeDp", d.eraserSizeDp),
                 eraserHighlighterOnly = prefs.getBoolean("eraserHighlighterOnly", d.eraserHighlighterOnly),

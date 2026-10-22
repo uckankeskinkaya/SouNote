@@ -47,7 +47,25 @@ object TextBoxes {
     /** Arka plan kutusunun yazıdan taşma payı. */
     fun backgroundPad(box: TextBox) = box.fontSize * 0.3f
 
+    /** Dönmüş kutunun kapladığı alan (eksenlere hizalı). */
+    fun visualBounds(box: TextBox, out: RectF = RectF()): RectF {
+        bounds(box, out)
+        if (box.rotation != 0f) Rotation.boundsOf(out, box.rotation, out)
+        return out
+    }
+
     fun draw(canvas: Canvas, box: TextBox) {
+        val rotated = box.rotation != 0f
+        if (rotated) {
+            val c = bounds(box, RectF())
+            canvas.save()
+            canvas.rotate(box.rotation, c.centerX(), c.centerY())
+        }
+        drawUnrotated(canvas, box)
+        if (rotated) canvas.restore()
+    }
+
+    private fun drawUnrotated(canvas: Canvas, box: TextBox) {
         if (box.background != 0) {
             val r = bounds(box, RectF())
             val pad = backgroundPad(box)

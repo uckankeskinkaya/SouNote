@@ -35,9 +35,11 @@ import com.sounote.app.ink.ImageItem
 import com.sounote.app.ink.Images
 import com.sounote.app.ink.InkTool
 import com.sounote.app.ink.Selection
+import com.sounote.app.ink.Rotation
 import com.sounote.app.ink.Selections
 import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.ShapeRecognizer
+import com.sounote.app.ink.SmartHighlighter
 import com.sounote.app.ink.TextBox
 import com.sounote.app.ink.TextBoxes
 import com.sounote.app.ink.Stroke
@@ -90,6 +92,7 @@ class PdfDocumentView(context: Context) : View(context) {
                 if (value.tool == Tool.TEXT) requestRender()
                 invalidate()
             }
+            if (value.tool == Tool.HIGHLIGHTER) requestRender()
         }
 
     /** Yazı aracıyla metin kutusuna (yeni ya da var olan) dokunuldu. */
@@ -191,6 +194,10 @@ class PdfDocumentView(context: Context) : View(context) {
         borderPaint.color = if (dark) Color.rgb(0x3A, 0x3B, 0x40) else Color.rgb(0xC8, 0xC9, 0xCE)
         invalidate()
     }
+
+    // Akıllı fosforlu için metin alanları
+    private val textBounds = HashMap<Int, List<RectF>>()
+    private val textBoundsRequested = HashSet<Int>()
 
     // PDF bağlantıları
     private val links = HashMap<Int, List<PageLink>>()
@@ -309,6 +316,10 @@ class PdfDocumentView(context: Context) : View(context) {
 
         override fun onLinks(page: Int, links: List<PageLink>) {
             this@PdfDocumentView.links[page] = links
+        }
+
+        override fun onTextBounds(page: Int, rects: List<RectF>) {
+            textBounds[page] = rects
         }
     }
 
@@ -571,6 +582,9 @@ class PdfDocumentView(context: Context) : View(context) {
             for (i in visible) if (formRequested.add(i)) r.requestFormFields(i)
         }
         for (i in visible) if (linksRequested.add(i)) r.requestLinks(i)
+        if (tools.tool == Tool.HIGHLIGHTER && tools.smartHighlighter) {
+            for (i in visible) if (textBoundsRequested.add(i)) r.requestTextBounds(i)
+        }
         // 4) Komşu sayfaları önceden hazırla
         for (i in max(0, visible.first - 1)..min(n - 1, visible.last + 2)) {
             if (i !in visible && baseCache[i] == null) add(RenderTask.Base(i, baseWidthPx))
@@ -706,6 +720,11 @@ class PdfDocumentView(context: Context) : View(context) {
             selectionPaint.pathEffect = DashPathEffect(floatArrayOf(6f * density / scale, 4f * density / scale), 0f)
             canvas.drawRect(boundsRect, selectionPaint)
             canvas.drawCircle(boundsRect.right, boundsRect.bottom, HANDLE_DP * 1.4f * density / scale, handlePaint)
+            // Döndürme tutamacı: üst ortada, çerçeveye bir çizgiyle bağlı
+            val rotY = boundsRect.top + pad - ROTATE_HANDLE_DP * density / scale
+            selectionPaint.pathEffect = null
+            canvas.drawLine(boundsRect.centerX(), boundsRect.top, boundsRect.centerX(), rotY, selectionPaint)
+            canvas.drawCircle(boundsRect.centerX(), rotY, HANDLE_DP * 1.4f * density / scale, handlePaint)
         }
         if (active != null) {
             // Kalemin gideceği tahmin edilen noktaları da ekle: gecikme daha az hissedilir.
@@ -1323,7 +1342,21 @@ class PdfDocumentView(context: Context) : View(context) {
             toggleTapeAt(inputPage, b.points[0], b.points[1])
             current = null
         }
-        current?.let { s -> ink.addStroke(inputPage, s.build()) }
+        current?.let { s ->
+            val stroke = s.build()
+            // Akıllı fosforlu: altındaki metin satırlarına oturt (şekle dönmediyse).
+            val snappedLines = if (stroke.tool == InkTool.HIGHLIGHTER && tools.smartHighlighter && !snapped) {
+                textBounds[inputPage]?.let { SmartHighlighter.snap(stroke, it) }
+            } else {
+                null
+            }
+            if (snappedLines.isNullOrEmpty()) {
+                ink.addStroke(inputPage, stroke)
+            } else {
+                val c = ink.content(inputPage)
+                ink.commit(inputPage, c.copy(strokes = c.strokes + snappedLines))
+            }
+        }
         val wasFront = useFront
         recordGesture()
         resetInput()
@@ -1456,7 +1489,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     // ---- Lasso: seç, taşı, büyüt/küçült ----
 
-    private enum class SelMode { NONE, LASSO, MOVE, SCALE, PINCH }
+    private enum class SelMode { NONE, LASSO, MOVE, SCALE, PINCH, ROTATE }
 
     private var selMode = SelMode.NONE
     private var selection: Selection? = null
@@ -1474,6 +1507,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private var selAnchorX = 0f
     private var selAnchorY = 0f
     private var selStartDist = 1f
+    private var selStartAngle = 0f
     private var selPinchScale = 1f
     private var fingerSelecting = false
     private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -1525,7 +1559,9 @@ class PdfDocumentView(context: Context) : View(context) {
             val py = toPageY(sel.page, y)
             val b = Selections.bounds(ink.content(sel.page), sel, RectF())
             val handleR = HANDLE_TOUCH_DP * density / pageScale(sel.page)
+            val rotY = b.top - ROTATE_HANDLE_DP * density / pageScale(sel.page)
             selMode = when {
+                kotlin.math.hypot(px - b.centerX(), py - rotY) <= handleR -> SelMode.ROTATE
                 kotlin.math.hypot(px - b.right, py - b.bottom) <= handleR -> SelMode.SCALE
                 selectionHit(sel, px, py) -> SelMode.MOVE
                 else -> SelMode.NONE
@@ -1536,6 +1572,11 @@ class PdfDocumentView(context: Context) : View(context) {
                 selAnchorX = b.left
                 selAnchorY = b.top
                 selStartDist = kotlin.math.hypot(px - b.left, py - b.top).coerceAtLeast(4f)
+                if (selMode == SelMode.ROTATE) {
+                    selAnchorX = b.centerX()
+                    selAnchorY = b.centerY()
+                    selStartAngle = Math.toDegrees(kotlin.math.atan2((py - selAnchorY).toDouble(), (px - selAnchorX).toDouble())).toFloat()
+                }
                 return
             }
             clearSelection()
@@ -1564,11 +1605,24 @@ class PdfDocumentView(context: Context) : View(context) {
                     invalidate()
                 }
             }
-            SelMode.MOVE, SelMode.SCALE -> {
+            SelMode.MOVE, SelMode.SCALE, SelMode.ROTATE -> {
                 if (!selMoved && kotlin.math.hypot(x - selDownX, y - selDownY) < touchSlop) return
                 selMoved = true
                 val page = selBaseSelection?.page ?: return
-                if (selMode == SelMode.MOVE) {
+                if (selMode == SelMode.ROTATE) {
+                    val px = toPageX(page, x)
+                    val py = toPageY(page, y)
+                    val now = Math.toDegrees(kotlin.math.atan2((py - selAnchorY).toDouble(), (px - selAnchorX).toDouble())).toFloat()
+                    var angle = Rotation.normalize(now - selStartAngle)
+                    // Dik açılara yakınsa oturt (0, ±90, 180).
+                    val snap = Math.round(angle / 90f) * 90f
+                    if (kotlin.math.abs(angle - snap) < 4f) angle = snap
+                    val base = selBase ?: return
+                    val sel0 = selBaseSelection ?: return
+                    val (content, sel) = Selections.rotate(base, sel0, angle, selAnchorX, selAnchorY)
+                    changing { ink.set(sel0.page, content) }
+                    selection = sel
+                } else if (selMode == SelMode.MOVE) {
                     val s = pageScale(page)
                     applySelectionTransform(1f, 0f, 0f, (x - selDownX) / s, (y - selDownY) / s)
                 } else {
@@ -1602,7 +1656,7 @@ class PdfDocumentView(context: Context) : View(context) {
                 selection = if (sel.isEmpty) null else sel
                 notifySelection()
             }
-            SelMode.MOVE, SelMode.SCALE, SelMode.PINCH -> {
+            SelMode.MOVE, SelMode.SCALE, SelMode.PINCH, SelMode.ROTATE -> {
                 val base = selBase
                 val sel0 = selBaseSelection
                 if (base != null && sel0 != null && (selMoved || selMode == SelMode.PINCH)) {
@@ -1616,7 +1670,7 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun selCancel() {
-        if (selMode == SelMode.MOVE || selMode == SelMode.SCALE || selMode == SelMode.PINCH) {
+        if (selMode == SelMode.MOVE || selMode == SelMode.SCALE || selMode == SelMode.PINCH || selMode == SelMode.ROTATE) {
             // Yarım kalan taşımayı geri koy.
             val base = selBase
             val sel0 = selBaseSelection
@@ -1761,7 +1815,10 @@ class PdfDocumentView(context: Context) : View(context) {
         for (im in images) {
             tmpRect.set(im.x, im.y, im.x + im.width, im.y + im.height)
             val bmp = Images.get(File(dir, im.file)) { pageChanged(page) }
+            canvas.save()
+            if (im.rotation != 0f) canvas.rotate(im.rotation, tmpRect.centerX(), tmpRect.centerY())
             if (bmp != null) canvas.drawBitmap(bmp, null, tmpRect, bitmapPaint) else canvas.drawRect(tmpRect, imagePlaceholderPaint)
+            canvas.restore()
         }
     }
 
@@ -1981,6 +2038,7 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val MIN_FONT_PT = 4f
         private const val MAX_FONT_PT = 144f
         private const val SELECTION_PAD_DP = 16f
+        private const val ROTATE_HANDLE_DP = 36f
         private const val MIN_SELECTION_SCALE = 0.05f
         private const val MAX_SELECTION_SCALE = 20f
         private const val HOLD_SLOP_DP = 3f

@@ -118,6 +118,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var insertAfterCurrent by remember { mutableStateOf(false) }
     var goToPageDialog by remember { mutableStateOf(false) }
     var recordingsDialog by remember { mutableStateOf(false) }
+    // Dışa aktarma penceresi: (dosyaya mı kaydedilecek, açık mı)
+    var exportDialog by remember { mutableStateOf(false to false) }
+    var pomodoroDialog by remember { mutableStateOf(false) }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.startRecording(doc) else vm.showMessage("Ses kaydı için mikrofon izni gerekiyor")
     }
@@ -132,8 +135,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     }
     // Kayıt süresi göstergesi
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(vm.recordingSince) {
-        while (vm.recordingSince != 0L) {
+    LaunchedEffect(vm.recordingSince, vm.pomodoro != null) {
+        while (vm.recordingSince != 0L || vm.pomodoro != null) {
             now = System.currentTimeMillis()
             kotlinx.coroutines.delay(1000)
         }
@@ -266,6 +269,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 },
                 actions = {
+                    vm.pomodoro?.let { p ->
+                        TextButton(onClick = { pomodoroDialog = true }) {
+                            Text(
+                                (if (p.onBreak) "☕ " else "🍅 ") + formatDuration((p.endsAt - now).coerceAtLeast(0L)),
+                                color = if (p.onBreak) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
                     if (vm.recordingSince != 0L) {
                         TextButton(onClick = { toggleRecording() }) {
                             Text(
@@ -310,20 +321,17 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         }
                         DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
                             DropdownMenuItem(
-                                text = { Text("Notlu PDF'i paylaş") },
+                                text = { Text("Notlu PDF'i paylaş…") },
                                 onClick = {
                                     exportMenu = false
-                                    vm.export(doc) { share(it) }
+                                    exportDialog = false to true
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Notlu PDF'i dosyaya kaydet") },
+                                text = { Text("Notlu PDF'i dosyaya kaydet…") },
                                 onClick = {
                                     exportMenu = false
-                                    vm.export(doc) { file ->
-                                        pendingExport = file
-                                        saveLauncher.launch(file.name)
-                                    }
+                                    exportDialog = true to true
                                 },
                             )
                         }
@@ -339,6 +347,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                     moreMenu = false
                                     vm.loadRecordings(doc)
                                     recordingsDialog = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Çalışma sayacı (pomodoro)") },
+                                onClick = {
+                                    moreMenu = false
+                                    pomodoroDialog = true
                                 },
                             )
                             DropdownMenuItem(
@@ -463,7 +478,10 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         onDelete = { vm.deletePage(doc, it) },
                         onMove = { from, to -> vm.movePage(doc, from, to) },
                         onToggleBookmark = { vm.toggleBookmark(doc, it) },
+                        onDuplicate = { vm.duplicatePage(doc, it) },
                     ),
+                    outline = vm.outline,
+                    onShowOutline = { vm.loadOutline(doc) },
                 )
             }
             Box(Modifier.weight(1f).fillMaxHeight().clipToBounds(), contentAlignment = Alignment.Center) {
@@ -526,6 +544,55 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             }
             }
         }
+    }
+
+    if (exportDialog.second) {
+        val toFile = exportDialog.first
+        ExportDialog(
+            pageCount = page?.second ?: 1,
+            currentPage = page?.first ?: 0,
+            toFile = toFile,
+            onExport = { range ->
+                exportDialog = false to false
+                vm.export(doc, range) { file ->
+                    if (toFile) {
+                        pendingExport = file
+                        saveLauncher.launch(file.name)
+                    } else {
+                        share(file)
+                    }
+                }
+            },
+            onDismiss = { exportDialog = false to false },
+        )
+    }
+
+    if (pomodoroDialog) {
+        AlertDialog(
+            onDismissRequest = { pomodoroDialog = false },
+            title = { Text("Çalışma sayacı") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Belirli süre çalış, sonra kısa mola ver. Süre dolunca tablet titrer ve haber verir.")
+                    vm.pomodoro?.let { p ->
+                        Text(
+                            (if (p.onBreak) "Mola: " else "Çalışma: ") + formatDuration((p.endsAt - now).coerceAtLeast(0L)) + " kaldı",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.OutlinedButton(onClick = { vm.startPomodoro(25, 5); pomodoroDialog = false }) { Text("25 / 5 dk") }
+                        androidx.compose.material3.OutlinedButton(onClick = { vm.startPomodoro(50, 10); pomodoroDialog = false }) { Text("50 / 10 dk") }
+                    }
+                }
+            },
+            confirmButton = {
+                if (vm.pomodoro != null) {
+                    TextButton(onClick = { vm.stopPomodoro(); pomodoroDialog = false }) { Text("Durdur") }
+                }
+            },
+            dismissButton = { TextButton(onClick = { pomodoroDialog = false }) { Text("Kapat") } },
+        )
     }
 
     if (recordingsDialog) {

@@ -94,6 +94,12 @@ class InkStore(context: Context) {
         File(d, "bookmarks.txt").writeText(pages.sorted().joinToString(","))
     }
 
+    /** Sayfa çoğaltılınca notlarını da kopyala. */
+    fun copyPage(docId: String, from: Int, to: Int) {
+        val src = File(dir(docId), "$from.bin")
+        if (src.exists()) src.copyTo(File(dir(docId), "$to.bin"), overwrite = true)
+    }
+
     fun hasInk(docId: String) = dir(docId).listFiles()?.any { it.name.endsWith(".bin") } == true
 
     fun delete(docId: String) {
@@ -125,6 +131,7 @@ class InkStore(context: Context) {
             out.write(bytes)
             out.writeBoolean(t.bold)
             out.writeInt(t.background)
+            out.writeFloat(t.rotation)
         }
         out.writeInt(c.images.size)
         for (im in c.images) {
@@ -134,6 +141,7 @@ class InkStore(context: Context) {
             out.writeFloat(im.width)
             out.writeFloat(im.height)
             out.writeUTF(im.file)
+            out.writeFloat(im.rotation)
         }
     }
 
@@ -163,11 +171,14 @@ class InkStore(context: Context) {
                 // Sürüm 3'ten önce yazı stili yoktu.
                 val bold = if (version >= 3) inp.readBoolean() else false
                 val background = if (version >= 3) inp.readInt() else 0
-                TextBox(id, x, y, w, size, color, String(bytes, Charsets.UTF_8), bold, background)
+                // Sürüm 4'ten önce dönme yoktu.
+                val rotation = if (version >= 4) inp.readFloat() else 0f
+                TextBox(id, x, y, w, size, color, String(bytes, Charsets.UTF_8), bold, background, rotation)
             }
             // Sürüm 1'de resim yoktu.
             val images = if (version < 2) emptyList() else List(inp.readInt()) {
-                ImageItem(inp.readLong(), inp.readFloat(), inp.readFloat(), inp.readFloat(), inp.readFloat(), inp.readUTF())
+                val im = ImageItem(inp.readLong(), inp.readFloat(), inp.readFloat(), inp.readFloat(), inp.readFloat(), inp.readUTF())
+                if (version >= 4) im.copy(rotation = inp.readFloat()) else im
             }
             PageContent(strokes, texts, images)
         }
@@ -175,6 +186,6 @@ class InkStore(context: Context) {
     companion object {
         private const val TAG = "InkStore"
         private const val MAGIC = 0x534E5031 // "SNP1"
-        private const val VERSION = 3
+        private const val VERSION = 4
     }
 }

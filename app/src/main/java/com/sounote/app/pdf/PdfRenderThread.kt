@@ -99,6 +99,8 @@ class PdfRenderThread(
         fun onOperationFailed(error: Throwable) {}
 
         fun onLinks(page: Int, links: List<PageLink>) {}
+
+        fun onTextBounds(page: Int, rects: List<RectF>) {}
     }
 
     private val thread = HandlerThread("sounote-pdf").apply { start() }
@@ -237,6 +239,20 @@ class PdfRenderThread(
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun detectForms(renderer: PdfRenderer): Boolean =
         runCatching { renderer.pdfFormType != PdfRenderer.PDF_FORM_TYPE_NONE }.getOrDefault(false)
+
+    /** Sayfadaki metnin kapladığı alanlar (akıllı fosforlu için, Android 15+). */
+    fun requestTextBounds(page: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
+        handler.post {
+            val r = pdf ?: return@post
+            val rects = runCatching { r.openPage(page).use { readTextBounds(it) } }.getOrNull() ?: return@post
+            main.post { if (!closed) listener.onTextBounds(page, rects) }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun readTextBounds(page: PdfRenderer.Page): List<RectF> =
+        page.textContents.flatMap { t -> t.bounds.map(::RectF) }
 
     /** Sayfadaki bağlantıları okur (Android 15+); sonuç [Listener.onLinks] ile gelir. */
     fun requestLinks(page: Int) {

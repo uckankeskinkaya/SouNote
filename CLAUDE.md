@@ -51,6 +51,8 @@ Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
 İmza anahtarı keystore/sounote.jks — değiştirme, yoksa güncelleme kurulmaz ve notlar gider.
 
 Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu gönderirse önce onu düzelt.
-Olası sonraki fikirler: seçimi döndürme (TextBox/ImageItem'a rotation), akıllı fosforlu (Android 15+ metin sınırları), etiketler, çalışma süresi sayacı.
+Eklendi (🧪, build-17+): seçimi döndürme (lasso üst tutamaç; TextBox/ImageItem.rotation, InkStore v4), akıllı fosforlu (Android 15+ metin alanları,
+bulunamazsa normal), belge etiketleri + filtre (library.json tags), çalışma süresi (belge başına + günlük, prefs) ve istatistik, pomodoro (25/5, 50/10),
+PDF içindekiler (PDFBox outline, sayfa panelinde), sayfayı notlarıyla çoğalt, dışa aktarmada sayfa aralığı.
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

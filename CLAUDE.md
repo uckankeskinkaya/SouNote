@@ -39,6 +39,9 @@ Teknik notlar:
 - Düşük gecikme (deneysel, kalem ayarlarında): androidx.graphics CanvasFrontBufferedRenderer; çizilen çizgi ön tampona, bitince görünüme geçer (FrontInk, PdfContainer).
 - Bu ortamda Android SDK ve Google Maven yok; API'leri doğrulamak gerekirse CI'da javap ile keşif iş akışı çalıştırılabilir.
 
+Ek özellikler (🧪): ekran açık kalır, tam ekran, sayfayı PNG paylaş, PDF bağlantıları (Android 15+), kapakta notlar,
+kaynağı kaybolan notlu belgeler bölümü (docs/<id>.json), 3 parmak = ileri al, sayfaya git, otomatik yedek (SAF klasörü, 2 dönüşümlü zip).
+
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.

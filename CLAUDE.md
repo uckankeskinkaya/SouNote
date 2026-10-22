@@ -36,7 +36,7 @@ Teknik notlar:
 - Bağlı klasördeki belgenin kopyası filesDir/docs/<belgeId>.pdf; form doldurulunca PdfRenderer.write ile bu dosyaya yazılır.
 - Sayfa ekle/sil/taşı PDF'in kendisinde yapılır (PdfPages, PDFBox); notlar InkStore.remapPages ile yeni numaralara taşınır, geri al geçmişi sıfırlanır.
 - Dışa aktarma: PDFBox-Android (com.tom-roush:pdfbox-android) ile orijinal PDF'e ek içerik akışı; metin kutuları yol olarak.
-- Hata kaydı: ErrorLog (filesDir/logs). Çökme olursa sonraki açılışta paylaşma penceresi; kütüphane ⋮ → "Hata raporu gönder". Kullanıcıdan gelen raporla hata ayıkla.
+- Hata kaydı: ErrorLog (filesDir/logs). Çökme olursa sonraki açılışta paylaşma penceresi; Ayarlar → "Hata raporu gönder". Kullanıcıdan gelen raporla hata ayıkla.
 - Düşük gecikme (deneysel, kalem ayarlarında): androidx.graphics CanvasFrontBufferedRenderer; çizilen çizgi ön tampona, bitince görünüme geçer (FrontInk, PdfContainer).
 - Bu ortamda Android SDK ve Google Maven yok; API'leri doğrulamak gerekirse CI'da javap ile keşif iş akışı çalıştırılabilir.
 
@@ -61,5 +61,9 @@ Eklendi (🧪, build-19+): sesle eşleşen notlar (kayıt sürerken çizilen çi
 çöp kutusu (silinen belge library.json deletedAt, 30 gün sonra kalıcı silinir), şekil aracı (çizgi/ok/dikdörtgen/elips/üçgen; Tool.SHAPE, Shapes),
 yazdır (PrintManager, notlu PDF), uygulama kilidi (platform BiometricPrompt, açılışta + 60 sn arka plan sonrası; prefs appLock),
 defter kâğıt rengi (PaperColor; araya eklenen sayfa da aynı renk, prefs paper_<id>), klavye kısayolları (Ctrl+Z/Y/Shift+Z, PageUp/Down, Ctrl+F/P/S, Ctrl+Home/End).
+Eklendi (🧪, build-21+): ana menü (MainShell: Ana sayfa / Kütüphane / Ayarlar; tablette NavigationRail, dar ekranda NavigationBar; sekme VM.tab),
+ilk açılışta tanıtım (OnboardingScreen, 5 sayfa: ad, kalem/parmak, tema; prefs onboarded, userName), ana sayfa (karşılama, kaldığın yer, hızlı başla,
+son açılanlar, haftalık çalışma, ipucu), ayarlar sayfası (kütüphanedeki ⋮ menüsü buraya taşındı), arkadaşla paylaş (indirme bağlantısı + APK dosyası),
+yeni simge (gradyan zemin, temalı tek renk), açılış ekranı (values-v31 windowSplashScreen*). Release'ler artık Latest: releases/latest/download/SouNote.apk.
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

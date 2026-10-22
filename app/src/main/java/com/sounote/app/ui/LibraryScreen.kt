@@ -104,23 +104,11 @@ import com.sounote.app.ink.InkStore
 
 @Composable
 fun LibraryScreen(vm: LibraryViewModel) {
-    val snackbar = remember { SnackbarHostState() }
     val pickPdfs = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         vm.importPdfs(uris)
     }
     val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let(vm::linkFolder)
-    }
-    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
-        uri?.let(vm::backup)
-    }
-    var restoreUri by remember { mutableStateOf<Uri?>(null) }
-    var autoBackupDialog by remember { mutableStateOf(false) }
-    val autoBackupPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        uri?.let(vm::enableAutoBackup)
-    }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        restoreUri = uri
     }
     val importPdf = { pickPdfs.launch(arrayOf("application/pdf")) }
     val linkFolder = { pickFolder.launch(null) }
@@ -137,26 +125,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var searching by remember { mutableStateOf(false) }
     var deletingOrphan by remember { mutableStateOf<DocRef?>(null) }
     var taggingDoc by remember { mutableStateOf<DocRef?>(null) }
-    var statsDialog by remember { mutableStateOf(false) }
-    var trashDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    var crash by remember { mutableStateOf(ErrorLog.pendingCrash()) }
-
-    fun shareReport(text: String) {
-        val send = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "SouNote hata raporu")
-            putExtra(Intent.EXTRA_TEXT, text)
-        }
-        context.startActivity(Intent.createChooser(send, "Hata raporunu paylaş"))
-    }
-
-    LaunchedEffect(vm.message) {
-        vm.message?.let {
-            snackbar.showSnackbar(it)
-            vm.consumeMessage()
-        }
-    }
 
     val inLinked = vm.path.isNotEmpty()
     val folders = vm.userFolders
@@ -165,7 +134,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
         inLinked -> vm.path.joinToString(" › ") { it.name }
         folder != null -> generateSequence(folder) { f -> folders.find { it.id == f.parentId } }
             .toList().asReversed().joinToString(" › ") { it.name }
-        else -> "SouNote"
+        else -> "Kütüphane"
     }
 
     Scaffold(
@@ -221,83 +190,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                         }
                     }
-                    var more by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { more = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
-                        }
-                        DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Yedekle") },
-                                onClick = {
-                                    more = false
-                                    val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
-                                    backupLauncher.launch("SouNote-yedek-$date.zip")
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(if (vm.autoBackupFolder != null) "Otomatik yedek: açık" else "Otomatik yedek…") },
-                                onClick = {
-                                    more = false
-                                    autoBackupDialog = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Yedekten geri yükle") },
-                                onClick = {
-                                    more = false
-                                    restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Çöp kutusu (${vm.trash.size})") },
-                                onClick = {
-                                    more = false
-                                    trashDialog = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Uygulama kilidi") },
-                                trailingIcon = { androidx.compose.material3.Switch(checked = vm.appLock, onCheckedChange = null) },
-                                onClick = {
-                                    more = false
-                                    vm.updateAppLock(!vm.appLock)
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Çalışma istatistiği") },
-                                onClick = {
-                                    more = false
-                                    statsDialog = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Hata raporu gönder") },
-                                onClick = {
-                                    more = false
-                                    shareReport(ErrorLog.fullReport(context))
-                                },
-                            )
-                            HorizontalDivider()
-                            Text(
-                                "Tema",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            )
-                            LibraryViewModel.ThemeMode.entries.forEach { m ->
-                                DropdownMenuItem(
-                                    text = { Text(m.label) },
-                                    trailingIcon = { RadioButton(selected = vm.themeMode == m, onClick = null) },
-                                    onClick = { more = false; vm.updateTheme(m) },
-                                )
-                            }
-                        }
-                    }
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (vm.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -562,58 +457,6 @@ fun LibraryScreen(vm: LibraryViewModel) {
             onDismiss = { taggingDoc = null },
         )
     }
-    if (trashDialog) {
-        var confirmEmpty by remember { mutableStateOf(false) }
-        AlertDialog(
-            onDismissRequest = { trashDialog = false },
-            title = { Text("Çöp kutusu") },
-            text = {
-                if (vm.trash.isEmpty()) {
-                    Text("Çöp kutusu boş.")
-                } else {
-                    LazyColumn(Modifier.heightIn(max = 420.dp)) {
-                        items(vm.trash, key = { it.id }) { doc ->
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(doc.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text(
-                                        "${vm.trashDaysLeft(doc)} gün sonra kalıcı silinecek",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                TextButton(onClick = { vm.restoreFromTrash(doc) }) { Text("Geri al") }
-                                TextButton(onClick = { vm.purge(doc) }) { Text("Sil", color = MaterialTheme.colorScheme.error) }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = { TextButton(onClick = { trashDialog = false }) { Text("Kapat") } },
-            dismissButton = {
-                if (vm.trash.isNotEmpty()) {
-                    TextButton(onClick = { confirmEmpty = true }) { Text("Çöpü boşalt", color = MaterialTheme.colorScheme.error) }
-                }
-            },
-        )
-        if (confirmEmpty) {
-            AlertDialog(
-                onDismissRequest = { confirmEmpty = false },
-                title = { Text("Çöp kutusu boşaltılsın mı?") },
-                text = { Text("${vm.trash.size} belge notları ve kayıtlarıyla birlikte kalıcı olarak silinecek.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        vm.emptyTrash()
-                        confirmEmpty = false
-                    }) { Text("Boşalt", color = MaterialTheme.colorScheme.error) }
-                },
-                dismissButton = { TextButton(onClick = { confirmEmpty = false }) { Text("Vazgeç") } },
-            )
-        }
-    }
-    if (statsDialog) {
-        StatsDialog(vm) { statsDialog = false }
-    }
     deletingOrphan?.let { doc ->
         AlertDialog(
             onDismissRequest = { deletingOrphan = null },
@@ -621,92 +464,6 @@ fun LibraryScreen(vm: LibraryViewModel) {
             text = { Text("\"${doc.title}\" ve üzerindeki notlar kalıcı olarak silinecek.") },
             confirmButton = { TextButton(onClick = { vm.deleteOrphan(doc); deletingOrphan = null }) { Text("Sil") } },
             dismissButton = { TextButton(onClick = { deletingOrphan = null }) { Text("Vazgeç") } },
-        )
-    }
-    if (autoBackupDialog) {
-        val enabled = vm.autoBackupFolder != null
-        AlertDialog(
-            onDismissRequest = { autoBackupDialog = false },
-            title = { Text("Otomatik yedek") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Açıkken bütün kütüphane günde bir (değişiklik olduysa) seçtiğin klasöre yedeklenir. " +
-                            "İki dosya dönüşümlü yazılır, biri her zaman sağlam kalır. Drive gibi bir bulut klasörü seçersen tablet bozulsa da notların kurtulur.",
-                    )
-                    if (enabled) {
-                        val last = vm.lastAutoBackup()
-                        Text(
-                            if (last > 0) "Son yedek: " + SimpleDateFormat("d MMMM yyyy HH:mm", TR).format(Date(last)) else "Henüz yedek alınmadı",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                if (enabled) {
-                    TextButton(onClick = { vm.runAutoBackup(force = true); autoBackupDialog = false }) { Text("Şimdi yedekle") }
-                } else {
-                    TextButton(onClick = { autoBackupPicker.launch(null); autoBackupDialog = false }) { Text("Klasör seç") }
-                }
-            },
-            dismissButton = {
-                Row {
-                    if (enabled) {
-                        TextButton(onClick = { vm.disableAutoBackup(); autoBackupDialog = false }) { Text("Kapat") }
-                        TextButton(onClick = { autoBackupPicker.launch(null); autoBackupDialog = false }) { Text("Klasörü değiştir") }
-                    } else {
-                        TextButton(onClick = { autoBackupDialog = false }) { Text("Vazgeç") }
-                    }
-                }
-            },
-        )
-    }
-    crash?.let { report ->
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Uygulama beklenmedik şekilde kapandı") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Raporu paylaşırsan (ya da kopyalayıp yapıştırırsan) sorunu bulup düzeltebilirim. Notların bundan etkilenmez.")
-                    Text(
-                        report.lineSequence().take(6).joinToString("\n"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    shareReport(ErrorLog.fullReport(context))
-                    ErrorLog.clearCrash()
-                    crash = null
-                }) { Text("Paylaş") }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = {
-                        val cm = context.getSystemService(ClipboardManager::class.java)
-                        cm?.setPrimaryClip(ClipData.newPlainText("SouNote hata raporu", ErrorLog.fullReport(context)))
-                        ErrorLog.clearCrash()
-                        crash = null
-                    }) { Text("Kopyala") }
-                    TextButton(onClick = {
-                        ErrorLog.clearCrash()
-                        crash = null
-                    }) { Text("Kapat") }
-                }
-            },
-        )
-    }
-    restoreUri?.let { uri ->
-        AlertDialog(
-            onDismissRequest = { restoreUri = null },
-            title = { Text("Yedek geri yüklensin mi?") },
-            text = { Text("Şu anki kütüphane (belgeler, notlar, klasörler) yedektekiyle değiştirilecek. Emin değilsen önce şimdikini yedekle.") },
-            confirmButton = { TextButton(onClick = { vm.restore(uri); restoreUri = null }) { Text("Geri yükle") } },
-            dismissButton = { TextButton(onClick = { restoreUri = null }) { Text("Vazgeç") } },
         )
     }
     unlinking?.let { f ->
@@ -919,7 +676,7 @@ private fun TagsDialog(doc: DocRef, allTags: List<String>, onSave: (List<String>
 
 /** Çalışma istatistiği: bugün, bu hafta ve son 7 günün çubukları; en çok çalışılan belgeler. */
 @Composable
-private fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
+internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     val days = remember { vm.studyDays(7) }
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
     val dayName = remember { SimpleDateFormat("EEE d", TR) }
@@ -963,7 +720,7 @@ private fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
 
 /** Yeni boş defter: ad + sayfa şablonu. */
 @Composable
-private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor) -> Unit, onDismiss: () -> Unit) {
+internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var paper by remember { mutableStateOf(PaperColor.WHITE) }
     var template by remember { mutableStateOf(PageTemplate.LINED) }
@@ -1093,7 +850,7 @@ private fun FolderCard(folder: FolderRef, onClick: () -> Unit, onLongClick: (() 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DocCard(
+internal fun DocCard(
     doc: DocRef,
     onClick: () -> Unit,
     menu: (@Composable (dismiss: () -> Unit) -> Unit)? = null,
@@ -1161,7 +918,7 @@ private fun CardTitle(text: String) {
 }
 
 @Composable
-private fun Thumbnail(doc: DocRef) {
+internal fun Thumbnail(doc: DocRef) {
     val context = LocalContext.current
     // İlk sayfanın notları değişince kapak da yenilensin.
     val inkStamp = InkStore(context).pageStamp(doc.id, 0)

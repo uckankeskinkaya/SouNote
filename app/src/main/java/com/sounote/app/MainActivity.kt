@@ -20,8 +20,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.key
 import androidx.core.content.IntentCompat
-import com.sounote.app.ui.LibraryScreen
 import com.sounote.app.ui.LockScreen
+import com.sounote.app.ui.MainShell
+import com.sounote.app.ui.OnboardingScreen
 import com.sounote.app.ui.SouNoteTheme
 import com.sounote.app.ui.ViewerScreen
 
@@ -162,8 +163,15 @@ private fun SouNoteApp(vm: LibraryViewModel) {
         key(doc.id, vm.docVersion) {
             ViewerScreen(doc, vm)
         }
+    } else if (!vm.onboarded) {
+        OnboardingScreen(vm)
     } else {
-        BackHandler(enabled = vm.canNavigateUp) { vm.navigateUp() }
-        LibraryScreen(vm)
+        val inLibrary = vm.tab == LibraryViewModel.Tab.LIBRARY
+        // Geri: kütüphanede önce üst klasöre, sonra ana sayfaya; ana sayfada uygulamadan çıkar.
+        BackHandler(enabled = inLibrary && vm.canNavigateUp) { vm.navigateUp() }
+        BackHandler(enabled = vm.tab != LibraryViewModel.Tab.HOME && !(inLibrary && vm.canNavigateUp)) {
+            vm.tab = LibraryViewModel.Tab.HOME
+        }
+        MainShell(vm)
     }
 }

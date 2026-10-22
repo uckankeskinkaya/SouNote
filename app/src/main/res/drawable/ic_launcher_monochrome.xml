@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Temalı simge (Android 13+): tek renk sayfa + kalem. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M40,30h22l8,8v38a4,4 0,0 1,-4 4h-26a4,4 0,0 1,-4 -4v-42a4,4 0,0 1,4 -4zM42.2,44.8h17.6v2.4h-17.6zM42.2,52.8h17.6v2.4h-17.6zM42.2,60.8h9.6v2.4h-9.6z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M76.58,43.76L82.24,49.42L85.78,45.88L80.12,40.22zM75.17,45.17L80.83,50.83L66.83,64.83L61.17,59.17zM61.17,59.17L66.83,64.83L58,68z" />
+</vector>

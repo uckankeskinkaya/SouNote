@@ -112,6 +112,34 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString("theme", mode.name).apply()
     }
 
+    // ---- Ana ekran: sekmeler, tanıtım, kullanıcı adı ----
+
+    enum class Tab { HOME, LIBRARY, SETTINGS }
+
+    /** Belge kapanınca aynı sekmeye dönülsün diye burada tutulur. */
+    var tab by mutableStateOf(Tab.HOME)
+
+    var onboarded by mutableStateOf(prefs.getBoolean("onboarded", false))
+        private set
+
+    fun finishOnboarding() {
+        onboarded = true
+        prefs.edit().putBoolean("onboarded", true).apply()
+    }
+
+    /** Ayarlar → Tanıtımı tekrar göster. */
+    fun replayOnboarding() {
+        onboarded = false
+    }
+
+    var userName by mutableStateOf(prefs.getString("userName", null) ?: "")
+        private set
+
+    fun updateUserName(name: String) {
+        userName = name.trim().take(30)
+        prefs.edit().putString("userName", userName).apply()
+    }
+
     /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */
     var keyHandler: ((android.view.KeyEvent) -> Boolean)? = null
 
@@ -1138,7 +1166,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             runCatching { ShortcutManagerCompat.removeDynamicShortcuts(getApplication(), listOf("doc_${doc.id}")) }
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             trash = withContext(Dispatchers.IO) { repo.trashDocs() }
-            message = "\"${doc.title}\" çöp kutusuna taşındı (⋮ → Çöp kutusu)"
+            message = "\"${doc.title}\" çöp kutusuna taşındı (Ayarlar → Çöp kutusu)"
         }
     }
 

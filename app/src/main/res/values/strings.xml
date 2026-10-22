@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SouNote</string>
+    <string name="shortcut_quick_note">Hızlı not</string>
 </resources>

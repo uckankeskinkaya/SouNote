@@ -17,6 +17,12 @@ enum class PageTemplate(val label: String) {
     DOTTED("Noktalı"),
     /** Cornell not düzeni: başlık, solda anahtar kelime sütunu, altta özet alanı. */
     CORNELL("Cornell"),
+    /** 1 mm ince, 5 mm ve 10 mm kalın çizgili kâğıt. */
+    MILLIMETRIC("Milimetrik"),
+    /** Nota kâğıdı: 5 çizgili porteler. */
+    MUSIC("Müzik"),
+    /** Üçgen ızgara noktaları (izometrik çizim). */
+    ISOMETRIC("İzometrik"),
 }
 
 /** Yeni defter kâğıt boyutu (dikey, nokta cinsinden). */
@@ -49,6 +55,27 @@ object PdfPages {
     fun delete(context: Context, file: File, at: Int) = edit(context, file) { doc ->
         if (doc.numberOfPages <= 1) throw IOException("Son sayfa silinemez")
         doc.removePage(at)
+    }
+
+    /** Başka bir PDF'in sayfalarını [at] konumuna ekler; eklenen sayfa sayısını döndürür. */
+    fun insertFrom(context: Context, file: File, at: Int, source: android.net.Uri): Int {
+        PDFBoxResourceLoader.init(context.applicationContext)
+        val src = context.contentResolver.openInputStream(source)?.use { PDDocument.load(it) }
+            ?: throw IOException("PDF açılamadı")
+        var added = 0
+        src.use {
+            edit(context, file) { doc ->
+                val imported = (0 until src.numberOfPages).map { doc.importPage(src.getPage(it)) } // sona eklenir
+                imported.forEach { doc.removePage(it) }
+                val position = at.coerceIn(0, doc.numberOfPages)
+                imported.forEachIndexed { k, page ->
+                    val index = position + k
+                    if (index >= doc.numberOfPages) doc.pages.add(page) else doc.pages.insertBefore(page, doc.getPage(index))
+                }
+                added = imported.size
+            }
+        }
+        return added
     }
 
     /** [at] sayfasının bir kopyasını hemen arkasına ekler. */
@@ -207,6 +234,60 @@ object PdfPages {
                     cs.moveTo(0f, summary)
                     cs.lineTo(w, summary)
                     cs.stroke()
+                }
+                PageTemplate.MILLIMETRIC -> {
+                    // İnceden kalına üç katman: 1 mm, 5 mm, 10 mm
+                    for ((step, width, shade) in listOf(Triple(1f, 0.15f, 0.88f), Triple(5f, 0.35f, 0.78f), Triple(10f, 0.6f, 0.66f))) {
+                        cs.setStrokingColor(shade, shade + 0.04f, 0.97f)
+                        cs.setLineWidth(width)
+                        val gap = step * MM
+                        var x = 0f
+                        while (x <= w) {
+                            cs.moveTo(x, 0f)
+                            cs.lineTo(x, h)
+                            x += gap
+                        }
+                        var y = h
+                        while (y >= 0f) {
+                            cs.moveTo(0f, y)
+                            cs.lineTo(w, y)
+                            y -= gap
+                        }
+                        cs.stroke()
+                    }
+                }
+                PageTemplate.MUSIC -> {
+                    cs.setStrokingColor(0.55f, 0.58f, 0.64f)
+                    cs.setLineWidth(0.5f)
+                    val line = 2f * MM
+                    var top = h - 22f * MM
+                    while (top - 4 * line > 15f * MM) {
+                        for (k in 0..4) {
+                            val y = top - k * line
+                            cs.moveTo(15f * MM, y)
+                            cs.lineTo(w - 15f * MM, y)
+                        }
+                        top -= 4 * line + 12f * MM
+                    }
+                    cs.stroke()
+                }
+                PageTemplate.ISOMETRIC -> {
+                    val gap = 6f * MM
+                    val rowH = gap * 0.866f
+                    val d = 1.2f
+                    cs.setNonStrokingColor(0.62f, 0.66f, 0.72f)
+                    var y = h - rowH
+                    var row = 0
+                    while (y > 0f) {
+                        var x = if (row % 2 == 0) gap / 2 else gap
+                        while (x < w) {
+                            cs.addRect(x - d / 2, y - d / 2, d, d)
+                            x += gap
+                        }
+                        y -= rowH
+                        row++
+                    }
+                    cs.fill()
                 }
                 PageTemplate.BLANK -> {}
             }

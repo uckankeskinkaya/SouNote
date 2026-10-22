@@ -54,5 +54,8 @@ Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu g�
 Eklendi (🧪, build-17+): seçimi döndürme (lasso üst tutamaç; TextBox/ImageItem.rotation, InkStore v4), akıllı fosforlu (Android 15+ metin alanları,
 bulunamazsa normal), belge etiketleri + filtre (library.json tags), çalışma süresi (belge başına + günlük, prefs) ve istatistik, pomodoro (25/5, 50/10),
 PDF içindekiler (PDFBox outline, sayfa panelinde), sayfayı notlarıyla çoğalt, dışa aktarmada sayfa aralığı.
+Eklendi (🧪, build-18+): bilgi kartları (lasso → Karta çevir, Leitner 1–5 kutu; ink/<belge>/cards.json + cards/), damga aracı (✓✗★…; yazı kutusu olarak),
+sağ kenarda sayfa kaydırıcı, gece okuma (renk ters çevirme), hızlı not + uygulama kısayolları (son açılanlar dinamik), başka PDF'ten sayfa ekle,
+şablonlar: milimetrik, müzik, izometrik.
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

@@ -5,7 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.pow
 
-enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER }
+enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER, STAMP }
 
 /** Kalem aracının türü: hangi çizgi türüyle kaydedileceği ve basınca tepki verip vermediği. */
 enum class PenType(
@@ -65,6 +65,10 @@ data class ToolState(
     val textColor: Int = PEN_COLORS[0],
     val textBold: Boolean = false,
     val textBackground: Int = 0,
+    /** Damga: işaret, rengi ve boyutu (pt). */
+    val stampSymbol: String = STAMPS[0],
+    val stampColor: Int = 0xFFD93025.toInt(),
+    val stampSizePt: Float = 24f,
     val favorites: List<FavoritePen> = emptyList(),
     /** Renk seçiciden seçilmiş son renkler (en yenisi başta). */
     val customColors: List<Int> = emptyList(),
@@ -111,6 +115,9 @@ data class ToolState(
             .putInt("tapeColor", tapeColor)
             .putFloat("tapeWidthMm", tapeWidthMm)
             .putBoolean("textBold", textBold)
+            .putString("stampSymbol", stampSymbol)
+            .putInt("stampColor", stampColor)
+            .putFloat("stampSizePt", stampSizePt)
             .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
             .putFloat("textSizePt", textSizePt)
@@ -143,6 +150,9 @@ data class ToolState(
             0xFFE8710A.toInt(), // turuncu
             0xFF6E6E73.toInt(), // gri
         )
+        /** Damga işaretleri (düzeltme, işaretleme, önem). */
+        val STAMPS = listOf("✓", "✗", "★", "?", "!", "→", "←", "♥", "☆", "○", "①", "②", "③", "④", "⑤")
+
         /** Ezber bandı: altındaki yazıyı tamamen kapatacak kadar koyu, opak renkler. */
         val TAPE_COLORS = listOf(
             0xFF7FA7D9.toInt(), // mavi
@@ -190,6 +200,9 @@ data class ToolState(
                 tapeColor = prefs.getInt("tapeColor", d.tapeColor),
                 tapeWidthMm = prefs.getFloat("tapeWidthMm", d.tapeWidthMm),
                 textBold = prefs.getBoolean("textBold", d.textBold),
+                stampSymbol = prefs.getString("stampSymbol", null) ?: d.stampSymbol,
+                stampColor = prefs.getInt("stampColor", d.stampColor),
+                stampSizePt = prefs.getFloat("stampSizePt", d.stampSizePt),
                 textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),

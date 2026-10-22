@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Uygulama simgesine basılı tutunca çıkan kısayollar (son açılan belgeler uygulama içinden eklenir). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_note"
+        android:shortcutId="quick_note"
+        android:shortcutShortLabel="@string/shortcut_quick_note">
+        <intent
+            android:action="com.sounote.app.QUICK_NOTE"
+            android:targetClass="com.sounote.app.MainActivity"
+            android:targetPackage="com.sounote.app" />
+    </shortcut>
+</shortcuts>

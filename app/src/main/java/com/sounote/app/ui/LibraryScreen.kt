@@ -209,6 +209,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 Icon(Icons.Default.Add, contentDescription = "Ekle")
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                DropdownMenuItem(text = { Text("Hızlı not") }, onClick = { menu = false; vm.quickNote() })
                                 DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { menu = false; newNotebook = true })
                                 DropdownMenuItem(text = { Text("Yeni klasör") }, onClick = { menu = false; newFolder = true })
                                 DropdownMenuItem(text = { Text("PDF içe aktar") }, onClick = { menu = false; importPdf() })

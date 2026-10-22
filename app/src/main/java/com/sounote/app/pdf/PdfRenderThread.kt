@@ -54,6 +54,9 @@ sealed class RenderTask {
     }
 }
 
+/** Aramada bulunan bir eşleşme: sayfa ve (birden çok satıra yayılabilen) alanları, sayfa noktası. */
+class SearchHit(val page: Int, val rects: List<RectF>)
+
 /** PDF'in doldurulabilir form alanı (Android 15+). Koordinatlar sayfa noktası. */
 data class FormField(
     val page: Int,
@@ -226,6 +229,34 @@ class PdfRenderThread(
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun detectForms(renderer: PdfRenderer): Boolean =
         runCatching { renderer.pdfFormType != PdfRenderer.PDF_FORM_TYPE_NONE }.getOrDefault(false)
+
+    @Volatile
+    private var searchGeneration = 0
+
+    /** Bütün sayfalarda metin arar (Android 15+). Yeni arama başlayınca eskisinin sonucu atılır. */
+    fun search(query: String, onResult: (List<SearchHit>) -> Unit) {
+        val generation = ++searchGeneration
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM || query.isBlank()) {
+            main.post { onResult(emptyList()) }
+            return
+        }
+        handler.post {
+            val r = pdf ?: return@post
+            val hits = ArrayList<SearchHit>()
+            for (i in 0 until r.pageCount) {
+                if (generation != searchGeneration || closed) return@post
+                runCatching {
+                    r.openPage(i).use { page -> searchPage(page, i, query, hits) }
+                }.onFailure { Log.w(TAG, "Sayfada aranamadı: $i", it) }
+            }
+            main.post { if (!closed && generation == searchGeneration) onResult(hits) }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun searchPage(page: PdfRenderer.Page, index: Int, query: String, out: MutableList<SearchHit>) {
+        page.searchText(query).forEach { m -> out += SearchHit(index, m.bounds.map { RectF(it) }) }
+    }
 
     /** Sayfanın form alanlarını okur; sonuç [Listener.onFormFields] ile gelir. */
     fun requestFormFields(page: Int) {

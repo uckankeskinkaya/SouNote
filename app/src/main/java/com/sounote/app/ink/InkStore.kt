@@ -49,6 +49,41 @@ class InkStore(context: Context) {
         if (!tmp.renameTo(file)) throw IOException("Notlar kaydedilemedi: $file")
     }
 
+    /**
+     * Sayfa yapısı değişince (ekleme/silme/taşıma) not dosyalarını yeni sayfa numaralarına taşır.
+     * [map]: eski sayfa → yeni sayfa; null ise o sayfanın notları silinir.
+     * Çakışma olmasın diye önce geçici adlara, sonra asıl adlara taşınır.
+     */
+    fun remapPages(docId: String, map: (Int) -> Int?) {
+        val d = dir(docId)
+        val files = d.listFiles { f -> f.name.endsWith(".bin") } ?: return
+        val moves = ArrayList<Pair<File, Int>>()
+        for (f in files) {
+            val page = f.name.removeSuffix(".bin").toIntOrNull() ?: continue
+            val target = map(page)
+            if (target == null) {
+                f.delete()
+            } else if (target != page) {
+                val tmp = File(d, "$page.move")
+                if (!f.renameTo(tmp)) throw IOException("Notlar taşınamadı")
+                moves += tmp to target
+            }
+        }
+        for ((tmp, target) in moves) {
+            if (!tmp.renameTo(File(d, "$target.bin"))) throw IOException("Notlar taşınamadı")
+        }
+    }
+
+    fun loadBookmarks(docId: String): Set<Int> = runCatching {
+        File(dir(docId), "bookmarks.txt").readText().split(",").mapNotNull { it.trim().toIntOrNull() }.toSet()
+    }.getOrDefault(emptySet())
+
+    fun saveBookmarks(docId: String, pages: Set<Int>) {
+        val d = dir(docId)
+        d.mkdirs()
+        File(d, "bookmarks.txt").writeText(pages.sorted().joinToString(","))
+    }
+
     fun hasInk(docId: String) = dir(docId).listFiles()?.any { it.name.endsWith(".bin") } == true
 
     fun delete(docId: String) {

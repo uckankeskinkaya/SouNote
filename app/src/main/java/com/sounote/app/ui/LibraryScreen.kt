@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.sounote.app.ui
 
 import android.graphics.Bitmap
@@ -35,6 +37,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -69,6 +72,7 @@ import com.sounote.app.LibraryViewModel
 import com.sounote.app.R
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderRef
+import com.sounote.app.pdf.PageTemplate
 import com.sounote.app.pdf.Thumbnails
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,6 +91,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var renaming by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var unlinking by remember { mutableStateOf<FolderRef?>(null) }
+    var newNotebook by remember { mutableStateOf(false) }
 
     LaunchedEffect(vm.message) {
         vm.message?.let {
@@ -125,6 +130,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 Icon(Icons.Default.Add, contentDescription = "Ekle")
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                                DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { menu = false; newNotebook = true })
                                 DropdownMenuItem(text = { Text("PDF içe aktar") }, onClick = { menu = false; importPdf() })
                                 DropdownMenuItem(text = { Text("Klasör bağla") }, onClick = { menu = false; linkFolder() })
                             }
@@ -176,7 +182,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         }
                     }
                     if (vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty()) {
-                        fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder) }
+                        fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder, onNewNotebook = { newNotebook = true }) }
                     }
                 }
             }
@@ -202,6 +208,15 @@ fun LibraryScreen(vm: LibraryViewModel) {
             dismissButton = { TextButton(onClick = { deleting = null }) { Text("Vazgeç") } },
         )
     }
+    if (newNotebook) {
+        NotebookDialog(
+            onCreate = { name, template ->
+                newNotebook = false
+                vm.createNotebook(name, template)
+            },
+            onDismiss = { newNotebook = false },
+        )
+    }
     unlinking?.let { folder ->
         AlertDialog(
             onDismissRequest = { unlinking = null },
@@ -211,6 +226,41 @@ fun LibraryScreen(vm: LibraryViewModel) {
             dismissButton = { TextButton(onClick = { unlinking = null }) { Text("Vazgeç") } },
         )
     }
+}
+
+/** Yeni boş defter: ad + sayfa şablonu. */
+@Composable
+private fun NotebookDialog(onCreate: (String, PageTemplate) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var template by remember { mutableStateOf(PageTemplate.LINED) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Yeni defter") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    label = { Text("Ad") },
+                    placeholder = { Text("Defter") },
+                )
+                Text("Sayfa", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PageTemplate.entries.forEach { t ->
+                        FilterChip(selected = template == t, onClick = { template = t }, label = { Text(t.label) })
+                    }
+                }
+                Text(
+                    "Defterde sayfa paneli ya da ⋮ menüsünden yeni sayfa eklersin.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = { onCreate(name, template) }) { Text("Oluştur") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
+    )
 }
 
 private fun LazyGridScope.fullWidth(content: @Composable () -> Unit) {
@@ -234,7 +284,7 @@ private fun Hint(text: String) {
 }
 
 @Composable
-private fun EmptyLibrary(onImport: () -> Unit, onLinkFolder: () -> Unit) {
+private fun EmptyLibrary(onImport: () -> Unit, onLinkFolder: () -> Unit, onNewNotebook: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
@@ -242,14 +292,15 @@ private fun EmptyLibrary(onImport: () -> Unit, onLinkFolder: () -> Unit) {
         Text("Kütüphanen boş", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Bir PDF içe aktar ya da ders notlarının olduğu klasörü bağla.",
+            "Boş bir defter aç, bir PDF içe aktar ya da ders notlarının olduğu klasörü bağla.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onImport) { Text("PDF içe aktar") }
+            Button(onClick = onNewNotebook) { Text("Yeni defter") }
+            OutlinedButton(onClick = onImport) { Text("PDF içe aktar") }
             OutlinedButton(onClick = onLinkFolder) { Text("Klasör bağla") }
         }
     }

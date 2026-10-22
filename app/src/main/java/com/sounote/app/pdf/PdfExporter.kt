@@ -1,6 +1,7 @@
 package com.sounote.app.pdf
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.pdf.PdfRenderer
@@ -15,6 +16,8 @@ import com.sounote.app.ink.TextBoxes
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.pdmodel.PDPageContentStream
+import com.tom_roush.pdfbox.pdmodel.graphics.image.JPEGFactory
+import com.tom_roush.pdfbox.pdmodel.graphics.image.LosslessFactory
 import com.tom_roush.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import com.tom_roush.pdfbox.util.Matrix
 import java.io.File
@@ -28,7 +31,7 @@ import com.tom_roush.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
  */
 object PdfExporter {
 
-    fun export(context: Context, source: Uri, ink: Map<Int, PageContent>, target: File) {
+    fun export(context: Context, source: Uri, ink: Map<Int, PageContent>, imagesDir: File, target: File) {
         PDFBoxResourceLoader.init(context.applicationContext)
         val sizes = pageSizes(context, source, ink.keys)
         val doc = if (source.scheme == "file") {
@@ -42,7 +45,7 @@ object PdfExporter {
             for ((pageIndex, content) in ink) {
                 if (content.isEmpty || pageIndex >= doc.numberOfPages) continue
                 val ourWidth = sizes[pageIndex]?.first ?: continue
-                writePage(doc, pageIndex, ourWidth, content)
+                writePage(doc, pageIndex, ourWidth, content, imagesDir)
             }
             val tmp = File(target.path + ".tmp")
             doc.save(tmp)
@@ -60,7 +63,7 @@ object PdfExporter {
             }
         }
 
-    private fun writePage(doc: PDDocument, index: Int, ourWidth: Float, content: PageContent) {
+    private fun writePage(doc: PDDocument, index: Int, ourWidth: Float, content: PageContent, imagesDir: File) {
         val pencilState = PDExtendedGraphicsState().apply {
             strokingAlphaConstant = StrokeRenderer.PENCIL_ALPHA
             nonStrokingAlphaConstant = StrokeRenderer.PENCIL_ALPHA
@@ -88,6 +91,19 @@ object PdfExporter {
             cs.transform(m)
             cs.setLineCapStyle(1)
             cs.setLineJoinStyle(1)
+
+            // Resimler en altta. Birim kare y ekseninde ters çevrilerek yerleştirilir (ekran y'si aşağı doğru).
+            content.images.forEach { im ->
+                val f = File(imagesDir, im.file)
+                if (!f.exists()) return@forEach
+                val img = if (f.name.endsWith(".jpg")) {
+                    f.inputStream().use { JPEGFactory.createFromStream(doc, it) }
+                } else {
+                    val bmp = BitmapFactory.decodeFile(f.path) ?: return@forEach
+                    LosslessFactory.createFromImage(doc, bmp)
+                }
+                cs.drawImage(img, Matrix(im.width, 0f, 0f, -im.height, im.x, im.y + im.height))
+            }
 
             val highlighters = content.strokes.filter { it.tool == InkTool.HIGHLIGHTER }
             if (highlighters.isNotEmpty()) {

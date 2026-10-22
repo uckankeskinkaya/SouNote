@@ -26,7 +26,7 @@ Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.n
 3. 🧪 Kalem çekirdeği: basınca duyarlı kalem, hassas kalınlık (0.1 mm), silgi (çizgi + hassas), fosforlu, hazır renkler. "Parmakla çiz" anahtarı (açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır; kalemsiz arkadaşlar için).
 4. 🧪 Otomatik kayıt (bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır), geri al/ileri al, metin kutusu (klavyeyle yazı; taşı, iki parmakla ya da köşe tutamacıyla büyüt/küçült, renk), PDF form alanlarını doldurma (Android 15+ PdfRenderer form API'si), işaretli PDF olarak dışa aktar.
 5. 🧪 Gelişmiş kalem: kalem türleri (dolma/tükenmez/kurşun/fırça/kaligrafi/kesik), favori kalemler, basınç hassasiyeti, şekil düzeltme (bekletince çizgi/daire/dikdörtgen/üçgen), düz fosforlu, tam renk seçici.
-6. Düzenleme: lasso (taşı/boyutlandır/renk/kopyala/sil), resim ekleme.
+6. 🧪 Düzenleme: lasso (taşı/boyutlandır/renk/kopyala-yapıştır/sil; parmakla sürükle, iki parmakla büyüt), resim ekleme (galeriden; ink/<belge>/img/).
 7. Sayfalar: sayfa paneli, boş defter + şablonlar, araya boş sayfa, yer imleri, PDF içinde arama, yatayda çift sayfa.
 8. Kütüphane: klasörler, arama/sıralama, yedekleme, karanlık mod.
 

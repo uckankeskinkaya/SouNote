@@ -95,12 +95,26 @@ data class TextBox(
     val text: String,
 )
 
+/**
+ * Sayfaya eklenmiş resim. [file]: belgenin resim klasöründeki dosya adı.
+ * Konum ve boyut sayfa noktası cinsinden; [x],[y] sol üst köşe.
+ */
+data class ImageItem(
+    val id: Long,
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val height: Float,
+    val file: String,
+)
+
 /** Bir sayfanın bütün notları. Değişmez: her değişiklik yeni bir nesne üretir. */
 data class PageContent(
     val strokes: List<Stroke> = emptyList(),
     val texts: List<TextBox> = emptyList(),
+    val images: List<ImageItem> = emptyList(),
 ) {
-    val isEmpty get() = strokes.isEmpty() && texts.isEmpty()
+    val isEmpty get() = strokes.isEmpty() && texts.isEmpty() && images.isEmpty()
 
     companion object {
         val EMPTY = PageContent()
@@ -121,6 +135,7 @@ class InkDocument {
     fun content(page: Int): PageContent = pages[page] ?: PageContent.EMPTY
     fun strokes(page: Int): List<Stroke> = content(page).strokes
     fun texts(page: Int): List<TextBox> = content(page).texts
+    fun images(page: Int): List<ImageItem> = content(page).images
 
     /** Not içeren sayfalar ve içerikleri (kopya). */
     fun snapshot(): Map<Int, PageContent> = HashMap(pages)

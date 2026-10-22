@@ -5,7 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.pow
 
-enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT }
+enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO }
 
 /** Kalem aracının türü: hangi çizgi türüyle kaydedileceği ve basınca tepki verip vermediği. */
 enum class PenType(

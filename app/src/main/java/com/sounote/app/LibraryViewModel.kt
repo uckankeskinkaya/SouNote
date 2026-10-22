@@ -13,6 +13,7 @@ import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderListing
 import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
+import com.sounote.app.ink.Images
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkStore
 import com.sounote.app.ink.PageContent
@@ -133,6 +134,22 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Belgeye eklenen resimlerin klasörü. */
+    fun imagesDir(doc: DocRef): File = store.imagesDir(doc.id)
+
+    /** Galeriden seçilen resmi belgeye kaydeder; [onReady] dosya adı ve piksel boyutuyla çağrılır. */
+    fun importImage(doc: DocRef, uri: Uri, onReady: (file: String, width: Int, height: Int) -> Unit) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { Images.import(getApplication(), uri, store.imagesDir(doc.id)) }
+            }
+            result.onSuccess { onReady(it.file, it.width, it.height) }.onFailure {
+                Log.e(TAG, "Resim eklenemedi", it)
+                message = "Resim eklenemedi"
+            }
+        }
+    }
+
     /** Doldurulan formun yazılacağı dosya. */
     fun formSaveTarget(doc: DocRef): File = repo.docFile(doc.id)
 
@@ -175,7 +192,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     dir.listFiles()?.forEach { it.delete() }
                     val name = doc.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80)
                     val target = File(dir, "$name (notlu).pdf")
-                    PdfExporter.export(getApplication(), source, snapshot, target)
+                    PdfExporter.export(getApplication(), source, snapshot, store.imagesDir(doc.id), target)
                     target
                 }
             }

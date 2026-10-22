@@ -12,7 +12,7 @@ import java.util.Locale
 /** Belgeye bağlı ses kaydı. */
 class Recording(val file: File, val createdAt: Long, val durationMs: Long)
 
-/** Ders ses kayıtları: filesDir/ink/<belge>/audio/*.m4a (notlarla birlikte yedeklenir, silinir). */
+/** Ders ses kayıtları: filesDir/ink/<belge>/audio içinde .m4a dosyaları (notlarla birlikte yedeklenir, silinir). */
 object AudioNotes {
     fun dir(context: Context, docId: String) = File(context.filesDir, "ink/$docId/audio")
 

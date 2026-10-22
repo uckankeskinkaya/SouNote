@@ -9,10 +9,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sounote.app.data.Backup
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderListing
 import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
+import com.sounote.app.data.UserFolder
 import com.sounote.app.ink.Images
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkStore
@@ -61,6 +63,102 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun updateTools(state: ToolState) {
         tools = state
         state.save(toolPrefs)
+    }
+
+    // ---- Kütüphane düzeni: kendi klasörlerim, arama, sıralama, tema ----
+
+    enum class SortMode(val label: String) { RECENT("Son açılan"), ADDED("Son eklenen"), NAME("Ada göre") }
+    enum class ThemeMode(val label: String) { SYSTEM("Sistem"), LIGHT("Açık"), DARK("Koyu") }
+
+    var userFolders by mutableStateOf<List<UserFolder>>(emptyList())
+        private set
+
+    /** Açık olan kendi klasörüm; null = ana sayfa. */
+    var currentFolder by mutableStateOf<String?>(null)
+        private set
+
+    var searchQuery by mutableStateOf("")
+    var sortMode by mutableStateOf(enumValueOrNull<SortMode>(prefs.getString("sort", null)) ?: SortMode.RECENT)
+        private set
+    var themeMode by mutableStateOf(enumValueOrNull<ThemeMode>(prefs.getString("theme", null)) ?: ThemeMode.SYSTEM)
+        private set
+
+    fun updateSort(mode: SortMode) {
+        sortMode = mode
+        prefs.edit().putString("sort", mode.name).apply()
+    }
+
+    fun updateTheme(mode: ThemeMode) {
+        themeMode = mode
+        prefs.edit().putString("theme", mode.name).apply()
+    }
+
+    fun lastOpened(doc: DocRef) = prefs.getLong("opened_${doc.id}", 0L)
+
+    fun sorted(docs: List<DocRef>): List<DocRef> = when (sortMode) {
+        SortMode.NAME -> docs.sortedWith(compareBy(com.sounote.app.data.NaturalOrder) { it.title })
+        SortMode.ADDED -> docs.sortedByDescending { it.addedAt }
+        SortMode.RECENT -> docs.sortedByDescending { maxOf(lastOpened(it), it.addedAt) }
+    }
+
+    fun openUserFolder(id: String) {
+        path = emptyList()
+        currentFolder = id
+    }
+
+    fun createFolder(name: String, color: Int) = folderOp { repo.createFolder(name.trim().ifEmpty { "Klasör" }, currentFolder, color) }
+    fun updateFolder(f: UserFolder, name: String, color: Int) = folderOp { repo.updateFolder(f.id, name.trim().ifEmpty { f.name }, color) }
+    fun deleteFolder(f: UserFolder) = folderOp { repo.deleteFolder(f.id) }
+    fun moveDoc(doc: DocRef, folderId: String?) = folderOp { repo.moveDoc(doc.id, folderId) }
+    fun moveFolder(f: UserFolder, parentId: String?) = folderOp { repo.moveFolder(f.id, parentId) }
+
+    private fun folderOp(block: () -> Unit) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { block() }
+            userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
+            imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+        }
+    }
+
+    // ---- Yedekleme ----
+
+    fun backup(target: Uri) {
+        viewModelScope.launch {
+            busy = true
+            saveJob?.cancel()
+            flushInk()
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    getApplication<Application>().contentResolver.openOutputStream(target)?.use {
+                        Backup.write(getApplication(), it)
+                    } ?: error("Dosya açılamadı")
+                }.onFailure { Log.e(TAG, "Yedeklenemedi", it) }.isSuccess
+            }
+            busy = false
+            message = if (ok) "Yedek kaydedildi" else "Yedeklenemedi"
+        }
+    }
+
+    fun restore(source: Uri) {
+        viewModelScope.launch {
+            busy = true
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    getApplication<Application>().contentResolver.openInputStream(source)?.use {
+                        Backup.restore(getApplication(), it)
+                    } ?: error("Dosya açılamadı")
+                    repo.reload()
+                }
+            }
+            busy = false
+            currentFolder = null
+            path = emptyList()
+            refresh()
+            message = result.fold(
+                onSuccess = { "Yedek geri yüklendi" },
+                onFailure = { "Geri yüklenemedi: ${it.message ?: it.javaClass.simpleName}" },
+            )
+        }
     }
 
     fun consumeMessage() {
@@ -156,6 +254,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun formSaveTarget(doc: DocRef): File = repo.docFile(doc.id)
 
     fun open(doc: DocRef) {
+        prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis()).apply()
         viewModelScope.launch {
             val (resolved, content) = withContext(Dispatchers.IO) { repo.resolveForOpen(doc) to store.load(doc.id) }
             bookmarks = withContext(Dispatchers.IO) { store.loadBookmarks(doc.id) }
@@ -263,7 +362,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             busy = true
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    repo.createDocument(title.trim().ifEmpty { "Defter" }) { file ->
+                    repo.createDocument(title.trim().ifEmpty { "Defter" }, currentFolder) { file ->
                         PdfPages.createNotebook(getApplication(), file, template, pages = 1)
                     }
                 }
@@ -342,6 +441,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val (imp, roots) = withContext(Dispatchers.IO) { repo.importedDocs() to repo.linkedFolders() }
             imported = imp
             rootFolders = roots
+            userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
+            if (currentFolder != null && userFolders.none { it.id == currentFolder }) currentFolder = null
             loaded = true
             path.lastOrNull()?.let { loadListing(it) }
         }
@@ -358,6 +459,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    val canNavigateUp get() = path.isNotEmpty() || currentFolder != null
+
     fun openFolder(folder: FolderRef) {
         path = path + folder
         listing = FolderListing(emptyList(), emptyList())
@@ -365,7 +468,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun navigateUp() {
-        if (path.isEmpty()) return
+        if (path.isEmpty()) {
+            currentFolder = userFolders.find { it.id == currentFolder }?.parentId
+            return
+        }
         path = path.dropLast(1)
         path.lastOrNull()?.let { f ->
             listing = FolderListing(emptyList(), emptyList())
@@ -381,7 +487,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             var failed = 0
             for (uri in uris) {
                 try {
-                    last = withContext(Dispatchers.IO) { repo.importPdf(uri) }
+                    val folder = currentFolder
+                    last = withContext(Dispatchers.IO) { repo.importPdf(uri, folder) }
                 } catch (e: Exception) {
                     Log.w(TAG, "İçe aktarılamadı: $uri", e)
                     failed++
@@ -459,6 +566,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
+        private inline fun <reified T : Enum<T>> enumValueOrNull(name: String?): T? =
+            name?.let { n -> enumValues<T>().firstOrNull { it.name == n } }
+
         private const val TAG = "LibraryViewModel"
         private const val SAVE_DELAY_MS = 800L
     }

@@ -23,6 +23,17 @@ data class DocRef(
     val uri: Uri,
     val lastModified: Long,
     val imported: Boolean,
+    /** Kütüphanede bulunduğu kendi klasörü (içe aktarılanlar için); null = ana sayfa. */
+    val folderId: String? = null,
+    val addedAt: Long = 0L,
+)
+
+/** Kütüphanede kullanıcının oluşturduğu klasör (içe aktarılan belgeler için). */
+data class UserFolder(
+    val id: String,
+    val name: String,
+    val parentId: String?,
+    val color: Int,
 )
 
 /** Bağlı bir klasör ya da onun alt klasörü. */
@@ -43,7 +54,8 @@ data class FolderListing(
  */
 class LibraryRepository(private val context: Context) {
 
-    private class ImportedEntry(val id: String, var title: String, val addedAt: Long)
+    private class ImportedEntry(val id: String, var title: String, val addedAt: Long, var folderId: String? = null)
+    private class FolderEntry(val id: String, var name: String, var parentId: String?, var color: Int)
     private class LinkedEntry(val uri: String, val name: String)
 
     private val docsDir = File(context.filesDir, "docs").apply { mkdirs() }
@@ -51,15 +63,78 @@ class LibraryRepository(private val context: Context) {
     private val lock = Any()
     private val imported = mutableListOf<ImportedEntry>()
     private val linked = mutableListOf<LinkedEntry>()
+    private val userFolders = mutableListOf<FolderEntry>()
 
     init {
+        load()
+    }
+
+    /** Yedekten geri yükledikten sonra kaydı diskten yeniden okur. */
+    fun reload() = synchronized(lock) {
+        imported.clear()
+        linked.clear()
+        userFolders.clear()
         load()
     }
 
     fun importedDocs(): List<DocRef> = synchronized(lock) {
         imported.sortedByDescending { it.addedAt }.mapNotNull { e ->
             val file = fileFor(e.id)
-            if (file.exists()) DocRef(e.id, e.title, Uri.fromFile(file), file.lastModified(), imported = true) else null
+            if (file.exists()) {
+                DocRef(e.id, e.title, Uri.fromFile(file), file.lastModified(), imported = true, folderId = e.folderId, addedAt = e.addedAt)
+            } else {
+                null
+            }
+        }
+    }
+
+    // ---- Kullanıcı klasörleri ----
+
+    fun userFolders(): List<UserFolder> = synchronized(lock) {
+        userFolders.map { UserFolder(it.id, it.name, it.parentId, it.color) }
+    }
+
+    fun createFolder(name: String, parentId: String?, color: Int): UserFolder = synchronized(lock) {
+        val e = FolderEntry(UUID.randomUUID().toString(), name, parentId, color)
+        userFolders += e
+        save()
+        UserFolder(e.id, e.name, e.parentId, e.color)
+    }
+
+    fun updateFolder(id: String, name: String, color: Int) = synchronized(lock) {
+        userFolders.find { it.id == id }?.let {
+            it.name = name
+            it.color = color
+            save()
+        }
+    }
+
+    /** Klasörü siler; içindeki belgeler ve alt klasörler bir üst klasöre geçer (hiçbir şey kaybolmaz). */
+    fun deleteFolder(id: String) = synchronized(lock) {
+        val folder = userFolders.find { it.id == id } ?: return@synchronized
+        imported.forEach { if (it.folderId == id) it.folderId = folder.parentId }
+        userFolders.forEach { if (it.parentId == id) it.parentId = folder.parentId }
+        userFolders.remove(folder)
+        save()
+    }
+
+    fun moveDoc(docId: String, folderId: String?) = synchronized(lock) {
+        imported.find { it.id == docId }?.let {
+            it.folderId = folderId
+            save()
+        }
+    }
+
+    /** Klasörü başka bir klasörün içine taşır (kendi altına taşınamaz). */
+    fun moveFolder(id: String, parentId: String?) = synchronized(lock) {
+        var p = parentId
+        while (p != null) {
+            if (p == id) return@synchronized
+            p = userFolders.find { it.id == p }?.parentId
+        }
+        userFolders.find { it.id == id }?.let {
+            it.parentId = parentId
+            save()
         }
     }
 
@@ -71,7 +146,7 @@ class LibraryRepository(private val context: Context) {
     }
 
     /** Dosyayı uygulamanın içine kopyalar; açılamayan (bozuk/şifreli) PDF'i reddeder. */
-    fun importPdf(source: Uri): DocRef {
+    fun importPdf(source: Uri, folderId: String? = null): DocRef {
         val title = queryDisplayName(source)?.let(::stripPdfExtension)?.ifBlank { null } ?: "Belge"
         val id = UUID.randomUUID().toString()
         val tmp = File(docsDir, "$id.tmp")
@@ -87,10 +162,10 @@ class LibraryRepository(private val context: Context) {
         }
         val addedAt = System.currentTimeMillis()
         synchronized(lock) {
-            imported += ImportedEntry(id, title, addedAt)
+            imported += ImportedEntry(id, title, addedAt, folderId)
             save()
         }
-        return DocRef(id, title, Uri.fromFile(target), target.lastModified(), imported = true)
+        return DocRef(id, title, Uri.fromFile(target), target.lastModified(), imported = true, folderId = folderId, addedAt = addedAt)
     }
 
     /** Belgenin uygulama içindeki PDF dosyası: içe aktarılanın kendisi, bağlı klasördekinin kopyası. */
@@ -123,7 +198,7 @@ class LibraryRepository(private val context: Context) {
     }
 
     /** Uygulama içinde oluşturulan yeni PDF (ör. boş defter): [write] dosyayı yazar. */
-    fun createDocument(title: String, write: (File) -> Unit): DocRef {
+    fun createDocument(title: String, folderId: String? = null, write: (File) -> Unit): DocRef {
         val id = UUID.randomUUID().toString()
         val target = fileFor(id)
         try {
@@ -134,10 +209,10 @@ class LibraryRepository(private val context: Context) {
         }
         val addedAt = System.currentTimeMillis()
         synchronized(lock) {
-            imported += ImportedEntry(id, title, addedAt)
+            imported += ImportedEntry(id, title, addedAt, folderId)
             save()
         }
-        return DocRef(id, title, Uri.fromFile(target), target.lastModified(), imported = true)
+        return DocRef(id, title, Uri.fromFile(target), target.lastModified(), imported = true, folderId = folderId, addedAt = addedAt)
     }
 
     fun rename(id: String, title: String) = synchronized(lock) {
@@ -226,13 +301,25 @@ class LibraryRepository(private val context: Context) {
             json.optJSONArray("imported")?.let { arr ->
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
-                    imported += ImportedEntry(o.getString("id"), o.getString("title"), o.getLong("addedAt"))
+                    imported += ImportedEntry(
+                        o.getString("id"), o.getString("title"), o.getLong("addedAt"),
+                        o.optString("folder").ifEmpty { null },
+                    )
                 }
             }
             json.optJSONArray("folders")?.let { arr ->
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
                     linked += LinkedEntry(o.getString("uri"), o.getString("name"))
+                }
+            }
+            json.optJSONArray("userFolders")?.let { arr ->
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    userFolders += FolderEntry(
+                        o.getString("id"), o.getString("name"),
+                        o.optString("parent").ifEmpty { null }, o.optInt("color", DEFAULT_FOLDER_COLOR),
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -243,10 +330,17 @@ class LibraryRepository(private val context: Context) {
     private fun save() {
         val json = JSONObject()
         json.put("imported", JSONArray().apply {
-            imported.forEach { put(JSONObject().put("id", it.id).put("title", it.title).put("addedAt", it.addedAt)) }
+            imported.forEach {
+                put(JSONObject().put("id", it.id).put("title", it.title).put("addedAt", it.addedAt).put("folder", it.folderId ?: ""))
+            }
         })
         json.put("folders", JSONArray().apply {
             linked.forEach { put(JSONObject().put("uri", it.uri).put("name", it.name)) }
+        })
+        json.put("userFolders", JSONArray().apply {
+            userFolders.forEach {
+                put(JSONObject().put("id", it.id).put("name", it.name).put("parent", it.parentId ?: "").put("color", it.color))
+            }
         })
         // Önce geçici dosyaya yaz, sonra değiştir: yazarken kapanırsa eski kayıt bozulmaz.
         val tmp = File(libraryFile.path + ".tmp")
@@ -256,6 +350,7 @@ class LibraryRepository(private val context: Context) {
 
     companion object {
         private const val TAG = "LibraryRepository"
+        const val DEFAULT_FOLDER_COLOR = 0xFF5B7FD6.toInt()
         private val PDF_EXT = Regex("\\.pdf$", RegexOption.IGNORE_CASE)
 
         fun stripPdfExtension(name: String) = name.replace(PDF_EXT, "")

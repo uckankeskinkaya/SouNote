@@ -23,7 +23,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SouNoteTheme {
+            val dark = when (vm.themeMode) {
+                LibraryViewModel.ThemeMode.LIGHT -> false
+                LibraryViewModel.ThemeMode.DARK -> true
+                LibraryViewModel.ThemeMode.SYSTEM -> null
+            }
+            SouNoteTheme(dark) {
                 SouNoteApp(vm)
             }
         }
@@ -66,7 +71,7 @@ private fun SouNoteApp(vm: LibraryViewModel) {
             ViewerScreen(doc, vm)
         }
     } else {
-        BackHandler(enabled = vm.path.isNotEmpty()) { vm.navigateUp() }
+        BackHandler(enabled = vm.canNavigateUp) { vm.navigateUp() }
         LibraryScreen(vm)
     }
 }

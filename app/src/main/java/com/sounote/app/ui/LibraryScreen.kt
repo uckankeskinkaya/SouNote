@@ -11,6 +11,10 @@ import com.sounote.app.ErrorLog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.automirrored.filled.List
@@ -93,6 +97,7 @@ import com.sounote.app.R
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderRef
 import com.sounote.app.pdf.PageTemplate
+import com.sounote.app.pdf.PaperSize
 import com.sounote.app.pdf.Thumbnails
 import com.sounote.app.ink.InkStore
 
@@ -334,6 +339,29 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         fullWidth { Hint("Bu klasörde PDF yok. Dosya yöneticisinden buraya PDF atınca görünür.") }
                     }
                 } else {
+                    // Son açılanlar: kaldığın belgeye hızlı dönüş
+                    val recent = if (folder == null) {
+                        vm.imported.filter { vm.lastOpened(it) > 0 }.sortedByDescending { vm.lastOpened(it) }.take(10)
+                    } else {
+                        emptyList()
+                    }
+                    if (recent.size >= 2) {
+                        fullWidth {
+                            Column {
+                                SectionTitle("Son açılanlar")
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    contentPadding = PaddingValues(top = 12.dp),
+                                ) {
+                                    items(recent, key = { "recent" + it.id }) { doc ->
+                                        Box(Modifier.width(130.dp)) {
+                                            DocCard(doc, onClick = { vm.open(doc) })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (folder == null && vm.rootFolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Bağlı klasörler") }
                         items(vm.rootFolders, key = { "r" + it.treeUri }) { f ->
@@ -410,9 +438,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
     }
     if (newNotebook) {
         NotebookDialog(
-            onCreate = { name, template ->
+            onCreate = { name, template, size, landscape ->
                 newNotebook = false
-                vm.createNotebook(name, template)
+                vm.createNotebook(name, template, size, landscape)
             },
             onDismiss = { newNotebook = false },
         )
@@ -723,9 +751,11 @@ private fun MoveDialog(
 
 /** Yeni boş defter: ad + sayfa şablonu. */
 @Composable
-private fun NotebookDialog(onCreate: (String, PageTemplate) -> Unit, onDismiss: () -> Unit) {
+private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var template by remember { mutableStateOf(PageTemplate.LINED) }
+    var size by remember { mutableStateOf(PaperSize.A4) }
+    var landscape by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Yeni defter") },
@@ -739,10 +769,18 @@ private fun NotebookDialog(onCreate: (String, PageTemplate) -> Unit, onDismiss: 
                     placeholder = { Text("Defter") },
                 )
                 Text("Sayfa", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     PageTemplate.entries.forEach { t ->
                         FilterChip(selected = template == t, onClick = { template = t }, label = { Text(t.label) })
                     }
+                }
+                Text("Boyut", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    PaperSize.entries.forEach { p ->
+                        FilterChip(selected = size == p, onClick = { size = p }, label = { Text(p.label) })
+                    }
+                    FilterChip(selected = !landscape, onClick = { landscape = false }, label = { Text("Dikey") })
+                    FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
                 }
                 Text(
                     "Defterde sayfa paneli ya da ⋮ menüsünden yeni sayfa eklersin.",
@@ -751,7 +789,7 @@ private fun NotebookDialog(onCreate: (String, PageTemplate) -> Unit, onDismiss: 
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onCreate(name, template) }) { Text("Oluştur") } },
+        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape) }) { Text("Oluştur") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
 }

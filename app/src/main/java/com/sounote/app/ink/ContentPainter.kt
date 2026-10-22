@@ -29,5 +29,6 @@ class ContentPainter(private val imagesDir: File?) {
         content.strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }
         content.texts.forEach { TextBoxes.draw(canvas, it) }
         content.strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }
+        // Not: ezber bantları burada kapalı (opak) çizilir.
     }
 }

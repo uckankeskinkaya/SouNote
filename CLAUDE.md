@@ -40,7 +40,9 @@ Teknik notlar:
 - Bu ortamda Android SDK ve Google Maven yok; API'leri doğrulamak gerekirse CI'da javap ile keşif iş akışı çalıştırılabilir.
 
 Ek özellikler (🧪): ekran açık kalır, tam ekran, sayfayı PNG paylaş, PDF bağlantıları (Android 15+), kapakta notlar,
-kaynağı kaybolan notlu belgeler bölümü (docs/<id>.json), 3 parmak = ileri al, sayfaya git, otomatik yedek (SAF klasörü, 2 dönüşümlü zip).
+kaynağı kaybolan notlu belgeler bölümü (docs/<id>.json), 3 parmak = ileri al, sayfaya git, otomatik yedek (SAF klasörü, 2 dönüşümlü zip),
+ezber bandı (InkTool.TAPE; parmakla dokun aç/kapat, dışa aktarılmaz), lazer kalem (kaydedilmez), ders ses kaydı (ink/<belge>/audio/*.m4a),
+yazı kalın + arka plan (InkStore v3), silgi yazı/resim de silebilir, Cornell şablonu, defter boyutu/yönü, kütüphanede Son açılanlar.
 
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 

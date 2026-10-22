@@ -90,6 +90,8 @@ fun InkToolbar(
     onInsertImage: () -> Unit,
     /** Tam ekranda üst çubuk gizlenince gereken düğmeler (çık, geri al, ileri al) buraya gelir. */
     leading: (@Composable () -> Unit)? = null,
+    /** Bütün ezber bantlarını aç (true) / kapat (false). */
+    onRevealTapes: (Boolean) -> Unit = {},
 ) {
     // Renk seçici açıkken seçilen rengin hangi araca gideceği
     var picker by remember { mutableStateOf<Tool?>(null) }
@@ -116,6 +118,12 @@ fun InkToolbar(
                 ToolChip("Seç", state.tool == Tool.LASSO, drawable = R.drawable.ic_lasso) {
                     onChange(state.copy(tool = Tool.LASSO))
                 }
+                ToolChip("Bant", state.tool == Tool.TAPE, drawable = R.drawable.ic_tape) {
+                    onChange(state.copy(tool = Tool.TAPE))
+                }
+                ToolChip("Lazer", state.tool == Tool.LASER, drawable = R.drawable.ic_laser) {
+                    onChange(state.copy(tool = Tool.LASER))
+                }
                 AssistChip(
                     onClick = onInsertImage,
                     label = { Text("Resim") },
@@ -138,6 +146,12 @@ fun InkToolbar(
                     Tool.ERASER -> EraserOptions(state, onChange)
                     Tool.TEXT -> TextOptions(state, onChange) { picker = Tool.TEXT }
                     Tool.LASSO -> SelectionOptions(state, selection) { picker = Tool.LASSO }
+                    Tool.TAPE -> TapeOptions(state, onChange, onRevealTapes) { picker = Tool.TAPE }
+                    Tool.LASER -> Text(
+                        "Sunum ve anlatım için: çizgi birkaç saniyede kaybolur, kaydedilmez.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -147,6 +161,7 @@ fun InkToolbar(
         val initial = when (target) {
             Tool.HIGHLIGHTER -> state.highlighterColor
             Tool.TEXT -> state.textColor
+            Tool.TAPE -> state.tapeColor
             else -> state.penColor
         }
         ColorPickerDialog(
@@ -157,6 +172,7 @@ fun InkToolbar(
                     when (target) {
                         Tool.HIGHLIGHTER -> s.copy(highlighterColor = c)
                         Tool.TEXT -> s.copy(textColor = c)
+                        Tool.TAPE -> s.copy(tapeColor = c)
                         Tool.LASSO -> s
                         else -> s.copy(penColor = c)
                     },
@@ -380,6 +396,31 @@ private fun EraserOptions(state: ToolState, onChange: (ToolState) -> Unit) {
         onClick = { onChange(state.copy(eraserHighlighterOnly = !state.eraserHighlighterOnly)) },
         label = { Text("Sadece fosforlu") },
     )
+    if (state.eraserMode == EraserMode.STROKE) {
+        FilterChip(
+            selected = state.eraserObjects,
+            onClick = { onChange(state.copy(eraserObjects = !state.eraserObjects)) },
+            label = { Text("Yazı ve resim de") },
+        )
+    }
+}
+
+@Composable
+private fun TapeOptions(
+    state: ToolState,
+    onChange: (ToolState) -> Unit,
+    onReveal: (Boolean) -> Unit,
+    onCustomColor: () -> Unit,
+) {
+    Palette(ToolState.TAPE_COLORS, emptyList(), state.tapeColor, { onChange(state.copy(tapeColor = it)) }, onCustomColor)
+    WidthControl(state.tapeWidthMm, min = 3f, max = 25f, step = 0.5f) { onChange(state.copy(tapeWidthMm = it)) }
+    AssistChip(onClick = { onReveal(true) }, label = { Text("Hepsini aç") })
+    AssistChip(onClick = { onReveal(false) }, label = { Text("Hepsini kapat") })
+    Text(
+        "Ezberlemek istediğin yerin üstünü çiz · banda parmakla dokun: aç/kapat",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
@@ -393,6 +434,12 @@ private fun TextOptions(state: ToolState, onChange: (ToolState) -> Unit, onCusto
         modifier = Modifier.width(180.dp),
     )
     Text("${state.textSizePt.roundToInt()} pt", style = MaterialTheme.typography.labelLarge)
+    FilterChip(
+        selected = state.textBold,
+        onClick = { onChange(state.copy(textBold = !state.textBold)) },
+        label = { Text("Kalın", fontWeight = FontWeight.Bold) },
+    )
+    NoteBackgroundRow(state.textBackground) { onChange(state.copy(textBackground = it)) }
     Text(
         "Sayfaya dokun: yazı ekle · yazıya dokun: düzenle · sürükle: taşı",
         style = MaterialTheme.typography.bodySmall,
@@ -486,6 +533,31 @@ private fun Swatch(c: Int, isSelected: Boolean, onClick: () -> Unit) {
             .background(Color(c), CircleShape)
             .clickable(onClick = onClick),
     )
+}
+
+/** Yazı kutusu arka planı seçimi: yok + pastel renkler. */
+@Composable
+internal fun NoteBackgroundRow(selected: Int, onSelect: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        ToolState.NOTE_BACKGROUNDS.forEach { c ->
+            val isSelected = c == selected
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(30.dp)
+                    .border(
+                        if (isSelected) 2.5.dp else 1.dp,
+                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        RoundedCornerShape(6.dp),
+                    )
+                    .padding(3.dp)
+                    .background(if (c == 0) Color.White else Color(c), RoundedCornerShape(4.dp))
+                    .clickable { onSelect(c) },
+            ) {
+                if (c == 0) Text("∅", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+            }
+        }
+    }
 }
 
 /** Sadece hazır renkler (yazı düzenleme penceresi için). */

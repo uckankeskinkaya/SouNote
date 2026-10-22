@@ -40,6 +40,7 @@ import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.ShapeRecognizer
 import com.sounote.app.ink.TextBox
 import com.sounote.app.ink.TextBoxes
+import com.sounote.app.ink.Stroke
 import com.sounote.app.ink.StrokeBuilder
 import com.sounote.app.ink.StrokeRenderer
 import com.sounote.app.ink.Tool
@@ -645,6 +646,7 @@ class PdfDocumentView(context: Context) : View(context) {
         if (erasing && drawPointerId != -1) {
             canvas.drawCircle(eraserX, eraserY, tools.eraserSizeDp * density, eraserPaint)
         }
+        drawLaser(canvas)
         if (selMode == SelMode.LASSO && lassoCount > 1) {
             lassoPath.rewind()
             lassoPath.moveTo(lasso[0], lasso[1])
@@ -673,7 +675,7 @@ class PdfDocumentView(context: Context) : View(context) {
                 drawImages(canvas, page)
                 strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
                 ink.texts(page).forEach { TextBoxes.draw(canvas, it) }
-                strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
+                strokes.forEach { drawStroke(canvas, it) }
             }
         }
         if (tools.tool == Tool.TEXT) {
@@ -727,7 +729,7 @@ class PdfDocumentView(context: Context) : View(context) {
             // Fosforlu altta, kalem üstte.
             strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
             ink.texts(page).forEach { TextBoxes.draw(c, it) }
-            strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
+            strokes.forEach { drawStroke(c, it) }
             endRecording()
         }
     }
@@ -845,12 +847,14 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-            // Kalem/fosforlu/silgideyken parmakla dokunulan bağlantıyı aç (yazı ve seçim araçları dokunmayı kendisi kullanır).
-            if (tools.fingerDraw || tools.tool == Tool.TEXT || tools.tool == Tool.LASSO) return false
-            if (pageTops.isEmpty()) return false
+            if (tools.fingerDraw || pageTops.isEmpty()) return false
             val page = pageAtScreen(e.x, e.y)
             val px = toPageX(page, e.x)
             val py = toPageY(page, e.y)
+            // Ezber bandına parmakla dokun: aç/kapat (her araçta).
+            if (toggleTapeAt(page, px, py)) return true
+            // Kalem/fosforlu/silgideyken dokunulan bağlantıyı aç (yazı ve seçim araçları dokunmayı kendisi kullanır).
+            if (tools.tool == Tool.TEXT || tools.tool == Tool.LASSO) return false
             val link = links[page]?.firstOrNull { l -> l.rects.any { it.contains(px, py) } } ?: return false
             link.page?.let { goToPage(it) }
             link.uri?.let { onOpenLink?.invoke(it) }
@@ -1069,6 +1073,12 @@ class PdfDocumentView(context: Context) : View(context) {
         scroller.forceFinished(true)
         parent?.requestDisallowInterceptTouchEvent(true)
 
+        if (tools.tool == Tool.LASER) {
+            erasing = false
+            laserStart(x, y)
+            invalidate()
+            return
+        }
         if (erase) {
             eraserX = x
             eraserY = y
@@ -1079,16 +1089,32 @@ class PdfDocumentView(context: Context) : View(context) {
         } else {
             val t = tools
             val highlighter = t.tool == Tool.HIGHLIGHTER
+            val tape = t.tool == Tool.TAPE
             current = StrokeBuilder(
-                tool = if (highlighter) InkTool.HIGHLIGHTER else t.penType.inkTool,
-                color = if (highlighter) t.highlighterColor else t.penColor,
-                width = mmToPt(if (highlighter) t.highlighterWidthMm else t.penWidthMm),
-                pressureSensitive = fromStylus && !highlighter && t.penType.usesPressure,
+                tool = when {
+                    highlighter -> InkTool.HIGHLIGHTER
+                    tape -> InkTool.TAPE
+                    else -> t.penType.inkTool
+                },
+                color = when {
+                    highlighter -> t.highlighterColor
+                    tape -> t.tapeColor
+                    else -> t.penColor
+                },
+                width = mmToPt(
+                    when {
+                        highlighter -> t.highlighterWidthMm
+                        tape -> t.tapeWidthMm
+                        else -> t.penWidthMm
+                    },
+                ),
+                pressureSensitive = fromStylus && !highlighter && !tape && t.penType.usesPressure,
             ).also {
                 val p = if (it.pressureSensitive) t.applyPressureCurve(event.getPressure(idx)) else 1f
                 it.add(toPageX(inputPage, x), toPageY(inputPage, y), p)
             }
-            straightLine = highlighter && t.highlighterStraight
+            // Bant her zaman düz şerit.
+            straightLine = (highlighter && t.highlighterStraight) || tape
             snapped = false
             holdX = x
             holdY = y
@@ -1101,6 +1127,12 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun moveInput(event: MotionEvent, idx: Int) {
+        if (laser != null) {
+            for (h in 0 until event.historySize) laserAdd(event.getHistoricalX(idx, h), event.getHistoricalY(idx, h))
+            laserAdd(event.getX(idx), event.getY(idx))
+            invalidate()
+            return
+        }
         if (erasing) {
             for (h in 0 until event.historySize) {
                 eraseStep(event.getHistoricalX(idx, h), event.getHistoricalY(idx, h))
@@ -1249,8 +1281,8 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private fun eraseAlong(ax: Float, ay: Float, bx: Float, by: Float) {
         val page = pageAtScreen(bx, by)
+        if (ink.content(page).isEmpty) return
         val strokes = ink.strokes(page)
-        if (strokes.isEmpty()) return
         val r = tools.eraserSizeDp * density / pageScale(page)
         val x0 = toPageX(page, ax)
         val y0 = toPageY(page, ay)
@@ -1259,14 +1291,39 @@ class PdfDocumentView(context: Context) : View(context) {
         val result = when (tools.eraserMode) {
             EraserMode.STROKE -> Eraser.eraseStrokes(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
             EraserMode.PRECISE -> Eraser.erasePrecise(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
-        } ?: return
+        }
         val before = ink.content(page)
+        // İstenirse yazı kutuları ve resimler de (silginin değdiği) silinir.
+        var texts = before.texts
+        var images = before.images
+        if (tools.eraserObjects && tools.eraserMode == EraserMode.STROKE) {
+            val hit = RectF()
+            texts = texts.filterNot { t ->
+                TextBoxes.bounds(t, hit).inset(-r, -r)
+                hit.contains(x1, y1)
+            }
+            images = images.filterNot { im -> RectF(im.x - r, im.y - r, im.x + im.width + r, im.y + im.height + r).contains(x1, y1) }
+        }
+        if (result == null && texts.size == before.texts.size && images.size == before.images.size) return
         gestureBefore.getOrPut(page) { before }
-        ink.set(page, before.copy(strokes = result))
+        ink.set(page, before.copy(strokes = result ?: before.strokes, texts = texts, images = images))
     }
 
     private fun endInput() {
-        current?.let { b -> ink.addStroke(inputPage, b.build()) }
+        if (laser != null) {
+            laserEnd()
+            resetInput()
+            return
+        }
+        val b = current
+        if (b != null && b.tool == InkTool.TAPE &&
+            kotlin.math.hypot(b.lastX - b.points[0], b.lastY - b.points[1]) < TAPE_TAP_PT
+        ) {
+            // Bant aracıyla kısa dokunuş: yeni bant değil, alttaki bandı aç/kapat.
+            toggleTapeAt(inputPage, b.points[0], b.points[1])
+            current = null
+        }
+        current?.let { s -> ink.addStroke(inputPage, s.build()) }
         val wasFront = useFront
         recordGesture()
         resetInput()
@@ -1281,6 +1338,7 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun cancelInput() {
+        if (laser != null) laserEnd()
         if (useFront) frontInk?.clear()
         recordGesture()
         resetInput()
@@ -1390,6 +1448,8 @@ class PdfDocumentView(context: Context) : View(context) {
             fontSize = size,
             color = tools.textColor,
             text = "",
+            bold = tools.textBold,
+            background = tools.textBackground,
         )
         onTextBoxRequest?.invoke(page, box, true)
     }
@@ -1707,6 +1767,104 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private val imagePlaceholderPaint = Paint().apply { color = Color.argb(40, 120, 120, 120) }
 
+    // ---- Ezber bandı ----
+
+    /** Açılmış (altı görünen) bantlar. Kaydedilmez: belge her açıldığında bantlar kapalı gelir. */
+    private val revealedTapes = HashSet<Stroke>()
+
+    private fun drawStroke(canvas: Canvas, s: Stroke) {
+        when (s.tool) {
+            InkTool.HIGHLIGHTER -> {}
+            InkTool.TAPE -> strokeRenderer.drawTape(canvas, s, s in revealedTapes)
+            else -> strokeRenderer.draw(canvas, s)
+        }
+    }
+
+    /** Noktadaki bandı aç/kapat; bant yoksa false. */
+    private fun toggleTapeAt(page: Int, px: Float, py: Float): Boolean {
+        val tape = ink.strokes(page).lastOrNull { s ->
+            s.tool == InkTool.TAPE && s.pointCount >= 1 && run {
+                val p = s.points
+                val n = s.pointCount
+                if (n == 1) kotlin.math.hypot(px - p[0], py - p[1]) <= s.width / 2
+                else (0 until n - 1).any { i ->
+                    Eraser.distPointSeg(px, py, p[i * 3], p[i * 3 + 1], p[i * 3 + 3], p[i * 3 + 4]) <= s.width / 2
+                }
+            }
+        } ?: return false
+        if (!revealedTapes.remove(tape)) revealedTapes += tape
+        pageChanged(page)
+        return true
+    }
+
+    /** Bütün bantları aç ya da kapat. */
+    fun setAllTapes(reveal: Boolean) {
+        revealedTapes.clear()
+        if (reveal) ink.snapshot().values.forEach { c -> c.strokes.filterTo(revealedTapes) { it.tool == InkTool.TAPE } }
+        discardInkNodes()
+        invalidate()
+    }
+
+    // ---- Lazer kalem: kaydedilmez, birkaç saniyede kaybolur ----
+
+    private class LaserTrail(var points: FloatArray, var count: Int, var endedAt: Long)
+
+    private var laser: LaserTrail? = null
+    private val laserTrails = ArrayList<LaserTrail>()
+    private val laserPath = Path()
+    private val laserGlow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        strokeWidth = 12f * density
+    }
+    private val laserCore = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        strokeWidth = 3.5f * density
+    }
+
+    private fun laserStart(x: Float, y: Float) {
+        val t = LaserTrail(FloatArray(256), 0, 0L)
+        laser = t
+        laserTrails += t
+        laserAdd(x, y)
+    }
+
+    private fun laserAdd(x: Float, y: Float) {
+        val t = laser ?: return
+        if (t.count * 2 + 2 > t.points.size) t.points = t.points.copyOf(t.points.size * 2)
+        t.points[t.count * 2] = x
+        t.points[t.count * 2 + 1] = y
+        t.count++
+    }
+
+    private fun laserEnd() {
+        laser?.endedAt = SystemClock.uptimeMillis()
+        laser = null
+        invalidate()
+    }
+
+    private fun drawLaser(canvas: Canvas) {
+        if (laserTrails.isEmpty()) return
+        val now = SystemClock.uptimeMillis()
+        laserTrails.removeAll { it.endedAt > 0 && now - it.endedAt > LASER_FADE_MS }
+        for (t in laserTrails) {
+            if (t.count < 1) continue
+            val alpha = if (t.endedAt == 0L) 1f else 1f - (now - t.endedAt).toFloat() / LASER_FADE_MS
+            laserPath.rewind()
+            laserPath.moveTo(t.points[0], t.points[1])
+            if (t.count == 1) laserPath.lineTo(t.points[0] + 0.1f, t.points[1])
+            for (i in 1 until t.count) laserPath.lineTo(t.points[i * 2], t.points[i * 2 + 1])
+            laserGlow.color = Color.argb((alpha * 90).toInt(), 255, 40, 40)
+            laserCore.color = Color.argb((alpha * 255).toInt(), 255, 70, 60)
+            canvas.drawPath(laserPath, laserGlow)
+            canvas.drawPath(laserPath, laserCore)
+        }
+        if (laserTrails.any { it.endedAt > 0 }) postInvalidateOnAnimation()
+    }
+
     // ---- İki parmakla dokununca geri al ----
 
     private fun trackTwoFingerTap(event: MotionEvent) {
@@ -1814,6 +1972,8 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val PREDICTION_MS = 16L
         private const val MIN_POINT_DISTANCE_PX = 0.75f
         private const val MULTI_TAP_MS = 350L
+        private const val TAPE_TAP_PT = 4f
+        private const val LASER_FADE_MS = 1200L
         private const val HOLD_MS = 550L
         private const val PINCH_PAD_DP = 24f
         private const val HANDLE_DP = 5f

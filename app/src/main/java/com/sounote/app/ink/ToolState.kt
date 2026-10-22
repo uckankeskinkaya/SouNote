@@ -5,7 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.pow
 
-enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO }
+enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER }
 
 /** Kalem aracının türü: hangi çizgi türüyle kaydedileceği ve basınca tepki verip vermediği. */
 enum class PenType(
@@ -51,11 +51,18 @@ data class ToolState(
     /** Silgi yarıçapı, ekranda dp; yakınlaştırmadan bağımsız aynı boyutta görünür. */
     val eraserSizeDp: Float = 14f,
     val eraserHighlighterOnly: Boolean = false,
+    /** Çizgi silgisi yazı kutularını ve resimleri de silsin. */
+    val eraserObjects: Boolean = false,
+    /** Ezber bandı rengi ve kalınlığı (mm). */
+    val tapeColor: Int = TAPE_COLORS[0],
+    val tapeWidthMm: Float = 6f,
     /** Açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır. */
     val fingerDraw: Boolean = false,
     /** Yeni metin kutularının yazı boyutu (pt) ve rengi. */
     val textSizePt: Float = 14f,
     val textColor: Int = PEN_COLORS[0],
+    val textBold: Boolean = false,
+    val textBackground: Int = 0,
     val favorites: List<FavoritePen> = emptyList(),
     /** Renk seçiciden seçilmiş son renkler (en yenisi başta). */
     val customColors: List<Int> = emptyList(),
@@ -97,6 +104,11 @@ data class ToolState(
             .putString("eraserMode", eraserMode.name)
             .putFloat("eraserSizeDp", eraserSizeDp)
             .putBoolean("eraserHighlighterOnly", eraserHighlighterOnly)
+            .putBoolean("eraserObjects", eraserObjects)
+            .putInt("tapeColor", tapeColor)
+            .putFloat("tapeWidthMm", tapeWidthMm)
+            .putBoolean("textBold", textBold)
+            .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
             .putFloat("textSizePt", textSizePt)
             .putInt("textColor", textColor)
@@ -128,6 +140,24 @@ data class ToolState(
             0xFFE8710A.toInt(), // turuncu
             0xFF6E6E73.toInt(), // gri
         )
+        /** Ezber bandı: altındaki yazıyı tamamen kapatacak kadar koyu, opak renkler. */
+        val TAPE_COLORS = listOf(
+            0xFF7FA7D9.toInt(), // mavi
+            0xFF8CC27A.toInt(), // yeşil
+            0xFFEE97B5.toInt(), // pembe
+            0xFFF2C14E.toInt(), // sarı
+            0xFFA9AEB8.toInt(), // gri
+        )
+
+        /** Yazı kutusu arka planları (yapışkan not); 0 = yok. */
+        val NOTE_BACKGROUNDS = listOf(
+            0,
+            0xFFFFF3A6.toInt(), // sarı
+            0xFFCDE7FF.toInt(), // mavi
+            0xFFD6F2C8.toInt(), // yeşil
+            0xFFFFD6E5.toInt(), // pembe
+        )
+
         val HIGHLIGHTER_COLORS = listOf(
             0xFFFFE94D.toInt(), // sarı
             0xFFA6E37A.toInt(), // yeşil
@@ -152,6 +182,11 @@ data class ToolState(
                 eraserMode = enumOr(prefs.getString("eraserMode", null), d.eraserMode),
                 eraserSizeDp = prefs.getFloat("eraserSizeDp", d.eraserSizeDp),
                 eraserHighlighterOnly = prefs.getBoolean("eraserHighlighterOnly", d.eraserHighlighterOnly),
+                eraserObjects = prefs.getBoolean("eraserObjects", d.eraserObjects),
+                tapeColor = prefs.getInt("tapeColor", d.tapeColor),
+                tapeWidthMm = prefs.getFloat("tapeWidthMm", d.tapeWidthMm),
+                textBold = prefs.getBoolean("textBold", d.textBold),
+                textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),
                 textColor = prefs.getInt("textColor", d.textColor),

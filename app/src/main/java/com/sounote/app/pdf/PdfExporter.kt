@@ -113,7 +113,8 @@ object PdfExporter {
                 cs.restoreGraphicsState()
             }
             content.texts.forEach { drawText(cs, it) }
-            content.strokes.filter { it.tool != InkTool.HIGHLIGHTER }.forEach { stroke ->
+            // Ezber bantları dışa aktarılmaz: çalışma aracı, paylaşılan PDF'te yazıyı kapatmasın.
+            content.strokes.filter { it.tool != InkTool.HIGHLIGHTER && it.tool != InkTool.TAPE }.forEach { stroke ->
                 if (stroke.tool == InkTool.PENCIL) {
                     cs.saveGraphicsState()
                     cs.setGraphicsStateParameters(pencilState)
@@ -227,6 +228,13 @@ object PdfExporter {
             path.addPath(line)
         }
         if (path.isEmpty) return
+        if (box.background != 0) {
+            val r = TextBoxes.bounds(box, android.graphics.RectF())
+            val pad = TextBoxes.backgroundPad(box)
+            setColor(cs, box.background, stroking = false)
+            cs.addRect(r.left - pad, r.top - pad, r.width() + 2 * pad, r.height() + 2 * pad)
+            cs.fill()
+        }
         setColor(cs, box.color, stroking = false)
         // Path.approximate: [oran, x, y] üçlüleri; aynı oran tekrar ederse yeni kontur başlar.
         val a = path.approximate(0.02f)

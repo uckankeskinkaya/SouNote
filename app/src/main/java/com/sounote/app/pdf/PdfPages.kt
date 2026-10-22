@@ -15,6 +15,15 @@ enum class PageTemplate(val label: String) {
     LINED("Çizgili"),
     GRID("Kareli"),
     DOTTED("Noktalı"),
+    /** Cornell not düzeni: başlık, solda anahtar kelime sütunu, altta özet alanı. */
+    CORNELL("Cornell"),
+}
+
+/** Yeni defter kâğıt boyutu (dikey, nokta cinsinden). */
+enum class PaperSize(val label: String, val width: Float, val height: Float) {
+    A4("A4", 595f, 842f),
+    A5("A5", 420f, 595f),
+    LETTER("Letter", 612f, 792f),
 }
 
 /**
@@ -49,12 +58,16 @@ object PdfPages {
         if (to >= doc.numberOfPages) doc.pages.add(page) else doc.pages.insertBefore(page, doc.getPage(to))
     }
 
-    /** Şablonlu sayfalardan oluşan yeni A4 defter. */
-    fun createNotebook(context: Context, file: File, template: PageTemplate, pages: Int) {
+    /** Şablonlu sayfalardan oluşan yeni defter. */
+    fun createNotebook(
+        context: Context, file: File, template: PageTemplate, pages: Int,
+        size: PaperSize = PaperSize.A4, landscape: Boolean = false,
+    ) {
         PDFBoxResourceLoader.init(context.applicationContext)
+        val rect = if (landscape) PDRectangle(size.height, size.width) else PDRectangle(size.width, size.height)
         PDDocument().use { doc ->
             repeat(pages) {
-                val page = PDPage(PDRectangle.A4)
+                val page = PDPage(rect)
                 doc.addPage(page)
                 drawTemplate(doc, page, template)
             }
@@ -136,6 +149,31 @@ object PdfPages {
                         y -= gap
                     }
                     cs.fill()
+                }
+                PageTemplate.CORNELL -> {
+                    val top = h - 28f * MM // başlık alanının altı
+                    val summary = h * 0.22f // özet alanının üstü
+                    val cue = w * 0.3f // anahtar kelime sütunu
+                    // Not alanında satırlar
+                    cs.setStrokingColor(0.78f, 0.84f, 0.93f)
+                    cs.setLineWidth(0.5f)
+                    var y = top - 8f * MM
+                    while (y > summary + 4f) {
+                        cs.moveTo(cue, y)
+                        cs.lineTo(w, y)
+                        y -= 8f * MM
+                    }
+                    cs.stroke()
+                    // Bölüm çizgileri
+                    cs.setStrokingColor(0.45f, 0.55f, 0.72f)
+                    cs.setLineWidth(1.2f)
+                    cs.moveTo(0f, top)
+                    cs.lineTo(w, top)
+                    cs.moveTo(cue, top)
+                    cs.lineTo(cue, summary)
+                    cs.moveTo(0f, summary)
+                    cs.lineTo(w, summary)
+                    cs.stroke()
                 }
                 PageTemplate.BLANK -> {}
             }

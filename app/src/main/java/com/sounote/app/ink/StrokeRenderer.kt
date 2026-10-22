@@ -34,6 +34,15 @@ class StrokeRenderer {
     fun draw(canvas: Canvas, stroke: Stroke) =
         draw(canvas, stroke.tool, stroke.color, stroke.width, stroke.pressureSensitive, stroke.points, stroke.pointCount)
 
+    /** Ezber bandı: kapalıyken opak, açıkken (altı okunsun diye) çok soluk. */
+    fun drawTape(canvas: Canvas, stroke: Stroke, revealed: Boolean) {
+        tapeAlpha = if (revealed) TAPE_REVEALED_ALPHA else 1f
+        draw(canvas, stroke)
+        tapeAlpha = 1f
+    }
+
+    private var tapeAlpha = 1f
+
     fun draw(
         canvas: Canvas,
         tool: InkTool,
@@ -47,6 +56,9 @@ class StrokeRenderer {
         paint.color = color
         paint.blendMode = if (tool == InkTool.HIGHLIGHTER) BlendMode.MULTIPLY else null
         if (tool == InkTool.PENCIL) paint.alpha = (PENCIL_ALPHA * 255).roundToInt()
+        if (tool == InkTool.TAPE) paint.alpha = (tapeAlpha * 255).roundToInt()
+        // Bant düz kesik uçlu, diğerleri yuvarlak uçlu.
+        paint.strokeCap = if (tool == InkTool.TAPE) Paint.Cap.BUTT else Paint.Cap.ROUND
         paint.pathEffect = if (tool == InkTool.DASHED) {
             val (on, off) = dashIntervals(width)
             DashPathEffect(floatArrayOf(on, off), 0f)
@@ -102,6 +114,7 @@ class StrokeRenderer {
         const val LEVELS = 12
         const val MAX_PRESSURE_FACTOR = 1.6f
         const val PENCIL_ALPHA = 0.78f
+        const val TAPE_REVEALED_ALPHA = 0.16f
 
         /** Kaligrafi ucunun açısı: bu yönde giden çizgi en ince olur (sağ üste doğru). */
         private val NIB_ANGLE = (-PI / 4).toFloat()

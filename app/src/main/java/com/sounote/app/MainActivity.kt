@@ -1,58 +1,71 @@
 package com.sounote.app
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.key
+import androidx.core.content.IntentCompat
+import com.sounote.app.ui.LibraryScreen
+import com.sounote.app.ui.SouNoteTheme
+import com.sounote.app.ui.ViewerScreen
 
 class MainActivity : ComponentActivity() {
+
+    private val vm: LibraryViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SouNoteTheme {
-                WelcomeScreen()
+                SouNoteApp(vm)
             }
         }
+        if (savedInstanceState == null) handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        vm.refresh()
+    }
+
+    /** Dosya yöneticisinden "SouNote ile aç" / "Paylaş" ile gelen PDF'i içe aktarıp aç. */
+    private fun handleIntent(intent: Intent?) {
+        val uri: Uri? = when (intent?.action) {
+            Intent.ACTION_VIEW -> intent.data
+            Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+            else -> null
+        }
+        if (uri != null) vm.importPdfs(listOf(uri), openAfter = true)
     }
 }
 
 @Composable
-fun SouNoteTheme(content: @Composable () -> Unit) {
-    val colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-    MaterialTheme(colorScheme = colors, content = content)
-}
-
-@Composable
-fun WelcomeScreen() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displayMedium)
-            Spacer(Modifier.height(12.dp))
-            Text(
-                stringResource(R.string.welcome_subtitle, BuildConfig.VERSION_NAME),
-                style = MaterialTheme.typography.bodyLarge,
+private fun SouNoteApp(vm: LibraryViewModel) {
+    val doc = vm.openDoc
+    if (doc != null) {
+        BackHandler { vm.closeDoc() }
+        key(doc.id) {
+            ViewerScreen(
+                doc = doc,
+                initialPage = vm.lastPage(doc),
+                onPageChanged = { vm.saveLastPage(doc, it) },
+                onBack = vm::closeDoc,
             )
         }
+    } else {
+        BackHandler(enabled = vm.path.isNotEmpty()) { vm.navigateUp() }
+        LibraryScreen(vm)
     }
 }

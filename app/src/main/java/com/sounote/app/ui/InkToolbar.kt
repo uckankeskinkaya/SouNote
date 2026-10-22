@@ -315,6 +315,20 @@ private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
                     }
                     Switch(checked = state.shapeAssist, onCheckedChange = { onChange(state.copy(shapeAssist = it)) })
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 16.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Düşük gecikme (deneysel)", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Çizgi kalemin ucunu daha yakından izler. Dolma, tükenmez, fırça ve kaligrafide çalışır. Sorun olursa kapat.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = state.lowLatency, onCheckedChange = { onChange(state.copy(lowLatency = it)) })
+                }
             }
         }
     }

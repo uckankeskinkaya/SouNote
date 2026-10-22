@@ -72,4 +72,5 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.pdfbox.android)
+    implementation(libs.androidx.graphics.core)
 }

@@ -91,6 +91,9 @@ class PdfRenderThread(
         fun onFailed(error: Throwable)
         fun onFormFields(page: Int, fields: List<FormField>) {}
         fun onFormEdited(page: Int, fields: List<FormField>) {}
+
+        /** Belgeyi kapatmayı gerektirmeyen hata (ör. form alanı yazılamadı). */
+        fun onOperationFailed(error: Throwable) {}
     }
 
     private val thread = HandlerThread("sounote-pdf").apply { start() }
@@ -123,7 +126,7 @@ class PdfRenderThread(
                 val hasForms = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && detectForms(renderer)
                 main.post { if (!closed) listener.onOpened(sizes, hasForms) }
             } catch (e: Throwable) {
-                Log.e(TAG, "PDF açılamadı", e)
+                com.sounote.app.ErrorLog.record("PDF açılamadı: $uri", e)
                 main.post { if (!closed) listener.onFailed(e) }
             }
         }
@@ -286,8 +289,8 @@ class PdfRenderThread(
                 writeTo(r, saveTo)
                 main.post { if (!closed) listener.onFormEdited(field.page, fields) }
             } catch (e: Exception) {
-                Log.e(TAG, "Form alanı değiştirilemedi", e)
-                main.post { if (!closed) listener.onFailed(e) }
+                com.sounote.app.ErrorLog.record("Form alanı değiştirilemedi", e)
+                main.post { if (!closed) listener.onOperationFailed(e) }
             }
         }
     }

@@ -1,17 +1,27 @@
 package com.sounote.app
 
+import android.app.KeyguardManager
 import android.content.Intent
+import android.hardware.biometrics.BiometricManager
+import android.hardware.biometrics.BiometricPrompt
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.CancellationSignal
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.key
 import androidx.core.content.IntentCompat
 import com.sounote.app.ui.LibraryScreen
+import com.sounote.app.ui.LockScreen
 import com.sounote.app.ui.SouNoteTheme
 import com.sounote.app.ui.ViewerScreen
 
@@ -35,10 +45,72 @@ class MainActivity : ComponentActivity() {
                 LibraryViewModel.ThemeMode.SYSTEM -> null
             }
             SouNoteTheme(dark) {
-                SouNoteApp(vm)
+                Box(Modifier.fillMaxSize()) {
+                    SouNoteApp(vm)
+                    // Kilit ekranı üstte durur; altındaki belge açık kalır, kilit açılınca kaldığı yerden devam.
+                    if (vm.locked) LockScreen(onUnlock = ::unlock)
+                }
             }
         }
         if (savedInstanceState == null) handleIntent(intent)
+    }
+
+    /** Biyometrik doğrulama sürerken (PIN ekranı başka etkinlik olarak açılabilir) arka plana geçiş sayılmaz. */
+    private var authenticating = false
+
+    private fun unlock() {
+        if (authenticating) return
+        val keyguard = getSystemService(KeyguardManager::class.java)
+        if (keyguard?.isDeviceSecure != true) {
+            vm.lockUnavailable()
+            return
+        }
+        val builder = BiometricPrompt.Builder(this)
+            .setTitle("SouNote kilitli")
+            .setSubtitle("Notlarını açmak için doğrula")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            builder.setAllowedAuthenticators(
+                BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            builder.setDeviceCredentialAllowed(true)
+        }
+        authenticating = true
+        runCatching {
+            builder.build().authenticate(
+                CancellationSignal(),
+                mainExecutor,
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
+                        authenticating = false
+                        vm.unlocked()
+                    }
+
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
+                        authenticating = false
+                    }
+                },
+            )
+        }.onFailure {
+            authenticating = false
+            ErrorLog.record("Kilit açılamadı", it)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (!authenticating) vm.onAppForeground()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!authenticating) vm.onAppBackground()
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && !vm.locked && vm.keyHandler?.invoke(event) == true) return true
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -48,6 +120,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Kilit açıkken "son uygulamalar" önizlemesinde notlar görünmesin.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) setRecentsScreenshotEnabled(!vm.appLock)
         vm.refresh()
         vm.studyResume()
     }

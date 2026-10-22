@@ -51,7 +51,7 @@ object SmartHighlighter {
             val left = max(line.minOf { it.left }, minX - h)
             val right = min(line.maxOf { it.right }, maxX + h)
             val cy = (top + bottom) / 2
-            Stroke(stroke.tool, stroke.color, h * 1.15f, false, floatArrayOf(left, cy, 1f, right, cy, 1f))
+            Stroke(stroke.tool, stroke.color, h * 1.15f, false, floatArrayOf(left, cy, 1f, right, cy, 1f), stroke.audioFile, stroke.audioMs)
         }
     }
 

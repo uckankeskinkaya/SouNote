@@ -88,7 +88,7 @@ object Eraser {
         if (n == 1) return if (inside(0)) emptyList() else null
 
         val pieces = ArrayList<StrokeBuilder>()
-        fun newPiece() = StrokeBuilder(s.tool, s.color, s.width, s.pressureSensitive)
+        fun newPiece() = StrokeBuilder(s.tool, s.color, s.width, s.pressureSensitive, s.audioFile, s.audioMs)
         // Kural: cur != null ⇔ şu anki nokta dairenin dışında.
         var cur: StrokeBuilder? = null
         if (!inside(0)) cur = newPiece().also { it.add(p[0], p[1], p[2]) }

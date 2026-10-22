@@ -57,5 +57,9 @@ PDF içindekiler (PDFBox outline, sayfa panelinde), sayfayı notlarıyla çoğal
 Eklendi (🧪, build-18+): bilgi kartları (lasso → Karta çevir, Leitner 1–5 kutu; ink/<belge>/cards.json + cards/), damga aracı (✓✗★…; yazı kutusu olarak),
 sağ kenarda sayfa kaydırıcı, gece okuma (renk ters çevirme), hızlı not + uygulama kısayolları (son açılanlar dinamik), başka PDF'ten sayfa ekle,
 şablonlar: milimetrik, müzik, izometrik.
+Eklendi (🧪, build-19+): sesle eşleşen notlar (kayıt sürerken çizilen çizgi Stroke.audioFile/audioMs, InkStore v5; dokununca kayıt o andan çalar),
+çöp kutusu (silinen belge library.json deletedAt, 30 gün sonra kalıcı silinir), şekil aracı (çizgi/ok/dikdörtgen/elips/üçgen; Tool.SHAPE, Shapes),
+yazdır (PrintManager, notlu PDF), uygulama kilidi (platform BiometricPrompt, açılışta + 60 sn arka plan sonrası; prefs appLock),
+defter kâğıt rengi (PaperColor; araya eklenen sayfa da aynı renk, prefs paper_<id>), klavye kısayolları (Ctrl+Z/Y/Shift+Z, PageUp/Down, Ctrl+F/P/S, Ctrl+Home/End).
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

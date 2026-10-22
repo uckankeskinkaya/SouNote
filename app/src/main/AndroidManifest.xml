@@ -3,6 +3,8 @@
 
     <!-- Ders ses kaydı (sadece kullanıcı kayıt düğmesine basınca) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Uygulama kilidi (parmak izi / yüz / PIN) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
     <application
         android:name=".SouNoteApp"

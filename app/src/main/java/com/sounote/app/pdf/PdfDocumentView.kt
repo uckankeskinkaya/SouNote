@@ -38,7 +38,9 @@ import com.sounote.app.ink.Selection
 import com.sounote.app.ink.Rotation
 import com.sounote.app.ink.Selections
 import com.sounote.app.ink.PageContent
+import com.sounote.app.ink.PenType
 import com.sounote.app.ink.ShapeRecognizer
+import com.sounote.app.ink.Shapes
 import com.sounote.app.ink.SmartHighlighter
 import com.sounote.app.ink.TextBox
 import com.sounote.app.ink.TextBoxes
@@ -124,6 +126,12 @@ class PdfDocumentView(context: Context) : View(context) {
 
     /** Düşük gecikmeli çizim katmanı (açıksa). */
     var frontInk: FrontInk? = null
+
+    /** Ders kaydı sürüyorsa: kayıt dosyası ve şu anki an (ms). Çizgiler kaydın o anına bağlanır. */
+    var recordingNow: (() -> Pair<String, Long>?)? = null
+
+    /** Kayda bağlı çizgiye parmakla dokunuldu: kaydı o andan çal. */
+    var onPlayAudio: ((file: String, ms: Long) -> Unit)? = null
 
     private val density = resources.displayMetrics.density
     private val pageGap = 12f * density
@@ -872,6 +880,11 @@ class PdfDocumentView(context: Context) : View(context) {
             val py = toPageY(page, e.y)
             // Ezber bandına parmakla dokun: aç/kapat (her araçta).
             if (toggleTapeAt(page, px, py)) return true
+            // Kayda bağlı çizgiye dokun: kaydı o andan çal.
+            audioStrokeAt(page, px, py)?.let { s ->
+                onPlayAudio?.invoke(s.audioFile!!, s.audioMs)
+                return true
+            }
             // Kalem/fosforlu/silgideyken dokunulan bağlantıyı aç (yazı ve seçim araçları dokunmayı kendisi kullanır).
             if (tools.tool == Tool.TEXT || tools.tool == Tool.LASSO) return false
             val link = links[page]?.firstOrNull { l -> l.rects.any { it.contains(px, py) } } ?: return false
@@ -1115,10 +1128,12 @@ class PdfDocumentView(context: Context) : View(context) {
             val t = tools
             val highlighter = t.tool == Tool.HIGHLIGHTER
             val tape = t.tool == Tool.TAPE
+            shapeMode = t.tool == Tool.SHAPE
             current = StrokeBuilder(
                 tool = when {
                     highlighter -> InkTool.HIGHLIGHTER
                     tape -> InkTool.TAPE
+                    shapeMode -> if (t.penType == PenType.DASHED) InkTool.DASHED else InkTool.PEN
                     else -> t.penType.inkTool
                 },
                 color = when {
@@ -1133,17 +1148,23 @@ class PdfDocumentView(context: Context) : View(context) {
                         else -> t.penWidthMm
                     },
                 ),
-                pressureSensitive = fromStylus && !highlighter && !tape && t.penType.usesPressure,
+                pressureSensitive = fromStylus && !highlighter && !tape && !shapeMode && t.penType.usesPressure,
             ).also {
                 val p = if (it.pressureSensitive) t.applyPressureCurve(event.getPressure(idx)) else 1f
                 it.add(toPageX(inputPage, x), toPageY(inputPage, y), p)
+                recordingNow?.invoke()?.let { (file, ms) ->
+                    it.audioFile = file
+                    it.audioMs = ms
+                }
             }
             // Bant her zaman düz şerit.
             straightLine = (highlighter && t.highlighterStraight) || tape
+            shapeStartX = current!!.points[0]
+            shapeStartY = current!!.points[1]
             snapped = false
             holdX = x
             holdY = y
-            useFront = fromStylus && !inverted && frontInk?.available == true && FrontInk.supports(current!!.tool)
+            useFront = fromStylus && !inverted && !shapeMode && frontInk?.available == true && FrontInk.supports(current!!.tool)
             frontDrawn = 0
             frontGeneration++
             if (useFront) pushFront() else predictor?.record(event)
@@ -1167,6 +1188,16 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
         val b = current ?: return
+        if (shapeMode) {
+            // Şekil aracı: başlangıçtan parmağın/kalemin olduğu yere şekil
+            val x0 = shapeStartX
+            val y0 = shapeStartY
+            val pts = Shapes.points(tools.shapeKind, x0, y0, toPageX(inputPage, event.getX(idx)), toPageY(inputPage, event.getY(idx)), b.width)
+            b.replaceAll(pts, pts.size / 3)
+            predictedCount = 0
+            invalidate()
+            return
+        }
         // Şekle dönüştüyse kalem kalkana kadar şekil sabit kalır.
         if (snapped) return
         for (h in 0 until event.historySize) {
@@ -1220,6 +1251,9 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private var snapped = false
     private var straightLine = false
+    private var shapeMode = false
+    private var shapeStartX = 0f
+    private var shapeStartY = 0f
     private var holdX = 0f
     private var holdY = 0f
 
@@ -1348,6 +1382,7 @@ class PdfDocumentView(context: Context) : View(context) {
             toggleTapeAt(inputPage, b.points[0], b.points[1])
             current = null
         }
+        if (shapeMode && current?.let { it.count < 2 } == true) current = null
         current?.let { s ->
             val stroke = s.build()
             // Akıllı fosforlu: altındaki metin satırlarına oturt (şekle dönmediyse).
@@ -1899,6 +1934,21 @@ class PdfDocumentView(context: Context) : View(context) {
         }
     }
 
+    /** Dokunulan yerdeki, kayda bağlı en üstteki çizgi. */
+    private fun audioStrokeAt(page: Int, px: Float, py: Float): Stroke? {
+        if (onPlayAudio == null) return null
+        val reach = 8f * density / pageScale(page)
+        return ink.strokes(page).lastOrNull { s ->
+            s.audioFile != null && s.tool != InkTool.TAPE && run {
+                val p = s.points
+                val n = s.pointCount
+                val r = reach + s.width / 2
+                if (n == 1) kotlin.math.hypot(px - p[0], py - p[1]) <= r
+                else (0 until n - 1).any { i -> Eraser.distPointSeg(px, py, p[i * 3], p[i * 3 + 1], p[i * 3 + 3], p[i * 3 + 4]) <= r }
+            }
+        }
+    }
+
     /** Noktadaki bandı aç/kapat; bant yoksa false. */
     private fun toggleTapeAt(page: Int, px: Float, py: Float): Boolean {
         val tape = ink.strokes(page).lastOrNull { s ->
@@ -2030,6 +2080,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private fun resetInput() {
         useFront = false
+        shapeMode = false
         removeCallbacks(holdCheck)
         snapped = false
         straightLine = false

@@ -126,6 +126,12 @@ fun InkToolbar(
                     onChange(state.copy(tool = Tool.LASER))
                 }
                 FilterChip(
+                    selected = state.tool == Tool.SHAPE,
+                    onClick = { onChange(state.copy(tool = Tool.SHAPE)) },
+                    label = { Text("Şekil") },
+                    leadingIcon = { Text(state.shapeKind.symbol, fontWeight = FontWeight.Bold) },
+                )
+                FilterChip(
                     selected = state.tool == Tool.STAMP,
                     onClick = { onChange(state.copy(tool = Tool.STAMP)) },
                     label = { Text("Damga") },
@@ -155,6 +161,7 @@ fun InkToolbar(
                     Tool.LASSO -> SelectionOptions(state, selection) { picker = Tool.LASSO }
                     Tool.TAPE -> TapeOptions(state, onChange, onRevealTapes) { picker = Tool.TAPE }
                     Tool.STAMP -> StampOptions(state, onChange) { picker = Tool.STAMP }
+                    Tool.SHAPE -> ShapeOptions(state, onChange) { picker = Tool.PEN }
                     Tool.LASER -> Text(
                         "Sunum ve anlatım için: çizgi birkaç saniyede kaybolur, kaydedilmez.",
                         style = MaterialTheme.typography.bodySmall,
@@ -418,6 +425,25 @@ private fun EraserOptions(state: ToolState, onChange: (ToolState) -> Unit) {
             label = { Text("Yazı ve resim de") },
         )
     }
+}
+
+@Composable
+private fun ShapeOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
+    com.sounote.app.ink.ShapeKind.entries.forEach { k ->
+        FilterChip(
+            selected = state.shapeKind == k,
+            onClick = { onChange(state.copy(shapeKind = k)) },
+            label = { Text(k.label) },
+            leadingIcon = { Text(k.symbol, fontWeight = FontWeight.Bold) },
+        )
+    }
+    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.copy(penColor = it)) }, onCustomColor)
+    WidthControl(state.penWidthMm, min = 0.1f, max = 5f, step = 0.1f) { onChange(state.copy(penWidthMm = it)) }
+    Text(
+        "Sürükle: şekil çizilir · renk ve kalınlık kalemle aynı · kesik çizgi kalemi seçiliyse kesik çizer",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

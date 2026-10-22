@@ -18,7 +18,14 @@ class Stroke(
     val width: Float,
     val pressureSensitive: Boolean,
     val points: FloatArray,
+    /** Ders kaydı sürerken çizildiyse: kayıt dosyası ve çizginin kayıttaki anı (ms). */
+    val audioFile: String? = null,
+    val audioMs: Long = 0L,
 ) {
+    /** Aynı çizgi, yeni noktalar/renk/kalınlıkla (kayıt bağlantısı korunur). */
+    fun copy(color: Int = this.color, width: Float = this.width, points: FloatArray = this.points) =
+        Stroke(tool, color, width, pressureSensitive, points, audioFile, audioMs)
+
     val pointCount get() = points.size / 3
 
     /** Çizginin kapladığı alan (kalınlık dahil). */
@@ -46,6 +53,8 @@ class StrokeBuilder(
     val color: Int,
     val width: Float,
     val pressureSensitive: Boolean,
+    var audioFile: String? = null,
+    var audioMs: Long = 0L,
 ) {
     var points = FloatArray(3 * 256)
         private set
@@ -78,7 +87,7 @@ class StrokeBuilder(
         count = n
     }
 
-    fun build() = Stroke(tool, color, width, pressureSensitive, points.copyOf(count * 3))
+    fun build() = Stroke(tool, color, width, pressureSensitive, points.copyOf(count * 3), audioFile, audioMs)
 }
 
 /**

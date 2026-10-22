@@ -97,6 +97,7 @@ import com.sounote.app.R
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderRef
 import com.sounote.app.pdf.PageTemplate
+import com.sounote.app.pdf.PaperColor
 import com.sounote.app.pdf.PaperSize
 import com.sounote.app.pdf.Thumbnails
 import com.sounote.app.ink.InkStore
@@ -137,6 +138,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var deletingOrphan by remember { mutableStateOf<DocRef?>(null) }
     var taggingDoc by remember { mutableStateOf<DocRef?>(null) }
     var statsDialog by remember { mutableStateOf(false) }
+    var trashDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var crash by remember { mutableStateOf(ErrorLog.pendingCrash()) }
 
@@ -245,6 +247,21 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 onClick = {
                                     more = false
                                     restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Çöp kutusu (${vm.trash.size})") },
+                                onClick = {
+                                    more = false
+                                    trashDialog = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Uygulama kilidi") },
+                                trailingIcon = { androidx.compose.material3.Switch(checked = vm.appLock, onCheckedChange = null) },
+                                onClick = {
+                                    more = false
+                                    vm.updateAppLock(!vm.appLock)
                                 },
                             )
                             DropdownMenuItem(
@@ -467,16 +484,16 @@ fun LibraryScreen(vm: LibraryViewModel) {
         AlertDialog(
             onDismissRequest = { deleting = null },
             title = { Text("Silinsin mi?") },
-            text = { Text("\"${doc.title}\" ve üzerindeki notlar kalıcı olarak silinecek.") },
+            text = { Text("\"${doc.title}\" çöp kutusuna taşınacak. ${LibraryViewModel.TRASH_DAYS} gün içinde geri alabilirsin.") },
             confirmButton = { TextButton(onClick = { vm.delete(doc); deleting = null }) { Text("Sil") } },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text("Vazgeç") } },
         )
     }
     if (newNotebook) {
         NotebookDialog(
-            onCreate = { name, template, size, landscape ->
+            onCreate = { name, template, size, landscape, paper ->
                 newNotebook = false
-                vm.createNotebook(name, template, size, landscape)
+                vm.createNotebook(name, template, size, landscape, paper)
             },
             onDismiss = { newNotebook = false },
         )
@@ -544,6 +561,55 @@ fun LibraryScreen(vm: LibraryViewModel) {
             },
             onDismiss = { taggingDoc = null },
         )
+    }
+    if (trashDialog) {
+        var confirmEmpty by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { trashDialog = false },
+            title = { Text("Çöp kutusu") },
+            text = {
+                if (vm.trash.isEmpty()) {
+                    Text("Çöp kutusu boş.")
+                } else {
+                    LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                        items(vm.trash, key = { it.id }) { doc ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(doc.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(
+                                        "${vm.trashDaysLeft(doc)} gün sonra kalıcı silinecek",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                TextButton(onClick = { vm.restoreFromTrash(doc) }) { Text("Geri al") }
+                                TextButton(onClick = { vm.purge(doc) }) { Text("Sil", color = MaterialTheme.colorScheme.error) }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { trashDialog = false }) { Text("Kapat") } },
+            dismissButton = {
+                if (vm.trash.isNotEmpty()) {
+                    TextButton(onClick = { confirmEmpty = true }) { Text("Çöpü boşalt", color = MaterialTheme.colorScheme.error) }
+                }
+            },
+        )
+        if (confirmEmpty) {
+            AlertDialog(
+                onDismissRequest = { confirmEmpty = false },
+                title = { Text("Çöp kutusu boşaltılsın mı?") },
+                text = { Text("${vm.trash.size} belge notları ve kayıtlarıyla birlikte kalıcı olarak silinecek.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        vm.emptyTrash()
+                        confirmEmpty = false
+                    }) { Text("Boşalt", color = MaterialTheme.colorScheme.error) }
+                },
+                dismissButton = { TextButton(onClick = { confirmEmpty = false }) { Text("Vazgeç") } },
+            )
+        }
     }
     if (statsDialog) {
         StatsDialog(vm) { statsDialog = false }
@@ -897,8 +963,9 @@ private fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
 
 /** Yeni boş defter: ad + sayfa şablonu. */
 @Composable
-private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean) -> Unit, onDismiss: () -> Unit) {
+private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
+    var paper by remember { mutableStateOf(PaperColor.WHITE) }
     var template by remember { mutableStateOf(PageTemplate.LINED) }
     var size by remember { mutableStateOf(PaperSize.A4) }
     var landscape by remember { mutableStateOf(false) }
@@ -928,6 +995,22 @@ private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean) 
                     FilterChip(selected = !landscape, onClick = { landscape = false }, label = { Text("Dikey") })
                     FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
                 }
+                Text("Kâğıt rengi", style = MaterialTheme.typography.labelLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    PaperColor.entries.forEach { c ->
+                        FilterChip(
+                            selected = paper == c,
+                            onClick = { paper = c },
+                            label = { Text(c.label) },
+                            leadingIcon = {
+                                Box(
+                                    Modifier.size(16.dp).clip(CircleShape).background(Color(c.argb))
+                                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                                )
+                            },
+                        )
+                    }
+                }
                 Text(
                     "Defterde sayfa paneli ya da ⋮ menüsünden yeni sayfa eklersin.",
                     style = MaterialTheme.typography.bodySmall,
@@ -935,7 +1018,7 @@ private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean) 
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape) }) { Text("Oluştur") } },
+        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape, paper) }) { Text("Oluştur") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
 }

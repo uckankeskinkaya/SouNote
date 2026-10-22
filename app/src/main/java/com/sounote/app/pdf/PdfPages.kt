@@ -32,6 +32,18 @@ enum class PaperSize(val label: String, val width: Float, val height: Float) {
     LETTER("Letter", 612f, 792f),
 }
 
+/** Yeni defter kâğıt rengi (0–1 RGB). */
+enum class PaperColor(val label: String, val r: Float, val g: Float, val b: Float) {
+    WHITE("Beyaz", 1f, 1f, 1f),
+    CREAM("Krem", 0.99f, 0.96f, 0.88f),
+    BLUE("Mavi", 0.90f, 0.95f, 1f),
+    GREEN("Yeşil", 0.91f, 0.97f, 0.91f),
+    GRAY("Gri", 0.93f, 0.93f, 0.93f),
+    ;
+
+    val argb get() = (0xFF shl 24) or ((r * 255).toInt() shl 16) or ((g * 255).toInt() shl 8) or (b * 255).toInt()
+}
+
 /**
  * PDF'in sayfa yapısını değiştirir (PDFBox): boş sayfa ekleme, silme, taşıma, yeni defter.
  * Dosya önce geçici dosyaya yazılır, sonra eskisinin yerine konur.
@@ -40,7 +52,7 @@ object PdfPages {
     private const val MM = 72f / 25.4f
 
     /** [at] konumuna (ondan önceye) şablonlu boş sayfa ekler; boyut komşu sayfayla aynı. */
-    fun insertBlank(context: Context, file: File, at: Int, template: PageTemplate) = edit(context, file) { doc ->
+    fun insertBlank(context: Context, file: File, at: Int, template: PageTemplate, paper: PaperColor = PaperColor.WHITE) = edit(context, file) { doc ->
         val count = doc.numberOfPages
         val neighbor = doc.getPage((if (at > 0) at - 1 else 0).coerceAtMost(count - 1))
         val box = neighbor.cropBox
@@ -49,7 +61,7 @@ object PdfPages {
         val size = if (rotated) PDRectangle(box.height, box.width) else PDRectangle(box.width, box.height)
         val page = PDPage(size)
         if (at >= count) doc.pages.add(page) else doc.pages.insertBefore(page, doc.getPage(at))
-        drawTemplate(doc, page, template)
+        drawTemplate(doc, page, template, paper)
     }
 
     fun delete(context: Context, file: File, at: Int) = edit(context, file) { doc ->
@@ -121,7 +133,7 @@ object PdfPages {
     /** Şablonlu sayfalardan oluşan yeni defter. */
     fun createNotebook(
         context: Context, file: File, template: PageTemplate, pages: Int,
-        size: PaperSize = PaperSize.A4, landscape: Boolean = false,
+        size: PaperSize = PaperSize.A4, landscape: Boolean = false, paper: PaperColor = PaperColor.WHITE,
     ) {
         PDFBoxResourceLoader.init(context.applicationContext)
         val rect = if (landscape) PDRectangle(size.height, size.width) else PDRectangle(size.width, size.height)
@@ -129,7 +141,7 @@ object PdfPages {
             repeat(pages) {
                 val page = PDPage(rect)
                 doc.addPage(page)
-                drawTemplate(doc, page, template)
+                drawTemplate(doc, page, template, paper)
             }
             save(doc, file)
         }
@@ -154,11 +166,16 @@ object PdfPages {
     }
 
     /** Şablon çizgileri (PDF koordinatı: sol alt köşe, y yukarı). */
-    private fun drawTemplate(doc: PDDocument, page: PDPage, template: PageTemplate) {
-        if (template == PageTemplate.BLANK) return
+    private fun drawTemplate(doc: PDDocument, page: PDPage, template: PageTemplate, paper: PaperColor) {
+        if (template == PageTemplate.BLANK && paper == PaperColor.WHITE) return
         val w = page.mediaBox.width
         val h = page.mediaBox.height
         PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true).use { cs ->
+            if (paper != PaperColor.WHITE) {
+                cs.setNonStrokingColor(paper.r, paper.g, paper.b)
+                cs.addRect(0f, 0f, w, h)
+                cs.fill()
+            }
             when (template) {
                 PageTemplate.LINED -> {
                     val gap = 8f * MM

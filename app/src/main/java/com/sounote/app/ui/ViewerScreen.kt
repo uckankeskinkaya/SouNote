@@ -3,6 +3,7 @@ package com.sounote.app.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -26,6 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.sounote.app.data.DocRef
+import com.sounote.app.ink.InkDocument
+import com.sounote.app.ink.ToolState
 import com.sounote.app.pdf.PdfDocumentView
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +36,9 @@ import com.sounote.app.pdf.PdfDocumentView
 fun ViewerScreen(
     doc: DocRef,
     initialPage: Int,
+    ink: InkDocument,
+    tools: ToolState,
+    onToolsChange: (ToolState) -> Unit,
     onPageChanged: (Int) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -59,25 +65,31 @@ fun ViewerScreen(
             )
         },
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.Center) {
-            val message = error
-            if (message != null) {
-                Text(message, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
-            } else {
-                AndroidView(
-                    factory = { context ->
-                        PdfDocumentView(context).apply {
-                            this.onPageChanged = { p, n ->
-                                page = p to n
-                                pageCallback(p)
+        Column(Modifier.padding(padding).fillMaxSize()) {
+            InkToolbar(tools, onToolsChange)
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                val message = error
+                if (message != null) {
+                    Text(message, textAlign = TextAlign.Center, modifier = Modifier.padding(32.dp))
+                } else {
+                    AndroidView(
+                        factory = { context ->
+                            PdfDocumentView(context).apply {
+                                this.onPageChanged = { p, n ->
+                                    page = p to n
+                                    pageCallback(p)
+                                }
+                                onError = { error = "PDF açılamadı. Dosya taşınmış, bozuk ya da şifreli olabilir." }
+                                this.ink = ink
+                                this.tools = tools
+                                open(doc.uri, initialPage)
                             }
-                            onError = { error = "PDF açılamadı. Dosya taşınmış, bozuk ya da şifreli olabilir." }
-                            open(doc.uri, initialPage)
-                        }
-                    },
-                    onRelease = { it.release() },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                        },
+                        update = { it.tools = tools },
+                        onRelease = { it.release() },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
         }
     }

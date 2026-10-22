@@ -13,6 +13,8 @@ import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderListing
 import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
+import com.sounote.app.ink.InkDocument
+import com.sounote.app.ink.ToolState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,6 +23,20 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo = LibraryRepository(app)
     private val prefs = app.getSharedPreferences("viewer", Context.MODE_PRIVATE)
+    private val toolPrefs = app.getSharedPreferences("tools", Context.MODE_PRIVATE)
+
+    /** Açık kaldığı sürece belgelerin çizimleri. 4. adımda diske kaydedilecek. */
+    private val inks = HashMap<String, InkDocument>()
+
+    var tools by mutableStateOf(ToolState.load(toolPrefs))
+        private set
+
+    fun updateTools(state: ToolState) {
+        tools = state
+        state.save(toolPrefs)
+    }
+
+    fun inkFor(doc: DocRef): InkDocument = inks.getOrPut(doc.id) { InkDocument() }
 
     var imported by mutableStateOf<List<DocRef>>(emptyList())
         private set
@@ -144,6 +160,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun delete(doc: DocRef) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { repo.delete(doc.id) }
+            inks.remove(doc.id)
             prefs.edit().remove(pageKey(doc)).apply()
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
         }

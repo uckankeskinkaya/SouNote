@@ -60,6 +60,9 @@ private fun SouNoteApp(vm: LibraryViewModel) {
             ViewerScreen(
                 doc = doc,
                 initialPage = vm.lastPage(doc),
+                ink = vm.inkFor(doc),
+                tools = vm.tools,
+                onToolsChange = vm::updateTools,
                 onPageChanged = { vm.saveLastPage(doc, it) },
                 onBack = vm::closeDoc,
             )

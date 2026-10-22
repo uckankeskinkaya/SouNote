@@ -1,0 +1,34 @@
+name: API keşfi (geçici)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Platform 36
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" > /dev/null || true
+          ls $ANDROID_HOME/platforms
+      - name: PDF sınıfları
+        run: |
+          JAR=$ANDROID_HOME/platforms/android-36/android.jar
+          unzip -l $JAR | grep 'android/graphics/pdf/' | awk '{print $4}'
+          for c in $(unzip -l $JAR | grep 'android/graphics/pdf/' | awk '{print $4}' | grep '\.class$' | sed 's/\.class$//' | tr '/' '.'); do
+            echo "=================== $c"
+            javap -classpath $JAR "$c"
+          done
+      - name: api-versions (pdf)
+        run: |
+          X=$ANDROID_HOME/platforms/android-36/data/api-versions.xml
+          ls -la $ANDROID_HOME/platforms/android-36/data/ || true
+          grep -n 'android/graphics/pdf' $X | head -400 || true
+          grep -n -A3 'name="android/graphics/pdf/PdfRenderer\$Page"' $X | head -50 || true
+      - name: Google Maven sürümleri
+        run: |
+          for p in androidx/ink/ink-strokes androidx/graphics/graphics-core androidx/input/input-motionprediction androidx/compose/compose-bom androidx/core/core-ktx androidx/activity/activity-compose androidx/lifecycle/lifecycle-viewmodel-compose com/android/tools/build/gradle androidx/pdf/pdf-viewer; do
+            echo "== $p"
+            curl -s https://dl.google.com/dl/android/maven2/$p/maven-metadata.xml | grep -o '<version>[^<]*</version>' | tail -6 | tr '\n' ' '
+            echo
+          done

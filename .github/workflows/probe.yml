@@ -1,0 +1,54 @@
+name: Kurulum testi (geçici)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/probe.yml"
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: APK'ları indir
+        run: |
+          gh release download build-16 -R ${{ github.repository }} -p SouNote.apk -D a16
+          gh release download build-21 -R ${{ github.repository }} -p SouNote.apk -D a21
+          ls -la a16 a21
+
+      - name: İmza ve paket bilgisi
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          echo "build-tools: $BT"
+          for f in a16/SouNote.apk a21/SouNote.apk; do
+            echo "== $f"
+            $BT/apksigner verify --verbose --print-certs $f | head -20 || true
+            $BT/aapt2 dump badging $f | head -15 || true
+          done
+
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emülatörde kur
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: |
+            adb install a16/SouNote.apk && echo "build-16 kuruldu"
+            adb install -r a21/SouNote.apk && echo "build-21 güncelleme kuruldu" || echo "build-21 güncelleme HATA"
+            adb uninstall com.sounote.app || true
+            adb install a21/SouNote.apk && echo "build-21 temiz kuruldu" || echo "build-21 temiz HATA"
+            adb shell dumpsys package com.sounote.app | grep -i "versionCode\|versionName" || true
+            adb logcat -c || true
+            adb shell am start -W -n com.sounote.app/.MainActivity || true
+            sleep 8
+            adb logcat -d | grep -i "AndroidRuntime\|FATAL\|sounote\|PackageManager" | tail -60 || true

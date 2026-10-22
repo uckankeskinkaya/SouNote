@@ -15,17 +15,18 @@ Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.n
 - Kotlin + native Android (web/Flutter/Expo/FlutterFlow değerlendirildi, kalem akıcılığı yüzünden elendi).
 - PDF görüntüleme: Android PdfRenderer.
 - Düşük gecikmeli mürekkep: androidx low-latency/ink kütüphanelerini değerlendir.
-- Sadece kalem (stylus toolType) çizer; parmak kaydırır ve yakınlaştırır (avuç içi sorunu).
+- Varsayılan: sadece kalem (stylus toolType) çizer; parmak kaydırır ve yakınlaştırır (avuç içi sorunu). "Parmakla çiz" ayarı açılınca tek parmak çizer.
 - Notlar cihazda saklanır; işaretli PDF olarak dışa aktarılabilir.
 - Word dosyaları uygulamada açılmaz, önce PDF'e çevrilir.
 
 ## Yol haritası
+(✅ tablette doğrulandı · 🧪 derlendi, tablette test bekliyor)
 1. ✅ Boş proje + GitHub Actions workflow'u → APK derlenip tablete kurulsun (Releases'tan indirilir).
-2. PDF içe aktar (tek dosya + "klasör bağla": bağlı klasördeki PDF'ler otomatik görünür, alt klasörler klasör olur), kütüphane ızgarası, sayfaları göster, kaydır/yakınlaştır (yakınlaşınca net).
-3. Kalem çekirdeği: basınca duyarlı kalem, hassas kalınlık (0.1 mm), silgi (çizgi + hassas), fosforlu, hazır renkler. Bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır.
-4. Otomatik kayıt, geri al/ileri al, işaretli PDF olarak dışa aktar.
+2. 🧪 PDF içe aktar (tek dosya + "klasör bağla": bağlı klasördeki PDF'ler otomatik görünür, alt klasörler klasör olur), kütüphane ızgarası, sayfaları göster, kaydır/yakınlaştır (yakınlaşınca net).
+3. Kalem çekirdeği: basınca duyarlı kalem, hassas kalınlık (0.1 mm), silgi (çizgi + hassas), fosforlu, hazır renkler. "Parmakla çiz" anahtarı (açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır; kalemsiz arkadaşlar için). Bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır.
+4. Otomatik kayıt, geri al/ileri al, metin kutusu (klavyeyle yazı; taşı, boyut, renk), PDF form alanlarını doldurma (Android 15+ PdfRenderer form API'si), işaretli PDF olarak dışa aktar.
 5. Gelişmiş kalem: kalem türleri, favori kalemler, basınç eğrisi, şekil/düz çizgi düzeltme, tam renk seçici.
-6. Düzenleme: lasso (taşı/boyutlandır/renk/kopyala/sil), metin kutusu, resim ekleme.
+6. Düzenleme: lasso (taşı/boyutlandır/renk/kopyala/sil), resim ekleme.
 7. Sayfalar: sayfa paneli, boş defter + şablonlar, araya boş sayfa, yer imleri, PDF içinde arama, yatayda çift sayfa.
 8. Kütüphane: klasörler, arama/sıralama, yedekleme, karanlık mod.
 

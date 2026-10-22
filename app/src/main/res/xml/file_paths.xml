@@ -2,4 +2,6 @@
 <paths>
     <!-- Dışa aktarılan notlu PDF'ler (paylaşmak için) -->
     <cache-path name="exports" path="exports/" />
+    <!-- Ses kayıtlarını paylaşmak için -->
+    <files-path name="notes" path="ink/" />
 </paths>

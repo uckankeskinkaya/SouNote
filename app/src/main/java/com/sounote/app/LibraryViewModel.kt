@@ -15,7 +15,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sounote.app.data.AudioNotes
+import com.sounote.app.data.AudioRecorder
 import com.sounote.app.data.Backup
+import com.sounote.app.data.Recording
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderListing
 import com.sounote.app.data.FolderRef
@@ -28,6 +31,7 @@ import com.sounote.app.ink.InkStore
 import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.ToolState
 import com.sounote.app.pdf.PageTemplate
+import com.sounote.app.pdf.PaperSize
 import com.sounote.app.pdf.PdfExporter
 import com.sounote.app.pdf.PdfPages
 import kotlinx.coroutines.Dispatchers
@@ -124,6 +128,52 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             withContext(Dispatchers.IO) { block() }
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+        }
+    }
+
+    // ---- Ders ses kaydı ----
+
+    private var recorder: AudioRecorder? = null
+
+    /** Kayıt başlangıç zamanı (uptime değil, duvar saati); 0 = kayıt yok. */
+    var recordingSince by mutableStateOf(0L)
+        private set
+
+    var recordings by mutableStateOf<List<Recording>>(emptyList())
+        private set
+
+    fun startRecording(doc: DocRef) {
+        if (recorder != null) return
+        try {
+            val r = AudioRecorder(getApplication())
+            r.start(AudioNotes.dir(getApplication(), doc.id))
+            recorder = r
+            recordingSince = System.currentTimeMillis()
+        } catch (e: Exception) {
+            ErrorLog.record("Ses kaydı başlatılamadı", e)
+            message = "Ses kaydı başlatılamadı"
+        }
+    }
+
+    fun stopRecording(doc: DocRef?) {
+        val r = recorder ?: return
+        recorder = null
+        recordingSince = 0L
+        val saved = r.stop()
+        message = if (saved != null) "Ses kaydı kaydedildi (⋮ → Ses kayıtları)" else "Ses kaydı boş, kaydedilmedi"
+        doc?.let(::loadRecordings)
+    }
+
+    fun loadRecordings(doc: DocRef) {
+        viewModelScope.launch {
+            recordings = withContext(Dispatchers.IO) { AudioNotes.list(getApplication(), doc.id) }
+        }
+    }
+
+    fun deleteRecording(doc: DocRef, rec: Recording) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { rec.file.delete() }
+            loadRecordings(doc)
         }
     }
 
@@ -536,13 +586,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Boş defter: şablonlu A4 sayfalardan oluşan yeni bir PDF olarak kütüphaneye eklenir ve açılır. */
-    fun createNotebook(title: String, template: PageTemplate) {
+    fun createNotebook(title: String, template: PageTemplate, size: PaperSize = PaperSize.A4, landscape: Boolean = false) {
         viewModelScope.launch {
             busy = true
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     repo.createDocument(title.trim().ifEmpty { "Defter" }, currentFolder) { file ->
-                        PdfPages.createNotebook(getApplication(), file, template, pages = 1)
+                        PdfPages.createNotebook(getApplication(), file, template, pages = 1, size = size, landscape = landscape)
                     }
                 }
             }
@@ -557,6 +607,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun closeDoc() {
         fullScreen = false
+        stopRecording(null)
         viewModelScope.launch {
             saveJob?.cancel()
             flushInk()
@@ -748,6 +799,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     private fun pageKey(doc: DocRef) = "page_${doc.id}"
 
     override fun onCleared() {
+        recorder?.stop()
+        recorder = null
         // Son değişiklikler kaybolmasın.
         val open = openInk ?: return
         val snapshot = dirtyPages.associateWith { open.ink.content(it) }

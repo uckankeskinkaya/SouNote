@@ -3,7 +3,10 @@
 package com.sounote.app.ui
 
 import android.content.Intent
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.graphics.luminance
@@ -114,6 +117,28 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var moreMenu by remember { mutableStateOf(false) }
     var insertAfterCurrent by remember { mutableStateOf(false) }
     var goToPageDialog by remember { mutableStateOf(false) }
+    var recordingsDialog by remember { mutableStateOf(false) }
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.startRecording(doc) else vm.showMessage("Ses kaydı için mikrofon izni gerekiyor")
+    }
+    fun toggleRecording() {
+        if (vm.recordingSince != 0L) {
+            vm.stopRecording(doc)
+        } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            vm.startRecording(doc)
+        } else {
+            micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    // Kayıt süresi göstergesi
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(vm.recordingSince) {
+        while (vm.recordingSince != 0L) {
+            now = System.currentTimeMillis()
+            kotlinx.coroutines.delay(1000)
+        }
+    }
+    LaunchedEffect(doc.id) { vm.loadRecordings(doc) }
     val darkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     // Tam ekran: sistem çubukları da gizlenir, kaydırınca geçici olarak görünür.
@@ -204,6 +229,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     }
 
     val fullScreenButtons: @Composable () -> Unit = {
+        if (vm.recordingSince != 0L) {
+            TextButton(onClick = { toggleRecording() }) {
+                Text("● " + formatDuration(now - vm.recordingSince), color = Color(0xFFE53935))
+            }
+        }
         IconButton(onClick = { vm.toggleFullScreen() }) {
             Icon(painterResource(R.drawable.ic_fullscreen_exit), contentDescription = "Tam ekrandan çık")
         }
@@ -236,6 +266,18 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 },
                 actions = {
+                    if (vm.recordingSince != 0L) {
+                        TextButton(onClick = { toggleRecording() }) {
+                            Text(
+                                "● " + formatDuration(now - vm.recordingSince) + "  Durdur",
+                                color = Color(0xFFE53935),
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = { toggleRecording() }) {
+                            Icon(painterResource(R.drawable.ic_mic), contentDescription = "Ses kaydı başlat")
+                        }
+                    }
                     IconButton(onClick = { vm.togglePagePanel() }) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
@@ -291,6 +333,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Ses kayıtları (${vm.recordings.size})") },
+                                onClick = {
+                                    moreMenu = false
+                                    vm.loadRecordings(doc)
+                                    recordingsDialog = true
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Tam ekran") },
                                 onClick = {
@@ -396,6 +446,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
                 leading = if (vm.fullScreen) fullScreenButtons else null,
+                onRevealTapes = { view?.setAllTapes(it) },
             )
             Row(Modifier.weight(1f).fillMaxWidth()) {
             val pageInfo = page
@@ -477,6 +528,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         }
     }
 
+    if (recordingsDialog) {
+        RecordingsDialog(
+            recordings = vm.recordings,
+            onDelete = { vm.deleteRecording(doc, it) },
+            onDismiss = { recordingsDialog = false },
+        )
+    }
+
     if (goToPageDialog) {
         val count = page?.second ?: 0
         var text by remember { mutableStateOf("") }
@@ -530,7 +589,12 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 }
                 ink.commit(p, c.copy(texts = texts))
                 if (edited.text.isNotBlank()) {
-                    vm.updateTools(tools.copy(textSizePt = edited.fontSize, textColor = edited.color))
+                    vm.updateTools(
+                        tools.copy(
+                            textSizePt = edited.fontSize, textColor = edited.color,
+                            textBold = edited.bold, textBackground = edited.background,
+                        ),
+                    )
                 }
                 editingText = null
             },

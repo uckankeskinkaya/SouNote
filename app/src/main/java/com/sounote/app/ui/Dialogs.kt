@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.sounote.app.ui
 
 import androidx.compose.foundation.clickable
@@ -12,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -32,6 +35,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +56,8 @@ fun TextBoxDialog(
     var value by remember(box.id) { mutableStateOf(TextFieldValue(box.text, TextRange(box.text.length))) }
     var size by remember(box.id) { mutableStateOf(box.fontSize) }
     var color by remember(box.id) { mutableStateOf(box.color) }
+    var bold by remember(box.id) { mutableStateOf(box.bold) }
+    var background by remember(box.id) { mutableStateOf(box.background) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
@@ -66,8 +72,12 @@ fun TextBoxDialog(
                     onValueChange = { value = it },
                     minLines = 3,
                     placeholder = { Text("Buraya yaz…", color = Color(0xFF8A8F99)) },
-                    textStyle = TextStyle(color = Color(color), fontSize = 18.sp),
-                    colors = paperFieldColors(Color(color)),
+                    textStyle = TextStyle(
+                        color = Color(color),
+                        fontSize = 18.sp,
+                        fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+                    ),
+                    colors = paperFieldColors(Color(color), if (background != 0) Color(background) else Color.White),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp).focusRequester(focus),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -81,10 +91,21 @@ fun TextBoxDialog(
                     Text("${size.roundToInt()} pt", modifier = Modifier.width(48.dp))
                 }
                 ColorRow(ToolState.PEN_COLORS, color) { color = it }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    FilterChip(
+                        selected = bold,
+                        onClick = { bold = !bold },
+                        label = { Text("Kalın", fontWeight = FontWeight.Bold) },
+                    )
+                    Text("Arka plan", style = MaterialTheme.typography.labelLarge)
+                    NoteBackgroundRow(background) { background = it }
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(box.copy(text = value.text.trimEnd(), fontSize = size, color = color)) }) {
+            TextButton(onClick = {
+                onSave(box.copy(text = value.text.trimEnd(), fontSize = size, color = color, bold = bold, background = background))
+            }) {
                 Text("Tamam")
             }
         },
@@ -99,9 +120,9 @@ fun TextBoxDialog(
 
 /** Beyaz "kâğıt" görünümlü yazı alanı: seçilen yazı rengi koyu temada da okunur. */
 @Composable
-private fun paperFieldColors(textColor: Color) = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = Color.White,
-    unfocusedContainerColor = Color.White,
+private fun paperFieldColors(textColor: Color, paper: Color = Color.White) = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = paper,
+    unfocusedContainerColor = paper,
     focusedTextColor = textColor,
     unfocusedTextColor = textColor,
     cursorColor = textColor,

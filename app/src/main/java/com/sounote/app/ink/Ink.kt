@@ -5,7 +5,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Kayıtlı çizgi türü. Sıra diske yazıldığı için yeni tür sadece sona eklenir. */
-enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED }
+enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED, TAPE }
 
 /**
  * Tek bir çizgi. Koordinatlar sayfanın PDF noktası (1/72 inç) cinsinden; böylece
@@ -93,6 +93,9 @@ data class TextBox(
     val fontSize: Float,
     val color: Int,
     val text: String,
+    val bold: Boolean = false,
+    /** Arka plan rengi (yapışkan not görünümü); 0 = yok. */
+    val background: Int = 0,
 )
 
 /**

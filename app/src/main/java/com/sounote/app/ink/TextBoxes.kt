@@ -3,6 +3,7 @@ package com.sounote.app.ink
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -16,6 +17,7 @@ object TextBoxes {
     fun paint(box: TextBox) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = box.fontSize
         color = box.color
+        typeface = if (box.bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         // Yakınlaştırınca harfler kademeli değil pürüzsüz büyüsün.
         isLinearText = true
         isSubpixelText = true
@@ -42,7 +44,16 @@ object TextBoxes {
         return out
     }
 
+    /** Arka plan kutusunun yazıdan taşma payı. */
+    fun backgroundPad(box: TextBox) = box.fontSize * 0.3f
+
     fun draw(canvas: Canvas, box: TextBox) {
+        if (box.background != 0) {
+            val r = bounds(box, RectF())
+            val pad = backgroundPad(box)
+            r.inset(-pad, -pad)
+            canvas.drawRoundRect(r, pad, pad, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = box.background })
+        }
         canvas.save()
         canvas.translate(box.x, box.y)
         layout(box).draw(canvas)

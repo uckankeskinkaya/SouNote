@@ -123,6 +123,8 @@ class InkStore(context: Context) {
             val bytes = t.text.toByteArray(Charsets.UTF_8)
             out.writeInt(bytes.size)
             out.write(bytes)
+            out.writeBoolean(t.bold)
+            out.writeInt(t.background)
         }
         out.writeInt(c.images.size)
         for (im in c.images) {
@@ -158,7 +160,10 @@ class InkStore(context: Context) {
                 val color = inp.readInt()
                 val bytes = ByteArray(inp.readInt())
                 inp.readFully(bytes)
-                TextBox(id, x, y, w, size, color, String(bytes, Charsets.UTF_8))
+                // Sürüm 3'ten önce yazı stili yoktu.
+                val bold = if (version >= 3) inp.readBoolean() else false
+                val background = if (version >= 3) inp.readInt() else 0
+                TextBox(id, x, y, w, size, color, String(bytes, Charsets.UTF_8), bold, background)
             }
             // Sürüm 1'de resim yoktu.
             val images = if (version < 2) emptyList() else List(inp.readInt()) {
@@ -170,6 +175,6 @@ class InkStore(context: Context) {
     companion object {
         private const val TAG = "InkStore"
         private const val MAGIC = 0x534E5031 // "SNP1"
-        private const val VERSION = 2
+        private const val VERSION = 3
     }
 }

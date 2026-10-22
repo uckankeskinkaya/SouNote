@@ -4,7 +4,8 @@ import android.graphics.RectF
 import kotlin.math.max
 import kotlin.math.min
 
-enum class InkTool { PEN, HIGHLIGHTER }
+/** Kayıtlı çizgi türü. Sıra diske yazıldığı için yeni tür sadece sona eklenir. */
+enum class InkTool { PEN, HIGHLIGHTER, PENCIL }
 
 /**
  * Tek bir çizgi. Koordinatlar sayfanın PDF noktası (1/72 inç) cinsinden; böylece
@@ -68,6 +69,13 @@ class StrokeBuilder(
         points[(count - 1) * 3] = x
         points[(count - 1) * 3 + 1] = y
         points[(count - 1) * 3 + 2] = pressure
+    }
+
+    /** Bütün noktaları değiştirir (şekil düzeltmede elle çizilen yerine düzgün şekil). */
+    fun replaceAll(pts: FloatArray, n: Int) {
+        if (points.size < n * 3) points = FloatArray(n * 3 * 2)
+        System.arraycopy(pts, 0, points, 0, n * 3)
+        count = n
     }
 
     fun build() = Stroke(tool, color, width, pressureSensitive, points.copyOf(count * 3))

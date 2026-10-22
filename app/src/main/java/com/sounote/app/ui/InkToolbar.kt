@@ -1,12 +1,17 @@
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+
 package com.sounote.app.ui
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,20 +21,34 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -37,6 +56,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sounote.app.R
 import com.sounote.app.ink.EraserMode
+import com.sounote.app.ink.FavoritePen
+import com.sounote.app.ink.PenType
 import com.sounote.app.ink.Tool
 import com.sounote.app.ink.ToolState
 import java.util.Locale
@@ -44,101 +65,292 @@ import kotlin.math.roundToInt
 
 private val TR = Locale.forLanguageTag("tr")
 
-/** Görüntüleyicinin üstündeki araç çubuğu: araç seçimi + seçili aracın ayarları. */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun mm(v: Float) = String.format(TR, "%.1f", v)
+
+/**
+ * Görüntüleyicinin üstündeki araç çubuğu.
+ * Üst satır: araçlar, favori kalemler, parmakla çiz. Alt satır: seçili aracın ayarları.
+ */
 @Composable
 fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
+    // Renk seçici açıkken seçilen rengin hangi araca gideceği
+    var picker by remember { mutableStateOf<Tool?>(null) }
+
     Surface(tonalElevation = 2.dp) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-        ) {
-            ToolChip("Kalem", state.tool == Tool.PEN, vector = Icons.Default.Edit) {
-                onChange(state.copy(tool = Tool.PEN))
+        Column {
+            ToolbarRow {
+                ToolChip("Kalem", state.tool == Tool.PEN, vector = Icons.Default.Edit) {
+                    onChange(state.copy(tool = Tool.PEN))
+                }
+                ToolChip("Fosforlu", state.tool == Tool.HIGHLIGHTER, drawable = R.drawable.ic_highlighter) {
+                    onChange(state.copy(tool = Tool.HIGHLIGHTER))
+                }
+                ToolChip("Silgi", state.tool == Tool.ERASER, drawable = R.drawable.ic_eraser) {
+                    onChange(state.copy(tool = Tool.ERASER))
+                }
+                ToolChip("Yazı", state.tool == Tool.TEXT, drawable = R.drawable.ic_text) {
+                    onChange(state.copy(tool = Tool.TEXT))
+                }
+                Separator()
+                Favorites(state, onChange)
+                Separator()
+                FilterChip(
+                    selected = state.fingerDraw,
+                    onClick = { onChange(state.copy(fingerDraw = !state.fingerDraw)) },
+                    label = { Text("Parmakla çiz") },
+                )
             }
-            ToolChip("Fosforlu", state.tool == Tool.HIGHLIGHTER, drawable = R.drawable.ic_highlighter) {
-                onChange(state.copy(tool = Tool.HIGHLIGHTER))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            ToolbarRow {
+                when (state.tool) {
+                    Tool.PEN -> PenOptions(state, onChange) { picker = Tool.PEN }
+                    Tool.HIGHLIGHTER -> HighlighterOptions(state, onChange) { picker = Tool.HIGHLIGHTER }
+                    Tool.ERASER -> EraserOptions(state, onChange)
+                    Tool.TEXT -> TextOptions(state, onChange) { picker = Tool.TEXT }
+                }
             }
-            ToolChip("Silgi", state.tool == Tool.ERASER, drawable = R.drawable.ic_eraser) {
-                onChange(state.copy(tool = Tool.ERASER))
-            }
-            ToolChip("Yazı", state.tool == Tool.TEXT, drawable = R.drawable.ic_text) {
-                onChange(state.copy(tool = Tool.TEXT))
-            }
-            VerticalDivider(Modifier.height(32.dp).padding(horizontal = 4.dp))
+        }
+    }
 
-            when (state.tool) {
-                Tool.PEN -> {
-                    ColorRow(ToolState.PEN_COLORS, state.penColor) { onChange(state.copy(penColor = it)) }
-                    WidthControl(state.penWidthMm, min = 0.1f, max = 5f, step = 0.1f) {
-                        onChange(state.copy(penWidthMm = it))
-                    }
-                }
-                Tool.HIGHLIGHTER -> {
-                    ColorRow(ToolState.HIGHLIGHTER_COLORS, state.highlighterColor) {
-                        onChange(state.copy(highlighterColor = it))
-                    }
-                    WidthControl(state.highlighterWidthMm, min = 1f, max = 15f, step = 0.5f) {
-                        onChange(state.copy(highlighterWidthMm = it))
-                    }
-                }
-                Tool.TEXT -> {
-                    ColorRow(ToolState.PEN_COLORS, state.textColor) { onChange(state.copy(textColor = it)) }
-                    Text("Boyut", style = MaterialTheme.typography.labelLarge)
-                    Slider(
-                        value = state.textSizePt,
-                        onValueChange = { onChange(state.copy(textSizePt = it.roundToInt().toFloat())) },
-                        valueRange = 6f..48f,
-                        modifier = Modifier.width(180.dp),
-                    )
-                    Text("${state.textSizePt.roundToInt()} pt", style = MaterialTheme.typography.labelLarge)
-                    Text(
-                        "Sayfaya dokun: yazı ekle · yazıya dokun: düzenle · sürükle: taşı",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Tool.ERASER -> {
-                    FilterChip(
-                        selected = state.eraserMode == EraserMode.STROKE,
-                        onClick = { onChange(state.copy(eraserMode = EraserMode.STROKE)) },
-                        label = { Text("Çizgiyi sil") },
-                    )
-                    FilterChip(
-                        selected = state.eraserMode == EraserMode.PRECISE,
-                        onClick = { onChange(state.copy(eraserMode = EraserMode.PRECISE)) },
-                        label = { Text("Hassas") },
-                    )
-                    Text("Boyut", style = MaterialTheme.typography.labelLarge)
-                    Slider(
-                        value = state.eraserSizeDp,
-                        onValueChange = { onChange(state.copy(eraserSizeDp = it.roundToInt().toFloat())) },
-                        valueRange = 4f..48f,
-                        modifier = Modifier.width(180.dp),
-                    )
-                    FilterChip(
-                        selected = state.eraserHighlighterOnly,
-                        onClick = { onChange(state.copy(eraserHighlighterOnly = !state.eraserHighlighterOnly)) },
-                        label = { Text("Sadece fosforlu") },
-                    )
-                }
-            }
+    picker?.let { target ->
+        val initial = when (target) {
+            Tool.HIGHLIGHTER -> state.highlighterColor
+            Tool.TEXT -> state.textColor
+            else -> state.penColor
+        }
+        ColorPickerDialog(
+            initial = initial,
+            onPick = { c ->
+                val s = state.withCustomColor(c)
+                onChange(
+                    when (target) {
+                        Tool.HIGHLIGHTER -> s.copy(highlighterColor = c)
+                        Tool.TEXT -> s.copy(textColor = c)
+                        else -> s.copy(penColor = c)
+                    },
+                )
+                picker = null
+            },
+            onDismiss = { picker = null },
+        )
+    }
+}
 
-            VerticalDivider(Modifier.height(32.dp).padding(horizontal = 4.dp))
-            FilterChip(
-                selected = state.fingerDraw,
-                onClick = { onChange(state.copy(fingerDraw = !state.fingerDraw)) },
-                label = { Text("Parmakla çiz") },
+@Composable
+private fun ToolbarRow(content: @Composable () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp),
+    ) { content() }
+}
+
+@Composable
+private fun Separator() {
+    VerticalDivider(Modifier.height(28.dp).padding(horizontal = 4.dp))
+}
+
+// ---- Favoriler ----
+
+@Composable
+private fun Favorites(state: ToolState, onChange: (ToolState) -> Unit) {
+    state.favorites.forEach { f ->
+        FavoriteChip(
+            f,
+            active = state.isActive(f),
+            onClick = { onChange(state.apply(f)) },
+            onLongClick = { onChange(state.copy(favorites = state.favorites - f)) },
+        )
+    }
+    val current = state.currentFavorite()
+    if (current != null && current !in state.favorites && state.favorites.size < ToolState.MAX_FAVORITES) {
+        AssistChip(
+            onClick = { onChange(state.copy(favorites = state.favorites + current)) },
+            label = { Text(if (state.favorites.isEmpty()) "Favorilere ekle" else "Ekle") },
+            leadingIcon = { Icon(Icons.Default.Star, null, Modifier.size(18.dp)) },
+        )
+    }
+}
+
+/** Favori kalem: renkli nokta (kalınlığa göre büyür) + kalınlık. Basılı tutunca silinir. */
+@Composable
+private fun FavoriteChip(f: FavoritePen, active: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val shape = RoundedCornerShape(16.dp)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .height(34.dp)
+            .border(
+                if (active) 2.dp else 1.dp,
+                if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                shape,
             )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 10.dp),
+    ) {
+        val dot = if (f.tool == Tool.HIGHLIGHTER) 14.dp else (4f + f.widthMm * 4f).coerceIn(5f, 16f).dp
+        Box(
+            Modifier
+                .size(width = if (f.tool == Tool.HIGHLIGHTER) 20.dp else dot, height = dot)
+                .background(Color(f.color), if (f.tool == Tool.HIGHLIGHTER) RoundedCornerShape(3.dp) else CircleShape),
+        )
+        Text(
+            if (f.tool == Tool.PEN && f.penType != PenType.FOUNTAIN) "${mm(f.widthMm)} ${f.penType.label.take(1)}" else mm(f.widthMm),
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+    }
+}
+
+// ---- Araç ayarları ----
+
+@Composable
+private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
+    var typeMenu by remember { mutableStateOf(false) }
+    Box {
+        AssistChip(
+            onClick = { typeMenu = true },
+            label = { Text(state.penType.label) },
+            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, Modifier.size(18.dp)) },
+        )
+        DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
+            PenType.entries.forEach { t ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(t.label, fontWeight = if (t == state.penType) FontWeight.Bold else null)
+                            Text(
+                                when (t) {
+                                    PenType.FOUNTAIN -> "Bastırdıkça kalınlaşır"
+                                    PenType.BALLPOINT -> "Her zaman aynı kalınlık"
+                                    PenType.PENCIL -> "Yarı saydam, sabit kalınlık"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    onClick = {
+                        typeMenu = false
+                        onChange(state.copy(penType = t))
+                    },
+                )
+            }
+        }
+    }
+    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.copy(penColor = it)) }, onCustomColor)
+    WidthControl(state.penWidthMm, min = 0.1f, max = 5f, step = 0.1f) { onChange(state.copy(penWidthMm = it)) }
+    PenSettings(state, onChange)
+}
+
+/** Kalem ayarları menüsü: basınç hassasiyeti ve şekil düzeltme. */
+@Composable
+private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) { Icon(Icons.Default.Settings, contentDescription = "Kalem ayarları") }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            Column(Modifier.width(320.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    if (state.penType == PenType.FOUNTAIN) "Sadece dolma kalemde etkili" else "Dolma kalem seçince etkili olur",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Slider(
+                    value = state.pressureSensitivity,
+                    onValueChange = { onChange(state.copy(pressureSensitivity = (it * 20).roundToInt() / 20f)) },
+                    valueRange = 0f..1f,
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Sert", style = MaterialTheme.typography.labelSmall)
+                    Text("Yumuşak", style = MaterialTheme.typography.labelSmall)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 16.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Şekil düzeltme", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Çizginin sonunda kalemi bir an beklet: düz çizgi, daire, dikdörtgen, üçgen olur",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = state.shapeAssist, onCheckedChange = { onChange(state.copy(shapeAssist = it)) })
+                }
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HighlighterOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
+    Palette(
+        ToolState.HIGHLIGHTER_COLORS, state.customColors, state.highlighterColor,
+        { onChange(state.copy(highlighterColor = it)) }, onCustomColor,
+    )
+    WidthControl(state.highlighterWidthMm, min = 1f, max = 15f, step = 0.5f) {
+        onChange(state.copy(highlighterWidthMm = it))
+    }
+    FilterChip(
+        selected = state.highlighterStraight,
+        onClick = { onChange(state.copy(highlighterStraight = !state.highlighterStraight)) },
+        label = { Text("Düz çizgi") },
+    )
+}
+
+@Composable
+private fun EraserOptions(state: ToolState, onChange: (ToolState) -> Unit) {
+    FilterChip(
+        selected = state.eraserMode == EraserMode.STROKE,
+        onClick = { onChange(state.copy(eraserMode = EraserMode.STROKE)) },
+        label = { Text("Çizgiyi sil") },
+    )
+    FilterChip(
+        selected = state.eraserMode == EraserMode.PRECISE,
+        onClick = { onChange(state.copy(eraserMode = EraserMode.PRECISE)) },
+        label = { Text("Hassas") },
+    )
+    Text("Boyut", style = MaterialTheme.typography.labelLarge)
+    Slider(
+        value = state.eraserSizeDp,
+        onValueChange = { onChange(state.copy(eraserSizeDp = it.roundToInt().toFloat())) },
+        valueRange = 4f..48f,
+        modifier = Modifier.width(180.dp),
+    )
+    FilterChip(
+        selected = state.eraserHighlighterOnly,
+        onClick = { onChange(state.copy(eraserHighlighterOnly = !state.eraserHighlighterOnly)) },
+        label = { Text("Sadece fosforlu") },
+    )
+}
+
+@Composable
+private fun TextOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
+    Palette(ToolState.PEN_COLORS, state.customColors, state.textColor, { onChange(state.copy(textColor = it)) }, onCustomColor)
+    Text("Boyut", style = MaterialTheme.typography.labelLarge)
+    Slider(
+        value = state.textSizePt,
+        onValueChange = { onChange(state.copy(textSizePt = it.roundToInt().toFloat())) },
+        valueRange = 6f..48f,
+        modifier = Modifier.width(180.dp),
+    )
+    Text("${state.textSizePt.roundToInt()} pt", style = MaterialTheme.typography.labelLarge)
+    Text(
+        "Sayfaya dokun: yazı ekle · yazıya dokun: düzenle · sürükle: taşı",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+// ---- Ortak parçalar ----
+
 @Composable
 private fun ToolChip(
     label: String,
@@ -158,24 +370,52 @@ private fun ToolChip(
     )
 }
 
+/** Hazır renkler + renk seçiciden seçilmiş son renkler + "yeni renk" düğmesi. */
+@Composable
+private fun Palette(
+    presets: List<Int>,
+    customs: List<Int>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    onCustom: () -> Unit,
+) {
+    val extra = customs.filter { it !in presets }
+    val all = if (selected !in presets && selected !in extra) presets + extra + selected else presets + extra
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        all.forEach { c -> Swatch(c, c == selected) { onSelect(c) } }
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(30.dp)
+                .border(2.5.dp, Brush.sweepGradient(HUE_COLORS), CircleShape)
+                .clickable(onClick = onCustom),
+        ) {
+            Text("+", style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+@Composable
+private fun Swatch(c: Int, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(30.dp)
+            .border(
+                width = if (isSelected) 2.5.dp else 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                shape = CircleShape,
+            )
+            .padding(4.dp)
+            .background(Color(c), CircleShape)
+            .clickable(onClick = onClick),
+    )
+}
+
+/** Sadece hazır renkler (yazı düzenleme penceresi için). */
 @Composable
 internal fun ColorRow(colors: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        colors.forEach { c ->
-            val isSelected = c == selected
-            Box(
-                Modifier
-                    .size(30.dp)
-                    .border(
-                        width = if (isSelected) 2.5.dp else 1.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                        shape = CircleShape,
-                    )
-                    .padding(4.dp)
-                    .background(Color(c), CircleShape)
-                    .clickable { onSelect(c) },
-            )
-        }
+        colors.forEach { c -> Swatch(c, c == selected) { onSelect(c) } }
     }
 }
 
@@ -197,7 +437,7 @@ private fun WidthControl(value: Float, min: Float, max: Float, step: Float, onCh
             Text("+", style = MaterialTheme.typography.titleLarge)
         }
         Text(
-            String.format(TR, "%.1f mm", value),
+            "${mm(value)} mm",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.widthIn(min = 56.dp),

@@ -62,6 +62,10 @@ object PdfExporter {
         }
 
     private fun writePage(doc: PDDocument, index: Int, ourWidth: Float, content: PageContent) {
+        val pencilState = PDExtendedGraphicsState().apply {
+            strokingAlphaConstant = StrokeRenderer.PENCIL_ALPHA
+            nonStrokingAlphaConstant = StrokeRenderer.PENCIL_ALPHA
+        }
         val page = doc.getPage(index)
         val box = page.cropBox
         val rotation = ((page.rotation % 360) + 360) % 360
@@ -94,7 +98,16 @@ object PdfExporter {
                 cs.restoreGraphicsState()
             }
             content.texts.forEach { drawText(cs, it) }
-            content.strokes.filter { it.tool == InkTool.PEN }.forEach { drawStroke(cs, it) }
+            content.strokes.filter { it.tool != InkTool.HIGHLIGHTER }.forEach { stroke ->
+                if (stroke.tool == InkTool.PENCIL) {
+                    cs.saveGraphicsState()
+                    cs.setGraphicsStateParameters(pencilState)
+                    drawStroke(cs, stroke)
+                    cs.restoreGraphicsState()
+                } else {
+                    drawStroke(cs, stroke)
+                }
+            }
             cs.restoreGraphicsState()
         }
     }
@@ -125,7 +138,7 @@ object PdfExporter {
             cs.fill()
             return
         }
-        if (s.tool == InkTool.HIGHLIGHTER) {
+        if (s.tool != InkTool.PEN) {
             run(cs, pts, 0, n - 1, s.width)
             return
         }

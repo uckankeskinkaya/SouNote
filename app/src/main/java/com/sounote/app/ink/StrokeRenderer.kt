@@ -14,6 +14,7 @@ import kotlin.math.roundToInt
  * yol olarak çizilir; hızlı ve göze pürüzsüz görünür.
  *
  * Fosforlu: sabit kalınlık, MULTIPLY karışımı; altındaki yazı koyu kalır, kapanmaz.
+ * Kurşun kalem: sabit kalınlık, yarı saydam.
  */
 class StrokeRenderer {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -39,6 +40,20 @@ class StrokeRenderer {
         when (tool) {
             InkTool.HIGHLIGHTER -> {
                 paint.blendMode = BlendMode.MULTIPLY
+                if (n == 1) {
+                    paint.style = Paint.Style.FILL
+                    canvas.drawCircle(pts[0], pts[1], width / 2f, paint)
+                } else {
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = width
+                    buildPath(pts, 0, n - 1)
+                    canvas.drawPath(path, paint)
+                }
+            }
+            InkTool.PENCIL -> {
+                // Tek yol, sabit kalınlık, yarı saydam: üst üste gelen yerler doğal olarak koyulaşır.
+                paint.blendMode = null
+                paint.alpha = (PENCIL_ALPHA * 255).roundToInt()
                 if (n == 1) {
                     paint.style = Paint.Style.FILL
                     canvas.drawCircle(pts[0], pts[1], width / 2f, paint)
@@ -100,6 +115,7 @@ class StrokeRenderer {
     companion object {
         private const val LEVELS = 12
         const val MAX_PRESSURE_FACTOR = 1.6f
+        const val PENCIL_ALPHA = 0.78f
 
         /** Basınç 0.5 → seçilen kalınlık; hafif basınç incelir, sert basınç kalınlaşır. */
         fun pressureFactor(p: Float) = (0.35f + 1.3f * p).coerceIn(0.35f, MAX_PRESSURE_FACTOR)

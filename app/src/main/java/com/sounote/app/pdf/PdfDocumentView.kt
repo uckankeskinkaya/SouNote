@@ -16,6 +16,7 @@ import android.os.SystemClock
 import android.util.LruCache
 import android.util.Size
 import android.view.GestureDetector
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.MotionPredictor
 import android.view.ScaleGestureDetector
@@ -29,6 +30,8 @@ import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkTool
 import com.sounote.app.ink.PageContent
+import com.sounote.app.ink.PenType
+import com.sounote.app.ink.ShapeRecognizer
 import com.sounote.app.ink.TextBox
 import com.sounote.app.ink.TextBoxes
 import com.sounote.app.ink.StrokeBuilder
@@ -516,7 +519,7 @@ class PdfDocumentView(context: Context) : View(context) {
             } else {
                 strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
                 ink.texts(page).forEach { TextBoxes.draw(canvas, it) }
-                strokes.forEach { if (it.tool == InkTool.PEN) strokeRenderer.draw(canvas, it) }
+                strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
             }
         }
         if (tools.tool == Tool.TEXT) {
@@ -553,7 +556,7 @@ class PdfDocumentView(context: Context) : View(context) {
             // Fosforlu altta, kalem üstte.
             strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
             ink.texts(page).forEach { TextBoxes.draw(c, it) }
-            strokes.forEach { if (it.tool == InkTool.PEN) strokeRenderer.draw(c, it) }
+            strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
             endRecording()
         }
     }
@@ -791,11 +794,22 @@ class PdfDocumentView(context: Context) : View(context) {
             val t = tools
             val highlighter = t.tool == Tool.HIGHLIGHTER
             current = StrokeBuilder(
-                tool = if (highlighter) InkTool.HIGHLIGHTER else InkTool.PEN,
+                tool = when {
+                    highlighter -> InkTool.HIGHLIGHTER
+                    t.penType == PenType.PENCIL -> InkTool.PENCIL
+                    else -> InkTool.PEN
+                },
                 color = if (highlighter) t.highlighterColor else t.penColor,
                 width = mmToPt(if (highlighter) t.highlighterWidthMm else t.penWidthMm),
-                pressureSensitive = fromStylus && !highlighter,
-            ).also { it.add(toPageX(inputPage, x), toPageY(inputPage, y), pressureOf(event, idx, null)) }
+                pressureSensitive = fromStylus && !highlighter && t.penType == PenType.FOUNTAIN,
+            ).also {
+                val p = if (it.pressureSensitive) t.applyPressureCurve(event.getPressure(idx)) else 1f
+                it.add(toPageX(inputPage, x), toPageY(inputPage, y), p)
+            }
+            straightLine = highlighter && t.highlighterStraight
+            snapped = false
+            holdX = x
+            holdY = y
             predictor?.record(event)
         }
         invalidate()
@@ -811,18 +825,61 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
         val b = current ?: return
+        // Şekle dönüştüyse kalem kalkana kadar şekil sabit kalır.
+        if (snapped) return
         for (h in 0 until event.historySize) {
             addPoint(b, event.getHistoricalX(idx, h), event.getHistoricalY(idx, h), event.getHistoricalPressure(idx, h))
         }
-        addPoint(b, event.getX(idx), event.getY(idx), event.getPressure(idx))
-        updatePrediction(event)
+        val x = event.getX(idx)
+        val y = event.getY(idx)
+        addPoint(b, x, y, event.getPressure(idx))
+        if (straightLine) predictedCount = 0 else updatePrediction(event)
+        watchForHold(x, y)
         invalidate()
     }
 
+    // ---- Şekil düzeltme: çizginin sonunda kalemi bekletince ----
+
+    private var snapped = false
+    private var straightLine = false
+    private var holdX = 0f
+    private var holdY = 0f
+
+    private val holdCheck = Runnable {
+        val b = current ?: return@Runnable
+        if (snapped || erasing) return@Runnable
+        val lineOnly = b.tool == InkTool.HIGHLIGHTER
+        val shape = ShapeRecognizer.recognize(b.points, b.count, lineOnly) ?: return@Runnable
+        b.replaceAll(shape.points, shape.count)
+        snapped = true
+        predictedCount = 0
+        performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        invalidate()
+    }
+
+    private fun watchForHold(x: Float, y: Float) {
+        if (!tools.shapeAssist || straightLine) return
+        if (kotlin.math.hypot(x - holdX, y - holdY) > HOLD_SLOP_DP * density) {
+            holdX = x
+            holdY = y
+            removeCallbacks(holdCheck)
+            postDelayed(holdCheck, HOLD_MS)
+        }
+    }
+
     private fun addPoint(b: StrokeBuilder, sx: Float, sy: Float, rawPressure: Float) {
-        val x = toPageX(inputPage, sx)
-        val y = toPageY(inputPage, sy)
-        val p = if (b.pressureSensitive) b.lastPressure * 0.5f + rawPressure.coerceIn(0f, 1f) * 0.5f else 1f
+        var x = toPageX(inputPage, sx)
+        var y = toPageY(inputPage, sy)
+        if (straightLine) {
+            // Düz fosforlu: başlangıçtan bu noktaya tek çizgi; yataya/dikeye yakınsa ona oturt.
+            val x0 = b.points[0]
+            val y0 = b.points[1]
+            if (kotlin.math.abs(y - y0) < kotlin.math.abs(x - x0) * 0.09f) y = y0
+            else if (kotlin.math.abs(x - x0) < kotlin.math.abs(y - y0) * 0.09f) x = x0
+            if (b.count == 1) b.add(x, y, 1f) else b.replaceLast(x, y, 1f)
+            return
+        }
+        val p = if (b.pressureSensitive) b.lastPressure * 0.5f + tools.applyPressureCurve(rawPressure) * 0.5f else 1f
         val minStep = MIN_POINT_DISTANCE_PX / pageScale(inputPage)
         val dx = x - b.lastX
         val dy = y - b.lastY
@@ -833,9 +890,6 @@ class PdfDocumentView(context: Context) : View(context) {
         }
         b.add(x, y, p)
     }
-
-    private fun pressureOf(event: MotionEvent, idx: Int, prev: Float?): Float =
-        if (inputFromStylus) event.getPressure(idx).coerceIn(0f, 1f).let { if (prev == null) it else prev * 0.5f + it * 0.5f } else 1f
 
     private fun updatePrediction(event: MotionEvent) {
         predictedCount = 0
@@ -1026,6 +1080,9 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun resetInput() {
+        removeCallbacks(holdCheck)
+        snapped = false
+        straightLine = false
         current = null
         drawPointerId = -1
         erasing = false
@@ -1084,6 +1141,8 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val PREDICTION_MS = 16L
         private const val MIN_POINT_DISTANCE_PX = 0.75f
         private const val TWO_FINGER_TAP_MS = 300L
+        private const val HOLD_MS = 550L
+        private const val HOLD_SLOP_DP = 3f
 
         private fun baseCacheBytes(): Int {
             val third = Runtime.getRuntime().maxMemory() / 3

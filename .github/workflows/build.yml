@@ -42,6 +42,8 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: SouNote 0.1.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
-          prerelease: true
+          # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
+          prerelease: false
+          make_latest: true
           body: "Dal: ${{ github.ref_name }} · commit ${{ github.sha }}"
           files: SouNote.apk

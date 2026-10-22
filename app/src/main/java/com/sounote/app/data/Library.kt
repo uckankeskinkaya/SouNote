@@ -26,6 +26,8 @@ data class DocRef(
     /** Kütüphanede bulunduğu kendi klasörü (içe aktarılanlar için); null = ana sayfa. */
     val folderId: String? = null,
     val addedAt: Long = 0L,
+    /** Etiketler ("sınav", "fizik"…), sadece içe aktarılanlarda. */
+    val tags: List<String> = emptyList(),
 )
 
 /** Kütüphanede kullanıcının oluşturduğu klasör (içe aktarılan belgeler için). */
@@ -54,7 +56,13 @@ data class FolderListing(
  */
 class LibraryRepository(private val context: Context) {
 
-    private class ImportedEntry(val id: String, var title: String, val addedAt: Long, var folderId: String? = null)
+    private class ImportedEntry(
+        val id: String,
+        var title: String,
+        val addedAt: Long,
+        var folderId: String? = null,
+        var tags: List<String> = emptyList(),
+    )
     private class FolderEntry(val id: String, var name: String, var parentId: String?, var color: Int)
     private class LinkedEntry(val uri: String, val name: String)
 
@@ -81,7 +89,10 @@ class LibraryRepository(private val context: Context) {
         imported.sortedByDescending { it.addedAt }.mapNotNull { e ->
             val file = fileFor(e.id)
             if (file.exists()) {
-                DocRef(e.id, e.title, Uri.fromFile(file), file.lastModified(), imported = true, folderId = e.folderId, addedAt = e.addedAt)
+                DocRef(
+                    e.id, e.title, Uri.fromFile(file), file.lastModified(), imported = true,
+                    folderId = e.folderId, addedAt = e.addedAt, tags = e.tags,
+                )
             } else {
                 null
             }
@@ -116,6 +127,13 @@ class LibraryRepository(private val context: Context) {
         userFolders.forEach { if (it.parentId == id) it.parentId = folder.parentId }
         userFolders.remove(folder)
         save()
+    }
+
+    fun setTags(docId: String, tags: List<String>) = synchronized(lock) {
+        imported.find { it.id == docId }?.let {
+            it.tags = tags.map { t -> t.trim() }.filter { t -> t.isNotEmpty() }.distinct()
+            save()
+        }
     }
 
     fun moveDoc(docId: String, folderId: String?) = synchronized(lock) {
@@ -347,9 +365,11 @@ class LibraryRepository(private val context: Context) {
             json.optJSONArray("imported")?.let { arr ->
                 for (i in 0 until arr.length()) {
                     val o = arr.getJSONObject(i)
+                    val tagArr = o.optJSONArray("tags")
                     imported += ImportedEntry(
                         o.getString("id"), o.getString("title"), o.getLong("addedAt"),
                         o.optString("folder").ifEmpty { null },
+                        if (tagArr == null) emptyList() else List(tagArr.length()) { k -> tagArr.getString(k) },
                     )
                 }
             }
@@ -377,7 +397,10 @@ class LibraryRepository(private val context: Context) {
         val json = JSONObject()
         json.put("imported", JSONArray().apply {
             imported.forEach {
-                put(JSONObject().put("id", it.id).put("title", it.title).put("addedAt", it.addedAt).put("folder", it.folderId ?: ""))
+                put(
+                    JSONObject().put("id", it.id).put("title", it.title).put("addedAt", it.addedAt)
+                        .put("folder", it.folderId ?: "").put("tags", JSONArray(it.tags)),
+                )
             }
         })
         json.put("folders", JSONArray().apply {

@@ -23,6 +23,7 @@ import com.sounote.app.data.DocRef
 import com.sounote.app.data.FolderListing
 import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
+import com.sounote.app.data.NaturalOrder
 import com.sounote.app.data.UserFolder
 import com.sounote.app.ink.ContentPainter
 import com.sounote.app.ink.Images
@@ -106,6 +107,101 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun lastOpened(doc: DocRef) = prefs.getLong("opened_${doc.id}", 0L)
 
+    /** Seçili etiket filtresi; null = hepsi. */
+    var tagFilter by mutableStateOf<String?>(null)
+
+    val allTags: List<String> get() = imported.flatMap { it.tags }.distinct().sortedWith(NaturalOrder)
+
+    fun setTags(doc: DocRef, tags: List<String>) = folderOp { repo.setTags(doc.id, tags) }
+
+    // ---- Çalışma süresi ----
+
+    private var studyStart = 0L
+    private var studyDoc: String? = null
+
+    /** Belge açıkken ve uygulama öndeyken geçen süre sayılır. */
+    fun studyResume() {
+        val d = openDoc ?: return
+        studyDoc = d.id
+        studyStart = System.currentTimeMillis()
+    }
+
+    fun studyPause() {
+        val id = studyDoc ?: return
+        val start = studyStart
+        studyDoc = null
+        if (start == 0L) return
+        val ms = (System.currentTimeMillis() - start).coerceIn(0L, 12L * 60 * 60 * 1000)
+        if (ms < 1000) return
+        val day = dayKey(System.currentTimeMillis())
+        prefs.edit()
+            .putLong("study_$id", studyTime(id) + ms)
+            .putLong("studyday_$day", prefs.getLong("studyday_$day", 0L) + ms)
+            .apply()
+    }
+
+    fun studyTime(docId: String) = prefs.getLong("study_$docId", 0L)
+
+    /** Son [days] günün çalışma süreleri (bugün başta). */
+    fun studyDays(days: Int): List<Pair<Long, Long>> {
+        val dayMs = 24L * 60 * 60 * 1000
+        val now = System.currentTimeMillis()
+        return (0 until days).map { i ->
+            val t = now - i * dayMs
+            t to prefs.getLong("studyday_${dayKey(t)}", 0L)
+        }
+    }
+
+    private fun dayKey(t: Long) = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(java.util.Date(t))
+
+    // ---- Pomodoro ----
+
+    /** Çalışan pomodoro: bitiş zamanı ve mola mı; null = kapalı. */
+    var pomodoro by mutableStateOf<Pomodoro?>(null)
+        private set
+
+    data class Pomodoro(val endsAt: Long, val onBreak: Boolean, val workMin: Int, val breakMin: Int)
+
+    private var pomodoroJob: Job? = null
+
+    fun startPomodoro(workMin: Int, breakMin: Int) {
+        pomodoroJob?.cancel()
+        pomodoro = Pomodoro(System.currentTimeMillis() + workMin * 60_000L, false, workMin, breakMin)
+        pomodoroJob = viewModelScope.launch {
+            while (true) {
+                val p = pomodoro ?: break
+                val left = p.endsAt - System.currentTimeMillis()
+                if (left > 0) {
+                    delay(minOf(left, 1000L))
+                    continue
+                }
+                // Süre doldu: çalışma ↔ mola
+                val next = if (p.onBreak) p.workMin else p.breakMin
+                pomodoro = p.copy(endsAt = System.currentTimeMillis() + next * 60_000L, onBreak = !p.onBreak)
+                message = if (p.onBreak) "Mola bitti, çalışmaya devam! (${p.workMin} dk)" else "Mola zamanı! (${p.breakMin} dk)"
+                vibrate()
+            }
+        }
+    }
+
+    fun stopPomodoro() {
+        pomodoroJob?.cancel()
+        pomodoro = null
+    }
+
+    private fun vibrate() {
+        runCatching {
+            val app = getApplication<Application>()
+            val vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                app.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                app.getSystemService(android.os.Vibrator::class.java)
+            } ?: return
+            vibrator.vibrate(android.os.VibrationEffect.createWaveform(longArrayOf(0, 300, 200, 300), -1))
+        }
+    }
+
     fun sorted(docs: List<DocRef>): List<DocRef> = when (sortMode) {
         SortMode.NAME -> docs.sortedWith(compareBy(com.sounote.app.data.NaturalOrder) { it.title })
         SortMode.ADDED -> docs.sortedByDescending { it.addedAt }
@@ -174,6 +270,26 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { rec.file.delete() }
             loadRecordings(doc)
+        }
+    }
+
+    // ---- İçindekiler (PDF'in kendi bölüm listesi) ----
+
+    var outline by mutableStateOf<List<PdfPages.OutlineEntry>?>(null)
+        private set
+    private var outlineFor: String? = null
+
+    fun loadOutline(doc: DocRef) {
+        val key = "${doc.id}:$docVersion"
+        if (outlineFor == key) return
+        outlineFor = key
+        outline = null
+        viewModelScope.launch {
+            outline = withContext(Dispatchers.IO) {
+                runCatching { PdfPages.outline(getApplication(), repo.resolveForOpen(doc).uri) }
+                    .onFailure { ErrorLog.record("İçindekiler okunamadı", it) }
+                    .getOrDefault(emptyList())
+            }
         }
     }
 
@@ -483,12 +599,14 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun open(doc: DocRef) {
         prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis()).apply()
+        studyPause()
         viewModelScope.launch {
             withContext(Dispatchers.IO) { repo.rememberLinked(doc) }
             val (resolved, content) = withContext(Dispatchers.IO) { repo.resolveForOpen(doc) to store.load(doc.id) }
             bookmarks = withContext(Dispatchers.IO) { store.loadBookmarks(doc.id) }
             attachInk(resolved, content)
             openDoc = resolved
+            studyResume()
         }
     }
 
@@ -537,6 +655,12 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             ({ i: Int -> if (i == at) null else if (i > at) i - 1 else i })
         }
 
+    fun duplicatePage(doc: DocRef, at: Int) =
+        changePages(doc, focusPage = at + 1, "Sayfa çoğaltılamadı", afterRemap = { store.copyPage(doc.id, at, at + 1) }) { file ->
+            PdfPages.duplicate(getApplication(), file, at)
+            ({ i: Int -> if (i > at) i + 1 else i })
+        }
+
     fun movePage(doc: DocRef, from: Int, to: Int) =
         changePages(doc, focusPage = to, "Sayfa taşınamadı") { file ->
             PdfPages.move(getApplication(), file, from, to)
@@ -555,7 +679,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
      * PDF düzenlenir, sonra notlar, yer imleri ve son sayfa yeni numaralara taşınır.
      * [edit] PDF'i değiştirip eski sayfa → yeni sayfa eşlemesini döndürür.
      */
-    private fun changePages(doc: DocRef, focusPage: Int, error: String, edit: (File) -> (Int) -> Int?) {
+    private fun changePages(
+        doc: DocRef,
+        focusPage: Int,
+        error: String,
+        afterRemap: (() -> Unit)? = null,
+        edit: (File) -> (Int) -> Int?,
+    ) {
         if (pagesBusy) return
         viewModelScope.launch {
             pagesBusy = true
@@ -566,6 +696,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     repo.ensureCopy(doc)
                     val map = edit(repo.docFile(doc.id))
                     store.remapPages(doc.id, map)
+                    afterRemap?.invoke()
                     val marks = store.loadBookmarks(doc.id).mapNotNull(map).toSet()
                     store.saveBookmarks(doc.id, marks)
                     Triple(repo.resolveForOpen(doc), store.load(doc.id), marks)
@@ -606,6 +737,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeDoc() {
+        studyPause()
         fullScreen = false
         stopRecording(null)
         viewModelScope.launch {
@@ -623,7 +755,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     /** Notlu PDF'i oluşturur; [onReady] dosyayla çağrılır (paylaşmak ya da kaydetmek için). */
-    fun export(doc: DocRef, onReady: (File) -> Unit) {
+    fun export(doc: DocRef, pages: IntRange? = null, onReady: (File) -> Unit) {
         if (exporting) return
         viewModelScope.launch {
             exporting = true
@@ -637,8 +769,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     val dir = File(getApplication<Application>().cacheDir, "exports").apply { mkdirs() }
                     dir.listFiles()?.forEach { it.delete() }
                     val name = doc.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80)
-                    val target = File(dir, "$name (notlu).pdf")
-                    PdfExporter.export(getApplication(), source, snapshot, store.imagesDir(doc.id), target)
+                    val suffix = when {
+                        pages == null -> ""
+                        pages.first == pages.last -> " s${pages.first + 1}"
+                        else -> " s${pages.first + 1}-${pages.last + 1}"
+                    }
+                    val target = File(dir, "$name (notlu)$suffix.pdf")
+                    PdfExporter.export(getApplication(), source, snapshot, store.imagesDir(doc.id), target, pages)
                     target
                 }
             }

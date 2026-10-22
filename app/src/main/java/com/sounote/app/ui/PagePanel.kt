@@ -54,6 +54,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.pdf.PageTemplate
+import com.sounote.app.pdf.PdfPages
 import com.sounote.app.pdf.PageThumbLoader
 
 /** Sayfa işlemleri (paneldeki menüden). */
@@ -63,6 +64,7 @@ class PageActions(
     val onDelete: (Int) -> Unit,
     val onMove: (from: Int, to: Int) -> Unit,
     val onToggleBookmark: (Int) -> Unit,
+    val onDuplicate: (Int) -> Unit = {},
 )
 
 /** Soldaki sayfa paneli: küçük resimler, yer imleri, sayfa ekle/sil/taşı. */
@@ -75,8 +77,11 @@ fun PagePanel(
     ink: InkDocument,
     loader: PageThumbLoader,
     actions: PageActions,
+    outline: List<PdfPages.OutlineEntry>? = null,
+    onShowOutline: () -> Unit = {},
 ) {
     var onlyBookmarks by remember { mutableStateOf(false) }
+    var showOutline by remember { mutableStateOf(false) }
     var inserting by remember { mutableStateOf<Int?>(null) }
     var deleting by remember { mutableStateOf<Int?>(null) }
     val pages = if (onlyBookmarks) (0 until pageCount).filter { it in bookmarks } else (0 until pageCount).toList()
@@ -92,15 +97,28 @@ fun PagePanel(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text("Sayfalar", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 FilterChip(
-                    selected = onlyBookmarks,
-                    onClick = { onlyBookmarks = !onlyBookmarks },
-                    label = { Text("Yer imleri") },
-                    leadingIcon = { Icon(Icons.Default.Star, null, Modifier.size(16.dp)) },
+                    selected = !showOutline,
+                    onClick = { showOutline = false },
+                    label = { Text("Sayfalar") },
                 )
+                FilterChip(
+                    selected = showOutline,
+                    onClick = {
+                        showOutline = true
+                        onShowOutline()
+                    },
+                    label = { Text("İçindekiler") },
+                )
+                if (!showOutline) {
+                    IconToggle(onlyBookmarks) { onlyBookmarks = !onlyBookmarks }
+                }
             }
             HorizontalDivider()
+            if (showOutline) {
+                OutlineList(outline, onGoTo = actions.onGoTo)
+                return@Column
+            }
             if (onlyBookmarks && pages.isEmpty()) {
                 Text(
                     "Yer imi yok. Üst çubuktaki ☆ ile ya da sayfaya basılı tutarak ekleyebilirsin.",
@@ -146,6 +164,7 @@ fun PagePanel(
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(text = { Text("Önüne boş sayfa ekle") }, onClick = { menu = false; inserting = i })
                                 DropdownMenuItem(text = { Text("Arkasına boş sayfa ekle") }, onClick = { menu = false; inserting = i + 1 })
+                                DropdownMenuItem(text = { Text("Çoğalt (notlarıyla)") }, onClick = { menu = false; actions.onDuplicate(i) })
                                 if (i > 0) DropdownMenuItem(text = { Text("Yukarı taşı") }, onClick = { menu = false; actions.onMove(i, i - 1) })
                                 if (i < pageCount - 1) DropdownMenuItem(text = { Text("Aşağı taşı") }, onClick = { menu = false; actions.onMove(i, i + 1) })
                                 DropdownMenuItem(
@@ -195,6 +214,53 @@ fun PagePanel(
             },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text("Vazgeç") } },
         )
+    }
+}
+
+/** Sadece yer imleri düğmesi (yıldız). */
+@Composable
+private fun IconToggle(on: Boolean, onClick: () -> Unit) {
+    androidx.compose.material3.IconButton(onClick = onClick) {
+        Icon(
+            Icons.Default.Star,
+            contentDescription = "Sadece yer imleri",
+            tint = if (on) Color(0xFFF2B705) else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** PDF'in kendi içindekiler listesi; dokununca o sayfaya. */
+@Composable
+private fun OutlineList(outline: List<PdfPages.OutlineEntry>?, onGoTo: (Int) -> Unit) {
+    when {
+        outline == null -> Text("Yükleniyor…", modifier = Modifier.padding(16.dp))
+        outline.isEmpty() -> Text(
+            "Bu PDF'te içindekiler bilgisi yok.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(16.dp),
+        )
+        else -> androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize()) {
+            items(outline.size) { k ->
+                val e = outline[k]
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(onClick = { if (e.page >= 0) onGoTo(e.page) })
+                        .padding(start = (12 + e.level * 16).dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+                ) {
+                    Text(
+                        e.title,
+                        style = if (e.level == 0) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (e.page >= 0) {
+                        Text("${e.page + 1}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
     }
 }
 

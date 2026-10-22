@@ -31,7 +31,11 @@ import com.tom_roush.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
  */
 object PdfExporter {
 
-    fun export(context: Context, source: Uri, ink: Map<Int, PageContent>, imagesDir: File, target: File) {
+    /** [pages] verilirse sadece o sayfalar (0'dan başlayan) yeni PDF'te kalır. */
+    fun export(
+        context: Context, source: Uri, ink: Map<Int, PageContent>, imagesDir: File, target: File,
+        pages: IntRange? = null,
+    ) {
         PDFBoxResourceLoader.init(context.applicationContext)
         val sizes = pageSizes(context, source, ink.keys)
         val doc = if (source.scheme == "file") {
@@ -46,6 +50,9 @@ object PdfExporter {
                 if (content.isEmpty || pageIndex >= doc.numberOfPages) continue
                 val ourWidth = sizes[pageIndex]?.first ?: continue
                 writePage(doc, pageIndex, ourWidth, content, imagesDir)
+            }
+            if (pages != null) {
+                for (i in doc.numberOfPages - 1 downTo 0) if (i !in pages) doc.removePage(i)
             }
             val tmp = File(target.path + ".tmp")
             doc.save(tmp)
@@ -102,7 +109,21 @@ object PdfExporter {
                     val bmp = BitmapFactory.decodeFile(f.path) ?: return@forEach
                     LosslessFactory.createFromImage(doc, bmp)
                 }
-                cs.drawImage(img, Matrix(im.width, 0f, 0f, -im.height, im.x, im.y + im.height))
+                // Birim kare → resmin yeri (y ters), merkezi etrafında dönme dahil.
+                val r = Math.toRadians(im.rotation.toDouble())
+                val cos = kotlin.math.cos(r).toFloat()
+                val sin = kotlin.math.sin(r).toFloat()
+                val cx = im.x + im.width / 2
+                val cy = im.y + im.height / 2
+                val bottom = im.y + im.height
+                cs.drawImage(
+                    img,
+                    Matrix(
+                        im.width * cos, im.width * sin, im.height * sin, -im.height * cos,
+                        cx + (im.x - cx) * cos - (bottom - cy) * sin,
+                        cy + (im.x - cx) * sin + (bottom - cy) * cos,
+                    ),
+                )
             }
 
             val highlighters = content.strokes.filter { it.tool == InkTool.HIGHLIGHTER }
@@ -228,11 +249,22 @@ object PdfExporter {
             path.addPath(line)
         }
         if (path.isEmpty) return
+        val center = TextBoxes.bounds(box, android.graphics.RectF())
+        val turn = android.graphics.Matrix().apply { setRotate(box.rotation, center.centerX(), center.centerY()) }
+        if (box.rotation != 0f) path.transform(turn)
         if (box.background != 0) {
-            val r = TextBoxes.bounds(box, android.graphics.RectF())
+            // Arka plan: (dönmüş) dörtgen
+            val r = android.graphics.RectF(center)
             val pad = TextBoxes.backgroundPad(box)
+            r.inset(-pad, -pad)
+            val pts = floatArrayOf(r.left, r.top, r.right, r.top, r.right, r.bottom, r.left, r.bottom)
+            turn.mapPoints(pts)
             setColor(cs, box.background, stroking = false)
-            cs.addRect(r.left - pad, r.top - pad, r.width() + 2 * pad, r.height() + 2 * pad)
+            cs.moveTo(pts[0], pts[1])
+            cs.lineTo(pts[2], pts[3])
+            cs.lineTo(pts[4], pts[5])
+            cs.lineTo(pts[6], pts[7])
+            cs.closePath()
             cs.fill()
         }
         setColor(cs, box.color, stroking = false)

@@ -43,10 +43,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         vm.refresh()
+        vm.studyResume()
     }
 
     override fun onPause() {
         super.onPause()
+        vm.studyPause()
         vm.flush()
     }
 

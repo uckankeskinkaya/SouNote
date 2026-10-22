@@ -135,6 +135,8 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var movingFolder by remember { mutableStateOf<UserFolder?>(null) }
     var searching by remember { mutableStateOf(false) }
     var deletingOrphan by remember { mutableStateOf<DocRef?>(null) }
+    var taggingDoc by remember { mutableStateOf<DocRef?>(null) }
+    var statsDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var crash by remember { mutableStateOf(ErrorLog.pendingCrash()) }
 
@@ -245,6 +247,13 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 },
                             )
                             DropdownMenuItem(
+                                text = { Text("Çalışma istatistiği") },
+                                onClick = {
+                                    more = false
+                                    statsDialog = true
+                                },
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Hata raporu gönder") },
                                 onClick = {
                                     more = false
@@ -288,6 +297,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
             val docMenu: @Composable (DocRef, () -> Unit) -> Unit = { doc, dismiss ->
                 DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
                 DropdownMenuItem(text = { Text("Klasöre taşı") }, onClick = { dismiss(); movingDoc = doc })
+                DropdownMenuItem(text = { Text("Etiketler") }, onClick = { dismiss(); taggingDoc = doc })
                 DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deleting = doc })
             }
             val folderMenu: @Composable (UserFolder, () -> Unit) -> Unit = { f, dismiss ->
@@ -320,7 +330,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         fullWidth { SectionTitle("Belgeler") }
                         items(ds, key = { "s" + it.id }) { doc ->
                             if (doc.imported) {
-                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) })
+                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
                             } else {
                                 DocCard(doc, onClick = { vm.open(doc) })
                             }
@@ -339,8 +349,33 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         fullWidth { Hint("Bu klasörde PDF yok. Dosya yöneticisinden buraya PDF atınca görünür.") }
                     }
                 } else {
+                    val tag = vm.tagFilter
+                    if (folder == null && vm.allTags.isNotEmpty()) {
+                        fullWidth {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                            ) {
+                                FilterChip(selected = tag == null, onClick = { vm.tagFilter = null }, label = { Text("Tümü") })
+                                vm.allTags.forEach { t ->
+                                    FilterChip(
+                                        selected = tag == t,
+                                        onClick = { vm.tagFilter = if (tag == t) null else t },
+                                        label = { Text("#$t") },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (tag != null) {
+                        val tagged = vm.sorted(vm.imported.filter { tag in it.tags })
+                        fullWidth { SectionTitle("#$tag · ${tagged.size} belge") }
+                        items(tagged, key = { "t" + it.id }) { doc ->
+                            DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                        }
+                    }
                     // Son açılanlar: kaldığın belgeye hızlı dönüş
-                    val recent = if (folder == null) {
+                    val recent = if (folder == null && tag == null) {
                         vm.imported.filter { vm.lastOpened(it) > 0 }.sortedByDescending { vm.lastOpened(it) }.take(10)
                     } else {
                         emptyList()
@@ -362,27 +397,27 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                         }
                     }
-                    if (folder == null && vm.rootFolders.isNotEmpty()) {
+                    if (folder == null && tag == null && vm.rootFolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Bağlı klasörler") }
                         items(vm.rootFolders, key = { "r" + it.treeUri }) { f ->
                             FolderCard(f, onClick = { vm.openFolder(f) }, onLongClick = { unlinking = f })
                         }
                     }
-                    val subfolders = folders.filter { it.parentId == vm.currentFolder }.sortedWith(compareBy(NaturalOrder) { it.name })
+                    val subfolders = if (tag != null) emptyList() else folders.filter { it.parentId == vm.currentFolder }.sortedWith(compareBy(NaturalOrder) { it.name })
                     if (subfolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Klasörler") }
                         items(subfolders, key = { "u" + it.id }) { f ->
                             UserFolderCard(f, countIn(f), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
                         }
                     }
-                    val docs = vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
+                    val docs = if (tag != null) emptyList() else vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
                     if (docs.isNotEmpty()) {
                         fullWidth { SectionTitle("Belgeler") }
                         items(docs, key = { it.id }) { doc ->
-                            DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) })
+                            DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
                         }
                     }
-                    if (folder == null && vm.orphans.isNotEmpty()) {
+                    if (folder == null && tag == null && vm.orphans.isNotEmpty()) {
                         fullWidth {
                             Column {
                                 SectionTitle("Kaynağı bulunamayan notlu belgeler")
@@ -405,7 +440,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             )
                         }
                     }
-                    if (folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty()) {
+                    if (tag == null && folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty()) {
                         fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder, onNewNotebook = { newNotebook = true }) }
                     } else if (folder != null && subfolders.isEmpty() && docs.isEmpty()) {
                         fullWidth {
@@ -497,6 +532,20 @@ fun LibraryScreen(vm: LibraryViewModel) {
             },
             onDismiss = { movingFolder = null },
         )
+    }
+    taggingDoc?.let { doc ->
+        TagsDialog(
+            doc = doc,
+            allTags = vm.allTags,
+            onSave = { tags ->
+                vm.setTags(doc, tags)
+                taggingDoc = null
+            },
+            onDismiss = { taggingDoc = null },
+        )
+    }
+    if (statsDialog) {
+        StatsDialog(vm) { statsDialog = false }
     }
     deletingOrphan?.let { doc ->
         AlertDialog(
@@ -749,6 +798,102 @@ private fun MoveDialog(
     )
 }
 
+/** Belgenin etiketleri: var olanlardan seç ya da yenisini yaz. */
+@Composable
+private fun TagsDialog(doc: DocRef, allTags: List<String>, onSave: (List<String>) -> Unit, onDismiss: () -> Unit) {
+    var selected by remember(doc.id) { mutableStateOf(doc.tags.toSet()) }
+    var newTag by remember { mutableStateOf("") }
+    val options = (allTags + selected).distinct()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Etiketler") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (options.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    ) {
+                        options.forEach { t ->
+                            FilterChip(
+                                selected = t in selected,
+                                onClick = { selected = if (t in selected) selected - t else selected + t },
+                                label = { Text("#$t") },
+                            )
+                        }
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = newTag,
+                        onValueChange = { newTag = it.replace("#", "").take(30) },
+                        singleLine = true,
+                        label = { Text("Yeni etiket") },
+                        placeholder = { Text("ör. sınav") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = {
+                        val t = newTag.trim().lowercase(TR)
+                        if (t.isNotEmpty()) selected = selected + t
+                        newTag = ""
+                    }) { Text("Ekle") }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val t = newTag.trim().lowercase(TR)
+                onSave((if (t.isNotEmpty()) selected + t else selected).toList())
+            }) { Text("Kaydet") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
+    )
+}
+
+/** Çalışma istatistiği: bugün, bu hafta ve son 7 günün çubukları; en çok çalışılan belgeler. */
+@Composable
+private fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
+    val days = remember { vm.studyDays(7) }
+    val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
+    val dayName = remember { SimpleDateFormat("EEE d", TR) }
+    val top = remember { vm.imported.map { it to vm.studyTime(it.id) }.filter { it.second >= 60_000 }.sortedByDescending { it.second }.take(5) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Çalışma istatistiği") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Bugün: ${formatStudy(days.first().second)}", style = MaterialTheme.typography.titleMedium)
+                Text("Son 7 gün: ${formatStudy(days.sumOf { it.second })}", style = MaterialTheme.typography.bodyMedium)
+                days.reversed().forEach { (t, ms) ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(dayName.format(Date(t)), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(56.dp))
+                        Box(
+                            Modifier
+                                .height(14.dp)
+                                .fillMaxWidth((ms.toFloat() / max).coerceIn(0.02f, 1f) * 0.75f)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary),
+                        )
+                        Text(formatStudy(ms), style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                if (top.isNotEmpty()) {
+                    Text("En çok çalışılan", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+                    top.forEach { (doc, ms) ->
+                        Text("${doc.title} · ${formatStudy(ms)}", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                Text(
+                    "Belge açıkken geçen süre sayılır.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Kapat") } },
+    )
+}
+
 /** Yeni boş defter: ad + sayfa şablonu. */
 @Composable
 private fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean) -> Unit, onDismiss: () -> Unit) {
@@ -868,6 +1013,7 @@ private fun DocCard(
     doc: DocRef,
     onClick: () -> Unit,
     menu: (@Composable (dismiss: () -> Unit) -> Unit)? = null,
+    subtitle: String? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Column(
@@ -892,7 +1038,31 @@ private fun DocCard(
             }
         }
         CardTitle(doc.title)
+        if (!subtitle.isNullOrEmpty()) {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 2.dp),
+            )
+        }
     }
+}
+
+/** Kartın altındaki küçük satır: etiketler ve çalışma süresi. */
+private fun cardSubtitle(vm: LibraryViewModel, doc: DocRef): String {
+    val parts = ArrayList<String>()
+    doc.tags.take(3).forEach { parts += "#$it" }
+    val study = vm.studyTime(doc.id)
+    if (study >= 60_000) parts += "⏱ " + formatStudy(study)
+    return parts.joinToString("  ")
+}
+
+internal fun formatStudy(ms: Long): String {
+    val min = ms / 60_000
+    return if (min >= 60) "${min / 60} sa ${min % 60} dk" else "$min dk"
 }
 
 @Composable

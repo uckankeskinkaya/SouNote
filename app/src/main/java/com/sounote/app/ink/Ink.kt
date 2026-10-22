@@ -96,6 +96,8 @@ data class TextBox(
     val bold: Boolean = false,
     /** Arka plan rengi (yapışkan not görünümü); 0 = yok. */
     val background: Int = 0,
+    /** Merkez etrafında dönme açısı (derece, saat yönü). */
+    val rotation: Float = 0f,
 )
 
 /**
@@ -109,6 +111,8 @@ data class ImageItem(
     val width: Float,
     val height: Float,
     val file: String,
+    /** Merkez etrafında dönme açısı (derece, saat yönü). */
+    val rotation: Float = 0f,
 )
 
 /** Bir sayfanın bütün notları. Değişmez: her değişiklik yeni bir nesne üretir. */

@@ -52,8 +52,14 @@ object Selections {
         out.setEmpty()
         val r = RectF()
         c.strokes.forEach { if (it in sel.strokes) union(out, it.bounds) }
-        c.texts.forEach { if (it.id in sel.textIds) union(out, TextBoxes.bounds(it, r)) }
-        c.images.forEach { if (it.id in sel.imageIds) union(out, r.apply { set(it.x, it.y, it.x + it.width, it.y + it.height) }) }
+        c.texts.forEach { if (it.id in sel.textIds) union(out, TextBoxes.visualBounds(it, r)) }
+        c.images.forEach {
+            if (it.id in sel.imageIds) {
+                r.set(it.x, it.y, it.x + it.width, it.y + it.height)
+                if (it.rotation != 0f) Rotation.boundsOf(r, it.rotation, r)
+                union(out, r)
+            }
+        }
         return out
     }
 
@@ -87,6 +93,35 @@ object Selections {
         val images = c.images.map { im ->
             if (im.id !in sel.imageIds) im
             else im.copy(x = mx(im.x), y = my(im.y), width = im.width * scale, height = im.height * scale)
+        }
+        return c.copy(strokes = strokes, texts = texts, images = images) to
+            Selection(sel.page, newStrokes, sel.textIds, sel.imageIds)
+    }
+
+    /** Seçimi (cx, cy) etrafında [degrees] kadar döndürür. Yazı ve resimlerin merkezi döner, açıları artar. */
+    fun rotate(c: PageContent, sel: Selection, degrees: Float, cx: Float, cy: Float): Pair<PageContent, Selection> {
+        val newStrokes = HashSet<Stroke>()
+        val strokes = c.strokes.map { s ->
+            if (s !in sel.strokes) return@map s
+            val p = s.points.copyOf()
+            for (i in 0 until s.pointCount) {
+                val (x, y) = Rotation.rotate(p[i * 3], p[i * 3 + 1], cx, cy, degrees)
+                p[i * 3] = x
+                p[i * 3 + 1] = y
+            }
+            Stroke(s.tool, s.color, s.width, s.pressureSensitive, p).also { newStrokes += it }
+        }
+        val r = RectF()
+        val texts = c.texts.map { t ->
+            if (t.id !in sel.textIds) return@map t
+            TextBoxes.bounds(t, r)
+            val (ncx, ncy) = Rotation.rotate(r.centerX(), r.centerY(), cx, cy, degrees)
+            t.copy(x = t.x + ncx - r.centerX(), y = t.y + ncy - r.centerY(), rotation = Rotation.normalize(t.rotation + degrees))
+        }
+        val images = c.images.map { im ->
+            if (im.id !in sel.imageIds) return@map im
+            val (ncx, ncy) = Rotation.rotate(im.x + im.width / 2, im.y + im.height / 2, cx, cy, degrees)
+            im.copy(x = ncx - im.width / 2, y = ncy - im.height / 2, rotation = Rotation.normalize(im.rotation + degrees))
         }
         return c.copy(strokes = strokes, texts = texts, images = images) to
             Selection(sel.page, newStrokes, sel.textIds, sel.imageIds)

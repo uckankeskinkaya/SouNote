@@ -66,6 +66,9 @@ fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
             ToolChip("Silgi", state.tool == Tool.ERASER, drawable = R.drawable.ic_eraser) {
                 onChange(state.copy(tool = Tool.ERASER))
             }
+            ToolChip("Yazı", state.tool == Tool.TEXT, drawable = R.drawable.ic_text) {
+                onChange(state.copy(tool = Tool.TEXT))
+            }
             VerticalDivider(Modifier.height(32.dp).padding(horizontal = 4.dp))
 
             when (state.tool) {
@@ -82,6 +85,22 @@ fun InkToolbar(state: ToolState, onChange: (ToolState) -> Unit) {
                     WidthControl(state.highlighterWidthMm, min = 1f, max = 15f, step = 0.5f) {
                         onChange(state.copy(highlighterWidthMm = it))
                     }
+                }
+                Tool.TEXT -> {
+                    ColorRow(ToolState.PEN_COLORS, state.textColor) { onChange(state.copy(textColor = it)) }
+                    Text("Boyut", style = MaterialTheme.typography.labelLarge)
+                    Slider(
+                        value = state.textSizePt,
+                        onValueChange = { onChange(state.copy(textSizePt = it.roundToInt().toFloat())) },
+                        valueRange = 6f..48f,
+                        modifier = Modifier.width(180.dp),
+                    )
+                    Text("${state.textSizePt.roundToInt()} pt", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        "Sayfaya dokun: yazı ekle · yazıya dokun: düzenle · sürükle: taşı",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Tool.ERASER -> {
                     FilterChip(
@@ -140,7 +159,7 @@ private fun ToolChip(
 }
 
 @Composable
-private fun ColorRow(colors: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
+internal fun ColorRow(colors: List<Int>, selected: Int, onSelect: (Int) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         colors.forEach { c ->
             val isSelected = c == selected

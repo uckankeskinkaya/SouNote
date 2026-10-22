@@ -40,6 +40,11 @@ class MainActivity : ComponentActivity() {
         vm.refresh()
     }
 
+    override fun onPause() {
+        super.onPause()
+        vm.flush()
+    }
+
     /** Dosya yöneticisinden "SouNote ile aç" / "Paylaş" ile gelen PDF'i içe aktarıp aç. */
     private fun handleIntent(intent: Intent?) {
         val uri: Uri? = when (intent?.action) {
@@ -57,15 +62,7 @@ private fun SouNoteApp(vm: LibraryViewModel) {
     if (doc != null) {
         BackHandler { vm.closeDoc() }
         key(doc.id) {
-            ViewerScreen(
-                doc = doc,
-                initialPage = vm.lastPage(doc),
-                ink = vm.inkFor(doc),
-                tools = vm.tools,
-                onToolsChange = vm::updateTools,
-                onPageChanged = { vm.saveLastPage(doc, it) },
-                onBack = vm::closeDoc,
-            )
+            ViewerScreen(doc, vm)
         }
     } else {
         BackHandler(enabled = vm.path.isNotEmpty()) { vm.navigateUp() }

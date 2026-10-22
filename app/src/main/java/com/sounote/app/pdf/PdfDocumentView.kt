@@ -21,11 +21,16 @@ import android.view.MotionPredictor
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.view.ViewConfiguration
 import android.widget.OverScroller
+import java.io.File
 import com.sounote.app.ink.Eraser
 import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkTool
+import com.sounote.app.ink.PageContent
+import com.sounote.app.ink.TextBox
+import com.sounote.app.ink.TextBoxes
 import com.sounote.app.ink.StrokeBuilder
 import com.sounote.app.ink.StrokeRenderer
 import com.sounote.app.ink.Tool
@@ -55,12 +60,37 @@ class PdfDocumentView(context: Context) : View(context) {
 
     var ink: InkDocument = InkDocument()
         set(value) {
+            field.removeListener(inkListener)
             field = value
+            value.addListener(inkListener)
             discardInkNodes()
             invalidate()
         }
 
     var tools: ToolState = ToolState()
+        set(value) {
+            val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
+            field = value
+            if (formsChanged) {
+                if (value.tool == Tool.TEXT) requestRender()
+                invalidate()
+            }
+        }
+
+    /** Yazı aracıyla metin kutusuna (yeni ya da var olan) dokunuldu. */
+    var onTextBoxRequest: ((page: Int, box: TextBox, isNew: Boolean) -> Unit)? = null
+
+    /** Yazı aracıyla doldurulabilir metin/liste alanına dokunuldu. */
+    var onFormFieldRequest: ((FormField) -> Unit)? = null
+
+    /** İki parmakla dokununca geri al. */
+    var onUndoGesture: (() -> Unit)? = null
+
+    /** Doldurulan formun yazılacağı dosya (belgenin uygulama içindeki kopyası). */
+    var formSaveTarget: File? = null
+
+    /** Form doldurulup PDF yeniden yazıldığında. */
+    var onFormSaved: (() -> Unit)? = null
 
     private val density = resources.displayMetrics.density
     private val pageGap = 12f * density
@@ -141,10 +171,59 @@ class PdfDocumentView(context: Context) : View(context) {
     private var predictedCount = 0
     private var drawScratch = FloatArray(0)
 
+    // Silme ve sürükleme tek geri alma adımı olsun diye hareket başındaki hal
+    private val gestureBefore = HashMap<Int, PageContent>()
+
+    // Yazı aracı
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+    private var textDownX = 0f
+    private var textDownY = 0f
+    private var textPage = -1
+    private var draggingBox: TextBox? = null
+    private var dragMoved = false
+    private var dragOrigin = 0f to 0f
+
+    // Form alanları
+    private var hasForms = false
+    private val formFields = HashMap<Int, List<FormField>>()
+    private val formRequested = HashSet<Int>()
+    private val formPaint = Paint().apply { color = Color.argb(46, 33, 110, 230) }
+    private val formBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1f * density
+        color = Color.argb(140, 33, 110, 230)
+    }
+
+    // İki parmakla dokunma (geri al)
+    private var tapCandidate = false
+    private var tapStartTime = 0L
+    private var tapMaxPointers = 0
+    private val tapStart = FloatArray(4)
+
+    private val inkListener: (Int) -> Unit = { page -> pageChanged(page) }
+    private val boundsRect = RectF()
+
     private val renderListener = object : PdfRenderThread.Listener {
-        override fun onOpened(pageSizes: List<Size>) {
+        override fun onOpened(pageSizes: List<Size>, hasForms: Boolean) {
             this@PdfDocumentView.pageSizes = pageSizes
+            this@PdfDocumentView.hasForms = hasForms
             relayout(initial = true)
+        }
+
+        override fun onFormFields(page: Int, fields: List<FormField>) {
+            formFields[page] = fields
+            if (tools.tool == Tool.TEXT) invalidate()
+        }
+
+        override fun onFormEdited(page: Int, fields: List<FormField>) {
+            formFields[page] = fields
+            // Sayfanın görüntüsü değişti: yeniden çiz.
+            baseCache.remove(page)
+            previewCache.remove(page)
+            details.remove(page)
+            requestRender()
+            invalidate()
+            onFormSaved?.invoke()
         }
 
         override fun onRendered(task: RenderTask, bitmap: Bitmap) {
@@ -170,7 +249,18 @@ class PdfDocumentView(context: Context) : View(context) {
         renderer = PdfRenderThread(context, uri, renderListener)
     }
 
+    init {
+        ink.addListener(inkListener)
+    }
+
+    /** Form alanını değiştir: metin, liste seçimi ya da (ikisi de null) tıklama. */
+    fun editFormField(field: FormField, text: String? = null, indices: IntArray? = null) {
+        val target = formSaveTarget ?: return
+        renderer?.editFormField(field, text, indices, target)
+    }
+
     fun release() {
+        ink.removeListener(inkListener)
         renderer?.close()
         renderer = null
         zoomAnimator?.cancel()
@@ -329,6 +419,9 @@ class PdfDocumentView(context: Context) : View(context) {
             details.clear()
         }
         details.keys.retainAll { it in visible }
+        if (hasForms && tools.tool == Tool.TEXT) {
+            for (i in visible) if (formRequested.add(i)) r.requestFormFields(i)
+        }
         // 4) Komşu sayfaları önceden hazırla
         for (i in max(0, visible.first - 1)..min(n - 1, visible.last + 2)) {
             if (i !in visible && baseCache[i] == null) add(RenderTask.Base(i, baseWidthPx))
@@ -404,20 +497,36 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
-        val strokes = ink.strokes(page)
+        val content = ink.content(page)
+        val strokes = content.strokes
         val active = current?.takeIf { inputPage == page }
-        if (strokes.isEmpty() && active == null) return
+        val showOverlay = tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)
+        if (content.isEmpty && active == null && !showOverlay) return
         val scale = r.width() / pageSizes[page].width
         canvas.save()
         canvas.clipRect(r)
         canvas.translate(r.left, r.top)
         canvas.scale(scale, scale)
-        if (strokes.isNotEmpty()) {
+        if (!content.isEmpty) {
             if (canvas.isHardwareAccelerated) {
                 canvas.drawRenderNode(inkNode(page))
             } else {
                 strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(canvas, it) }
+                ink.texts(page).forEach { TextBoxes.draw(canvas, it) }
                 strokes.forEach { if (it.tool == InkTool.PEN) strokeRenderer.draw(canvas, it) }
+            }
+        }
+        if (tools.tool == Tool.TEXT) {
+            // Yazı aracındayken metin kutularının ve form alanlarının yerini göster.
+            ink.texts(page).forEach { box ->
+                TextBoxes.bounds(box, boundsRect).inset(-3f, -3f)
+                canvas.drawRect(boundsRect, formBorderPaint.apply { strokeWidth = 1f * density / scale })
+            }
+            formFields[page]?.forEach { f ->
+                if (f.editable) {
+                    canvas.drawRect(f.rect, formPaint)
+                    canvas.drawRect(f.rect, formBorderPaint)
+                }
             }
         }
         if (active != null) {
@@ -440,6 +549,7 @@ class PdfDocumentView(context: Context) : View(context) {
             val strokes = ink.strokes(page)
             // Fosforlu altta, kalem üstte.
             strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
+            ink.texts(page).forEach { TextBoxes.draw(c, it) }
             strokes.forEach { if (it.tool == InkTool.PEN) strokeRenderer.draw(c, it) }
             endRecording()
         }
@@ -485,8 +595,13 @@ class PdfDocumentView(context: Context) : View(context) {
             return true
         }
 
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            if (tools.tool == Tool.TEXT && !tools.fingerDraw) textTap(e.x, e.y)
+            return false
+        }
+
         override fun onDoubleTap(e: MotionEvent): Boolean {
-            if (tools.fingerDraw) return false
+            if (tools.fingerDraw || tools.tool == Tool.TEXT) return false
             val target = if (zoom < 1.5f) DOUBLE_TAP_ZOOM else 1f
             animateZoom(target, e.x, e.y)
             return true
@@ -520,12 +635,20 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun handleStylus(event: MotionEvent) {
         lastStylusTime = event.eventTime
         if (fingerGestureActive) cancelFingerGesture(event)
-        if (drawPointerId != -1 && !inputFromStylus) cancelInput()
+        if (drawPointerId != -1 && !inputFromStylus) {
+            if (textPage >= 0) textCancel() else cancelInput()
+        }
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val idx = event.actionIndex
                 if (drawPointerId == -1 && isStylusTool(event.getToolType(idx))) {
+                    if (tools.tool == Tool.TEXT && event.getToolType(idx) != MotionEvent.TOOL_TYPE_ERASER) {
+                        drawPointerId = event.getPointerId(idx)
+                        inputFromStylus = true
+                        textDown(event.getX(idx), event.getY(idx))
+                        return
+                    }
                     val erase = tools.tool == Tool.ERASER ||
                         event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER ||
                         (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
@@ -534,15 +657,21 @@ class PdfDocumentView(context: Context) : View(context) {
             }
             MotionEvent.ACTION_MOVE -> {
                 val idx = event.findPointerIndex(drawPointerId)
-                if (idx >= 0) moveInput(event, idx)
+                if (idx >= 0) {
+                    if (textPage >= 0) textMove(event.getX(idx), event.getY(idx)) else moveInput(event, idx)
+                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                 if (event.getPointerId(event.actionIndex) == drawPointerId) {
-                    moveInput(event, event.actionIndex)
-                    endInput()
+                    if (textPage >= 0) {
+                        textUp()
+                    } else {
+                        moveInput(event, event.actionIndex)
+                        endInput()
+                    }
                 }
             }
-            MotionEvent.ACTION_CANCEL -> cancelInput()
+            MotionEvent.ACTION_CANCEL -> if (textPage >= 0) textCancel() else cancelInput()
         }
     }
 
@@ -558,7 +687,24 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
 
-        if (tools.fingerDraw) {
+        trackTwoFingerTap(event)
+
+        if (tools.fingerDraw && tools.tool == Tool.TEXT) {
+            when (action) {
+                MotionEvent.ACTION_DOWN -> {
+                    drawPointerId = event.getPointerId(0)
+                    inputFromStylus = false
+                    textDown(event.getX(0), event.getY(0))
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    multiTouch = true
+                    if (textPage >= 0) textCancel()
+                }
+                MotionEvent.ACTION_MOVE -> if (!multiTouch && textPage >= 0) textMove(event.getX(0), event.getY(0))
+                MotionEvent.ACTION_UP -> if (textPage >= 0) textUp()
+                MotionEvent.ACTION_CANCEL -> if (textPage >= 0) textCancel()
+            }
+        } else if (tools.fingerDraw) {
             when (action) {
                 MotionEvent.ACTION_DOWN -> beginInput(event, 0, fromStylus = false, erase = tools.tool == Tool.ERASER)
                 MotionEvent.ACTION_POINTER_DOWN -> {
@@ -636,6 +782,7 @@ class PdfDocumentView(context: Context) : View(context) {
             eraserY = y
             lastEraseX = x
             lastEraseY = y
+            gestureBefore.clear()
             eraseAlong(x, y, x, y)
         } else {
             val t = tools
@@ -730,20 +877,149 @@ class PdfDocumentView(context: Context) : View(context) {
             EraserMode.STROKE -> Eraser.eraseStrokes(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
             EraserMode.PRECISE -> Eraser.erasePrecise(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
         } ?: return
-        ink.replace(page, result)
-        pageChanged(page)
+        val before = ink.content(page)
+        gestureBefore.getOrPut(page) { before }
+        ink.set(page, before.copy(strokes = result))
     }
 
     private fun endInput() {
-        current?.let { b ->
-            ink.add(inputPage, b.build())
-            pageChanged(inputPage)
-        }
+        current?.let { b -> ink.addStroke(inputPage, b.build()) }
+        recordGesture()
         resetInput()
     }
 
+    /** Silgi hareketinin yaptığı bütün değişiklikleri tek geri alma adımı yap. */
+    private fun recordGesture() {
+        if (gestureBefore.isEmpty()) return
+        ink.record(gestureBefore.map { (page, before) -> InkDocument.Change(page, before, ink.content(page)) })
+        gestureBefore.clear()
+    }
+
     private fun cancelInput() {
+        recordGesture()
         resetInput()
+    }
+
+    // ---- Yazı aracı ----
+
+    private fun textDown(x: Float, y: Float) {
+        textDownX = x
+        textDownY = y
+        textPage = pageAt((y + offsetY) / zoom)
+        dragMoved = false
+        val px = toPageX(textPage, x)
+        val py = toPageY(textPage, y)
+        draggingBox = ink.texts(textPage).lastOrNull { TextBoxes.bounds(it, boundsRect).contains(px, py) }
+        draggingBox?.let { dragOrigin = it.x to it.y }
+        parent?.requestDisallowInterceptTouchEvent(true)
+    }
+
+    private fun textMove(x: Float, y: Float) {
+        val box = draggingBox ?: return
+        if (!dragMoved && kotlin.math.hypot(x - textDownX, y - textDownY) < touchSlop) return
+        if (!dragMoved) {
+            dragMoved = true
+            gestureBefore[textPage] = ink.content(textPage)
+        }
+        val s = pageScale(textPage)
+        val moved = box.copy(
+            x = dragOrigin.first + (x - textDownX) / s,
+            y = dragOrigin.second + (y - textDownY) / s,
+        )
+        val c = ink.content(textPage)
+        ink.set(textPage, c.copy(texts = c.texts.map { if (it.id == box.id) moved else it }))
+        draggingBox = moved
+    }
+
+    private fun textUp() {
+        if (dragMoved) recordGesture() else textTap(textDownX, textDownY)
+        textCancelState()
+    }
+
+    private fun textCancel() {
+        recordGesture()
+        textCancelState()
+    }
+
+    private fun textCancelState() {
+        textPage = -1
+        draggingBox = null
+        dragMoved = false
+        drawPointerId = -1
+    }
+
+    /** Dokunulan yerde form alanı varsa onu, metin kutusu varsa onu düzenle; yoksa yeni kutu aç. */
+    private fun textTap(x: Float, y: Float) {
+        if (pageTops.isEmpty()) return
+        val page = pageAt((y + offsetY) / zoom)
+        val px = toPageX(page, x)
+        val py = toPageY(page, y)
+        val pageW = pageSizes[page].width.toFloat()
+        val pageH = pageSizes[page].height.toFloat()
+        if (px < 0 || py < 0 || px > pageW || py > pageH) return
+
+        formFields[page]?.lastOrNull { it.editable && it.rect.contains(px, py) }?.let { f ->
+            when (f.type) {
+                FormField.Type.TEXT, FormField.Type.CHOICE -> onFormFieldRequest?.invoke(f)
+                else -> editFormField(f)
+            }
+            return
+        }
+        ink.texts(page).lastOrNull { TextBoxes.bounds(it, boundsRect).contains(px, py) }?.let {
+            onTextBoxRequest?.invoke(page, it, false)
+            return
+        }
+        val size = tools.textSizePt
+        val bx = px.coerceAtMost(pageW - 90f).coerceAtLeast(4f)
+        val by = (py - size * 0.6f).coerceAtLeast(0f)
+        val box = TextBox(
+            id = System.currentTimeMillis(),
+            x = bx,
+            y = by,
+            width = (pageW - bx - 12f).coerceAtLeast(80f),
+            fontSize = size,
+            color = tools.textColor,
+            text = "",
+        )
+        onTextBoxRequest?.invoke(page, box, true)
+    }
+
+    // ---- İki parmakla dokununca geri al ----
+
+    private fun trackTwoFingerTap(event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                tapCandidate = false
+                tapMaxPointers = 1
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                tapMaxPointers = maxOf(tapMaxPointers, event.pointerCount)
+                if (event.pointerCount == 2) {
+                    tapCandidate = true
+                    tapStartTime = event.eventTime
+                    for (i in 0..1) {
+                        tapStart[i * 2] = event.getX(i)
+                        tapStart[i * 2 + 1] = event.getY(i)
+                    }
+                } else {
+                    tapCandidate = false
+                }
+            }
+            MotionEvent.ACTION_MOVE -> if (tapCandidate && event.pointerCount >= 2) {
+                for (i in 0..1) {
+                    if (kotlin.math.hypot(event.getX(i) - tapStart[i * 2], event.getY(i) - tapStart[i * 2 + 1]) > touchSlop) {
+                        tapCandidate = false
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                if (tapCandidate && tapMaxPointers == 2 && event.eventTime - tapStartTime < TWO_FINGER_TAP_MS) {
+                    onUndoGesture?.invoke()
+                }
+                tapCandidate = false
+            }
+            MotionEvent.ACTION_CANCEL -> tapCandidate = false
+        }
     }
 
     private fun resetInput() {
@@ -804,6 +1080,7 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val PALM_WINDOW_MS = 400L
         private const val PREDICTION_MS = 16L
         private const val MIN_POINT_DISTANCE_PX = 0.75f
+        private const val TWO_FINGER_TAP_MS = 300L
 
         private fun baseCacheBytes(): Int {
             val third = Runtime.getRuntime().maxMemory() / 3

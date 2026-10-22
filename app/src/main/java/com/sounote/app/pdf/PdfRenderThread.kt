@@ -4,16 +4,24 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Point
 import android.graphics.RectF
 import android.graphics.pdf.PdfRenderer
+import android.graphics.pdf.RenderParams
+import android.graphics.pdf.models.FormEditRecord
+import android.graphics.pdf.models.FormWidgetInfo
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import android.util.Size
+import androidx.annotation.RequiresApi
 import com.sounote.app.data.LibraryRepository
+import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 
 /** Çizilecek iş. [key] aynı işi iki kez istemeyi önler. */
@@ -46,6 +54,25 @@ sealed class RenderTask {
     }
 }
 
+/** PDF'in doldurulabilir form alanı (Android 15+). Koordinatlar sayfa noktası. */
+data class FormField(
+    val page: Int,
+    val index: Int,
+    val type: Type,
+    val rect: RectF,
+    val value: String,
+    val multiLine: Boolean,
+    val maxLength: Int,
+    val readOnly: Boolean,
+    val items: List<String>,
+    val selected: List<Int>,
+    val multiSelect: Boolean,
+) {
+    enum class Type { TEXT, CHECKBOX, RADIO, BUTTON, CHOICE, OTHER }
+
+    val editable get() = !readOnly && type != Type.OTHER
+}
+
 /**
  * PdfRenderer'ı tek bir arka plan iş parçacığında tutar (PdfRenderer iş parçacığı güvenli değil).
  * [submit] bekleyen listeyi tamamen değiştirir: görünüm her değiştiğinde en güncel istek listesi işlenir.
@@ -56,9 +83,11 @@ class PdfRenderThread(
     private val listener: Listener,
 ) {
     interface Listener {
-        fun onOpened(pageSizes: List<Size>)
+        fun onOpened(pageSizes: List<Size>, hasForms: Boolean)
         fun onRendered(task: RenderTask, bitmap: Bitmap)
         fun onFailed(error: Throwable)
+        fun onFormFields(page: Int, fields: List<FormField>) {}
+        fun onFormEdited(page: Int, fields: List<FormField>) {}
     }
 
     private val thread = HandlerThread("sounote-pdf").apply { start() }
@@ -68,6 +97,7 @@ class PdfRenderThread(
     private var pending: List<RenderTask> = emptyList()
     private var pfd: ParcelFileDescriptor? = null
     private var pdf: PdfRenderer? = null
+    private var renderParams: Any? = null
 
     @Volatile
     private var closed = false
@@ -87,7 +117,8 @@ class PdfRenderThread(
                 val sizes = (0 until renderer.pageCount).map { i ->
                     renderer.openPage(i).use { Size(it.width, it.height) }
                 }
-                main.post { if (!closed) listener.onOpened(sizes) }
+                val hasForms = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && detectForms(renderer)
+                main.post { if (!closed) listener.onOpened(sizes, hasForms) }
             } catch (e: Throwable) {
                 Log.e(TAG, "PDF açılamadı", e)
                 main.post { if (!closed) listener.onFailed(e) }
@@ -150,7 +181,7 @@ class PdfRenderThread(
                         setScale(scale, scale)
                         postTranslate(-task.region.left * pageW * scale, -task.region.top * pageH * scale)
                     }
-                    page.render(bitmap, null, matrix, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    renderPage(page, bitmap, matrix)
                     bitmap
                 }
             }
@@ -167,8 +198,115 @@ class PdfRenderThread(
         }
         val bitmap = Bitmap.createBitmap(width.coerceAtLeast(1), height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.WHITE)
-        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        val matrix = Matrix().apply { setScale(width / page.width.toFloat(), height / page.height.toFloat()) }
+        renderPage(page, bitmap, matrix)
         return bitmap
+    }
+
+    /** Android 15+: PDF'in kendi vurgu/not açıklamaları ve form içeriği de çizilir. */
+    private fun renderPage(page: PdfRenderer.Page, bitmap: Bitmap, matrix: Matrix) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            renderWithParams(page, bitmap, matrix)
+        } else {
+            page.render(bitmap, null, matrix, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun renderWithParams(page: PdfRenderer.Page, bitmap: Bitmap, matrix: Matrix) {
+        val params = (renderParams as? RenderParams) ?: RenderParams.Builder(RenderParams.RENDER_MODE_FOR_DISPLAY)
+            .setRenderFlags(RenderParams.FLAG_RENDER_HIGHLIGHT_ANNOTATIONS or RenderParams.FLAG_RENDER_TEXT_ANNOTATIONS)
+            .build()
+            .also { renderParams = it }
+        page.render(bitmap, null, matrix, params)
+    }
+
+    // ---- Form alanları (Android 15+) ----
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun detectForms(renderer: PdfRenderer): Boolean =
+        runCatching { renderer.pdfFormType != PdfRenderer.PDF_FORM_TYPE_NONE }.getOrDefault(false)
+
+    /** Sayfanın form alanlarını okur; sonuç [Listener.onFormFields] ile gelir. */
+    fun requestFormFields(page: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
+        handler.post {
+            val r = pdf ?: return@post
+            val fields = runCatching { r.openPage(page).use { readFields(page, it) } }
+                .onFailure { Log.w(TAG, "Form alanları okunamadı", it) }
+                .getOrNull() ?: return@post
+            main.post { if (!closed) listener.onFormFields(page, fields) }
+        }
+    }
+
+    /**
+     * Form alanını değiştirir ve PDF'i [saveTo] dosyasına yazar (doldurulmuş form kalıcı olur).
+     * [text] metin alanı için, [indices] liste için; ikisi de null ise tıklama (onay kutusu vb.).
+     */
+    fun editFormField(field: FormField, text: String?, indices: IntArray?, saveTo: File) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
+        handler.post {
+            val r = pdf ?: return@post
+            try {
+                val fields = r.openPage(field.page).use { page ->
+                    page.applyEdit(buildEdit(field, text, indices))
+                    readFields(field.page, page)
+                }
+                writeTo(r, saveTo)
+                main.post { if (!closed) listener.onFormEdited(field.page, fields) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Form alanı değiştirilemedi", e)
+                main.post { if (!closed) listener.onFailed(e) }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun buildEdit(field: FormField, text: String?, indices: IntArray?): FormEditRecord = when {
+        text != null -> FormEditRecord.Builder(FormEditRecord.EDIT_TYPE_SET_TEXT, field.page, field.index)
+            .setText(text).build()
+        indices != null -> FormEditRecord.Builder(FormEditRecord.EDIT_TYPE_SET_INDICES, field.page, field.index)
+            .setSelectedIndices(indices).build()
+        else -> FormEditRecord.Builder(FormEditRecord.EDIT_TYPE_CLICK, field.page, field.index)
+            .setClickPoint(Point(field.rect.centerX().toInt(), field.rect.centerY().toInt())).build()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun readFields(pageIndex: Int, page: PdfRenderer.Page): List<FormField> =
+        page.formWidgetInfos.map { w ->
+            val type = when (w.widgetType) {
+                FormWidgetInfo.WIDGET_TYPE_TEXTFIELD -> FormField.Type.TEXT
+                FormWidgetInfo.WIDGET_TYPE_CHECKBOX -> FormField.Type.CHECKBOX
+                FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON -> FormField.Type.RADIO
+                FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON -> FormField.Type.BUTTON
+                FormWidgetInfo.WIDGET_TYPE_COMBOBOX, FormWidgetInfo.WIDGET_TYPE_LISTBOX -> FormField.Type.CHOICE
+                else -> FormField.Type.OTHER
+            }
+            val items = w.listItems
+            FormField(
+                page = pageIndex,
+                index = w.widgetIndex,
+                type = type,
+                rect = RectF(w.widgetRect),
+                value = w.textValue ?: "",
+                multiLine = w.isMultiLineText,
+                maxLength = w.maxLength,
+                readOnly = w.isReadOnly || (type == FormField.Type.TEXT && !w.isEditableText),
+                items = items.map { it.label },
+                selected = items.indices.filter { items[it].isSelected },
+                multiSelect = w.isMultiSelect,
+            )
+        }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun writeTo(r: PdfRenderer, target: File) {
+        target.parentFile?.mkdirs()
+        val tmp = File(target.path + ".tmp")
+        ParcelFileDescriptor.open(
+            tmp,
+            ParcelFileDescriptor.MODE_WRITE_ONLY or ParcelFileDescriptor.MODE_CREATE or ParcelFileDescriptor.MODE_TRUNCATE,
+        ).use { r.write(it, false) }
+        if (!tmp.renameTo(target)) throw IOException("PDF kaydedilemedi")
     }
 
     companion object {

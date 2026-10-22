@@ -21,14 +21,15 @@ Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.n
 
 ## Yol haritası
 (✅ tablette doğrulandı · 🧪 derlendi, tablette test bekliyor)
+3–8 ve ek özellikler: kullanıcı tablette kullandı, sorun bildirmedi (build-16).
 1. ✅ Boş proje + GitHub Actions workflow'u → APK derlenip tablete kurulsun (Releases'tan indirilir).
 2. ✅ PDF içe aktar (tek dosya + "klasör bağla": bağlı klasördeki PDF'ler otomatik görünür, alt klasörler klasör olur), kütüphane ızgarası, sayfaları göster, kaydır/yakınlaştır (yakınlaşınca net).
-3. 🧪 Kalem çekirdeği: basınca duyarlı kalem, hassas kalınlık (0.1 mm), silgi (çizgi + hassas), fosforlu, hazır renkler. "Parmakla çiz" anahtarı (açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır; kalemsiz arkadaşlar için).
-4. 🧪 Otomatik kayıt (bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır), geri al/ileri al, metin kutusu (klavyeyle yazı; taşı, iki parmakla ya da köşe tutamacıyla büyüt/küçült, renk), PDF form alanlarını doldurma (Android 15+ PdfRenderer form API'si), işaretli PDF olarak dışa aktar.
-5. 🧪 Gelişmiş kalem: kalem türleri (dolma/tükenmez/kurşun/fırça/kaligrafi/kesik), favori kalemler, basınç hassasiyeti, şekil düzeltme (bekletince çizgi/daire/dikdörtgen/üçgen), düz fosforlu, tam renk seçici.
-6. 🧪 Düzenleme: lasso (taşı/boyutlandır/renk/kopyala-yapıştır/sil; parmakla sürükle, iki parmakla büyüt), resim ekleme (galeriden; ink/<belge>/img/).
-7. 🧪 Sayfalar: sayfa paneli (küçük resimler, ekle/sil/taşı), boş defter + şablonlar (düz/çizgili/kareli/noktalı), araya boş sayfa, yer imleri, PDF içinde arama (Android 15+), yatayda çift sayfa.
-8. 🧪 Kütüphane: kendi klasörlerim (iç içe, renkli; belge/klasör taşı), arama, sıralama (son açılan/eklenen/ad), yedekle/geri yükle (zip: library.json + docs + ink), tema seçimi (sistem/açık/koyu).
+3. ✅ Kalem çekirdeği: basınca duyarlı kalem, hassas kalınlık (0.1 mm), silgi (çizgi + hassas), fosforlu, hazır renkler. "Parmakla çiz" anahtarı (açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır; kalemsiz arkadaşlar için).
+4. ✅ Otomatik kayıt (bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır), geri al/ileri al, metin kutusu (klavyeyle yazı; taşı, iki parmakla ya da köşe tutamacıyla büyüt/küçült, renk), PDF form alanlarını doldurma (Android 15+ PdfRenderer form API'si), işaretli PDF olarak dışa aktar.
+5. ✅ Gelişmiş kalem: kalem türleri (dolma/tükenmez/kurşun/fırça/kaligrafi/kesik), favori kalemler, basınç hassasiyeti, şekil düzeltme (bekletince çizgi/daire/dikdörtgen/üçgen), düz fosforlu, tam renk seçici.
+6. ✅ Düzenleme: lasso (taşı/boyutlandır/renk/kopyala-yapıştır/sil; parmakla sürükle, iki parmakla büyüt), resim ekleme (galeriden; ink/<belge>/img/).
+7. ✅ Sayfalar: sayfa paneli (küçük resimler, ekle/sil/taşı), boş defter + şablonlar (düz/çizgili/kareli/noktalı), araya boş sayfa, yer imleri, PDF içinde arama (Android 15+), yatayda çift sayfa.
+8. ✅ Kütüphane: kendi klasörlerim (iç içe, renkli; belge/klasör taşı), arama, sıralama (son açılan/eklenen/ad), yedekle/geri yükle (zip: library.json + docs + ink), tema seçimi (sistem/açık/koyu).
 
 Teknik notlar:
 - Notlar sayfa noktası (PDF pt, sol üst köşe) cinsinden: filesDir/ink/<belgeId>/<sayfa>.bin (InkStore, ikili biçim).
@@ -39,7 +40,7 @@ Teknik notlar:
 - Düşük gecikme (deneysel, kalem ayarlarında): androidx.graphics CanvasFrontBufferedRenderer; çizilen çizgi ön tampona, bitince görünüme geçer (FrontInk, PdfContainer).
 - Bu ortamda Android SDK ve Google Maven yok; API'leri doğrulamak gerekirse CI'da javap ile keşif iş akışı çalıştırılabilir.
 
-Ek özellikler (🧪): ekran açık kalır, tam ekran, sayfayı PNG paylaş, PDF bağlantıları (Android 15+), kapakta notlar,
+Ek özellikler (✅): ekran açık kalır, tam ekran, sayfayı PNG paylaş, PDF bağlantıları (Android 15+), kapakta notlar,
 kaynağı kaybolan notlu belgeler bölümü (docs/<id>.json), 3 parmak = ileri al, sayfaya git, otomatik yedek (SAF klasörü, 2 dönüşümlü zip),
 ezber bandı (InkTool.TAPE; parmakla dokun aç/kapat, dışa aktarılmaz), lazer kalem (kaydedilmez), ders ses kaydı (ink/<belge>/audio/*.m4a),
 yazı kalın + arka plan (InkStore v3), silgi yazı/resim de silebilir, Cornell şablonu, defter boyutu/yönü, kütüphanede Son açılanlar.
@@ -48,5 +49,8 @@ Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
 İmza anahtarı keystore/sounote.jks — değiştirme, yoksa güncelleme kurulmaz ve notlar gider.
+
+Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu gönderirse önce onu düzelt.
+Olası sonraki fikirler: seçimi döndürme (TextBox/ImageItem'a rotation), akıllı fosforlu (Android 15+ metin sınırları), etiketler, çalışma süresi sayacı.
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

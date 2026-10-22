@@ -65,7 +65,11 @@ import kotlin.math.min
 class PdfDocumentView(context: Context) : View(context) {
 
     var onPageChanged: ((page: Int, pageCount: Int) -> Unit)? = null
+    /** PDF açılamadı: görüntüleyici kullanılamaz. */
     var onError: ((Throwable) -> Unit)? = null
+
+    /** Bir işlem yapılamadı ama belge açık kalabilir. */
+    var onOperationError: ((Throwable) -> Unit)? = null
 
     var ink: InkDocument = InkDocument()
         set(value) {
@@ -107,6 +111,9 @@ class PdfDocumentView(context: Context) : View(context) {
 
     /** Belgeye eklenen resimlerin klasörü. */
     var imagesDir: File? = null
+
+    /** Düşük gecikmeli çizim katmanı (açıksa). */
+    var frontInk: FrontInk? = null
 
     private val density = resources.displayMetrics.density
     private val pageGap = 12f * density
@@ -274,6 +281,10 @@ class PdfDocumentView(context: Context) : View(context) {
 
         override fun onFailed(error: Throwable) {
             onError?.invoke(error)
+        }
+
+        override fun onOperationFailed(error: Throwable) {
+            onOperationError?.invoke(error)
         }
     }
 
@@ -621,7 +632,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
         val content = ink.content(page)
         val strokes = content.strokes
-        val active = current?.takeIf { inputPage == page }
+        val active = current?.takeIf { inputPage == page && !useFront }
         val hits = searchHits[page]
         val showOverlay = hits != null || (tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)) ||
             (tools.tool == Tool.LASSO && selection?.page == page)
@@ -826,13 +837,20 @@ class PdfDocumentView(context: Context) : View(context) {
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (pageTops.isEmpty()) return true
+        // Parmak hareketleri ancak parmakla başlamış bir dokunuşta işlenir. Kalem dokunduysa o
+        // dokunuş bitene kadar kalan parmak (avuç içi) olayları yok sayılır; yoksa kalem kalkınca
+        // ekranda kalan avuç sayfayı kaydırırdı.
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) fingerStreamOpen = !isStylusTool(event.getToolType(0))
         if ((drawPointerId != -1 && inputFromStylus) || stylusIndex(event) >= 0) {
+            fingerStreamOpen = false
             handleStylus(event)
-        } else {
+        } else if (fingerStreamOpen) {
             handleFingers(event)
         }
         return true
     }
+
+    private var fingerStreamOpen = false
 
     override fun onHoverEvent(event: MotionEvent): Boolean {
         if (isStylusTool(event.getToolType(0))) lastStylusTime = event.eventTime
@@ -1037,7 +1055,10 @@ class PdfDocumentView(context: Context) : View(context) {
             snapped = false
             holdX = x
             holdY = y
-            predictor?.record(event)
+            useFront = fromStylus && frontInk?.available == true && FrontInk.supports(current!!.tool)
+            frontDrawn = 0
+            frontGeneration++
+            if (useFront) pushFront() else predictor?.record(event)
         }
         invalidate()
     }
@@ -1060,9 +1081,45 @@ class PdfDocumentView(context: Context) : View(context) {
         val x = event.getX(idx)
         val y = event.getY(idx)
         addPoint(b, x, y, event.getPressure(idx))
-        if (straightLine) predictedCount = 0 else updatePrediction(event)
+        when {
+            useFront -> pushFront()
+            straightLine -> predictedCount = 0
+            else -> updatePrediction(event)
+        }
         watchForHold(x, y)
-        invalidate()
+        // Ön tamponda çizilirken görünümü her noktada yeniden çizmeye gerek yok.
+        if (!useFront) invalidate()
+    }
+
+    // ---- Düşük gecikmeli çizim ----
+
+    private var useFront = false
+    private var frontDrawn = 0
+    private var frontGeneration = 0
+
+    /** Çizginin henüz ön tampona çizilmemiş kuyruğunu çizer (bir önceki parçayla biraz üst üste binerek). */
+    private fun pushFront() {
+        val f = frontInk ?: return
+        val b = current ?: return
+        val from = (frontDrawn - 2).coerceAtLeast(0)
+        val n = b.count - from
+        if (n <= 0) return
+        val pts = FloatArray(n * 3)
+        System.arraycopy(b.points, from * 3, pts, 0, n * 3)
+        val r = pageScreenRect(inputPage, RectF())
+        val clip = RectF(r).apply { if (!intersect(0f, 0f, width.toFloat(), height.toFloat())) setEmpty() }
+        f.draw(FrontInk.Segment(pts, n, b.tool, b.color, b.width, b.pressureSensitive, r.left, r.top, pageScale(inputPage), clip))
+        frontDrawn = b.count
+    }
+
+    /** Biten çizgi görünüme geçtikten (iki kare) sonra ön tamponu temizle; arada yeni çizgi başladıysa bekle. */
+    private fun clearFrontLater() {
+        val generation = frontGeneration
+        postOnAnimation {
+            postOnAnimation {
+                if (generation == frontGeneration && current == null) frontInk?.clear()
+            }
+        }
     }
 
     // ---- Şekil düzeltme: çizginin sonunda kalemi bekletince ----
@@ -1080,6 +1137,11 @@ class PdfDocumentView(context: Context) : View(context) {
         b.replaceAll(shape.points, shape.count)
         snapped = true
         predictedCount = 0
+        if (useFront) {
+            frontInk?.clear()
+            frontDrawn = 0
+            pushFront()
+        }
         performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         invalidate()
     }
@@ -1168,8 +1230,10 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private fun endInput() {
         current?.let { b -> ink.addStroke(inputPage, b.build()) }
+        val wasFront = useFront
         recordGesture()
         resetInput()
+        if (wasFront) clearFrontLater()
     }
 
     /** Silgi hareketinin yaptığı bütün değişiklikleri tek geri alma adımı yap. */
@@ -1180,6 +1244,7 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun cancelInput() {
+        if (useFront) frontInk?.clear()
         recordGesture()
         resetInput()
     }
@@ -1644,6 +1709,7 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun resetInput() {
+        useFront = false
         removeCallbacks(holdCheck)
         snapped = false
         straightLine = false

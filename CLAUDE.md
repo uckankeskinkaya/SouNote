@@ -35,6 +35,8 @@ Teknik notlar:
 - Bağlı klasördeki belgenin kopyası filesDir/docs/<belgeId>.pdf; form doldurulunca PdfRenderer.write ile bu dosyaya yazılır.
 - Sayfa ekle/sil/taşı PDF'in kendisinde yapılır (PdfPages, PDFBox); notlar InkStore.remapPages ile yeni numaralara taşınır, geri al geçmişi sıfırlanır.
 - Dışa aktarma: PDFBox-Android (com.tom-roush:pdfbox-android) ile orijinal PDF'e ek içerik akışı; metin kutuları yol olarak.
+- Hata kaydı: ErrorLog (filesDir/logs). Çökme olursa sonraki açılışta paylaşma penceresi; kütüphane ⋮ → "Hata raporu gönder". Kullanıcıdan gelen raporla hata ayıkla.
+- Düşük gecikme (deneysel, kalem ayarlarında): androidx.graphics CanvasFrontBufferedRenderer; çizilen çizgi ön tampona, bitince görünüme geçer (FrontInk, PdfContainer).
 - Bu ortamda Android SDK ve Google Maven yok; API'leri doğrulamak gerekirse CI'da javap ile keşif iş akışı çalıştırılabilir.
 
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.

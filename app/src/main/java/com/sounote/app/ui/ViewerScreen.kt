@@ -25,6 +25,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import com.sounote.app.pdf.PageThumbLoader
+import com.sounote.app.pdf.PdfContainer
 import com.sounote.app.pdf.SearchHit
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -112,9 +113,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         val current = hits.getOrNull(hitIndex)
         view?.setSearchHighlights(byPage, current?.let { it.page to it.rects })
         current?.let { h ->
-            val r = RectF(h.rects.first())
-            h.rects.forEach { r.union(it) }
-            view?.scrollToRect(h.page, r)
+            if (h.rects.isNotEmpty()) {
+                val r = RectF(h.rects.first())
+                h.rects.forEach { r.union(it) }
+                view?.scrollToRect(h.page, r)
+            }
         }
     }
 
@@ -359,12 +362,17 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 } else {
                     AndroidView(
                         factory = { ctx ->
-                            PdfDocumentView(ctx).apply {
+                            PdfContainer(ctx).also { container ->
+                            container.setLowLatency(tools.lowLatency)
+                            container.pdfView.apply {
                                 onPageChanged = { p, n ->
                                     page = p to n
                                     currentVm.saveLastPage(doc, p)
                                 }
                                 onError = { error = "PDF açılamadı. Dosya taşınmış, bozuk ya da şifreli olabilir." }
+                                onOperationError = { e ->
+                                    currentVm.showMessage("İşlem yapılamadı: ${e.message ?: e.javaClass.simpleName}")
+                                }
                                 onTextBoxRequest = { p, box, isNew -> editingText = Triple(p, box, isNew) }
                                 onFormFieldRequest = { editingField = it }
                                 onUndoGesture = { this.ink.undo() }
@@ -381,11 +389,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 open(doc.uri, initialPage)
                                 view = this
                             }
+                            }
                         },
-                        update = {
-                            it.tools = tools
-                            it.twoPage = vm.twoPage
-                            if (it.ink !== ink) it.ink = ink
+                        update = { container ->
+                            container.setLowLatency(tools.lowLatency)
+                            val v = container.pdfView
+                            v.tools = tools
+                            v.twoPage = vm.twoPage
+                            if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
                             it.release()

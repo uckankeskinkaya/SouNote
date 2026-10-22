@@ -132,7 +132,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     getApplication<Application>().contentResolver.openOutputStream(target)?.use {
                         Backup.write(getApplication(), it)
                     } ?: error("Dosya açılamadı")
-                }.onFailure { Log.e(TAG, "Yedeklenemedi", it) }.isSuccess
+                }.onFailure { ErrorLog.record("Yedeklenemedi", it) }.isSuccess
             }
             busy = false
             message = if (ok) "Yedek kaydedildi" else "Yedeklenemedi"
@@ -221,13 +221,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 // Bağlı klasördeki belgeye ilk not: PDF'in kopyasını al.
                 repo.ensureCopy(open.doc)
             } catch (e: Exception) {
-                Log.w(TAG, "Kopya alınamadı", e)
+                ErrorLog.record("Kopya alınamadı", e)
             }
             snapshot.forEach { (page, content) ->
                 try {
                     store.save(open.doc.id, page, content)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Notlar kaydedilemedi", e)
+                    ErrorLog.record("Notlar kaydedilemedi", e)
                     withContext(Dispatchers.Main) { message = "Notlar kaydedilemedi!" }
                 }
             }
@@ -244,7 +244,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 runCatching { Images.import(getApplication(), uri, store.imagesDir(doc.id)) }
             }
             result.onSuccess { onReady(it.file, it.width, it.height) }.onFailure {
-                Log.e(TAG, "Resim eklenemedi", it)
+                ErrorLog.record("Resim eklenemedi", it)
                 message = "Resim eklenemedi"
             }
         }
@@ -350,7 +350,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 openDoc = resolved
                 docVersion++
             }.onFailure {
-                Log.e(TAG, error, it)
+                ErrorLog.record(error, it)
                 message = "$error: ${it.message ?: it.javaClass.simpleName}"
             }
         }
@@ -370,7 +370,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             result.onSuccess { open(it) }.onFailure {
-                Log.e(TAG, "Defter oluşturulamadı", it)
+                ErrorLog.record("Defter oluşturulamadı", it)
                 message = "Defter oluşturulamadı"
             }
         }
@@ -413,7 +413,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             }
             exporting = false
             result.onSuccess(onReady).onFailure {
-                Log.e(TAG, "Dışa aktarılamadı", it)
+                ErrorLog.record("Dışa aktarılamadı", it)
                 message = "PDF oluşturulamadı: ${it.message ?: it.javaClass.simpleName}"
             }
         }
@@ -453,7 +453,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val result = withContext(Dispatchers.IO) { repo.listFolder(folder) }
             if (path.lastOrNull() == folder) listing = result
         } catch (e: Exception) {
-            Log.w(TAG, "Klasör okunamadı", e)
+            ErrorLog.record("Klasör okunamadı", e)
             message = "\"${folder.name}\" klasörüne erişilemiyor. Silinmiş ya da izni kaldırılmış olabilir."
             path = emptyList()
         }
@@ -490,7 +490,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     val folder = currentFolder
                     last = withContext(Dispatchers.IO) { repo.importPdf(uri, folder) }
                 } catch (e: Exception) {
-                    Log.w(TAG, "İçe aktarılamadı: $uri", e)
+                    ErrorLog.record("İçe aktarılamadı: $uri", e)
                     failed++
                 }
             }
@@ -517,7 +517,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 rootFolders = withContext(Dispatchers.IO) { repo.linkedFolders() }
                 message = "\"${folder.name}\" bağlandı. İçine attığın PDF'ler burada görünecek."
             } catch (e: Exception) {
-                Log.w(TAG, "Klasör bağlanamadı", e)
+                ErrorLog.record("Klasör bağlanamadı", e)
                 message = "Klasör bağlanamadı"
             }
         }

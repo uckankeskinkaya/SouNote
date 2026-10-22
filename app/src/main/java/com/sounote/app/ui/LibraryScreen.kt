@@ -3,7 +3,11 @@
 package com.sounote.app.ui
 
 import android.graphics.Bitmap
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
 import android.net.Uri
+import com.sounote.app.ErrorLog
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -120,6 +124,17 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var movingDoc by remember { mutableStateOf<DocRef?>(null) }
     var movingFolder by remember { mutableStateOf<UserFolder?>(null) }
     var searching by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var crash by remember { mutableStateOf(ErrorLog.pendingCrash()) }
+
+    fun shareReport(text: String) {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "SouNote hata raporu")
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(Intent.createChooser(send, "Hata raporunu paylaş"))
+    }
 
     LaunchedEffect(vm.message) {
         vm.message?.let {
@@ -209,6 +224,13 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 onClick = {
                                     more = false
                                     restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Hata raporu gönder") },
+                                onClick = {
+                                    more = false
+                                    shareReport(ErrorLog.fullReport(context))
                                 },
                             )
                             HorizontalDivider()
@@ -410,6 +432,43 @@ fun LibraryScreen(vm: LibraryViewModel) {
                 vm.moveFolder(f, target)
             },
             onDismiss = { movingFolder = null },
+        )
+    }
+    crash?.let { report ->
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Uygulama beklenmedik şekilde kapandı") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Raporu paylaşırsan (ya da kopyalayıp yapıştırırsan) sorunu bulup düzeltebilirim. Notların bundan etkilenmez.")
+                    Text(
+                        report.lineSequence().take(6).joinToString("\n"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    shareReport(ErrorLog.fullReport(context))
+                    ErrorLog.clearCrash()
+                    crash = null
+                }) { Text("Paylaş") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        val cm = context.getSystemService(ClipboardManager::class.java)
+                        cm?.setPrimaryClip(ClipData.newPlainText("SouNote hata raporu", ErrorLog.fullReport(context)))
+                        ErrorLog.clearCrash()
+                        crash = null
+                    }) { Text("Kopyala") }
+                    TextButton(onClick = {
+                        ErrorLog.clearCrash()
+                        crash = null
+                    }) { Text("Kapat") }
+                }
+            },
         )
     }
     restoreUri?.let { uri ->

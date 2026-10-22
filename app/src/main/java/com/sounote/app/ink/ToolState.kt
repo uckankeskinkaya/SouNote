@@ -41,6 +41,8 @@ data class ToolState(
     val pressureSensitivity: Float = 0.5f,
     /** Kalemi çizginin sonunda bir an bekletince düz çizgi / şekil yap. */
     val shapeAssist: Boolean = true,
+    /** Deneysel: çizilen çizgi ön tampona (daha az gecikme). */
+    val lowLatency: Boolean = false,
     val highlighterColor: Int = HIGHLIGHTER_COLORS[0],
     val highlighterWidthMm: Float = 5f,
     /** Fosforlu her zaman düz çizgi çizer (altını çizmek için). */
@@ -88,6 +90,7 @@ data class ToolState(
             .putFloat("penWidthMm", penWidthMm)
             .putFloat("pressureSensitivity", pressureSensitivity)
             .putBoolean("shapeAssist", shapeAssist)
+            .putBoolean("lowLatency", lowLatency)
             .putInt("highlighterColor", highlighterColor)
             .putFloat("highlighterWidthMm", highlighterWidthMm)
             .putBoolean("highlighterStraight", highlighterStraight)
@@ -142,6 +145,7 @@ data class ToolState(
                 penWidthMm = prefs.getFloat("penWidthMm", d.penWidthMm),
                 pressureSensitivity = prefs.getFloat("pressureSensitivity", d.pressureSensitivity),
                 shapeAssist = prefs.getBoolean("shapeAssist", d.shapeAssist),
+                lowLatency = prefs.getBoolean("lowLatency", d.lowLatency),
                 highlighterColor = prefs.getInt("highlighterColor", d.highlighterColor),
                 highlighterWidthMm = prefs.getFloat("highlighterWidthMm", d.highlighterWidthMm),
                 highlighterStraight = prefs.getBoolean("highlighterStraight", d.highlighterStraight),

@@ -93,6 +93,35 @@ class LibraryRepository(private val context: Context) {
         return DocRef(id, title, Uri.fromFile(target), target.lastModified(), imported = true)
     }
 
+    /** Belgenin uygulama içindeki PDF dosyası: içe aktarılanın kendisi, bağlı klasördekinin kopyası. */
+    fun docFile(id: String) = fileFor(id)
+
+    /**
+     * Bağlı klasördeki belgeye ilk not alınınca PDF'in kopyasını uygulamaya alır.
+     * Böylece dosya klasörden silinse ya da değişse bile notlar sayfalarıyla birlikte kalır.
+     */
+    fun ensureCopy(doc: DocRef) {
+        if (doc.imported) return
+        val target = fileFor(doc.id)
+        if (target.exists()) return
+        val tmp = File(docsDir, "${doc.id}.tmp")
+        try {
+            val input = context.contentResolver.openInputStream(doc.uri) ?: throw IOException("Dosya açılamadı")
+            input.use { inp -> tmp.outputStream().use { inp.copyTo(it) } }
+            if (!tmp.renameTo(target)) throw IOException("Kopya kaydedilemedi")
+        } catch (e: Exception) {
+            tmp.delete()
+            throw e
+        }
+    }
+
+    /** Açarken: bağlı klasördeki belgenin kopyası varsa onu kullan (notlar ona göre). */
+    fun resolveForOpen(doc: DocRef): DocRef {
+        if (doc.imported) return doc
+        val copy = fileFor(doc.id)
+        return if (copy.exists()) doc.copy(uri = Uri.fromFile(copy), lastModified = copy.lastModified()) else doc
+    }
+
     fun rename(id: String, title: String) = synchronized(lock) {
         imported.find { it.id == id }?.let {
             it.title = title

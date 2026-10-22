@@ -73,24 +73,111 @@ class StrokeBuilder(
     fun build() = Stroke(tool, color, width, pressureSensitive, points.copyOf(count * 3))
 }
 
-/** Bir belgenin bütün çizimleri, sayfa sayfa. */
+/**
+ * Sayfaya klavyeyle yazılmış metin. Konum ve boyutlar sayfa noktası cinsinden;
+ * [x],[y] kutunun sol üst köşesi, [width] satır kaydırma genişliği.
+ */
+data class TextBox(
+    val id: Long,
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val fontSize: Float,
+    val color: Int,
+    val text: String,
+)
+
+/** Bir sayfanın bütün notları. Değişmez: her değişiklik yeni bir nesne üretir. */
+data class PageContent(
+    val strokes: List<Stroke> = emptyList(),
+    val texts: List<TextBox> = emptyList(),
+) {
+    val isEmpty get() = strokes.isEmpty() && texts.isEmpty()
+
+    companion object {
+        val EMPTY = PageContent()
+    }
+}
+
+/** Bir belgenin bütün notları (sayfa sayfa) ve geri al / ileri al geçmişi. */
 class InkDocument {
-    private val pages = HashMap<Int, List<Stroke>>()
+    private val pages = HashMap<Int, PageContent>()
 
-    /** Her değişiklikte çağrılır (4. adımda otomatik kayıt buna bağlanacak). */
-    var onChanged: ((page: Int) -> Unit)? = null
+    class Change(val page: Int, val before: PageContent, val after: PageContent)
 
-    fun strokes(page: Int): List<Stroke> = pages[page] ?: emptyList()
+    private val undoStack = ArrayDeque<List<Change>>()
+    private val redoStack = ArrayDeque<List<Change>>()
+    private val listeners = mutableListOf<(page: Int) -> Unit>()
+    private val historyListeners = mutableListOf<() -> Unit>()
 
-    fun add(page: Int, stroke: Stroke) {
-        pages[page] = strokes(page) + stroke
-        onChanged?.invoke(page)
-    }
+    fun content(page: Int): PageContent = pages[page] ?: PageContent.EMPTY
+    fun strokes(page: Int): List<Stroke> = content(page).strokes
+    fun texts(page: Int): List<TextBox> = content(page).texts
 
-    fun replace(page: Int, strokes: List<Stroke>) {
-        if (strokes.isEmpty()) pages.remove(page) else pages[page] = strokes
-        onChanged?.invoke(page)
-    }
+    /** Not içeren sayfalar ve içerikleri (kopya). */
+    fun snapshot(): Map<Int, PageContent> = HashMap(pages)
 
     val isEmpty get() = pages.isEmpty()
+    val canUndo get() = undoStack.isNotEmpty()
+    val canRedo get() = redoStack.isNotEmpty()
+
+    fun addListener(l: (page: Int) -> Unit) { listeners += l }
+    fun removeListener(l: (page: Int) -> Unit) { listeners -= l }
+    fun addHistoryListener(l: () -> Unit) { historyListeners += l }
+    fun removeHistoryListener(l: () -> Unit) { historyListeners -= l }
+
+    /** Diskten yüklerken: dinleyicilere haber verilmez, geçmişe yazılmaz. */
+    fun load(content: Map<Int, PageContent>) {
+        pages.clear()
+        content.forEach { (page, c) -> if (!c.isEmpty) pages[page] = c }
+    }
+
+    /** Geçmişe yazmadan değiştirir (silgi ya da sürükleme sürerken). Sonunda [record] çağrılmalı. */
+    fun set(page: Int, content: PageContent) {
+        if (content.isEmpty) pages.remove(page) else pages[page] = content
+        listeners.toList().forEach { it(page) }
+    }
+
+    /** Tek adımlık değişiklik; geri alınabilir. */
+    fun commit(page: Int, content: PageContent) {
+        val before = content(page)
+        if (before == content) return
+        set(page, content)
+        record(listOf(Change(page, before, content)))
+    }
+
+    fun addStroke(page: Int, stroke: Stroke) {
+        val c = content(page)
+        commit(page, c.copy(strokes = c.strokes + stroke))
+    }
+
+    /** [set] ile yapılmış değişiklikleri tek bir geri alma adımı olarak kaydeder. */
+    fun record(changes: List<Change>) {
+        val real = changes.filter { it.before != it.after }
+        if (real.isEmpty()) return
+        undoStack.addLast(real)
+        while (undoStack.size > MAX_HISTORY) undoStack.removeFirst()
+        redoStack.clear()
+        historyListeners.toList().forEach { it() }
+    }
+
+    fun undo(): Boolean {
+        val changes = undoStack.removeLastOrNull() ?: return false
+        changes.asReversed().forEach { set(it.page, it.before) }
+        redoStack.addLast(changes)
+        historyListeners.toList().forEach { it() }
+        return true
+    }
+
+    fun redo(): Boolean {
+        val changes = redoStack.removeLastOrNull() ?: return false
+        changes.forEach { set(it.page, it.after) }
+        undoStack.addLast(changes)
+        historyListeners.toList().forEach { it() }
+        return true
+    }
+
+    companion object {
+        private const val MAX_HISTORY = 200
+    }
 }

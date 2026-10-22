@@ -2,7 +2,7 @@ package com.sounote.app.ink
 
 import android.content.SharedPreferences
 
-enum class Tool { PEN, HIGHLIGHTER, ERASER }
+enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT }
 
 /** Seçili araç ve her aracın kendi ayarları. Kalınlıklar mm (sayfa üzerinde). */
 data class ToolState(
@@ -17,6 +17,9 @@ data class ToolState(
     val eraserHighlighterOnly: Boolean = false,
     /** Açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır. */
     val fingerDraw: Boolean = false,
+    /** Yeni metin kutularının yazı boyutu (pt) ve rengi. */
+    val textSizePt: Float = 14f,
+    val textColor: Int = PEN_COLORS[0],
 ) {
     fun save(prefs: SharedPreferences) {
         prefs.edit()
@@ -29,6 +32,8 @@ data class ToolState(
             .putFloat("eraserSizeDp", eraserSizeDp)
             .putBoolean("eraserHighlighterOnly", eraserHighlighterOnly)
             .putBoolean("fingerDraw", fingerDraw)
+            .putFloat("textSizePt", textSizePt)
+            .putInt("textColor", textColor)
             .apply()
     }
 
@@ -62,6 +67,8 @@ data class ToolState(
                 eraserSizeDp = prefs.getFloat("eraserSizeDp", d.eraserSizeDp),
                 eraserHighlighterOnly = prefs.getBoolean("eraserHighlighterOnly", d.eraserHighlighterOnly),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
+                textSizePt = prefs.getFloat("textSizePt", d.textSizePt),
+                textColor = prefs.getInt("textColor", d.textColor),
             )
         }
 

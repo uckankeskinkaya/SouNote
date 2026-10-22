@@ -24,8 +24,8 @@ Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.n
 1. ✅ Boş proje + GitHub Actions workflow'u → APK derlenip tablete kurulsun (Releases'tan indirilir).
 2. ✅ PDF içe aktar (tek dosya + "klasör bağla": bağlı klasördeki PDF'ler otomatik görünür, alt klasörler klasör olur), kütüphane ızgarası, sayfaları göster, kaydır/yakınlaştır (yakınlaşınca net).
 3. 🧪 Kalem çekirdeği: basınca duyarlı kalem, hassas kalınlık (0.1 mm), silgi (çizgi + hassas), fosforlu, hazır renkler. "Parmakla çiz" anahtarı (açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır; kalemsiz arkadaşlar için).
-4. 🧪 Otomatik kayıt (bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır), geri al/ileri al, metin kutusu (klavyeyle yazı; taşı, boyut, renk), PDF form alanlarını doldurma (Android 15+ PdfRenderer form API'si), işaretli PDF olarak dışa aktar.
-5. 🧪 Gelişmiş kalem: kalem türleri (dolma/tükenmez/kurşun), favori kalemler, basınç hassasiyeti, şekil düzeltme (bekletince çizgi/daire/dikdörtgen/üçgen), düz fosforlu, tam renk seçici.
+4. 🧪 Otomatik kayıt (bağlı klasördeki PDF'e ilk not alınınca kopyası uygulamaya alınır), geri al/ileri al, metin kutusu (klavyeyle yazı; taşı, iki parmakla ya da köşe tutamacıyla büyüt/küçült, renk), PDF form alanlarını doldurma (Android 15+ PdfRenderer form API'si), işaretli PDF olarak dışa aktar.
+5. 🧪 Gelişmiş kalem: kalem türleri (dolma/tükenmez/kurşun/fırça/kaligrafi/kesik), favori kalemler, basınç hassasiyeti, şekil düzeltme (bekletince çizgi/daire/dikdörtgen/üçgen), düz fosforlu, tam renk seçici.
 6. Düzenleme: lasso (taşı/boyutlandır/renk/kopyala/sil), resim ekleme.
 7. Sayfalar: sayfa paneli, boş defter + şablonlar, araya boş sayfa, yer imleri, PDF içinde arama, yatayda çift sayfa.
 8. Kütüphane: klasörler, arama/sıralama, yedekleme, karanlık mod.
@@ -35,6 +35,8 @@ Teknik notlar:
 - Bağlı klasördeki belgenin kopyası filesDir/docs/<belgeId>.pdf; form doldurulunca PdfRenderer.write ile bu dosyaya yazılır.
 - Dışa aktarma: PDFBox-Android (com.tom-roush:pdfbox-android) ile orijinal PDF'e ek içerik akışı; metin kutuları yol olarak.
 - Bu ortamda Android SDK ve Google Maven yok; API'leri doğrulamak gerekirse CI'da javap ile keşif iş akışı çalıştırılabilir.
+
+Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
 İmza anahtarı keystore/sounote.jks — değiştirme, yoksa güncelleme kurulmaz ve notlar gider.

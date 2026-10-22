@@ -7,14 +7,20 @@ import kotlin.math.pow
 
 enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT }
 
-/** Kalem aracının türü. */
-enum class PenType(val label: String) {
-    /** Bastırdıkça kalınlaşır. */
-    FOUNTAIN("Dolma kalem"),
-    /** Her basınçta aynı kalınlık. */
-    BALLPOINT("Tükenmez"),
-    /** Sabit kalınlık, yarı saydam. */
-    PENCIL("Kurşun kalem"),
+/** Kalem aracının türü: hangi çizgi türüyle kaydedileceği ve basınca tepki verip vermediği. */
+enum class PenType(
+    val label: String,
+    val description: String,
+    val short: String,
+    val inkTool: InkTool,
+    val usesPressure: Boolean,
+) {
+    FOUNTAIN("Dolma kalem", "Bastırdıkça kalınlaşır", "", InkTool.PEN, true),
+    BALLPOINT("Tükenmez", "Her zaman aynı kalınlık", "T", InkTool.PEN, false),
+    PENCIL("Kurşun kalem", "Yarı saydam, sabit kalınlık", "Kş", InkTool.PENCIL, false),
+    BRUSH("Fırça", "Basınca çok duyarlı, uçları incelir", "F", InkTool.BRUSH, true),
+    CALLIGRAPHY("Kaligrafi", "Yöne göre ince/kalın, güzel yazı için", "Kl", InkTool.CALLIGRAPHY, false),
+    DASHED("Kesik çizgi", "Şekil ve şemalar için", "--", InkTool.DASHED, false),
 }
 
 /** Araç çubuğunda tek dokunuşla seçilen kayıtlı kalem. */

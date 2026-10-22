@@ -19,7 +19,6 @@ import com.tom_roush.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState
 import com.tom_roush.pdfbox.util.Matrix
 import java.io.File
 import java.io.IOException
-import kotlin.math.roundToInt
 import com.tom_roush.pdfbox.pdmodel.graphics.blend.BlendMode as PdfBlendMode
 
 /**
@@ -119,41 +118,42 @@ object PdfExporter {
         if (stroking) cs.setStrokingColor(r, g, b) else cs.setNonStrokingColor(r, g, b)
     }
 
-    /** Ekrandaki [StrokeRenderer] ile aynı: basınç kademelerine bölünmüş, yuvarlak uçlu yollar. */
+    /** Ekrandaki [StrokeRenderer] ile aynı: kalınlık kademelerine bölünmüş, yuvarlak uçlu yollar. */
     private fun drawStroke(cs: PDPageContentStream, s: Stroke) {
         val pts = s.points
         val n = s.pointCount
         if (n == 0) return
         setColor(cs, s.color, stroking = true)
         setColor(cs, s.color, stroking = false)
-        fun level(i: Int) =
-            if (s.pressureSensitive && s.tool == InkTool.PEN) {
-                (StrokeRenderer.pressureFactor(pts[i * 3 + 2]) * LEVELS).roundToInt()
-            } else {
-                LEVELS
-            }
+        val levels = StrokeRenderer.levels(s.tool, s.width, s.pressureSensitive, pts, n)
+        val l = StrokeRenderer.LEVELS
 
         if (n == 1) {
-            circle(cs, pts[0], pts[1], s.width * level(0) / LEVELS / 2f)
+            circle(cs, pts[0], pts[1], s.width * (levels?.get(0) ?: l) / l / 2f)
             cs.fill()
             return
         }
-        if (s.tool != InkTool.PEN) {
-            run(cs, pts, 0, n - 1, s.width)
+        if (levels == null) {
+            if (s.tool == InkTool.DASHED) {
+                val (on, off) = StrokeRenderer.dashIntervals(s.width)
+                cs.saveGraphicsState()
+                cs.setLineDashPattern(floatArrayOf(on, off), 0f)
+                run(cs, pts, 0, n - 1, s.width)
+                cs.restoreGraphicsState()
+            } else {
+                run(cs, pts, 0, n - 1, s.width)
+            }
             return
         }
         var runStart = 0
-        var runLevel = level(0)
+        var runLevel = levels[0]
         for (i in 1 until n) {
             if (i == n - 1) {
-                run(cs, pts, runStart, i, s.width * runLevel / LEVELS)
-            } else {
-                val l = level(i)
-                if (l != runLevel) {
-                    run(cs, pts, runStart, i, s.width * runLevel / LEVELS)
-                    runStart = i
-                    runLevel = l
-                }
+                run(cs, pts, runStart, i, s.width * runLevel / l)
+            } else if (levels[i] != runLevel) {
+                run(cs, pts, runStart, i, s.width * runLevel / l)
+                runStart = i
+                runLevel = levels[i]
             }
         }
     }
@@ -235,5 +235,4 @@ object PdfExporter {
         cs.fill()
     }
 
-    private const val LEVELS = 12
 }

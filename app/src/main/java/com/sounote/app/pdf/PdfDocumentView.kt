@@ -30,7 +30,6 @@ import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.InkTool
 import com.sounote.app.ink.PageContent
-import com.sounote.app.ink.PenType
 import com.sounote.app.ink.ShapeRecognizer
 import com.sounote.app.ink.TextBox
 import com.sounote.app.ink.TextBoxes
@@ -202,6 +201,8 @@ class PdfDocumentView(context: Context) : View(context) {
     private var tapStartTime = 0L
     private var tapMaxPointers = 0
     private val tapStart = FloatArray(4)
+
+    private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(200, 33, 110, 230) }
 
     private val inkListener: (Int) -> Unit = { page -> pageChanged(page) }
     private val boundsRect = RectF()
@@ -525,7 +526,9 @@ class PdfDocumentView(context: Context) : View(context) {
         if (tools.tool == Tool.TEXT) {
             // Yazı aracındayken metin kutularının ve form alanlarının yerini göster.
             ink.texts(page).forEach { box ->
-                TextBoxes.bounds(box, boundsRect).inset(-3f, -3f)
+                TextBoxes.bounds(box, boundsRect)
+                canvas.drawCircle(boundsRect.right, boundsRect.bottom, HANDLE_DP * density / scale, handlePaint)
+                boundsRect.inset(-3f, -3f)
                 canvas.drawRect(boundsRect, formBorderPaint.apply { strokeWidth = 1f * density / scale })
             }
             formFields[page]?.forEach { f ->
@@ -569,18 +572,84 @@ class PdfDocumentView(context: Context) : View(context) {
     // ---- Dokunma ----
 
     private val scaleDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
-        override fun onScale(detector: ScaleGestureDetector): Boolean {
-            scaledThisGesture = true
-            zoomAround(zoom * detector.scaleFactor, detector.focusX, detector.focusY)
+        override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+            // Yazı aracında iki parmak bir yazının üstündeyse sayfa değil yazı büyür/küçülür.
+            if (tools.tool == Tool.TEXT) beginBoxPinch(detector.focusX, detector.focusY)
             return true
         }
+
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            scaledThisGesture = true
+            if (pinchBox != null) {
+                updateBoxPinch(detector)
+            } else {
+                zoomAround(zoom * detector.scaleFactor, detector.focusX, detector.focusY)
+            }
+            return true
+        }
+
+        override fun onScaleEnd(detector: ScaleGestureDetector) {
+            if (pinchBox != null) {
+                recordGesture()
+                pinchBox = null
+            }
+        }
     }).apply { isQuickScaleEnabled = false }
+
+    // ---- Yazıyı büyütme/küçültme: iki parmakla ya da kalemle köşe tutamacından ----
+
+    private var pinchBox: TextBox? = null
+    private var pinchPage = -1
+    private var pinchScale = 1f
+    private var pinchFocusX = 0f
+    private var pinchFocusY = 0f
+
+    private fun beginBoxPinch(fx: Float, fy: Float) {
+        if (pageTops.isEmpty()) return
+        val page = pageAt((fy + offsetY) / zoom)
+        val px = toPageX(page, fx)
+        val py = toPageY(page, fy)
+        val pad = PINCH_PAD_DP * density / pageScale(page)
+        val box = ink.texts(page).lastOrNull {
+            TextBoxes.bounds(it, boundsRect).inset(-pad, -pad)
+            boundsRect.contains(px, py)
+        } ?: return
+        pinchBox = box
+        pinchPage = page
+        pinchScale = 1f
+        pinchFocusX = px
+        pinchFocusY = py
+        gestureBefore[page] = ink.content(page)
+    }
+
+    private fun updateBoxPinch(d: ScaleGestureDetector) {
+        val start = pinchBox ?: return
+        pinchScale *= d.scaleFactor
+        val sized = scaledBox(start, pinchScale)
+        val k = sized.fontSize / start.fontSize
+        // Parmakların arasındaki nokta yazının aynı yerinde kalsın; iki parmakla kaydırınca yazı da kayar.
+        val fx = toPageX(pinchPage, d.focusX)
+        val fy = toPageY(pinchPage, d.focusY)
+        replaceBox(pinchPage, sized.copy(x = fx - (pinchFocusX - start.x) * k, y = fy - (pinchFocusY - start.y) * k))
+    }
+
+    private fun scaledBox(start: TextBox, factor: Float): TextBox {
+        val size = (start.fontSize * factor).coerceIn(MIN_FONT_PT, MAX_FONT_PT)
+        val k = size / start.fontSize
+        return start.copy(fontSize = size, width = start.width * k)
+    }
+
+    private fun replaceBox(page: Int, box: TextBox) {
+        val c = ink.content(page)
+        ink.set(page, c.copy(texts = c.texts.map { if (it.id == box.id) box else it }))
+    }
 
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(e: MotionEvent): Boolean = true
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
             if (tools.fingerDraw && !multiTouch) return false
+            if (pinchBox != null) return true
             offsetX += distanceX
             offsetY += distanceY
             clampOffsets()
@@ -794,14 +863,10 @@ class PdfDocumentView(context: Context) : View(context) {
             val t = tools
             val highlighter = t.tool == Tool.HIGHLIGHTER
             current = StrokeBuilder(
-                tool = when {
-                    highlighter -> InkTool.HIGHLIGHTER
-                    t.penType == PenType.PENCIL -> InkTool.PENCIL
-                    else -> InkTool.PEN
-                },
+                tool = if (highlighter) InkTool.HIGHLIGHTER else t.penType.inkTool,
                 color = if (highlighter) t.highlighterColor else t.penColor,
                 width = mmToPt(if (highlighter) t.highlighterWidthMm else t.penWidthMm),
-                pressureSensitive = fromStylus && !highlighter && t.penType == PenType.FOUNTAIN,
+                pressureSensitive = fromStylus && !highlighter && t.penType.usesPressure,
             ).also {
                 val p = if (it.pressureSensitive) t.applyPressureCurve(event.getPressure(idx)) else 1f
                 it.add(toPageX(inputPage, x), toPageY(inputPage, y), p)
@@ -966,10 +1031,28 @@ class PdfDocumentView(context: Context) : View(context) {
         dragMoved = false
         val px = toPageX(textPage, x)
         val py = toPageY(textPage, y)
-        draggingBox = ink.texts(textPage).lastOrNull { TextBoxes.bounds(it, boundsRect).contains(px, py) }
-        draggingBox?.let { dragOrigin = it.x to it.y }
+        val texts = ink.texts(textPage)
+        // Önce köşe tutamacı: sürükleyince yazı büyür/küçülür.
+        val handleR = HANDLE_TOUCH_DP * density / pageScale(textPage)
+        resizing = false
+        draggingBox = texts.lastOrNull {
+            TextBoxes.bounds(it, boundsRect)
+            kotlin.math.hypot(px - boundsRect.right, py - boundsRect.bottom) <= handleR
+        }
+        if (draggingBox != null) {
+            resizing = true
+        } else {
+            draggingBox = texts.lastOrNull { TextBoxes.bounds(it, boundsRect).contains(px, py) }
+        }
+        draggingBox?.let {
+            dragOrigin = it.x to it.y
+            resizeStartDist = kotlin.math.hypot(px - it.x, py - it.y).coerceAtLeast(4f)
+        }
         parent?.requestDisallowInterceptTouchEvent(true)
     }
+
+    private var resizing = false
+    private var resizeStartDist = 1f
 
     private fun textMove(x: Float, y: Float) {
         val box = draggingBox ?: return
@@ -978,13 +1061,18 @@ class PdfDocumentView(context: Context) : View(context) {
             dragMoved = true
             gestureBefore[textPage] = ink.content(textPage)
         }
+        if (resizing) {
+            // Sol üst köşe sabit; tutamacın köşeye uzaklığı kadar büyür.
+            val d = kotlin.math.hypot(toPageX(textPage, x) - box.x, toPageY(textPage, y) - box.y)
+            replaceBox(textPage, scaledBox(box, d / resizeStartDist))
+            return
+        }
         val s = pageScale(textPage)
         val moved = box.copy(
             x = dragOrigin.first + (x - textDownX) / s,
             y = dragOrigin.second + (y - textDownY) / s,
         )
-        val c = ink.content(textPage)
-        ink.set(textPage, c.copy(texts = c.texts.map { if (it.id == box.id) moved else it }))
+        replaceBox(textPage, moved)
         draggingBox = moved
     }
 
@@ -1000,6 +1088,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private fun textCancelState() {
         textPage = -1
+        resizing = false
         draggingBox = null
         dragMoved = false
         drawPointerId = -1
@@ -1142,6 +1231,11 @@ class PdfDocumentView(context: Context) : View(context) {
         private const val MIN_POINT_DISTANCE_PX = 0.75f
         private const val TWO_FINGER_TAP_MS = 300L
         private const val HOLD_MS = 550L
+        private const val PINCH_PAD_DP = 24f
+        private const val HANDLE_DP = 5f
+        private const val HANDLE_TOUCH_DP = 22f
+        private const val MIN_FONT_PT = 4f
+        private const val MAX_FONT_PT = 144f
         private const val HOLD_SLOP_DP = 3f
 
         private fun baseCacheBytes(): Int {

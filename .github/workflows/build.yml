@@ -10,11 +10,6 @@ on:
 permissions:
   contents: write
 
-# Aynı anda iki derleme release oluşturmaya çalışıp çakışmasın.
-concurrency:
-  group: release
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,6 +34,58 @@ jobs:
         with:
           name: SouNote-apk
           path: SouNote.apk
+
+  # Her derleme emülatörde açılıp ekranları gezer; çökerse release yapılmaz (arkadaşlara bozuk sürüm gitmez).
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: SouNote-apk
+          path: a
+
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emülatörde çökme testi
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash ./.github/smoke.sh
+
+      - name: Ekran görüntüleri
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-shots
+          path: shots
+
+  release:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    # Aynı anda iki derleme release oluşturmaya çalışıp çakışmasın.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: SouNote-apk
+          path: .
 
       - name: Sürüm notu
         run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md

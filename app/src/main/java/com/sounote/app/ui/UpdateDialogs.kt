@@ -60,7 +60,7 @@ fun UpdateDialogs(vm: LibraryViewModel) {
             },
             confirmButton = {
                 Button(onClick = {
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Updates.APK_URL))) }
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.apkUrl))) }
                     vm.skipUpdate()
                 }) { Text("İndir") }
             },

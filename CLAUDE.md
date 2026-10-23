@@ -108,8 +108,11 @@ rollback işi sürümü ön sürüme çeker. Gradle cache-read-only: false. Derl
 etiket koyamıyor: "workflows" izni ister). Smoke ekran görüntüleri "screenshots" dalına itilir.
 İndirme sayfası docs/index.html (+ docs/img), GitHub Pages: Settings → Pages → main /docs (kullanıcı açmalı). README yenilendi.
 KURAL (kullanıcı istedi): her yeni özellikte docs/index.html "Neler yapabilirsin?" kartlarına ve README özellik tablosuna ekle.
-Sitenin "Yenilikler" bölümü GitHub release notlarını kendisi çeker (commit mesajının ilk satırı başlık); kullanıcıya dönük commit mesajları yaz,
-teknik olanları "CI:", "Geçici", "Notlar", "Derleme düzeltmesi" ile başlat (sitede gizlenir). Site main dalından yayınlanır: değişiklikler main'e girince güncellenir.
+YAYIN KANALLARI (build-68+): her push = TEST sürümü (ön sürüm "Test 1.0.N", sadece yönetici alır). Herkese gitmesi için "Sürümü yayınla"
+(publish.yml, workflow_dispatch: version, title, notes "a | b | c", build boş = en yeni test) çalıştırılır; kullanıcı "yayınla" deyince
+mcp actions_run_trigger ile ben çalıştırırım. Çökme testi geçmeyen (notunda ⚠️) sürüm yayınlanmaz. Sitenin "Yenilikler"i sadece yayınlanan
+ana sürümleri gösterir (en yenisi "Son güncelleme"). Yönetici modu: Ayarlar → sürüm satırına 7 dokunuş (prefs testChannel; Updates.latestIncludingTests).
+Katalog ayrı kanal: "catalog" etiketli release'in catalog.json'u her derlemede güncellenir (Catalog.REMOTE_URL); yayınlanan sürüme de kopyalanır.
 Eklendi (🧪, build-62+): Bugünkü tekrar (vm.dueCards/reviewAny, ana sayfa kartı), Writing pratiği (Essays.kt, EssayStore filesDir/essays yedeğe girer,
 AssistantClient.gradeEssay JSON 5 ölçüt × 20, WritingScreen: liste → konu → süreli editör → değerlendirme).
 

@@ -408,7 +408,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         val now = System.currentTimeMillis()
         if (!manual && now - prefs.getLong("updateChecked", 0L) < 6 * 3_600_000L) return
         viewModelScope.launch {
-            val r = withContext(Dispatchers.IO) { runCatching { com.sounote.app.data.Updates.latest() } }
+            val r = withContext(Dispatchers.IO) {
+                runCatching { if (testChannel) com.sounote.app.data.Updates.latestIncludingTests() else com.sounote.app.data.Updates.latest() }
+            }
             r.onSuccess { rel ->
                 prefs.edit().putLong("updateChecked", now).apply()
                 val newer = rel.build > installedBuild
@@ -416,6 +418,20 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 if (manual && !newer) message = "Uygulama güncel ($installedVersion)"
             }.onFailure { if (manual) message = "Güncelleme denetlenemedi: internet bağlantısını kontrol et" }
         }
+    }
+
+    /**
+     * Yönetici / test kanalı: açıkken yayınlanmamış test sürümleri de bildirilir. Ayarlar'da sürüm satırına
+     * 7 kez dokununca açılır/kapanır (arkadaşlar sadece yayınlanmış sürümleri alır).
+     */
+    var testChannel by mutableStateOf(prefs.getBoolean("testChannel", false))
+        private set
+
+    fun setTestChannel(on: Boolean) {
+        testChannel = on
+        prefs.edit().putBoolean("testChannel", on).putLong("updateChecked", 0L).apply()
+        message = if (on) "Yönetici modu açık: test sürümlerini de alacaksın" else "Yönetici modu kapalı: sadece yayınlanan sürümler"
+        if (on) checkUpdate(manual = true)
     }
 
     /** "Sonra": bu sürüm için bir daha kendiliğinden sorma. */

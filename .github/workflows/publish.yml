@@ -3,6 +3,10 @@ name: Sürümü yayınla
 # Test edilmiş bir test sürümünü herkese açar: arkadaşların uygulaması güncelleme bildirimi alır,
 # indirme bağlantısı (releases/latest) ve sitedeki "Yenilikler" bu sürüme geçer.
 on:
+  # Elle (GitHub → Actions) ya da çalışma dalına .github/publish/request.json gönderilerek
+  push:
+    branches-ignore: [main, screenshots]
+    paths: [".github/publish/request.json"]
   workflow_dispatch:
     inputs:
       version:
@@ -33,6 +37,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       R: ${{ github.repository }}
     steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push'
+
       - name: Yayınla
         env:
           VERSION: ${{ inputs.version }}
@@ -40,6 +47,15 @@ jobs:
           NOTES: ${{ inputs.notes }}
           BUILD: ${{ inputs.build }}
         run: |
+          # İstek dosyasıyla tetiklendiyse bilgiler oradan
+          if [ -f .github/publish/request.json ] && [ "${{ github.event_name }}" = "push" ]; then
+            eval "$(python3 -c "
+          import json, shlex
+          d = json.load(open('.github/publish/request.json'))
+          for k in ('version', 'title', 'notes', 'build'):
+              print(k.upper() + '=' + shlex.quote(str(d.get(k, ''))))
+          ")"
+          fi
           if [ -z "$BUILD" ]; then
             gh release download test -R "$R" -p test.json -D t
             BUILD=$(python3 -c "import json; print(json.load(open('t/test.json'))['build'])")

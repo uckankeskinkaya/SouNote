@@ -6,6 +6,11 @@ on:
       - "**.md"
       - ".github/workflows/probe.yml"
       - "docs/**"
+      - ".github/publish/**"
+      - ".github/video/**"
+      - ".github/workflows/video.yml"
+      - ".github/workflows/publish.yml"
+      - ".github/workflows/site.yml"
   workflow_dispatch:
 
 permissions:

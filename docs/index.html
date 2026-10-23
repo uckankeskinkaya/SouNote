@@ -62,6 +62,9 @@
   .card h3 { margin: 0 0 6px; font-size: 18px; }
   .card p { margin: 0; color: var(--muted); font-size: 15px; }
 
+  .video-sec { text-align: center; }
+  .video-box { display: inline-block; border-radius: 28px; overflow: hidden; background: #0d1222; box-shadow: 0 24px 60px rgba(20,30,60,.25); max-width: 360px; width: 100%; }
+  .video-box video { display: block; width: 100%; aspect-ratio: 9 / 16; background: #0d1222; }
   .shots { display: flex; gap: 16px; overflow-x: auto; padding: 4px 4px 18px; scroll-snap-type: x mandatory; }
   .shots figure { margin: 0; flex: 0 0 220px; scroll-snap-align: start; }
   .shots img { width: 100%; border-radius: 22px; border: 1px solid var(--line); background: var(--surface); }
@@ -122,7 +125,7 @@
         <p class="lead">PDF'lerin üstüne kalemle yaz, fosforla, bilgi kartı çıkar. Haftalık kaynaklarına ve sınav takvimine anında ulaş. Ücretsiz, reklamsız.</p>
         <div class="cta">
           <a class="btn primary" id="dl" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk">⬇ Android için indir</a>
-          <a class="btn ghost" href="#kurulum">Nasıl kurulur?</a>
+          <a class="btn ghost" href="#video">▶ Tanıtım videosu</a>
         </div>
         <div class="meta" id="ver">Android 10 ve üstü · tablet ve telefon</div>
       </div>
@@ -135,6 +138,14 @@
 </header>
 
 <main class="wrap">
+  <section class="reveal video-sec" id="video">
+    <h2>1 dakikada SouNote</h2>
+    <p class="sub">Uygulamayı kısaca gör.</p>
+    <div class="video-box">
+      <video src="video/sounote.mp4" poster="video/poster.jpg" controls playsinline preload="metadata"></video>
+    </div>
+  </section>
+
   <section class="reveal">
     <h2>Neler yapabilirsin?</h2>
     <p class="sub">Kâğıt gibi doğal, kâğıttan çok daha akıllı.</p>

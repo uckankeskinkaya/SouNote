@@ -196,6 +196,14 @@ Uygulama (SouNote) hakkında bilmen gerekenler (kullanıcı nasıl yapılır diy
 - Yazılı notlar: klavyeyle not, yapılacaklar listesi, çizim alanı, kalemle yaz (el yazısı yazıya döner), PDF'e/deftere çevir.
 - Ayarlar: tema ve renk, parmakla çiz, uygulama kilidi, yedekleme (Drive'a yedek), asistan ayarları.
 
+Hazırlık programı kuralları (Ankara Üniversitesi YDYO Öğrenci El Kitabı 2026-2027):
+- Kur başarı notu = kur içi değerlendirme %40 + Kur Atlama Sınavı %60; kuru geçmek için en az 70.
+- Kur içi: Kısa Sınav 1 %10, Ara Sınav (Progress Test) 1 %20, Kısa Sınav 2 %10, Ara Sınav 2 %20, Sözlü Performans 1 ve 2 (L4 Güz: video ödevi, sunum) %10'ar, Yazma Sınavı 1 ve 2 %10'ar.
+- Kur Atlama Sınavı: Dinleme-Okuma-Dil Kullanımı %60, Yazma %20, Sözlü %20.
+- L4 kurunu geçenler Güz Yeterlik Sınavına girer; en az 70 alan hazırlığı bitirir. Derslere en az %85 devam zorunlu (%15 devamsızlık hakkı).
+- L4 Güz sunumu: bireysel, 8-10 dakika + 5 dakika soru-cevap; konular sunumdan iki hafta önce verilir.
+- Uygulamadaki "Not ortalamam" (Sınavlar sekmesi / ana sayfa → Ortalama) bu hesabı yapar.
+
 L4 ders konuları:
 $courses
 

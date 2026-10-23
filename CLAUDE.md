@@ -69,4 +69,13 @@ APK'da dex sıkıştırılmış (packaging.dex.useLegacyPackaging): sıkıştır
 Eklendi (🧪, build-24+): yazılı notlar (klavyeyle; TextNoteStore filesDir/texts/<id>.json, yedeğe girer; yapılacak/madde listesi, tarih,
 yazı boyutu, sabitle, metin/PDF paylaş, "Deftere çevir" = PDF olarak kütüphaneye ekler; TextNoteScreen, VM.openText).
 
+Eklendi (🧪, build-27+): renk temaları (ColorTheme, prefs colorTheme), ders klasörü kapakları (UserFolder.icon emoji), Drive'a yedek (paylaş → Drive),
+dışa aktarmada "sadece notlu / yer imli sayfalar".
+Eklendi (🧪, build-29+): Dersler ve Sınavlar sekmeleri. Ortak katalog app/src/main/assets/catalog.json (uygulamayla gelir; repo gizli olduğu için
+GitHub'dan okunamıyor, Drive bağlayıcısının yazma izni yok). Katalog: Drive "Ingilizce calismalar" klasöründeki 82 dosya alan/konuya ayrıldı
+(Grammar, Vocabulary, Reading, Listening, Writing, Speaking, Ünite, Sınav hazırlık) + 2026-27 güz sınav takvimi (L1–L4, ders saatleri:
+4. ders Cuma 11:45 diğer günler 12:45, 5. ders 13:40). Kur seçimi (prefs userLevel), kendi sınavların (filesDir/exams.json, yedeğe girer),
+hatırlatıcılar (AlarmManager; 3 gün/1 gün önce 19:00, 2 saat önce), PDF kaynağı "İndir" → kütüphanede alan adlı klasöre.
+Drive dosyaları herkese açık değilse indirme/açma sadece sahibinde çalışır. Katalog üretici betik: scratchpad catalog.py (yeniden üretmek için Drive listesi).
+
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

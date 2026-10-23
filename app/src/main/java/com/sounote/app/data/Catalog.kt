@@ -72,33 +72,30 @@ data class Catalog(
 }
 
 /**
- * Herkes için ortak ders kataloğu: GitHub'daki catalog/catalog.json okunur, son hali cihazda saklanır
- * (internet yokken de görünür).
+ * Herkes için ortak ders kataloğu. Uygulamayla birlikte gelir (assets/catalog.json); [REMOTE_URL] verilirse
+ * oradan daha yeni hali indirilip cihazda saklanır.
  */
 object CatalogRepo {
-    private val URLS = listOf(
-        "https://raw.githubusercontent.com/uckankeskinkaya/SouNote/main/catalog/catalog.json",
-        "https://raw.githubusercontent.com/uckankeskinkaya/SouNote/ccr-aefb7f13-i7jc0n/catalog/catalog.json",
-    )
+    /** Herkese açık güncel katalog adresi (boş = sadece uygulamadaki liste). */
+    private const val REMOTE_URL = ""
     private const val FILE = "catalog.json"
 
-    fun cached(context: Context): Catalog =
-        runCatching { parse(File(context.filesDir, FILE).readText()) }.getOrDefault(Catalog.EMPTY)
+    private fun bundled(context: Context): Catalog =
+        runCatching { parse(context.assets.open(FILE).bufferedReader().use { it.readText() }) }.getOrDefault(Catalog.EMPTY)
 
-    /** İnternetten indirir; olmazsa hata fırlatır (eski kayıt yerinde kalır). */
+    /** İndirilmiş kopya uygulamadakinden yeniyse o, değilse uygulamadaki. */
+    fun cached(context: Context): Catalog {
+        val inApp = bundled(context)
+        val saved = runCatching { parse(File(context.filesDir, FILE).readText()) }.getOrNull()
+        return if (saved != null && saved.updated > inApp.updated) saved else inApp
+    }
+
     fun fetch(context: Context): Catalog {
-        var last: Exception? = null
-        for (u in URLS) {
-            try {
-                val text = httpGet("$u?t=${System.currentTimeMillis() / 60_000}")
-                val catalog = parse(text)
-                File(context.filesDir, FILE).writeText(text)
-                return catalog
-            } catch (e: Exception) {
-                last = e
-            }
-        }
-        throw last ?: IOException("Katalog alınamadı")
+        if (REMOTE_URL.isEmpty()) return cached(context)
+        val text = httpGet(REMOTE_URL)
+        parse(text)
+        File(context.filesDir, FILE).writeText(text)
+        return cached(context)
     }
 
     private fun httpGet(url: String): String {

@@ -286,7 +286,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 }
                 item {
                     Group("Arkadaşınla paylaş") {
-                        SettingRow("🔗", "İndirme bağlantısını paylaş", subtitle = "Her zaman en yeni sürümü indirir", onClick = { shareLink() })
+                        SettingRow("🔗", "İndirme bağlantısını paylaş", subtitle = "Depo gizli olduğu sürece sadece GitHub erişimi olanlar indirebilir", onClick = { shareLink() })
                         RowDivider()
                         SettingRow(
                             "📲", "Uygulamayı dosya olarak gönder",

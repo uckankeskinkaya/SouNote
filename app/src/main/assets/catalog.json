@@ -1,6 +1,6 @@
 {
  "updated": "2026-10-23",
- "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz). Uygulama bu dosyayı GitHub'dan okur.",
+ "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "levels": [
   "L1",
   "L2",

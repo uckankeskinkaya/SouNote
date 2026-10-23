@@ -33,6 +33,12 @@ tap() {
 # Kayıt: rec ad süre  →  arka planda screenrecord; stop ile biter
 rec() { adb shell screenrecord --size 720x1600 --bit-rate 8000000 --time-limit "$2" "/sdcard/$1.mp4" & RECPID=$!; sleep 1; }
 stop() { wait $RECPID; sleep 1; adb pull "/sdcard/$1.mp4" "scenes/$1.mp4"; }
+# Ana sayfanın en üstüne dön (her sahneden önce)
+home_top() {
+  adb shell am start -n $P/.MainActivity >/dev/null; sleep 1.5
+  tap "Ana sayfa"
+  adb shell input swipe 540 700 540 2000 150; adb shell input swipe 540 700 540 2000 150; sleep 1.5
+}
 slow_scroll() { adb shell input swipe 540 1700 540 ${2:-900} ${1:-1200}; sleep 0.8; }
 # Parmakla çizim: noktalar listesi "x,y x,y ..." (motionevent ile eğri)
 draw() {
@@ -79,7 +85,7 @@ sleep 2; slow_scroll 1500 1000; sleep 2
 stop 04-sinavlar
 
 # 5) Defter: parmakla yaz + çizim
-tap "Ana sayfa"; sleep 1
+home_top
 adb shell am start -a $P.QUICK_NOTE -n $P/.MainActivity; sleep 4
 tap "Parmakla yaz kapalı"; sleep 1
 rec 05-defter 14
@@ -98,7 +104,7 @@ stop 05-defter
 adb shell input keyevent KEYCODE_BACK; sleep 2
 
 # 6) Writing
-tap "Ana sayfa"; sleep 1
+home_top
 rec 06-writing 16
 tap "Writing"; sleep 2.5; tap "Opinion Essay"; sleep 2.5
 tap "Social media does more harm than good to young people. Do you agree?"; sleep 2
@@ -108,14 +114,14 @@ stop 06-writing
 adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1
 
 # 7) Ortalama
-adb shell am start -n $P/.MainActivity; sleep 2; tap "Ana sayfa"; sleep 1
+home_top
 rec 07-ortalama 10
 tap "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 2; slow_scroll 1500 1000; sleep 2
 stop 07-ortalama
 adb shell input keyevent KEYCODE_BACK; sleep 1
 
 # 8) Arama
-adb shell am start -n $P/.MainActivity; sleep 2; tap "Ana sayfa"; sleep 1
+home_top
 rec 08-arama 8
 tap "Ara"; sleep 2; adb shell input text "not"; sleep 3
 stop 08-arama

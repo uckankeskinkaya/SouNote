@@ -8,6 +8,8 @@ import sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1080, 1920
+# 2 çekirdekli sunucuda hızlı ama yeterli kalite
+ENC = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "27", "-pix_fmt", "yuv420p", "-threads", "0"]
 FONT_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 TOP, BOTTOM = (74, 123, 234), (30, 58, 138)
@@ -115,7 +117,7 @@ def main():
     # Açılış kartı
     card([("SouNote", 110, True, (255, 255, 255)), ("Kalemle ders notu uygulaması", 44, False, (225, 233, 255))], "out/tmp/intro.png")
     run(["ffmpeg", "-y", "-loop", "1", "-t", "2.5", "-i", "out/tmp/intro.png", "-vf",
-         "fade=in:0:12,fade=out:st=2.1:d=0.4,format=yuv420p", "-r", "30", "out/tmp/p00.mp4"])
+         "fade=in:0:12,fade=out:st=2.1:d=0.4,format=yuv420p", "-r", "30", *ENC, "out/tmp/p00.mp4"])
     parts.append("out/tmp/p00.mp4")
     for i, (name, title, sub) in enumerate(SCENES, 1):
         src = f"scenes/{name}.mp4"
@@ -130,7 +132,7 @@ def main():
             "-filter_complex",
             f"[1:v]scale={PW}:{PH},fps=30[v];[0:v][v]overlay={PX}:{PY}:shortest=1[a];[a][2:v]overlay=0:0,"
             f"fade=in:0:9,fade=out:st={max(dur - 0.35, 0.5):.2f}:d=0.35,format=yuv420p",
-            "-t", f"{dur:.2f}", "-r", "30", "-an", out,
+            "-t", f"{dur:.2f}", "-r", "30", "-an", *ENC, out,
         ])
         parts.append(out)
     # Kapanış kartı
@@ -139,13 +141,13 @@ def main():
         ("uckankeskinkaya.github.io/SouNote", 40, False, (247, 185, 40)),
     ], "out/tmp/outro.png")
     run(["ffmpeg", "-y", "-loop", "1", "-t", "3", "-i", "out/tmp/outro.png", "-vf",
-         "fade=in:0:12,format=yuv420p", "-r", "30", "out/tmp/p99.mp4"])
+         "fade=in:0:12,format=yuv420p", "-r", "30", *ENC, "out/tmp/p99.mp4"])
     parts.append("out/tmp/p99.mp4")
     with open("out/tmp/list.txt", "w") as f:
         for p in parts:
             f.write(f"file '{os.path.abspath(p)}'\n")
-    run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "out/tmp/list.txt", "-c:v", "libx264", "-preset", "slow",
-         "-crf", "28", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "out/sounote.mp4"])
+    # Parçalar aynı ayarlarla kodlandı: yeniden kodlamadan birleştir
+    run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "out/tmp/list.txt", "-c", "copy", "-movflags", "+faststart", "out/sounote.mp4"])
     run(["ffmpeg", "-y", "-ss", "4", "-i", "out/sounote.mp4", "-frames:v", "1", "-q:v", "3", "out/poster.jpg"])
     print("Süre:", duration("out/sounote.mp4"), "sn, boyut:", os.path.getsize("out/sounote.mp4") // 1024, "KB")
 

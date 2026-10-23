@@ -12,13 +12,24 @@ import java.util.Locale
 
 /** Ders kaynağı: Drive dosyası, PDF bağlantısı ya da web sayfası. */
 /** [week]: dersin kaçıncı haftasının kaynağı (0 = belirtilmemiş). */
-data class Resource(val title: String, val url: String, val kind: String, val week: Int = 0) {
+data class Resource(
+    val title: String,
+    val url: String,
+    val kind: String,
+    val week: Int = 0,
+    /** Haftanın günü: 1 = Pazartesi … 5 = Cuma, 0 = kendi çalışman (self-study). */
+    val day: Int = 0,
+    val order: Int = 0,
+) {
     val isPdf get() = kind == "pdf"
     /** Drive paylaşım bağlantısından dosya kimliği. */
     val driveId: String?
         get() = Regex("drive\\.google\\.com/(?:file/d/|open\\?id=|uc\\?(?:export=download&)?id=)([A-Za-z0-9_-]{10,})")
             .find(url)?.groupValues?.get(1)
 }
+
+/** Haftalık programda olup Drive'da bulunmayan materyal (sadece listede görünür). */
+data class WeekItem(val week: Int, val day: Int, val title: String, val kind: String, val order: Int)
 
 data class Topic(val id: String, val name: String, val resources: List<Resource>)
 
@@ -63,6 +74,7 @@ data class Catalog(
     val levels: List<String> = emptyList(),
     /** Dönemin ilk haftasının pazartesisi (epoch ms; 0 = yok). */
     val termStart: Long = 0L,
+    val weekItems: List<WeekItem> = emptyList(),
 ) {
     /** [time] dönemin kaçıncı haftasında (1'den başlar; dönem öncesi 0). */
     fun weekOf(time: Long): Int =
@@ -133,7 +145,10 @@ object CatalogRepo {
                         id = t.getString("id"),
                         name = t.optString("name"),
                         resources = t.optJSONArray("resources").objects().map { r ->
-                            Resource(r.optString("title"), r.optString("url"), r.optString("kind", "link"), r.optInt("week"))
+                            Resource(
+                                r.optString("title"), r.optString("url"), r.optString("kind", "link"),
+                                r.optInt("week"), r.optInt("day"), r.optInt("order"),
+                            )
                         },
                     )
                 },
@@ -158,6 +173,9 @@ object CatalogRepo {
         return Catalog(
             o.optString("updated"), courses, exams, o.optJSONArray("levels").strings(),
             parseTime(o.optString("termStart"), "00:00") ?: 0L,
+            o.optJSONArray("weekItems").objects().map {
+                WeekItem(it.optInt("week"), it.optInt("day"), it.optString("title"), it.optString("kind"), it.optInt("order"))
+            },
         )
     }
 

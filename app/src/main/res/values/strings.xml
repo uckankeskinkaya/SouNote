@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">SouNote</string>
     <string name="shortcut_quick_note">Hızlı not</string>
+    <string name="widget_description">Sıradaki sınav ve bugünkü çalışma süren</string>
 </resources>

@@ -169,6 +169,9 @@ fun HomeScreen(vm: LibraryViewModel) {
             vm.tab = LibraryViewModel.Tab.LIBRARY
         }
     }
+    val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) vm.enableAutoBackup(uri)
+    }
     var newNotebook by remember { mutableStateOf(false) }
     var assistant by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<DocRef?>(null) }
@@ -225,6 +228,10 @@ fun HomeScreen(vm: LibraryViewModel) {
                             }
                         }
                     }
+                }
+
+                if (vm.showBackupNudge) {
+                    Appear(4) { BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge) }
                 }
 
                 val last = recent.firstOrNull()
@@ -449,6 +456,37 @@ private fun ContinueCard(
             )
         }
         Button(onClick = onOpen) { Text("Devam et") }
+    }
+}
+
+@Composable
+private fun BackupNudge(onPick: () -> Unit, onLater: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .padding(16.dp),
+    ) {
+        Text("☁️", fontSize = 30.sp)
+        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+            Text(
+                "Notların güvende mi?",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Text(
+                "Otomatik yedeği aç: her gün bütün notların seçtiğin klasöre (ör. Drive) yedeklenir. Tablet bozulsa da kaybolmaz.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                Button(onClick = onPick) { Text("Klasör seç") }
+                TextButton(onClick = onLater) { Text("Sonra") }
+            }
+        }
     }
 }
 

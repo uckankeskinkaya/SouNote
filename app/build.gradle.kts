@@ -77,4 +77,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.pdfbox.android)
     implementation(libs.androidx.graphics.core)
+    // Yazılı notta kalemle yazılanı yazıya çevirme (Türkçe model ilk kullanımda indirilir)
+    implementation("com.google.mlkit:digital-ink-recognition:18.1.0")
 }

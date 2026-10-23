@@ -264,7 +264,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val file = withContext(Dispatchers.IO) {
                 runCatching {
                     val name = note.displayTitle.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(60)
-                    File(getApplication<Application>().cacheDir, "exports/$name.pdf").also { TextNotePdf.write(note, it) }
+                    File(getApplication<Application>().cacheDir, "exports/$name.pdf").also { TextNotePdf.write(getApplication(), note, it) }
                 }.onFailure { ErrorLog.record("Not PDF'e çevrilemedi", it) }.getOrNull()
             }
             if (file != null) onReady(file) else message = "PDF oluşturulamadı"
@@ -276,7 +276,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             busy = true
             val result = withContext(Dispatchers.IO) {
-                runCatching { repo.createDocument(note.displayTitle, null) { TextNotePdf.write(note, it) } }
+                runCatching { repo.createDocument(note.displayTitle, null) { TextNotePdf.write(getApplication(), note, it) } }
             }
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }

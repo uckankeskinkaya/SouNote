@@ -2,6 +2,10 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Checkbox
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -226,6 +230,20 @@ fun HomeScreen(vm: LibraryViewModel) {
                             Appear(2 + i, Modifier.pressScale(0.98f)) {
                                 ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
                             }
+                        }
+                    }
+                }
+
+                // Bu haftanın kaynakları henüz girilmediyse (ör. hafta sonu) en son dolu hafta gösterilir.
+                val (week, weekTasks) = remember(vm.catalog) {
+                    val now = vm.catalog.weekOf(System.currentTimeMillis())
+                    (now downTo 1).asSequence().map { it to vm.weekTasks(it) }.firstOrNull { it.second.isNotEmpty() } ?: (0 to emptyList())
+                }
+                if (weekTasks.isNotEmpty()) {
+                    Appear(4) {
+                        WeekTasksCard(week, weekTasks, vm.doneItems, onToggle = vm::toggleDone) {
+                            vm.coursesByWeek = true
+                            vm.tab = LibraryViewModel.Tab.COURSES
                         }
                     }
                 }
@@ -456,6 +474,56 @@ private fun ContinueCard(
             )
         }
         Button(onClick = onOpen) { Text("Devam et") }
+    }
+}
+
+/** Bu haftanın kaynakları yapılacaklar listesi olarak: ilerleme + ilk birkaç yapılmamış. */
+@Composable
+private fun WeekTasksCard(
+    week: Int,
+    tasks: List<Triple<String, String, String>>,
+    done: Set<String>,
+    onToggle: (String) -> Unit,
+    onAll: () -> Unit,
+) {
+    val doneCount = tasks.count { it.first in done }
+    val progress by animateFloatAsState(doneCount / tasks.size.toFloat(), tween(600), label = "weekTasks")
+    // Yeni işaretlenen satır hemen kaybolmasın: kart açıkken görünen satırlar sabit kalır.
+    val shown = remember(tasks) { tasks.filter { it.first !in done }.take(4).ifEmpty { tasks.takeLast(2) } }
+    Column(Modifier.fillMaxWidth().card().padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Hafta $week listesi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (doneCount == tasks.size) "Hepsi tamam, harikasın 🎉" else "$doneCount / ${tasks.size} tamamlandı",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(onClick = onAll) { Text("Tümü →") }
+        }
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+        )
+        shown.forEach { (key, title, _) ->
+            val checked = key in done
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable { onToggle(key) },
+            ) {
+                Checkbox(checked = checked, onCheckedChange = { onToggle(key) })
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textDecoration = if (checked) TextDecoration.LineThrough else null,
+                    color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 }
 

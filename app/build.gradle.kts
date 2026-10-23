@@ -15,6 +15,10 @@ android {
         // CI'da her derleme numarası artar, böylece yeni APK eskisinin üstüne kurulur.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
         versionName = "0.1.$versionCode"
+        // Sadece telefon/tablet işlemcileri (emülatör x86 kodları APK'yı şişiriyordu).
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
     }
 
     // Kişisel uygulama: sabit anahtar repoda. Anahtar değişirse güncelleme kurulmaz
@@ -48,6 +52,10 @@ android {
     packaging {
         // Kod (dex) APK içinde sıkıştırılsın: sıkıştırılmamış dex tablete inerken bozuluyordu (CRC hatası, build-20..22).
         dex {
+            useLegacyPackaging = true
+        }
+        // Yerel kütüphaneler de sıkıştırılsın (aynı bozulma riskine karşı, APK da küçülür).
+        jniLibs {
             useLegacyPackaging = true
         }
         resources {

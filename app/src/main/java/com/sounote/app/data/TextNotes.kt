@@ -20,7 +20,10 @@ data class TextNote(
     val updated: Long,
     val pinned: Boolean = false,
 ) {
-    val displayTitle get() = title.ifBlank { body.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.take(60) ?: "Başlıksız not" }
+    /** Çizim satırları çıkarılmış metin (önizleme, arama, paylaşma). */
+    val plainBody get() = body.lineSequence().filterNot { it.startsWith(Sketches.MARKER) }.joinToString("\n")
+    val hasSketch get() = body.contains(Sketches.MARKER)
+    val displayTitle get() = title.ifBlank { plainBody.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.take(60) ?: "Başlıksız not" }
 }
 
 /** Yazılı notlar: filesDir/texts/<id>.json (yedeğe girer). */
@@ -74,13 +77,13 @@ class TextNoteStore(context: Context) {
     }
 }
 
-/** Yazılı notu A4 PDF'e çevirir (paylaşmak ya da üstüne kalemle yazmak için). */
+/** Yazılı notu A4 PDF'e çevirir (paylaşmak ya da üstüne kalemle yazmak için); çizimler de çizilir. */
 object TextNotePdf {
     private const val W = 595
     private const val H = 842
     private const val MARGIN = 56
 
-    fun write(note: TextNote, target: File) {
+    fun write(context: Context, note: TextNote, target: File) {
         val doc = PdfDocument()
         try {
             val width = W - 2 * MARGIN
@@ -97,43 +100,82 @@ object TextNotePdf {
                 textSize = 9f
                 color = Color.GRAY
             }
+            var pageNo = 0
+            var page: PdfDocument.Page? = null
+            var y = 0f
+            fun newPage() {
+                page?.let {
+                    it.canvas.drawText("$pageNo", (W / 2).toFloat(), (H - MARGIN / 2).toFloat(), footPaint)
+                    doc.finishPage(it)
+                }
+                pageNo++
+                page = doc.startPage(PdfDocument.PageInfo.Builder(W, H, pageNo).create())
+                y = MARGIN.toFloat()
+            }
+            newPage()
             val title = note.displayTitle
             val titleLayout = StaticLayout.Builder.obtain(title, 0, title.length, titlePaint, width).build()
-            val body = note.body
-            val bodyLayout = StaticLayout.Builder.obtain(body, 0, body.length, bodyPaint, width)
-                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
-                .setLineSpacing(0f, 1.3f)
-                .build()
+            page!!.canvas.apply {
+                save()
+                translate(MARGIN.toFloat(), y)
+                titleLayout.draw(this)
+                restore()
+            }
+            y += titleLayout.height + 18f
 
-            var line = 0
-            var pageNo = 1
-            while (true) {
-                val page = doc.startPage(PdfDocument.PageInfo.Builder(W, H, pageNo).create())
-                val c = page.canvas
-                var y = MARGIN.toFloat()
-                if (pageNo == 1) {
-                    c.save()
-                    c.translate(MARGIN.toFloat(), y)
-                    titleLayout.draw(c)
-                    c.restore()
-                    y += titleLayout.height + 18f
+            for (part in splitBody(note.body)) {
+                when (part) {
+                    is BodyPart.Text -> {
+                        if (part.text.isEmpty()) continue
+                        val layout = StaticLayout.Builder.obtain(part.text, 0, part.text.length, bodyPaint, width)
+                            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                            .setLineSpacing(0f, 1.3f)
+                            .build()
+                        var line = 0
+                        while (line < layout.lineCount) {
+                            val avail = H - MARGIN - y
+                            val startTop = layout.getLineTop(line)
+                            var end = line
+                            while (end < layout.lineCount && layout.getLineBottom(end) - startTop <= avail) end++
+                            if (end == line) {
+                                if (y > MARGIN) {
+                                    newPage()
+                                    continue
+                                }
+                                end = line + 1
+                            }
+                            val bottom = layout.getLineBottom(end - 1)
+                            page!!.canvas.apply {
+                                save()
+                                translate(MARGIN.toFloat(), y - startTop)
+                                clipRect(0f, startTop.toFloat(), width.toFloat(), bottom.toFloat())
+                                layout.draw(this)
+                                restore()
+                            }
+                            y += bottom - startTop
+                            line = end
+                            if (line < layout.lineCount) newPage()
+                        }
+                        y += 6f
+                    }
+                    is BodyPart.Drawing -> {
+                        val sketch = Sketches.load(context, part.id)
+                        val scale = width / sketch.width
+                        val h = sketch.height * scale
+                        if (y + h > H - MARGIN && y > MARGIN) newPage()
+                        page!!.canvas.apply {
+                            save()
+                            translate(MARGIN.toFloat(), y)
+                            Sketches.draw(this, sketch, scale)
+                            restore()
+                        }
+                        y += h + 12f
+                    }
                 }
-                val avail = H - MARGIN - y
-                val startTop = bodyLayout.getLineTop(line)
-                var end = line
-                while (end < bodyLayout.lineCount && bodyLayout.getLineBottom(end) - startTop <= avail) end++
-                if (end == line) end = line + 1
-                val bottom = bodyLayout.getLineBottom(end - 1)
-                c.save()
-                c.translate(MARGIN.toFloat(), y - startTop)
-                c.clipRect(0f, startTop.toFloat(), width.toFloat(), bottom.toFloat())
-                bodyLayout.draw(c)
-                c.restore()
-                c.drawText("$pageNo", (W / 2).toFloat(), (H - MARGIN / 2).toFloat(), footPaint)
-                doc.finishPage(page)
-                line = end
-                pageNo++
-                if (line >= bodyLayout.lineCount) break
+            }
+            page?.let {
+                it.canvas.drawText("$pageNo", (W / 2).toFloat(), (H - MARGIN / 2).toFloat(), footPaint)
+                doc.finishPage(it)
             }
             target.parentFile?.mkdirs()
             target.outputStream().use { doc.writeTo(it) }

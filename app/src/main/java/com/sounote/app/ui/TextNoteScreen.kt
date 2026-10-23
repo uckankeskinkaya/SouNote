@@ -68,7 +68,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.sounote.app.LibraryViewModel
+import com.sounote.app.ErrorLog
+import com.sounote.app.data.BodyPart
+import com.sounote.app.data.Sketch
+import com.sounote.app.data.Sketches
 import com.sounote.app.data.TextNote
+import com.sounote.app.data.joinBody
+import com.sounote.app.data.splitBody
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.onFocusChanged
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -125,6 +137,23 @@ private fun continueList(old: TextFieldValue, new: TextFieldValue): TextFieldVal
     return TextFieldValue(t, TextRange(pos + next.length))
 }
 
+/** Düzenleyicideki parça: yazı alanı ya da çizim. */
+private sealed interface EditorPart {
+    data class Text(val value: TextFieldValue) : EditorPart
+    data class Drawing(val id: String) : EditorPart
+
+    fun toBodyPart(): BodyPart = when (this) {
+        is Text -> BodyPart.Text(value.text)
+        is Drawing -> BodyPart.Drawing(id)
+    }
+}
+
+private fun insertAtCursor(v: TextFieldValue, t: String): TextFieldValue {
+    val s = v.selection.start.coerceIn(0, v.text.length)
+    val e = v.selection.end.coerceIn(s, v.text.length)
+    return TextFieldValue(v.text.substring(0, s) + t + v.text.substring(e), TextRange(s + t.length))
+}
+
 private fun wordCount(text: String) = text.split(Regex("\\s+")).count { it.isNotBlank() && it !in setOf("☐", "☑", "•") }
 
 /** Klavyeyle yazılan not: başlık + metin, liste/yapılacaklar, otomatik kayıt. */
@@ -133,18 +162,77 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     var title by remember(note.id) { mutableStateOf(note.title) }
-    var body by remember(note.id) { mutableStateOf(TextFieldValue(note.body, TextRange(note.body.length))) }
+    // Not metni yazı ve çizim parçalarından oluşur; her yazı parçası ayrı bir yazı alanı.
+    var parts by remember(note.id) {
+        mutableStateOf<List<EditorPart>>(
+            splitBody(note.body).map {
+                when (it) {
+                    is BodyPart.Text -> EditorPart.Text(TextFieldValue(it.text, TextRange(it.text.length)))
+                    is BodyPart.Drawing -> EditorPart.Drawing(it.id)
+                }
+            },
+        )
+    }
+    var focusIdx by remember(note.id) { mutableStateOf(parts.indexOfLast { it is EditorPart.Text }) }
+    var pad by remember { mutableStateOf(false) }
+    var editingSketch by remember { mutableStateOf<Sketch?>(null) }
+    val sketchCache = remember(note.id) { mutableStateMapOf<String, Sketch>() }
+    val scope = rememberCoroutineScope()
+    val bodyText = joinBody(parts.map { it.toBodyPart() })
+
+    // Çizimleri arka planda yükle
+    LaunchedEffect(parts) {
+        parts.filterIsInstance<EditorPart.Drawing>().forEach { d ->
+            if (d.id !in sketchCache) sketchCache[d.id] = withContext(Dispatchers.IO) { Sketches.load(context, d.id) }
+        }
+    }
+
+    fun updateFocused(f: (TextFieldValue) -> TextFieldValue) {
+        val i = focusIdx.takeIf { parts.getOrNull(it) is EditorPart.Text } ?: parts.indexOfLast { it is EditorPart.Text }
+        val cur = parts[i] as EditorPart.Text
+        parts = parts.toMutableList().also { it[i] = EditorPart.Text(f(cur.value)) }
+        focusIdx = i
+    }
+
+    /** Çizimi imlecin olduğu yere ekler: yazı parçası ikiye bölünür. */
+    fun insertSketch(id: String) {
+        val i = focusIdx.takeIf { parts.getOrNull(it) is EditorPart.Text } ?: parts.indexOfLast { it is EditorPart.Text }
+        val v = (parts[i] as EditorPart.Text).value
+        val at = v.selection.start.coerceIn(0, v.text.length)
+        val before = v.text.substring(0, at).removeSuffix("\n")
+        val after = v.text.substring(at).removePrefix("\n")
+        parts = parts.toMutableList().also {
+            it[i] = EditorPart.Text(TextFieldValue(before, TextRange(before.length)))
+            it.add(i + 1, EditorPart.Drawing(id))
+            it.add(i + 2, EditorPart.Text(TextFieldValue(after, TextRange(0))))
+        }
+        focusIdx = i + 2
+    }
+
+    /** Çizimi kaldırır; iki yanındaki yazılar birleşir. */
+    fun removeSketch(id: String) {
+        val i = parts.indexOfFirst { it is EditorPart.Drawing && it.id == id }
+        if (i < 0) return
+        val prev = (parts.getOrNull(i - 1) as? EditorPart.Text)?.value?.text.orEmpty()
+        val next = (parts.getOrNull(i + 1) as? EditorPart.Text)?.value?.text.orEmpty()
+        val merged = listOf(prev, next).filter { it.isNotEmpty() }.joinToString("\n")
+        parts = parts.toMutableList().also {
+            it.subList(maxOf(0, i - 1), minOf(it.size, i + 2)).clear()
+            it.add(maxOf(0, i - 1), EditorPart.Text(TextFieldValue(merged, TextRange(prev.length))))
+        }
+        focusIdx = maxOf(0, i - 1)
+    }
     var menu by remember { mutableStateOf(false) }
     var shareMenu by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     val latestTitle by rememberUpdatedState(title)
-    val latestBody by rememberUpdatedState(body.text)
+    val latestBody by rememberUpdatedState(bodyText)
     val fontSize = vm.textFontSize
 
     // Yazmayı bırakınca yarım saniye içinde kaydet; ekrandan çıkarken de kaydet.
-    LaunchedEffect(note.id, title, body.text) {
+    LaunchedEffect(note.id, title, bodyText) {
         delay(500)
-        vm.saveTextNote(note.id, title, body.text)
+        vm.saveTextNote(note.id, title, bodyText)
     }
     DisposableEffect(note.id) {
         onDispose { vm.saveTextNote(note.id, latestTitle, latestBody) }
@@ -157,7 +245,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     }
 
     fun close() {
-        vm.saveTextNote(note.id, title, body.text)
+        vm.saveTextNote(note.id, title, bodyText)
         vm.closeTextNote()
     }
 
@@ -165,14 +253,15 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
         val send = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, title)
-            putExtra(Intent.EXTRA_TEXT, if (title.isBlank()) body.text else "$title\n\n${body.text}")
+            val plain = note.copy(body = bodyText).plainBody
+            putExtra(Intent.EXTRA_TEXT, if (title.isBlank()) plain else "$title\n\n$plain")
         }
         context.startActivity(Intent.createChooser(send, "Notu paylaş"))
     }
 
     fun sharePdf() {
-        vm.saveTextNote(note.id, title, body.text)
-        val current = vm.openText ?: note.copy(title = title, body = body.text)
+        vm.saveTextNote(note.id, title, bodyText)
+        val current = vm.openText ?: note.copy(title = title, body = bodyText)
         vm.textNotePdf(current) { file ->
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
             val send = Intent(Intent.ACTION_SEND).apply {
@@ -218,7 +307,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                                 text = { Text(if (pinned) "Sabitlemeyi kaldır" else "Başa sabitle") },
                                 onClick = {
                                     menu = false
-                                    vm.saveTextNote(note.id, title, body.text)
+                                    vm.saveTextNote(note.id, title, bodyText)
                                     vm.textNotes.find { it.id == note.id }?.let(vm::togglePinText)
                                 },
                             )
@@ -226,8 +315,8 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                                 text = { Text("Deftere çevir (kalemle yaz)") },
                                 onClick = {
                                     menu = false
-                                    vm.saveTextNote(note.id, title, body.text)
-                                    vm.textNoteToDocument(vm.openText ?: note.copy(title = title, body = body.text))
+                                    vm.saveTextNote(note.id, title, bodyText)
+                                    vm.textNoteToDocument(vm.openText ?: note.copy(title = title, body = bodyText))
                                 },
                             )
                             DropdownMenuItem(
@@ -253,20 +342,20 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             ) {
-                AssistChip(onClick = { body = setLinePrefix(body, CHECK_OPEN) }, label = { Text("☐ Yapılacak") })
-                AssistChip(onClick = { body = setLinePrefix(body, BULLET) }, label = { Text("• Madde") })
+                AssistChip(onClick = { pad = !pad }, label = { Text(if (pad) "✍️ Kalemle yaz (açık)" else "✍️ Kalemle yaz") })
+                AssistChip(onClick = { editingSketch = Sketch(Sketches.newId(), emptyList()) }, label = { Text("🎨 Çizim ekle") })
+                AssistChip(onClick = { updateFocused { setLinePrefix(it, CHECK_OPEN) } }, label = { Text("☐ Yapılacak") })
+                AssistChip(onClick = { updateFocused { setLinePrefix(it, BULLET) } }, label = { Text("• Madde") })
                 AssistChip(
                     onClick = {
                         val stamp = SimpleDateFormat("d MMMM yyyy, HH:mm", Locale.forLanguageTag("tr")).format(Date())
-                        val s = body.selection.start.coerceIn(0, body.text.length)
-                        val e = body.selection.end.coerceIn(s, body.text.length)
-                        body = TextFieldValue(body.text.substring(0, s) + stamp + body.text.substring(e), TextRange(s + stamp.length))
+                        updateFocused { insertAtCursor(it, stamp) }
                     },
                     label = { Text("📅 Tarih") },
                 )
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) {
                 Column(
                     Modifier
                         .widthIn(max = 860.dp)
@@ -291,32 +380,86 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                         },
                     )
                     Text(
-                        "$edited · ${wordCount(body.text)} kelime",
+                        "$edited · ${wordCount(note.copy(body = bodyText).plainBody)} kelime",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 6.dp, bottom = 18.dp),
                     )
-                    BasicTextField(
-                        value = body,
-                        onValueChange = { body = continueList(body, it) },
-                        textStyle = TextStyle(fontSize = fontSize.sp, lineHeight = (fontSize * 1.5f).sp, color = textColor),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 400.dp),
-                        decorationBox = { inner ->
-                            if (body.text.isEmpty()) {
-                                Text(
-                                    "Yazmaya başla… (kalemle yazarsan da yazıya dönüşür)",
-                                    fontSize = fontSize.sp,
-                                    color = textColor.copy(alpha = 0.35f),
-                                )
+                    val textStyle = TextStyle(fontSize = fontSize.sp, lineHeight = (fontSize * 1.5f).sp, color = textColor)
+                    val lastText = parts.indexOfLast { it is EditorPart.Text }
+                    parts.forEachIndexed { i, part ->
+                        when (part) {
+                            is EditorPart.Text -> BasicTextField(
+                                value = part.value,
+                                onValueChange = { v ->
+                                    parts = parts.toMutableList().also { it[i] = EditorPart.Text(continueList(part.value, v)) }
+                                    focusIdx = i
+                                },
+                                textStyle = textStyle,
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(if (i == lastText) Modifier.heightIn(min = 300.dp) else Modifier)
+                                    .onFocusChanged { if (it.isFocused) focusIdx = i },
+                                decorationBox = { inner ->
+                                    if (part.value.text.isEmpty() && parts.size == 1) {
+                                        Text(
+                                            "Yazmaya başla… ✍️ ile kalemle de yazabilirsin",
+                                            fontSize = fontSize.sp,
+                                            color = textColor.copy(alpha = 0.35f),
+                                        )
+                                    }
+                                    inner()
+                                },
+                            )
+                            is EditorPart.Drawing -> {
+                                val sketch = sketchCache[part.id]
+                                if (sketch != null) {
+                                    SketchView(sketch, onEdit = { editingSketch = sketch }, onDelete = { removeSketch(part.id) })
+                                }
                             }
-                            inner()
-                        },
-                    )
+                        }
+                    }
                 }
             }
+            if (pad) {
+                HandwritingPad(
+                    onText = { t ->
+                        updateFocused { v ->
+                            val before = v.text.substring(0, v.selection.start.coerceIn(0, v.text.length))
+                            val needsSpace = t != " " && before.isNotEmpty() && !before.endsWith(" ") && !before.endsWith("\n")
+                            insertAtCursor(v, if (needsSpace) " $t" else t)
+                        }
+                    },
+                    onBackspace = {
+                        updateFocused { v ->
+                            val at = v.selection.start.coerceIn(0, v.text.length)
+                            if (at == 0) v else TextFieldValue(v.text.removeRange(at - 1, at), TextRange(at - 1))
+                        }
+                    },
+                    onNewLine = { updateFocused { insertAtCursor(it, "\n") } },
+                    onClose = { pad = false },
+                )
+            }
         }
+    }
+
+    editingSketch?.let { sk ->
+        SketchEditor(
+            initial = sk,
+            onSave = { saved ->
+                val isNew = parts.none { it is EditorPart.Drawing && it.id == saved.id }
+                sketchCache[saved.id] = saved
+                scope.launch(Dispatchers.IO) {
+                    runCatching { Sketches.save(context, saved) }.onFailure { ErrorLog.record("Çizim kaydedilemedi", it) }
+                }
+                if (isNew) insertSketch(saved.id) else parts = parts.toList()
+                editingSketch = null
+                vm.saveTextNote(note.id, title, joinBody(parts.map { it.toBodyPart() }))
+            },
+            onDismiss = { editingSketch = null },
+        )
     }
 
     if (confirmDelete) {
@@ -328,7 +471,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 TextButton(onClick = {
                     confirmDelete = false
                     title = ""
-                    body = TextFieldValue("")
+                    parts = listOf(EditorPart.Text(TextFieldValue("")))
                     vm.deleteTextNote(vm.openText ?: note)
                 }) { Text("Sil", color = MaterialTheme.colorScheme.error) }
             },
@@ -370,7 +513,7 @@ internal fun TextNoteCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    note.body,
+                    (if (note.hasSketch) "🎨 " else "") + note.plainBody,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF4A4E57),
                     overflow = TextOverflow.Ellipsis,

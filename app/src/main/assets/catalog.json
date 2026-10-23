@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-23c",
+ "updated": "2026-10-23d",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -216,17 +216,26 @@
       {
        "title": "PPT (Conditional Structures)",
        "url": "https://drive.google.com/file/d/15sIiDUTPpTbeL_OC_ULszgqV_d_lESD2/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 1,
+       "order": 3
       },
       {
        "title": "HANDOUT 1 (Conditional Structures)",
        "url": "https://drive.google.com/file/d/1fpeQckh3OgMXMcPHeo7X5KqjKNxrBVX3/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 1,
+       "order": 1
       },
       {
        "title": "HANDOUT 2 (Rewrite Conditional Structures)",
        "url": "https://drive.google.com/file/d/1UKgjhsxZa-mwGIkBtUUhR8A1BBQX-ifr/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 1,
+       "order": 2
       }
      ]
     },
@@ -237,12 +246,18 @@
       {
        "title": "PPT (Necessity, Obligation, Permission)",
        "url": "https://drive.google.com/file/d/18GnLbVfnqglCJOa5RN0-tGD_7POwxXL4/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 3,
+       "order": 16
       },
       {
        "title": "ACTIVITY HANDOUT (Necessity, Obligation, Permission)",
        "url": "https://drive.google.com/file/d/1Asum7vpcwyhmg3uXSGqlEHn3XmXzAnc0/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 3,
+       "order": 13
       }
      ]
     },
@@ -327,7 +342,10 @@
       {
        "title": "HANDOUT (Vocabulary B1+ U3A)",
        "url": "https://drive.google.com/file/d/12OGxdDpVOxCltlWX4WIn0JoAcIcaHFHH/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 1,
+       "order": 0
       }
      ]
     },
@@ -338,12 +356,18 @@
       {
        "title": "HANDOUT (Vocabulary)",
        "url": "https://drive.google.com/file/d/1Rt9SayzcAfkSa25gJV-PKEyEd9e47sSt/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 3,
+       "order": 15
       },
       {
        "title": "PPT (Vocabulary - So What Do You Study)",
        "url": "https://drive.google.com/file/d/1VuSRCy-Cpk-j1AckI4oELUsp2U5U5c1i/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 5,
+       "order": 22
       },
       {
        "title": "Knowing a word",
@@ -386,7 +410,10 @@
       {
        "title": "PPT (Reading Strategies III- Pronoun Reference)",
        "url": "https://drive.google.com/file/d/1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 4,
+       "order": 20
       }
      ]
     },
@@ -405,12 +432,18 @@
       {
        "title": "HANDOUT (Reading) 2",
        "url": "https://drive.google.com/file/d/1DvFvEcJ7wuxyR_mAavKdBmu6BladwkyK/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 4,
+       "order": 19
       },
       {
        "title": "Reading practice",
        "url": "https://drive.google.com/file/d/1IOzRZxl7kWKB8k0I8GRaLhFUORmU7s8K/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 0,
+       "order": 23
       }
      ]
     }
@@ -429,7 +462,10 @@
       {
        "title": "PPT (Listening Strategies I - Introduction)",
        "url": "https://drive.google.com/file/d/1ofKtAlr9IWtDtIMln3O7PksihHQmgKXL/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 2,
+       "order": 9
       }
      ]
     }
@@ -508,22 +544,34 @@
       {
        "title": "WRITING HANDOUT (Sample Opinion Essays)",
        "url": "https://drive.google.com/file/d/1QLiMlgvNJU5mKqZ6BNQWGaBixiTkNuUZ/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 2,
+       "order": 12
       },
       {
        "title": "PPT WRITING (Sample Opinion Essays)",
        "url": "https://drive.google.com/file/d/1hTGR11zxLHgN1i9BmS5LacfgrXeRxeHk/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 2,
+       "order": 10
       },
       {
        "title": "WRITING HANDOUT (Opinion Essay) Practice I",
        "url": "https://drive.google.com/file/d/1mVghXEmvIUepkosxNDXvdvDnKqHN9Bec/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 2,
+       "order": 11
       },
       {
        "title": "Opinion essay peer evaluation checklist",
        "url": "https://drive.google.com/file/d/1s8UchG_rfp8vsoVz8Vvzbftx7AaA_zJc/view",
-       "kind": "docx"
+       "kind": "docx",
+       "week": 5,
+       "day": 0,
+       "order": 24
       }
      ]
     },
@@ -585,7 +633,10 @@
       {
        "title": "PPT SPEAKING (Work Life)",
        "url": "https://drive.google.com/file/d/1l-jweFW3QchWIkE9jIqrzGW1ErpEpCC2/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 1,
+       "order": 4
       },
       {
        "title": "PPT SPEAKING (The Mic is Yours)",
@@ -677,17 +728,26 @@
       {
        "title": "INTEGRATED HANDOUT (Work Life)",
        "url": "https://drive.google.com/file/d/1UlfvBdR1uffoTKis29FO3fwj1kkVXX8S/view",
-       "kind": "pdf"
+       "kind": "pdf",
+       "week": 5,
+       "day": 4,
+       "order": 17
       },
       {
        "title": "PPT (From University to the Office)",
        "url": "https://drive.google.com/file/d/1yYZ9df3kBHk1FEdp9S5prjgRjur9sh2I/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 5,
+       "day": 5,
+       "order": 21
       },
       {
        "title": "Why does Japan work so hard (video)",
        "url": "https://drive.google.com/file/d/1uaaQqmrPAHVg7dctN2lvIz3eQF_l07_h/view",
-       "kind": "video"
+       "kind": "video",
+       "week": 5,
+       "day": 4,
+       "order": 18
       }
      ]
     },
@@ -1186,6 +1246,41 @@
    "title": "Opinion Essay Rating Scale Scoring Guideline",
    "kind": "pdf",
    "order": 11
+  },
+  {
+   "week": 5,
+   "day": 2,
+   "title": "HANDOUT (Listening) Track 1",
+   "kind": "audio",
+   "order": 5
+  },
+  {
+   "week": 5,
+   "day": 2,
+   "title": "HANDOUT (Listening) Track 2",
+   "kind": "audio",
+   "order": 6
+  },
+  {
+   "week": 5,
+   "day": 2,
+   "title": "HANDOUT (Listening) Track 3",
+   "kind": "audio",
+   "order": 7
+  },
+  {
+   "week": 5,
+   "day": 2,
+   "title": "HANDOUT (Listening)",
+   "kind": "pdf",
+   "order": 8
+  },
+  {
+   "week": 5,
+   "day": 3,
+   "title": "HANDOUT (Rewrite Necessity, Obligation, Permission)",
+   "kind": "pdf",
+   "order": 14
   }
  ]
 }

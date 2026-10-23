@@ -167,6 +167,13 @@ WEEKS = {
      (3,"!Reading Speaking Activity (Stereotypes)|pdf"),(3,"WRITING HANDOUT (Introductory Paragraph)"),
      (4,"!Reading Speaking Activity|pdf"),(4,"WRITING HANDOUT (Body Paragraphs)"),
      (5,"!Opinion Essay Rating Scale Scoring Guideline|pdf"),(5,"WRITING HANDOUT (Concluding Paragraph)"),(5,"WRITING HANDOUT (Points to Notice)")],
+ 5: [(1,"HANDOUT (Vocabulary B1+ U3A)"),(1,"HANDOUT 1 (Conditional Structures)"),(1,"HANDOUT 2 (Rewrite Conditional Structures)"),(1,"PPT (Conditional Structures)"),(1,"PPT SPEAKING (Work Life)"),
+     (2,"!HANDOUT (Listening) Track 1|audio"),(2,"!HANDOUT (Listening) Track 2|audio"),(2,"!HANDOUT (Listening) Track 3|audio"),(2,"!HANDOUT (Listening)|pdf"),(2,"PPT (Listening Strategies I - Introduction)"),
+     (2,"PPT WRITING (Sample Opinion Essays)"),(2,"WRITING HANDOUT (Opinion Essay) Practice I"),(2,"WRITING HANDOUT (Sample Opinion Essays)"),
+     (3,"ACTIVITY HANDOUT (Necessity, Obligation, Permission)"),(3,"!HANDOUT (Rewrite Necessity, Obligation, Permission)|pdf"),(3,"HANDOUT (Vocabulary)"),(3,"PPT (Necessity, Obligation, Permission)"),
+     (4,"INTEGRATED HANDOUT (Work Life)"),(4,"Why does Japan work so hard (video)"),(4,"HANDOUT (Reading) 2"),(4,"PPT (Reading Strategies III- Pronoun Reference)"),
+     (5,"PPT (From University to the Office)"),(5,"PPT (Vocabulary - So What Do You Study)"),
+     (0,"Reading practice"),(0,"Opinion essay peer evaluation checklist")],
 }
 byTitle={}
 for c in courses:
@@ -226,7 +233,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-23c","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-10-23d","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

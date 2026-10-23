@@ -358,7 +358,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                         weekMissing.filter { it.day == day }.map { it.order to it }
                     if (rows.isEmpty()) continue
                     Text(
-                        DAY_NAMES[day],
+                        DAY_NAMES.getValue(day),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 6.dp),
@@ -366,8 +366,8 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                     rows.sortedBy { it.first }.forEach { (_, item) ->
                         if (item is Triple<*, *, *>) {
                             @Suppress("UNCHECKED_CAST")
-                            val (c, t, r) = item as Triple<Course, Topic, Resource>
-                            ResourceRow(vm, c, t, r) { res ->
+                            val tr = item as Triple<Course, Topic, Resource>
+                            ResourceRow(vm, tr.first, tr.second, tr.third) { res ->
                                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
                             }
                         } else if (item is com.sounote.app.data.WeekItem) {

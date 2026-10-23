@@ -78,4 +78,15 @@ GitHub'dan okunamıyor, Drive bağlayıcısının yazma izni yok). Katalog: Driv
 hatırlatıcılar (AlarmManager; 3 gün/1 gün önce 19:00, 2 saat önce), PDF kaynağı "İndir" → kütüphanede alan adlı klasöre.
 Drive dosyaları herkese açık değilse indirme/açma sadece sahibinde çalışır. Katalog üretici betik: scratchpad catalog.py (yeniden üretmek için Drive listesi).
 
+
+## Devam eden iş (sonraki oturum)
+- Drive düzeni: Drive "Ingilizce calismalar" klasörü (id 1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) içinde "Hafta 01 · 21-27 Eylül", "Hafta 02 · 28 Eylül-4 Ekim" …
+  alt klasörleri aç, tools/make_catalog.py içindeki WEEKS eşlemesine göre dosyaları taşı (update_file parentId; dosya kimliği değişmez, katalog bozulmaz).
+  Hafta 1 = 21 Eylül 2026 pazartesi. Önceki oturumda bağlayıcının yazma izni yoktu.
+- Kullanıcı her hafta Harmanlanmış Eğitim ekran görüntüsü atar (gün gün + self-study): WEEKS'e ekle, `python3 tools/make_catalog.py`, derle.
+  Drive'da olmayanlar "!başlık|tür" olarak girer (uygulamada "Drive'da yok").
+- Katalog Drive'a da konabilir (SouNote-katalog.json, herkese açık) ve Catalog.kt REMOTE_URL ile uzaktan güncellenir; klasör herkese açık olmalı.
+- Bekleyen özellik: yazılı notta çizim alanı + el yazısı tanıma (ML Kit digital ink, tr; internet izni var).
+- Sadece L4: katalogda başka kur yok.
+
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

@@ -164,11 +164,16 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 }
                 item {
                     Group("Görünüm") {
-                        SettingRow("🎨", "Tema", subtitle = "Uygulamanın renkleri") {
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                LibraryViewModel.ThemeMode.entries.forEach { m ->
-                                    FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })
-                                }
+                        SettingRow("🎨", "Tema", subtitle = "Açık, koyu ya da sistemle aynı")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(start = 68.dp, end = 16.dp, bottom = 10.dp),
+                        ) {
+                            LibraryViewModel.ThemeMode.entries.forEach { m ->
+                                FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })
                             }
                         }
                         RowDivider()

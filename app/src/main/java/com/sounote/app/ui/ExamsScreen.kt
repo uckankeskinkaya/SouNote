@@ -13,6 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -265,26 +266,41 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
         SimpleDateFormat("EEEE", TR).format(Date(exam.time)) + " " +
             exam.slot.ifBlank { SimpleDateFormat("HH:mm", TR).format(Date(exam.time)) }
     }
+    // Dar ekranda (telefon) geri sayım sağda yer kaplamasın, başlığın altına geçer.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val compact = maxWidth < 440.dp
+    val c = countdownColor(exam.time)
+    val countdown = @Composable {
+        Text(
+            countdownText(exam.time),
+            color = c,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            modifier = Modifier.clip(RoundedCornerShape(50)).background(c.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().card().combinedClickable(onClick = onClick, onLongClick = onLongClick).padding(14.dp),
+        modifier = Modifier.fillMaxWidth().card().combinedClickable(onClick = onClick, onLongClick = onLongClick).padding(if (compact) 12.dp else 14.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(64.dp).clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.15f)).padding(vertical = 8.dp),
+            modifier = Modifier.width(if (compact) 54.dp else 64.dp).clip(RoundedCornerShape(14.dp)).background(accent.copy(alpha = 0.15f)).padding(vertical = 8.dp),
         ) {
             Text(day, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = accent)
             Text(month, style = MaterialTheme.typography.labelMedium, color = accent)
         }
-        Column(Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(Modifier.weight(1f).padding(start = if (compact) 12.dp else 14.dp, end = if (compact) 0.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(exam.kindEmoji + " ")
                 Text(
                     exam.title.ifBlank { exam.course },
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
+                    maxLines = if (compact) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
                 if (exam.global) Text("  🌐", style = MaterialTheme.typography.labelSmall)
                 if (exam.levels.isNotEmpty() && exam.levels.size < 4) {
@@ -308,20 +324,16 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
                                 vm.focusTopic = t.id
                                 vm.tab = LibraryViewModel.Tab.COURSES
                             },
-                            label = { Text(t.name, style = MaterialTheme.typography.labelMedium) },
+                            label = { Text(t.name, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            modifier = Modifier.widthIn(max = 240.dp),
                         )
                     }
                 }
             }
+            if (compact) Box(Modifier.padding(top = 4.dp)) { countdown() }
         }
-        val c = countdownColor(exam.time)
-        Text(
-            countdownText(exam.time),
-            color = c,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.clip(RoundedCornerShape(50)).background(c.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 6.dp),
-        )
+        if (!compact) countdown()
+    }
     }
 }
 

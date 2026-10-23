@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.sounote.app.ui
 
 import android.text.format.DateUtils
@@ -11,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -72,6 +75,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -173,16 +177,17 @@ fun HomeScreen(vm: LibraryViewModel) {
     val empty = vm.loaded && vm.imported.isEmpty() && vm.rootFolders.isEmpty()
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        val narrow = LocalConfiguration.current.screenWidthDp < 600
         Column(
             verticalArrangement = Arrangement.spacedBy(28.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .windowInsetsPadding(WindowInsets.systemBars)
-                .padding(horizontal = 24.dp, vertical = 20.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = if (narrow) 16.dp else 24.dp, vertical = if (narrow) 12.dp else 20.dp),
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(28.dp),
+                verticalArrangement = Arrangement.spacedBy(if (narrow) 22.dp else 28.dp),
                 modifier = Modifier.widthIn(max = 1100.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
             ) {
                 Hero(
@@ -315,22 +320,32 @@ private fun Hero(greeting: String, todayMs: Long, docCount: Int) {
     val date = remember { SimpleDateFormat("d MMMM EEEE", TR).format(Date()) }
     val motto = remember { MOTTOS[dayOfYear() % MOTTOS.size] }
     val hero = LocalColorTheme.current.heroColors
-    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Brush.linearGradient(hero))) {
+    BoxWithConstraints(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Brush.linearGradient(hero))) {
+        val compact = maxWidth < 420.dp
         Canvas(Modifier.matchParentSize()) {
             drawCircle(Color.White.copy(alpha = 0.08f), radius = size.height * 0.9f, center = Offset(size.width * 0.95f, 0f))
             drawCircle(Color.White.copy(alpha = 0.06f), radius = size.height * 0.45f, center = Offset(size.width * 0.72f, size.height * 1.05f))
         }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(28.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(if (compact) 20.dp else 28.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
                 Text(date, color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.labelLarge)
-                Text(greeting, color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    greeting,
+                    color = Color.White,
+                    style = if (compact) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
                 Text(motto, color = Color.White.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(top = 10.dp),
+                ) {
                     HeroChip("⏱ Bugün ${formatStudy(todayMs)}")
                     HeroChip("📚 $docCount belge")
                 }
             }
-            AppLogo(84.dp, Modifier.padding(start = 16.dp))
+            if (!compact) AppLogo(84.dp, Modifier.padding(start = 16.dp))
         }
     }
 }

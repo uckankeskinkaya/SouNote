@@ -154,6 +154,15 @@
   .step b { display: block; margin-bottom: 4px; font-size: 17px; }
   .step span { color: var(--muted); font-size: 15px; }
 
+  .notice { margin-top: 16px; display: grid; grid-template-columns: 48px 1fr; gap: 16px; background: var(--surface); border: 1px solid var(--line);
+    border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
+  .notice-ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  .notice b { font-size: 17px; }
+  .notice p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+  .notice p b { font-size: inherit; color: var(--text); }
+  .notice a:not(.pill) { color: var(--brand); text-decoration: underline; }
+  .notice .hash { font-family: ui-monospace, monospace; font-size: 12px; word-break: break-all; }
+  @media (max-width: 560px) { .notice { grid-template-columns: 1fr; } }
   details { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; margin-bottom: 10px; }
   summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
   summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--muted); transition: transform .2s; }
@@ -288,12 +297,13 @@
       </div>
       <div class="tile s3">
         <h3>🤖 Yardımcı asistan</h3>
-        <p>Açık PDF'ini okur; özetler, kelimeleri çıkarır, sayfadan bilgi kartı üretir, sınav kurallarını bilir.</p>
+        <p>Açık PDF'ini okur; özetler, kelimeleri çıkarır, sayfadan bilgi kartı üretir, sınav kurallarını bilir. e-Devlet ile Evren'den ücretsiz anahtar al; uygulama adım adım anlatır.</p>
         <div class="mini">
           <div class="row" style="justify-content:flex-end;background:var(--brand);color:#fff;margin-left:30%">Bu sayfayı özetle</div>
           <div class="row" style="margin-right:20%">📝 Sayfa <b>Conditionals</b>'ı anlatıyor: zero, first, second…</div>
         </div>
       </div>
+      <div class="tile s2"><h3>🔥 Çalışma serisi</h3><p>Her gün biraz çalış, serini büyüt. Kart tekrarı, Writing ya da haftalık liste de sayılır.</p></div>
       <div class="tile s2"><h3>🔁 Bugünkü tekrar</h3><p>Bütün belgelerinde zamanı gelen kartlar tek yerde.</p></div>
       <div class="tile s2"><h3>🔎 Her şeyde ara</h3><p>PDF'lerin içinde sayfa sayfa, notlarında ve kartlarında.</p></div>
       <div class="tile s2"><h3>📦 Arkadaşınla paylaş</h3><p>Notlu belgeyi gönder; onun SouNote'unda notlarıyla açılsın.</p></div>
@@ -356,11 +366,24 @@
       <div class="step"><b>İzin ver</b><span>"Bilinmeyen uygulamalar" uyarısında bu kaynağa izin ver, geri dön.</span></div>
       <div class="step"><b>Başla</b><span>"Yükle"ye bas. Kısa tanıtım seni karşılar.</span></div>
     </div>
+    <div class="notice">
+      <div class="notice-ic">🛡️</div>
+      <div>
+        <b>Telefonun uyarı verirse</b>
+        <p>SouNote Play Store'da olmadığı için Chrome "Bu dosya zararlı olabilir", Google Play Protect ise "Güvenli olmayan uygulama engellendi" ya da "Bilinmeyen geliştirici" diyebilir. Bu, mağaza dışından gelen her uygulamada çıkan genel bir uyarıdır. Chrome'da <b>"Yine de indir"</b>, Play Protect'te <b>"Diğer ayrıntılar" → "Yine de yükle"</b> de.</p>
+        <p><b>İçin rahat etsin mi?</b> Kurmadan önce dosyayı <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">virustotal.com</a>'a yükleyip 70'ten fazla antivirüsle taratabilirsin. Sadece bu siteden ya da uygulamanın kendi güncelleme bildiriminden kur; başkasının gönderdiği APK'yı kurma.</p>
+        <div class="cta" style="margin-top:12px">
+          <a class="pill soft" id="vt-link" href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">🔍 VirusTotal'da kontrol et</a>
+        </div>
+        <p class="hash" id="apk-hash"></p>
+      </div>
+    </div>
   </section>
 
   <section id="sss" class="reveal">
     <div class="head"><div class="kicker">SSS</div><h2>Sık sorulanlar</h2></div>
     <details><summary>Güncellemeler nasıl geliyor?</summary><p>Yeni sürüm çıkınca uygulama haber verir; "İndir"e basıp üstüne kurman yeterli, notların silinmez. Haftalık ders kaynakları güncelleme gerektirmeden kendiliğinden gelir.</p></details>
+    <details><summary>Telefon "zararlı olabilir" diyor, güvenli mi?</summary><p>Uyarı, Play Store dışından gelen her uygulamada çıkar. SouNote'un kodu GitHub'da herkese açık; her sürüm otomatik derlenir ve emülatörde test edilir. Yine de içinin rahat etmesi için yukarıdaki "VirusTotal'da kontrol et" ile taratabilirsin.</p></details>
     <details><summary>Notlarım nerede saklanıyor?</summary><p>Sadece senin cihazında. Hiçbir sunucuya gönderilmez. Kaybolmasın diye Ayarlar → Yedekleme'den otomatik yedeği aç.</p></details>
     <details><summary>Kalemim yok, kullanabilir miyim?</summary><p>Evet. Ana sayfadaki ya da defterdeki "Parmakla yaz"ı aç; tek parmak çizer, iki parmak kaydırır.</p></details>
     <details><summary>iPhone / iPad'de çalışır mı?</summary><p>Şimdilik sadece Android. iOS için tarayıcıda çalışan bir sürüm planlıyoruz.</p></details>
@@ -403,6 +426,12 @@
       if (!d) return;
       const apk = (d.assets || []).find(a => a.name === "SouNote.apk");
       if (apk) document.getElementById("size").textContent = "📦 " + (apk.size / 1048576).toFixed(0) + " MB";
+      // VirusTotal: dosyanın parmak iziyle doğrudan rapor sayfası (taranmamışsa oradan yüklenebilir)
+      const sha = apk && /^sha256:[0-9a-f]{64}$/.test(apk.digest || "") ? apk.digest.slice(7) : null;
+      if (sha) {
+        document.getElementById("vt-link").href = "https://www.virustotal.com/gui/file/" + sha;
+        document.getElementById("apk-hash").textContent = "SHA-256: " + sha;
+      }
       document.getElementById("ver-badge").textContent = (d.name || "").replace("SouNote ", "v");
       const first = (d.body || "").split("\n")[0].trim();
       if (first) document.getElementById("ver-line").textContent = first;

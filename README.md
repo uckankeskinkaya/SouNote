@@ -35,6 +35,8 @@
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; aralıklı tekrar (Leitner) |
 | 🤖 **Asistan** | Açık belgeyi okur; özet, kelime listesi, soru, essay değerlendirmesi (kendi API anahtarınla) |
 | 🔎 **Genel arama** | PDF'lerin içinde sayfa sayfa, yazılı notlarda ve kartlarda |
+| ✍️ **Writing pratiği** | Opinion essay/paragraph yaz; asistan L4 ölçütleriyle 100 üzerinden puanlar, hataları ve geliştirilmiş hali gösterir |
+| 🔁 **Bugünkü tekrar** | Bütün belgelerde zamanı gelen bilgi kartları tek oturumda |
 | 📊 **Not ortalaması** | Puanlarını gir, geçmek için kalan sınavlardan kaç alman gerektiğini gör |
 | 📝 **Yazılı notlar** | Klavyeyle ya da kalemle yazma, yapılacaklar, çizim alanı |
 | 📦 **Paylaşma** | Notlu belgeyi `.sounote` paketi olarak gönder; arkadaşında notlarıyla açılır |

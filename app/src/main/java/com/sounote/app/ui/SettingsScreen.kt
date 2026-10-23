@@ -304,7 +304,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                                 when {
                                     taps >= 7 -> {
                                         taps = 0
-                                        vm.setTestChannel(!vm.testChannel)
+                                        vm.switchTestChannel(!vm.testChannel)
                                     }
                                     taps == 1 -> vm.checkUpdate(manual = true)
                                 }
@@ -316,7 +316,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                                 "🧪", "Yönetici modu",
                                 "Yayınlanmamış test sürümlerini de alırsın; arkadaşların sadece yayınlananları alır",
                                 true,
-                            ) { vm.setTestChannel(it) }
+                            ) { vm.switchTestChannel(it) }
                             RowDivider()
                         }
                         SettingRow("❓", "Nasıl kullanılır?", subtitle = "Hareketler ve kısayollar", onClick = { helpDialog = true })

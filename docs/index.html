@@ -163,6 +163,17 @@
   .notice a:not(.pill) { color: var(--brand); text-decoration: underline; }
   .notice .hash { font-family: ui-monospace, monospace; font-size: 12px; word-break: break-all; }
   @media (max-width: 560px) { .notice { grid-template-columns: 1fr; } }
+  .why { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .why-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
+  .why-card b { font-size: 17px; }
+  .why-card p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+  .why-card p b { font-size: inherit; color: var(--text); }
+  .why-card a { color: var(--brand); text-decoration: underline; }
+  .why-ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; background: var(--surface-2); margin-bottom: 12px; }
+  .why-card.ok { border-top: 4px solid var(--green); }
+  .why-card.bad { border-top: 4px solid var(--red); }
+  @media (max-width: 960px) { .why { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .why { grid-template-columns: 1fr; } }
   details { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; margin-bottom: 10px; }
   summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
   summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--muted); transition: transform .2s; }
@@ -211,6 +222,7 @@
       <a href="#ekranlar">Ekranlar</a>
       <a href="#video">Video</a>
       <a href="#yenilikler">Yenilikler</a>
+      <a href="#neden">Neden mağazada değil?</a>
       <a href="#sss">SSS</a>
     </div>
     <span class="spacer"></span>
@@ -370,7 +382,7 @@
       <div class="notice-ic">🛡️</div>
       <div>
         <b>Telefonun uyarı verirse</b>
-        <p>SouNote Play Store'da olmadığı için Chrome "Bu dosya zararlı olabilir", Google Play Protect ise "Güvenli olmayan uygulama engellendi" ya da "Bilinmeyen geliştirici" diyebilir. Bu, mağaza dışından gelen her uygulamada çıkan genel bir uyarıdır. Chrome'da <b>"Yine de indir"</b>, Play Protect'te <b>"Diğer ayrıntılar" → "Yine de yükle"</b> de.</p>
+        <p>SouNote Play Store'da olmadığı için Chrome "Bu dosya zararlı olabilir", Google Play Protect ise "Güvenli olmayan uygulama engellendi" ya da "Bilinmeyen geliştirici" diyebilir. Bu, mağaza dışından gelen her uygulamada çıkan genel bir uyarıdır (<a href="#neden">neden?</a>). Chrome'da <b>"Yine de indir"</b>, Play Protect'te <b>"Diğer ayrıntılar" → "Yine de yükle"</b> de.</p>
         <p><b>İçin rahat etsin mi?</b> Kurmadan önce dosyayı <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">virustotal.com</a>'a yükleyip 70'ten fazla antivirüsle taratabilirsin. Sadece bu siteden ya da uygulamanın kendi güncelleme bildiriminden kur; başkasının gönderdiği APK'yı kurma.</p>
         <div class="cta" style="margin-top:12px">
           <a class="pill soft" id="vt-link" href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">🔍 VirusTotal'da kontrol et</a>
@@ -380,9 +392,36 @@
     </div>
   </section>
 
+  <section id="neden" class="reveal">
+    <div class="head">
+      <div class="kicker">Neden Play Store'da değil?</div>
+      <h2>Kısaca: bir öğrenci projesi için çok masraf ve bekleme.</h2>
+      <p class="sub">SouNote bir öğrencinin kendi dersleri için yaptığı, reklamsız ve ücretsiz bir uygulama. Mağazaya çıkmanın bedeli şunlar:</p>
+    </div>
+    <div class="why">
+      <div class="why-card"><div class="why-ic">💳</div><b>Ücret</b><p>Google Play geliştirici hesabı bir kerelik <b>25 $</b>. iPhone için App Store ise <b>her yıl 99 $</b> istiyor. SouNote reklam göstermiyor, para da almıyor; bu masrafı karşılayacak bir geliri yok.</p></div>
+      <div class="why-card"><div class="why-ic">👥</div><b>12 kişi × 14 gün test</b><p>Yeni bireysel hesaplar, uygulamayı herkese açmadan önce en az <b>12 test kullanıcısıyla 14 gün</b> kesintisiz kapalı test yapmak zorunda. Kullanıcı sayısı 12'nin altına düşerse süre baştan başlıyor.</p></div>
+      <div class="why-card"><div class="why-ic">📋</div><b>Formlar ve kurallar</b><p>Kimlik doğrulama, gizlilik politikası, veri güvenliği formu, içerik derecelendirmesi ve yapay zekâ özellikleri için ek kurallar (ör. uygunsuz cevabı bildirme düğmesi). Hepsi tek kişinin işi.</p></div>
+      <div class="why-card"><div class="why-ic">⏱️</div><b>Her güncelleme inceleniyor</b><p>Play Store'da her sürüm Google'ın incelemesinden geçiyor; bu saatler, bazen günler sürüyor. Burada ise haftalık ders kaynakları ve hata düzeltmeleri hemen sana ulaşıyor.</p></div>
+    </div>
+
+    <div class="head" style="margin-top:56px">
+      <div class="kicker">Play Protect uyarısı</div>
+      <h2>Uyarı "virüs var" demek değil.</h2>
+      <p class="sub">Google Play Protect, Play Store dışından kurulan ve daha önce görmediği her uygulamada temkinli davranır. SouNote mağazada olmadığı için Google onu "tanımıyor", uyarı bundan çıkıyor.</p>
+    </div>
+    <div class="why">
+      <div class="why-card ok"><div class="why-ic">✅</div><b>Normal uyarılar</b><p>"Bilinmeyen geliştirici", "Güvenli olmayan uygulama engellendi", "Bu dosya zararlı olabilir". Mağaza dışındaki her uygulamada çıkar. <b>Diğer ayrıntılar → Yine de yükle</b> diyebilirsin.</p></div>
+      <div class="why-card bad"><div class="why-ic">⛔</div><b>Ciddi uyarı</b><p>"<b>Zararlı uygulama tespit edildi</b>" ya da belirli bir virüs adı görürsen kurma. Dosyayı bu siteden yeniden indir ve bize haber ver. Resmi dosyada bu uyarı çıkmamalı.</p></div>
+      <div class="why-card"><div class="why-ic">🔐</div><b>Neden güvenebilirsin?</b><p>Kodu GitHub'da <b>herkese açık</b>, isteyen okuyabilir. Her sürüm GitHub'da otomatik derleniyor ve emülatörde test ediliyor. Hesap istemiyor, notların hiçbir sunucuya gitmiyor. APK gizli bir anahtarla imzalı; sahte bir "güncelleme" uygulamanın üstüne kurulamıyor.</p></div>
+      <div class="why-card"><div class="why-ic">🔍</div><b>Kendin kontrol et</b><p>Kurmadan önce APK'yı <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">VirusTotal</a>'a yükleyip 70'ten fazla antivirüsle taratabilirsin. "Kurulum" bölümündeki düğme bu sürümün raporunu doğrudan açar.</p></div>
+    </div>
+  </section>
+
   <section id="sss" class="reveal">
     <div class="head"><div class="kicker">SSS</div><h2>Sık sorulanlar</h2></div>
     <details><summary>Güncellemeler nasıl geliyor?</summary><p>Yeni sürüm çıkınca uygulama haber verir; "İndir"e basıp üstüne kurman yeterli, notların silinmez. Haftalık ders kaynakları güncelleme gerektirmeden kendiliğinden gelir.</p></details>
+    <details><summary>Neden Play Store'da yok?</summary><p>Geliştirici hesabı, 12 kişiyle 14 günlük zorunlu test, formlar ve her güncellemenin incelemeye girmesi, ücretsiz bir öğrenci projesi için fazla masraf ve bekleme demek. Ayrıntılar <a href="#neden" style="color:var(--brand);text-decoration:underline">yukarıda</a>. Kullanıcı sayısı artarsa mağazaya çıkmayı düşünüyoruz.</p></details>
     <details><summary>Telefon "zararlı olabilir" diyor, güvenli mi?</summary><p>Uyarı, Play Store dışından gelen her uygulamada çıkar. SouNote'un kodu GitHub'da herkese açık; her sürüm otomatik derlenir ve emülatörde test edilir. Yine de içinin rahat etmesi için yukarıdaki "VirusTotal'da kontrol et" ile taratabilirsin.</p></details>
     <details><summary>Notlarım nerede saklanıyor?</summary><p>Sadece senin cihazında. Hiçbir sunucuya gönderilmez. Kaybolmasın diye Ayarlar → Yedekleme'den otomatik yedeği aç.</p></details>
     <details><summary>Kalemim yok, kullanabilir miyim?</summary><p>Evet. Ana sayfadaki ya da defterdeki "Parmakla yaz"ı aç; tek parmak çizer, iki parmak kaydırır.</p></details>

@@ -51,6 +51,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -123,6 +125,34 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
 
     LaunchedEffect(messages.size, busy) { if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1 + if (busy) 1 else 0) }
 
+    // Kart üretme: önizlenen soru-cevaplar (null = pencere kapalı)
+    var cardDraft by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
+    var makingCards by remember { mutableStateOf(false) }
+
+    fun makeCards() {
+        val doc = source as? AssistantSource.Document ?: return
+        if (makingCards || busy) return
+        makingCards = true
+        error = null
+        // "Belgesiz" seçiliyken de bu sayfadan üret.
+        val sc = if (docScope == 2) 0 else docScope
+        scope.launch {
+            val r = runCatching {
+                val text = docTexts[sc] ?: run {
+                    val (from, to) = if (sc == 0) doc.page to doc.page else 0 to doc.pageCount - 1
+                    vm.documentText(doc.doc, from, to).also { docTexts[sc] = it }
+                }
+                if (text.isBlank()) throw java.io.IOException("Bu sayfada okunabilir metin yok (taranmış görüntü olabilir)")
+                withContext(Dispatchers.IO) { AssistantClient.generateCards(vm.assistantConfig, text) }
+            }
+            makingCards = false
+            r.onSuccess { cardDraft = it }.onFailure {
+                ErrorLog.record("Asistan kart", it)
+                error = it.message ?: "Kartlar üretilemedi"
+            }
+        }
+    }
+
     fun ask() {
         busy = true
         error = null
@@ -175,6 +205,52 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
         messages += ChatMessage("user", q)
         histories[source.key()] = messages.toList()
         ask()
+    }
+
+    cardDraft?.let { draft ->
+        val doc = (source as AssistantSource.Document)
+        val picked = remember(draft) { mutableStateListOf<Boolean>().apply { repeat(draft.size) { add(true) } } }
+        AlertDialog(
+            onDismissRequest = { cardDraft = null },
+            title = { Text("${draft.size} bilgi kartı") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState()),
+                ) {
+                    Text(
+                        "İstemediklerinin işaretini kaldır. Kartlar bu belgenin bilgi kartlarına eklenir.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    draft.forEachIndexed { i, (q, a) ->
+                        Row(
+                            verticalAlignment = Alignment.Top,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { picked[i] = !picked[i] }
+                                .background(if (picked[i]) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else Color.Transparent)
+                                .padding(8.dp),
+                        ) {
+                            Checkbox(checked = picked[i], onCheckedChange = { picked[i] = it })
+                            Column(Modifier.padding(start = 4.dp, top = 2.dp)) {
+                                Text(q, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                Text(a, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                val n = picked.count { it }
+                Button(enabled = n > 0, onClick = {
+                    vm.addGeneratedCards(doc.doc, draft.filterIndexed { i, _ -> picked[i] }, if (docScope == 1) -1 else doc.page)
+                    cardDraft = null
+                }) { Text("Ekle ($n)") }
+            },
+            dismissButton = { TextButton(onClick = { cardDraft = null }) { Text("Vazgeç") } },
+        )
     }
 
     terms?.let { (text, version) ->
@@ -304,6 +380,11 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
                                 FilterChip(selected = docScope == 0, onClick = { docScope = 0 }, label = { Text("Bu sayfa (${source.page + 1})") })
                                 FilterChip(selected = docScope == 1, onClick = { docScope = 1 }, label = { Text("Tüm belge") })
                                 FilterChip(selected = docScope == 2, onClick = { docScope = 2 }, label = { Text("Belgesiz") })
+                                AssistChip(
+                                    onClick = { makeCards() },
+                                    enabled = vm.assistantConfig.ready && !makingCards && !busy,
+                                    label = { Text(if (makingCards) "Kartlar hazırlanıyor…" else "🃏 Kart üret") },
+                                )
                             }
                         }
                         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

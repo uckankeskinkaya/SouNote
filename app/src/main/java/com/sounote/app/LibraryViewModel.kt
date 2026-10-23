@@ -736,6 +736,16 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         message = "Kart eklendi"
     }
 
+    /** Asistanın ürettiği soru-cevap kartlarını belgenin kartlarına ekler. */
+    fun addGeneratedCards(doc: DocRef, pairs: List<Pair<String, String>>, page: Int) {
+        if (pairs.isEmpty()) return
+        val now = System.currentTimeMillis()
+        // Görüntüleyicide açık belgenin kartları yüklü; değilse önce dosyadan oku.
+        val base = if (openDoc?.id == doc.id) cards else Flashcards.load(getApplication(), doc.id)
+        saveCards(doc, base + pairs.mapIndexed { i, (q, a) -> Card(now + i, q.trim(), null, a.trim(), page, due = now) })
+        message = "${pairs.size} kart eklendi · sağ üstteki ⋮ → Bilgi kartları"
+    }
+
     /** Sayfanın seçilen bölgesini (notlarıyla) görüntü olarak alıp kartın ön yüzü yapar. */
     fun addRegionCard(doc: DocRef, page: Int, region: RectF, front: String, back: String) {
         val content = openInk?.ink?.content(page) ?: PageContent.EMPTY

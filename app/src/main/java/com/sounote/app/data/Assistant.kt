@@ -132,6 +132,38 @@ object AssistantClient {
         if (code !in 200..299) throw IOException("Onay gönderilemedi (HTTP $code): ${text.take(200)}")
     }
 
+    /**
+     * Metinden soru-cevap bilgi kartları üretir. Model JSON dizisi döndürür: [{"q": "...", "a": "..."}].
+     * Cevabın etrafında açıklama ya da ``` olsa da ilk [...] bloğu okunur.
+     */
+    fun generateCards(config: AssistantConfig, source: String, count: Int = 10): List<Pair<String, String>> {
+        val prompt = """
+Aşağıdaki ders metninden en önemli bilgileri ölçen $count bilgi kartı hazırla (İngilizce hazırlık L4 öğrencisi için).
+Kurallar:
+- Ön yüz (q) kısa bir soru ya da boşluk doldurma; arka yüz (a) kısa ve net cevap.
+- Kelime varsa: q = İngilizce kelime/ifade ve örnek cümle, a = Türkçe anlamı.
+- Grammar varsa: q = kuralı sınayan cümle, a = doğru kullanım ve kısa açıklama.
+- Sadece metindeki bilgiye dayan, uydurma.
+- SADECE JSON dizisi döndür, başka hiçbir şey yazma: [{"q": "...", "a": "..."}]
+
+Metin:
+<<<
+${source.take(12_000)}
+>>>
+""".trim()
+        val reply = chat(config, listOf(ChatMessage("user", prompt)))
+        val start = reply.indexOf('[')
+        val end = reply.lastIndexOf(']')
+        if (start < 0 || end <= start) throw IOException("Asistan kartları beklenen biçimde vermedi, tekrar dene")
+        val arr = JSONArray(reply.substring(start, end + 1))
+        return (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val q = o.optString("q").ifBlank { o.optString("front") }.trim()
+            val a = o.optString("a").ifBlank { o.optString("back") }.trim()
+            if (q.isEmpty() || a.isEmpty()) null else q to a
+        }.ifEmpty { throw IOException("Metinden kart çıkarılamadı") }
+    }
+
     /** Asistanın uygulamayı, kullanıcıyı ve sınav takvimini tanıması için sistem talimatı. */
     fun systemPrompt(catalog: Catalog, userName: String, now: Long = System.currentTimeMillis()): String {
         val fmt = SimpleDateFormat("d MMMM yyyy EEEE HH:mm", Locale.forLanguageTag("tr"))

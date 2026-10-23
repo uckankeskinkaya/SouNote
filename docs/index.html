@@ -73,6 +73,12 @@
   ol.steps b { display: block; margin-bottom: 2px; }
   ol.steps span { color: var(--muted); font-size: 15px; }
 
+  .changes { display: grid; gap: 12px; }
+  .change { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: start; }
+  .change .badge { grid-row: span 2; background: var(--chip); color: var(--brand); font-weight: 700; font-size: 13px; padding: 6px 10px; border-radius: 10px; white-space: nowrap; }
+  .change b { font-size: 16px; }
+  .change span { color: var(--muted); font-size: 14px; }
+  .change ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; grid-column: 2; }
   details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; }
   summary { cursor: pointer; font-weight: 600; }
   details p { color: var(--muted); margin: 10px 0 0; }
@@ -131,10 +137,12 @@
     <h2>Neler yapabilirsin?</h2>
     <p class="sub">Kâğıt gibi doğal, kâğıttan çok daha akıllı.</p>
     <div class="grid">
-      <div class="card"><div class="ic">✍️</div><h3>Kalemle yaz</h3><p>Basınca duyarlı kalemler, fosforlu, silgi, şekil düzeltme. Avucun ekrana değse de çizmez.</p></div>
+      <div class="card"><div class="ic">🖊️</div><h3>Kalemle yaz</h3><p>Basınca duyarlı kalemler, fosforlu, silgi, şekil düzeltme. Avucun ekrana değse de çizmez.</p></div>
       <div class="card"><div class="ic">📚</div><h3>Haftalık kaynaklar</h3><p>Ders materyalleri hafta hafta ve konu konu. Bitirdiklerini işaretle, ilerlemeni gör.</p></div>
       <div class="card"><div class="ic">📅</div><h3>Sınav takvimi</h3><p>Geri sayım, hatırlatıcı bildirimler ve ana ekran widget'ı. Hiçbir sınavı kaçırma.</p></div>
       <div class="card"><div class="ic">🃏</div><h3>Bilgi kartları</h3><p>Sayfadan seçip karta çevir ya da asistana ürettir. Aralıklı tekrar ile kalıcı öğren.</p></div>
+      <div class="card"><div class="ic">✍️</div><h3>Writing pratiği</h3><p>Opinion essay yaz; asistan L4 ölçütleriyle 100 üzerinden puanlasın, hatalarını ve düzeltilmiş halini göstersin.</p></div>
+      <div class="card"><div class="ic">🔁</div><h3>Bugünkü tekrar</h3><p>Bütün belgelerinde zamanı gelen bilgi kartları tek yerde; birkaç dakikada bitir.</p></div>
       <div class="card"><div class="ic">🤖</div><h3>Yardımcı asistan</h3><p>Açık PDF'ini okur; özetler, kelimeleri çıkarır, essay'ini değerlendirir.</p></div>
       <div class="card"><div class="ic">🔎</div><h3>Her şeyde ara</h3><p>PDF'lerin içinde sayfa sayfa, yazılı notlarında ve kartlarında tek aramayla.</p></div>
       <div class="card"><div class="ic">📊</div><h3>Not ortalaması</h3><p>Puanlarını gir, geçmek için kalan sınavlardan kaç alman gerektiğini gör.</p></div>
@@ -169,6 +177,12 @@
     </ol>
   </section>
 
+  <section class="reveal" id="yenilikler">
+    <h2>Yenilikler</h2>
+    <p class="sub">Her güncellemeyle gelenler. Uygulama yeni sürümü kendisi haber verir.</p>
+    <div id="changes" class="changes"><p class="sub">Yükleniyor…</p></div>
+  </section>
+
   <section class="reveal">
     <h2>Sık sorulanlar</h2>
     <details><summary>Güncellemeler nasıl geliyor?</summary><p>Yeni sürüm çıkınca uygulama haber verir; "İndir"e basıp üstüne kurman yeterli. Notların silinmez. Haftalık ders kaynakları ise güncelleme gerektirmeden kendiliğinden gelir.</p></details>
@@ -199,6 +213,39 @@
       document.getElementById("ver").textContent = d.name + mb + " · " + date + " · Android 10 ve üstü";
     })
     .catch(() => {});
+  // Yenilikler: GitHub sürüm notlarından (teknik derleme notları ayıklanır).
+  const TECH = /^(CI|Geçici|Notlar|Derleme düzeltmesi|Merge|SouNote 1\.0$)/i;
+  fetch("https://api.github.com/repos/uckankeskinkaya/SouNote/releases?per_page=40")
+    .then(r => r.ok ? r.json() : [])
+    .then(list => {
+      const box = document.getElementById("changes");
+      const items = list.filter(r => !r.prerelease && !r.draft && r.body)
+        .map(r => {
+          const lines = r.body.split("\n").map(l => l.trim()).filter(Boolean);
+          return { name: r.name, date: new Date(r.published_at), title: lines[0] || "", rest: lines.slice(1) };
+        })
+        .filter(x => x.title && !TECH.test(x.title))
+        .slice(0, 12);
+      if (!items.length) { box.innerHTML = '<p class="sub">Henüz not yok.</p>'; return; }
+      box.innerHTML = "";
+      for (const it of items) {
+        const el = document.createElement("div");
+        el.className = "change";
+        const badge = document.createElement("div"); badge.className = "badge"; badge.textContent = it.name.replace("SouNote ", "");
+        const t = document.createElement("b"); t.textContent = it.title;
+        const d = document.createElement("span"); d.textContent = it.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+        el.append(badge, t, d);
+        const rest = it.rest.filter(l => !/^(Co-Authored-By|Claude-Session)/.test(l));
+        if (rest.length) {
+          const ul = document.createElement("ul");
+          rest.slice(0, 6).forEach(l => { const li = document.createElement("li"); li.textContent = l.replace(/^[-•*]\s*/, ""); ul.append(li); });
+          el.append(ul);
+        }
+        box.append(el);
+      }
+    })
+    .catch(() => { document.getElementById("changes").innerHTML = '<p class="sub">Yenilikler şu an yüklenemedi.</p>'; });
+
   // Bölümler kaydırdıkça belirsin.
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
   document.querySelectorAll(".reveal").forEach(el => io.observe(el));

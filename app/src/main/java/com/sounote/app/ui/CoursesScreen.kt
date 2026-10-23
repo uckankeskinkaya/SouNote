@@ -66,6 +66,7 @@ import com.sounote.app.data.Topic
 fun CoursesScreen(vm: LibraryViewModel) {
     var selected by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var byWeek by remember { mutableStateOf(false) }
     val catalog = vm.catalog
     val course = catalog.courses.find { it.id == selected }
 
@@ -100,7 +101,8 @@ fun CoursesScreen(vm: LibraryViewModel) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
             when {
                 catalog.courses.isEmpty() -> EmptyCatalog(vm)
-                course == null -> CourseGrid(vm) { selected = it.id }
+                course == null && byWeek -> WeekList(vm) { byWeek = false }
+                course == null -> CourseGrid(vm, onWeeks = { byWeek = true }) { selected = it.id }
                 else -> CourseDetail(vm, course, expanded) { id ->
                     expanded = if (id in expanded) expanded - id else expanded + id
                 }
@@ -128,7 +130,7 @@ private fun EmptyCatalog(vm: LibraryViewModel) {
 }
 
 @Composable
-private fun CourseGrid(vm: LibraryViewModel, onOpen: (Course) -> Unit) {
+private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Course) -> Unit) {
     val now = System.currentTimeMillis()
     val upcoming = vm.allExams.filter { it.time > now }
     LazyVerticalGrid(
@@ -138,6 +140,9 @@ private fun CourseGrid(vm: LibraryViewModel, onOpen: (Course) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.widthIn(max = 1100.dp).fillMaxSize(),
     ) {
+        if (vm.catalog.termStart != 0L) {
+            item(span = { GridItemSpan(maxLineSpan) }) { ViewSwitch(byWeek = false, onTopics = {}, onWeeks = onWeeks) }
+        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
                 "Bütün ders kaynakları konulara göre ayrıldı. Bu liste herkes için ortak; yeni kaynak eklenince burada görünür." +
@@ -285,6 +290,90 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
                 TextButton(onClick = { vm.downloadResource(course, topic, res) }) { Text("İndir") }
             }
             else -> TextButton(onClick = { onOpenLink(res) }) { Text("Drive'da aç") }
+        }
+    }
+}
+
+@Composable
+private fun ViewSwitch(byWeek: Boolean, onTopics: () -> Unit, onWeeks: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        androidx.compose.material3.FilterChip(selected = !byWeek, onClick = onTopics, label = { Text("📚 Konulara göre") })
+        androidx.compose.material3.FilterChip(selected = byWeek, onClick = onWeeks, label = { Text("🗓️ Haftalara göre") })
+    }
+}
+
+/** Haftalara göre: her haftanın tarihleri, o haftanın sınav/ödevleri ve kaynakları; bu hafta öne çıkar. */
+@Composable
+private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
+    val context = LocalContext.current
+    val catalog = vm.catalog
+    val exams = vm.allExams
+    val resources = catalog.courses.flatMap { c -> c.topics.flatMap { t -> t.resources.map { Triple(c, t, it) } } }
+    val lastWeek = maxOf(
+        exams.maxOfOrNull { catalog.weekOf(it.time) } ?: 0,
+        resources.maxOfOrNull { it.third.week } ?: 0,
+    )
+    val current = catalog.weekOf(System.currentTimeMillis())
+    val fmt = remember { java.text.SimpleDateFormat("d MMM", java.util.Locale.forLanguageTag("tr")) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    LaunchedEffect(Unit) { if (current in 1..lastWeek) listState.scrollToItem(current) }
+    val undated = resources.filter { it.third.week == 0 }
+    LazyColumn(
+        state = listState,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp),
+        modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
+    ) {
+        item { ViewSwitch(byWeek = true, onTopics = onTopics, onWeeks = {}) }
+        items((1..lastWeek).toList(), key = { it }) { week ->
+            val start = catalog.weekStart(week)
+            val weekExams = exams.filter { catalog.weekOf(it.time) == week }
+            val weekRes = resources.filter { it.third.week == week }
+            val isNow = week == current
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .card()
+                    .then(if (isNow) Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)) else Modifier)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Hafta $week", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(
+                        "  ${fmt.format(java.util.Date(start))} – ${fmt.format(java.util.Date(start + 4L * 86_400_000))}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (isNow) Text("Bu hafta", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                }
+                weekExams.forEach { e ->
+                    Text(
+                        "${e.kindEmoji} ${e.title} · ${countdownText(e.time)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = countdownColor(e.time),
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                weekRes.forEach { (c, t, r) ->
+                    ResourceRow(vm, c, t, r) { res ->
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                    }
+                }
+                if (weekExams.isEmpty() && weekRes.isEmpty()) {
+                    Text("Bu hafta için kayıt yok", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        if (undated.isNotEmpty()) {
+            item {
+                Text(
+                    "Haftası belirtilmemiş ${undated.size} kaynak \"Konulara göre\" görünümünde.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -1,0 +1,48 @@
+name: Telefon ekran görüntüleri (geçici)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/probe.yml"
+      - ".github/shots.sh"
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: APK'yı indir
+        run: gh release download build-${{ vars.SHOT_BUILD || '37' }} -R ${{ github.repository }} -p SouNote.apk -D a
+
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Telefonda ekran görüntüleri
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash ./.github/shots.sh
+
+      - name: Görüntüleri dala gönder
+        if: always()
+        run: |
+          cd shots
+          git init -q -b shots-tmp
+          git config user.name ci; git config user.email ci@example.com
+          git add -A; git commit -qm shots
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" shots-tmp

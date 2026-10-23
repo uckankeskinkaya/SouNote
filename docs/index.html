@@ -78,6 +78,8 @@
   .change .badge { grid-row: span 2; background: var(--chip); color: var(--brand); font-weight: 700; font-size: 13px; padding: 6px 10px; border-radius: 10px; white-space: nowrap; }
   .change b { font-size: 16px; }
   .change span { color: var(--muted); font-size: 14px; }
+  .change.latest { border: 2px solid var(--brand); box-shadow: 0 10px 30px rgba(47,91,211,.12); }
+  .change.latest .badge { background: var(--brand); color: #fff; }
   .change ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; grid-column: 2; }
   details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; }
   summary { cursor: pointer; font-weight: 600; }
@@ -179,7 +181,7 @@
 
   <section class="reveal" id="yenilikler">
     <h2>Yenilikler</h2>
-    <p class="sub">Her güncellemeyle gelenler. Uygulama yeni sürümü kendisi haber verir.</p>
+    <p class="sub">Ana güncellemeler. Yeni sürüm çıkınca uygulama kendisi haber verir.</p>
     <div id="changes" class="changes"><p class="sub">Yükleniyor…</p></div>
   </section>
 
@@ -213,36 +215,36 @@
       document.getElementById("ver").textContent = d.name + mb + " · " + date + " · Android 10 ve üstü";
     })
     .catch(() => {});
-  // Yenilikler: GitHub sürüm notlarından (teknik derleme notları ayıklanır).
-  const TECH = /^(CI|Geçici|Notlar|Derleme düzeltmesi|Merge|SouNote 1\.0$)/i;
-  fetch("https://api.github.com/repos/uckankeskinkaya/SouNote/releases?per_page=40")
+  // Yenilikler: sadece yayınlanan ana sürümler ("Sürümü yayınla" ile; adları "SouNote 1.1" gibi).
+  // Otomatik test derlemeleri ("Test 1.0.N") ve eski otomatik derlemeler ("SouNote 1.0.N") gösterilmez.
+  const AUTO = /^(Test |SouNote 1\.0\.\d+$|Ders kataloğu)/;
+  fetch("https://api.github.com/repos/uckankeskinkaya/SouNote/releases?per_page=60")
     .then(r => r.ok ? r.json() : [])
     .then(list => {
       const box = document.getElementById("changes");
-      const items = list.filter(r => !r.prerelease && !r.draft && r.body)
+      const items = list.filter(r => !r.prerelease && !r.draft && r.body && !AUTO.test(r.name || ""))
         .map(r => {
           const lines = r.body.split("\n").map(l => l.trim()).filter(Boolean);
           return { name: r.name, date: new Date(r.published_at), title: lines[0] || "", rest: lines.slice(1) };
         })
-        .filter(x => x.title && !TECH.test(x.title))
-        .slice(0, 12);
-      if (!items.length) { box.innerHTML = '<p class="sub">Henüz not yok.</p>'; return; }
+        .slice(0, 8);
+      if (!items.length) { box.innerHTML = '<p class="sub">İlk ana güncelleme yakında burada.</p>'; return; }
       box.innerHTML = "";
-      for (const it of items) {
+      items.forEach((it, i) => {
         const el = document.createElement("div");
-        el.className = "change";
-        const badge = document.createElement("div"); badge.className = "badge"; badge.textContent = it.name.replace("SouNote ", "");
-        const t = document.createElement("b"); t.textContent = it.title;
+        el.className = "change" + (i === 0 ? " latest" : "");
+        const badge = document.createElement("div"); badge.className = "badge"; badge.textContent = it.name.replace("SouNote ", "v");
+        const t = document.createElement("b"); t.textContent = (i === 0 ? "Son güncelleme · " : "") + it.title;
         const d = document.createElement("span"); d.textContent = it.date.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
         el.append(badge, t, d);
         const rest = it.rest.filter(l => !/^(Co-Authored-By|Claude-Session)/.test(l));
         if (rest.length) {
           const ul = document.createElement("ul");
-          rest.slice(0, 6).forEach(l => { const li = document.createElement("li"); li.textContent = l.replace(/^[-•*]\s*/, ""); ul.append(li); });
+          rest.slice(0, 8).forEach(l => { const li = document.createElement("li"); li.textContent = l.replace(/^[-•*]\s*/, ""); ul.append(li); });
           el.append(ul);
         }
         box.append(el);
-      }
+      });
     })
     .catch(() => { document.getElementById("changes").innerHTML = '<p class="sub">Yenilikler şu an yüklenemedi.</p>'; });
 

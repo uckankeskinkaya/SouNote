@@ -39,7 +39,8 @@ jobs:
           name: SouNote-apk
           path: SouNote.apk
 
-  # APK test beklemeden yayınlanır (derlemeden ~1 dk sonra hazır).
+  # Her push bir TEST sürümü (ön sürüm) üretir: sadece yönetici (test kanalını açan) alır.
+  # Herkese gitmesi için "Sürümü yayınla" iş akışı çalıştırılır (publish.yml).
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -68,25 +69,33 @@ jobs:
         if: steps.tip.outputs.latest == 'true'
         run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md
 
-      - name: Release oluştur
+      - name: Test sürümü oluştur
         if: steps.tip.outputs.latest == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: SouNote 1.0.${{ github.run_number }}
+          name: Test 1.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
-          # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
-          prerelease: false
-          make_latest: true
-          # Uygulamadaki "Yeni sürüm" penceresi bu metni gösterir.
+          prerelease: true
+          make_latest: false
           body_path: notes.md
-          # catalog.json: uygulama açılışta haftalık kaynakları buradan günceller (releases/latest/download/catalog.json).
-          files: |
-            SouNote.apk
-            app/src/main/assets/catalog.json
+          files: SouNote.apk
 
-  # Yayınla aynı anda emülatörde çökme testi. Uygulama çökerse sürüm "ön sürüm" yapılır:
-  # releases/latest (indirme bağlantısı ve uygulamadaki güncelleme bildirimi) bir önceki sağlam sürüme döner.
+      # Haftalık ders kataloğu ayrı kanalda ("catalog" etiketi): yayın beklemeden herkese gider.
+      - name: Kataloğu güncelle
+        if: steps.tip.outputs.latest == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="${{ github.repository }}"
+          if ! gh release view catalog -R "$R" >/dev/null 2>&1; then
+            gh release create catalog -R "$R" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Ders kataloğu" --notes "Uygulamanın haftalık ders kaynakları listesi (otomatik güncellenir)."
+          fi
+          gh release upload catalog app/src/main/assets/catalog.json -R "$R" --clobber
+
+  # Test sürümüyle aynı anda emülatörde çökme testi. Uygulama çökerse test sürümüne uyarı yazılır;
+  # "Sürümü yayınla" böyle bir sürümü herkese göndermez.
   smoke:
     needs: build
     runs-on: ubuntu-latest
@@ -159,17 +168,15 @@ jobs:
           git add -A; git commit -qm "build ${{ github.run_number }}" || exit 0
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" screenshots
 
-  # Test başarısızsa yayınlanan sürümü geri çek (ön sürüm yap).
+  # Test başarısızsa test sürümüne uyarı yaz (yayınlanması engellenir).
   rollback:
     needs: [release, smoke]
     if: failure() && needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Sürümü ön sürüme çek
+      - name: Uyarı yaz
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit "build-${{ github.run_number }}" -R "${{ github.repository }}" --prerelease --latest=false \
-            --notes "⚠️ Bu derleme çökme testinden geçemedi; indirme bağlantısı önceki sürüme döndü."
-          prev=$(gh release list -R "${{ github.repository }}" --exclude-pre-releases --exclude-drafts --limit 1 --json tagName -q '.[0].tagName')
-          [ -n "$prev" ] && gh release edit "$prev" -R "${{ github.repository }}" --latest
+          gh release edit "build-${{ github.run_number }}" -R "${{ github.repository }}" \
+            --notes "⚠️ Bu derleme çökme testinden geçemedi; yayınlanmamalı."

@@ -99,7 +99,7 @@ data class Catalog(
  */
 object CatalogRepo {
     /** Herkese açık güncel katalog adresi (boş = sadece uygulamadaki liste). */
-    private const val REMOTE_URL = "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/catalog.json"
+    private const val REMOTE_URL = "https://github.com/uckankeskinkaya/SouNote/releases/download/catalog/catalog.json"
     private const val FILE = "catalog.json"
 
     private fun bundled(context: Context): Catalog =

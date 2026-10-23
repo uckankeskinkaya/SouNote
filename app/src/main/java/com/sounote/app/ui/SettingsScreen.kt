@@ -290,12 +290,35 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 }
                 item {
                     Group("Yardım") {
+                        // Sürüm satırına art arda 7 dokunuş: yönetici modu (test sürümleri) aç/kapa
+                        var taps by remember { mutableStateOf(0) }
+                        var lastTap by remember { mutableStateOf(0L) }
                         SettingRow(
                             "🔄", "Güncellemeleri denetle",
-                            subtitle = "Sürüm ${vm.installedVersion}" + (vm.update?.let { " · yeni sürüm var: ${it.name}" } ?: ""),
-                            onClick = { vm.checkUpdate(manual = true) },
+                            subtitle = "Sürüm ${vm.installedVersion}" + (if (vm.testChannel) " · yönetici" else "") +
+                                (vm.update?.let { " · yeni sürüm var: ${it.name}" } ?: ""),
+                            onClick = {
+                                val t = System.currentTimeMillis()
+                                taps = if (t - lastTap < 600) taps + 1 else 1
+                                lastTap = t
+                                when {
+                                    taps >= 7 -> {
+                                        taps = 0
+                                        vm.setTestChannel(!vm.testChannel)
+                                    }
+                                    taps == 1 -> vm.checkUpdate(manual = true)
+                                }
+                            },
                         )
                         RowDivider()
+                        if (vm.testChannel) {
+                            SwitchRow(
+                                "🧪", "Yönetici modu",
+                                "Yayınlanmamış test sürümlerini de alırsın; arkadaşların sadece yayınlananları alır",
+                                true,
+                            ) { vm.setTestChannel(it) }
+                            RowDivider()
+                        }
                         SettingRow("❓", "Nasıl kullanılır?", subtitle = "Hareketler ve kısayollar", onClick = { helpDialog = true })
                         RowDivider()
                         SettingRow("✨", "Tanıtımı tekrar göster", onClick = { vm.replayOnboarding() })

@@ -157,34 +157,36 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
             )
         }
         items(vm.catalog.courses, key = { it.id }) { c ->
-            val topicIds = c.topics.map { it.id }.toSet()
-            val next = upcoming.firstOrNull { e -> e.topics.any { it in topicIds } }
-            val color = Color(c.color)
-            Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
-                    .aspectRatio(0.95f)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f).compositeOver(Color.Black))))
-                    .clickable { onOpen(c) }
-                    .padding(16.dp),
-            ) {
-                Text(c.emoji, fontSize = 36.sp)
-                Text(c.name, color = Color.White, style = if (narrow) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(
-                    "${c.topics.size} konu · ${c.topics.sumOf { it.resources.size }} kaynak",
-                    color = Color.White.copy(alpha = 0.85f),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                if (next != null) {
+            Box(Modifier.animateItem().appear(vm.catalog.courses.indexOf(c)).pressScale(), propagateMinConstraints = true) {
+                val topicIds = c.topics.map { it.id }.toSet()
+                val next = upcoming.firstOrNull { e -> e.topics.any { it in topicIds } }
+                val color = Color(c.color)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .aspectRatio(0.95f)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f).compositeOver(Color.Black))))
+                        .clickable { onOpen(c) }
+                        .padding(16.dp),
+                ) {
+                    Text(c.emoji, fontSize = 36.sp)
+                    Text(c.name, color = Color.White, style = if (narrow) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(
-                        "${next.kindEmoji} ${next.title} · ${countdownText(next.time)}",
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.18f)).padding(6.dp),
+                        "${c.topics.size} konu · ${c.topics.sumOf { it.resources.size }} kaynak",
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.labelLarge,
                     )
+                    if (next != null) {
+                        Text(
+                            "${next.kindEmoji} ${next.title} · ${countdownText(next.time)}",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.18f)).padding(6.dp),
+                        )
+                    }
                 }
             }
         }
@@ -202,16 +204,18 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
     ) {
         items(course.topics, key = { it.id }) { topic ->
-            val related = exams.filter { topic.id in it.topics }
-            TopicCard(
-                vm, course, topic, related.map { "${it.kindEmoji} ${it.title} · ${countdownText(it.time)}" },
-                open = topic.id in expanded,
-                onToggle = { onToggle(topic.id) },
-                onOpenLink = { res ->
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
-                        .onFailure { vm.showMessage("Bağlantı açılamadı") }
-                },
-            )
+            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                val related = exams.filter { topic.id in it.topics }
+                TopicCard(
+                    vm, course, topic, related.map { "${it.kindEmoji} ${it.title} · ${countdownText(it.time)}" },
+                    open = topic.id in expanded,
+                    onToggle = { onToggle(topic.id) },
+                    onOpenLink = { res ->
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                            .onFailure { vm.showMessage("Bağlantı açılamadı") }
+                    },
+                )
+            }
         }
         item {
             Text(
@@ -326,74 +330,76 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
     ) {
         item { ViewSwitch(byWeek = true, onTopics = onTopics, onWeeks = {}) }
         items((1..lastWeek).toList(), key = { it }) { week ->
-            val start = catalog.weekStart(week)
-            val weekExams = exams.filter { catalog.weekOf(it.time) == week }
-            val weekRes = resources.filter { it.third.week == week }
-            val weekMissing = catalog.weekItems.filter { it.week == week }
-            val isNow = week == current
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .card()
-                    .then(if (isNow) Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)) else Modifier)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Hafta $week", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(
-                        "  ${fmt.format(java.util.Date(start))} – ${fmt.format(java.util.Date(start + 4L * 86_400_000))}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (isNow) Text("Bu hafta", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                }
-                weekExams.forEach { e ->
-                    Text(
-                        "${e.kindEmoji} ${e.title} · ${countdownText(e.time)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = countdownColor(e.time),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-                // Gün gün: Pazartesi … Cuma, sonra kendi çalışman
-                for (day in listOf(1, 2, 3, 4, 5, 0)) {
-                    val rows = weekRes.filter { it.third.day == day }.map { it.third.order to it } +
-                        weekMissing.filter { it.day == day }.map { it.order to it }
-                    if (rows.isEmpty()) continue
-                    Text(
-                        DAY_NAMES.getValue(day),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                    rows.sortedBy { it.first }.forEach { (_, item) ->
-                        if (item is Triple<*, *, *>) {
-                            @Suppress("UNCHECKED_CAST")
-                            val tr = item as Triple<Course, Topic, Resource>
-                            ResourceRow(vm, tr.first, tr.second, tr.third) { res ->
-                                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
-                            }
-                        } else if (item is com.sounote.app.data.WeekItem) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                            ) {
-                                Text(kindIcon(item.kind), fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
-                                Text(
-                                    item.title,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                                )
-                                Text("Drive'da yok", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                val start = catalog.weekStart(week)
+                val weekExams = exams.filter { catalog.weekOf(it.time) == week }
+                val weekRes = resources.filter { it.third.week == week }
+                val weekMissing = catalog.weekItems.filter { it.week == week }
+                val isNow = week == current
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .card()
+                        .then(if (isNow) Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)) else Modifier)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Hafta $week", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            "  ${fmt.format(java.util.Date(start))} – ${fmt.format(java.util.Date(start + 4L * 86_400_000))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (isNow) Text("Bu hafta", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                    }
+                    weekExams.forEach { e ->
+                        Text(
+                            "${e.kindEmoji} ${e.title} · ${countdownText(e.time)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = countdownColor(e.time),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                    // Gün gün: Pazartesi … Cuma, sonra kendi çalışman
+                    for (day in listOf(1, 2, 3, 4, 5, 0)) {
+                        val rows = weekRes.filter { it.third.day == day }.map { it.third.order to it } +
+                            weekMissing.filter { it.day == day }.map { it.order to it }
+                        if (rows.isEmpty()) continue
+                        Text(
+                            DAY_NAMES.getValue(day),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                        rows.sortedBy { it.first }.forEach { (_, item) ->
+                            if (item is Triple<*, *, *>) {
+                                @Suppress("UNCHECKED_CAST")
+                                val tr = item as Triple<Course, Topic, Resource>
+                                ResourceRow(vm, tr.first, tr.second, tr.third) { res ->
+                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                                }
+                            } else if (item is com.sounote.app.data.WeekItem) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                ) {
+                                    Text(kindIcon(item.kind), fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
+                                    Text(
+                                        item.title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                                    )
+                                    Text("Drive'da yok", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                                }
                             }
                         }
                     }
-                }
-                if (weekExams.isEmpty() && weekRes.isEmpty() && weekMissing.isEmpty()) {
-                    Text("Bu hafta için kayıt yok", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (weekExams.isEmpty() && weekRes.isEmpty() && weekMissing.isEmpty()) {
+                        Text("Bu hafta için kayıt yok", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
             }
         }

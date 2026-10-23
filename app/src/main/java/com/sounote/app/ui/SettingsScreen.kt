@@ -369,7 +369,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
 
 @Composable
 private fun Group(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().appear()) {
         Text(
             title,
             style = MaterialTheme.typography.labelLarge,

@@ -2,6 +2,8 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.Crossfade
 import android.graphics.Bitmap
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -242,16 +244,20 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     if (fs.isNotEmpty()) {
                         fullWidth { SectionTitle("Klasörler") }
                         items(fs, key = { "u" + it.id }) { f ->
-                            UserFolderCard(f, countIn(f), onClick = { vm.searchQuery = ""; searching = false; vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                UserFolderCard(f, countIn(f), onClick = { vm.searchQuery = ""; searching = false; vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                            }
                         }
                     }
                     if (ds.isNotEmpty()) {
                         fullWidth { SectionTitle("Belgeler") }
                         items(ds, key = { "s" + it.id }) { doc ->
-                            if (doc.imported) {
-                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
-                            } else {
-                                DocCard(doc, onClick = { vm.open(doc) })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                if (doc.imported) {
+                                    DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                                } else {
+                                    DocCard(doc, onClick = { vm.open(doc) })
+                                }
                             }
                         }
                     }
@@ -261,17 +267,23 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     if (ts.isNotEmpty()) {
                         fullWidth { SectionTitle("Yazılı notlar") }
                         items(ts, key = { "sn" + it.id }) { n ->
-                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                            }
                         }
                     }
                     if (fs.isEmpty() && ds.isEmpty() && ts.isEmpty()) fullWidth { Hint("Sonuç yok") }
                 } else if (inLinked) {
                     val listing = vm.listing
                     items(listing.folders, key = { "f" + it.documentId }) { f ->
-                        FolderCard(f, onClick = { vm.openFolder(f) })
+                        Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                            FolderCard(f, onClick = { vm.openFolder(f) })
+                        }
                     }
                     items(vm.sorted(listing.docs), key = { it.id }) { doc ->
-                        DocCard(doc, onClick = { vm.open(doc) })
+                        Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                            DocCard(doc, onClick = { vm.open(doc) })
+                        }
                     }
                     if (listing.folders.isEmpty() && listing.docs.isEmpty()) {
                         fullWidth { Hint("Bu klasörde PDF yok. Dosya yöneticisinden buraya PDF atınca görünür.") }
@@ -299,7 +311,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         val tagged = vm.sorted(vm.imported.filter { tag in it.tags })
                         fullWidth { SectionTitle("#$tag · ${tagged.size} belge") }
                         items(tagged, key = { "t" + it.id }) { doc ->
-                            DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                            }
                         }
                     }
                     // Son açılanlar: kaldığın belgeye hızlı dönüş
@@ -317,8 +331,10 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                     contentPadding = PaddingValues(top = 12.dp),
                                 ) {
                                     items(recent, key = { "recent" + it.id }) { doc ->
-                                        Box(Modifier.width(130.dp)) {
-                                            DocCard(doc, onClick = { vm.open(doc) })
+                                        Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                            Box(Modifier.width(130.dp)) {
+                                                DocCard(doc, onClick = { vm.open(doc) })
+                                            }
                                         }
                                     }
                                 }
@@ -328,27 +344,35 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     if (folder == null && tag == null && vm.rootFolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Bağlı klasörler") }
                         items(vm.rootFolders, key = { "r" + it.treeUri }) { f ->
-                            FolderCard(f, onClick = { vm.openFolder(f) }, onLongClick = { unlinking = f })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                FolderCard(f, onClick = { vm.openFolder(f) }, onLongClick = { unlinking = f })
+                            }
                         }
                     }
                     val subfolders = if (tag != null) emptyList() else folders.filter { it.parentId == vm.currentFolder }.sortedWith(compareBy(NaturalOrder) { it.name })
                     if (subfolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Klasörler") }
                         items(subfolders, key = { "u" + it.id }) { f ->
-                            UserFolderCard(f, countIn(f), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                UserFolderCard(f, countIn(f), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                            }
                         }
                     }
                     if (folder == null && tag == null && vm.textNotes.isNotEmpty()) {
                         fullWidth { SectionTitle("Yazılı notlar") }
                         items(vm.textNotes, key = { "n" + it.id }) { n ->
-                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                            }
                         }
                     }
                     val docs = if (tag != null) emptyList() else vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
                     if (docs.isNotEmpty()) {
                         fullWidth { SectionTitle("Belgeler") }
                         items(docs, key = { it.id }) { doc ->
-                            DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                            }
                         }
                     }
                     if (folder == null && tag == null && vm.orphans.isNotEmpty()) {
@@ -364,14 +388,16 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                         }
                         items(vm.orphans, key = { "o" + it.id }) { doc ->
-                            DocCard(
-                                doc,
-                                onClick = { vm.open(doc) },
-                                menu = { d ->
-                                    DropdownMenuItem(text = { Text("Kütüphaneye al") }, onClick = { d(); vm.adoptOrphan(doc) })
-                                    DropdownMenuItem(text = { Text("Sil") }, onClick = { d(); deletingOrphan = doc })
-                                },
-                            )
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                DocCard(
+                                    doc,
+                                    onClick = { vm.open(doc) },
+                                    menu = { d ->
+                                        DropdownMenuItem(text = { Text("Kütüphaneye al") }, onClick = { d(); vm.adoptOrphan(doc) })
+                                        DropdownMenuItem(text = { Text("Sil") }, onClick = { d(); deletingOrphan = doc })
+                                    },
+                                )
+                            }
                         }
                     }
                     if (tag == null && folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty() && vm.textNotes.isEmpty()) {
@@ -524,7 +550,7 @@ private fun UserFolderCard(
     menu: @Composable (dismiss: () -> Unit) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
-    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = { open = true })) {
+    Column(Modifier.pressScale().combinedClickable(onClick = onClick, onLongClick = { open = true })) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -907,7 +933,7 @@ private val CardShape = RoundedCornerShape(10.dp)
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FolderCard(folder: FolderRef, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
-    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
+    Column(Modifier.pressScale().combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -937,10 +963,12 @@ internal fun DocCard(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Column(
-        Modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = if (menu != null) ({ menuOpen = true }) else null,
-        ),
+        Modifier
+            .pressScale()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = if (menu != null) ({ menuOpen = true }) else null,
+            ),
     ) {
         Box(
             modifier = Modifier
@@ -1004,7 +1032,8 @@ internal fun Thumbnail(doc: DocRef) {
     val bitmap by produceState<Bitmap?>(Thumbnails.cached(context, doc), doc.id, doc.lastModified, inkStamp) {
         if (value == null) value = Thumbnails.load(context, doc)
     }
-    val bmp = bitmap
+    // Kapak yüklenince yumuşakça belirir.
+    Crossfade(targetState = bitmap, animationSpec = tween(Motion.MEDIUM), label = "thumb") { bmp ->
     if (bmp != null) {
         Image(
             bitmap = bmp.asImageBitmap(),
@@ -1022,5 +1051,6 @@ internal fun Thumbnail(doc: DocRef) {
                 modifier = Modifier.size(48.dp),
             )
         }
+    }
     }
 }

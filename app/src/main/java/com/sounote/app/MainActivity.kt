@@ -14,13 +14,20 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.key
 import androidx.core.content.IntentCompat
+import com.sounote.app.data.DocRef
+import com.sounote.app.data.TextNote
 import com.sounote.app.ui.LockScreen
+import com.sounote.app.ui.Motion
 import com.sounote.app.ui.MainShell
 import com.sounote.app.ui.OnboardingScreen
 import com.sounote.app.ui.TextNoteScreen
@@ -161,28 +168,73 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Hangi ekranın gösterildiği (geçiş animasyonu için). */
+private sealed interface Screen {
+    val key: String
+    val depth: Int
+
+    data class Doc(val doc: DocRef, val version: Int) : Screen {
+        override val key get() = "doc:${doc.id}:$version"
+        override val depth get() = 1
+    }
+    data class Text(val note: TextNote) : Screen {
+        override val key get() = "text:${note.id}"
+        override val depth get() = 1
+    }
+    data object Onboarding : Screen {
+        override val key get() = "onboarding"
+        override val depth get() = 0
+    }
+    data object Main : Screen {
+        override val key get() = "main"
+        override val depth get() = 0
+    }
+}
+
 @Composable
 private fun SouNoteApp(vm: LibraryViewModel) {
     val doc = vm.openDoc
-    if (doc != null) {
-        BackHandler { vm.closeDoc() }
-        // Sayfa eklenip silinince PDF değişir: görüntüleyici baştan kurulur.
-        key(doc.id, vm.docVersion) {
-            ViewerScreen(doc, vm)
+    val text = vm.openText
+    val screen: Screen = when {
+        doc != null -> Screen.Doc(doc, vm.docVersion)
+        text != null -> Screen.Text(text)
+        !vm.onboarded -> Screen.Onboarding
+        else -> Screen.Main
+    }
+    when (screen) {
+        is Screen.Doc -> BackHandler { vm.closeDoc() }
+        is Screen.Text -> BackHandler { vm.closeTextNote() }
+        else -> Unit
+    }
+    AnimatedContent(
+        targetState = screen,
+        contentKey = { it.key },
+        transitionSpec = {
+            // Sayfa ekle/sil sonrası aynı belge yeniden kurulurken animasyon yok.
+            val sameDoc = initialState is Screen.Doc && targetState is Screen.Doc &&
+                (initialState as Screen.Doc).doc.id == (targetState as Screen.Doc).doc.id
+            if (sameDoc) {
+                EnterTransition.None togetherWith ExitTransition.None
+            } else {
+                Motion.screenTransition<Screen>(targetState.depth >= initialState.depth).invoke(this)
+            }
+        },
+        label = "screen",
+    ) { s ->
+        when (s) {
+            // Sayfa eklenip silinince PDF değişir: görüntüleyici baştan kurulur (key içinde version var).
+            is Screen.Doc -> ViewerScreen(s.doc, vm)
+            is Screen.Text -> TextNoteScreen(s.note, vm)
+            Screen.Onboarding -> OnboardingScreen(vm)
+            Screen.Main -> {
+                val inLibrary = vm.tab == LibraryViewModel.Tab.LIBRARY
+                // Geri: kütüphanede önce üst klasöre, sonra ana sayfaya; ana sayfada uygulamadan çıkar.
+                BackHandler(enabled = inLibrary && vm.canNavigateUp) { vm.navigateUp() }
+                BackHandler(enabled = vm.tab != LibraryViewModel.Tab.HOME && !(inLibrary && vm.canNavigateUp)) {
+                    vm.tab = LibraryViewModel.Tab.HOME
+                }
+                MainShell(vm)
+            }
         }
-    } else if (vm.openText != null) {
-        val text = vm.openText!!
-        BackHandler { vm.closeTextNote() }
-        key(text.id) { TextNoteScreen(text, vm) }
-    } else if (!vm.onboarded) {
-        OnboardingScreen(vm)
-    } else {
-        val inLibrary = vm.tab == LibraryViewModel.Tab.LIBRARY
-        // Geri: kütüphanede önce üst klasöre, sonra ana sayfaya; ana sayfada uygulamadan çıkar.
-        BackHandler(enabled = inLibrary && vm.canNavigateUp) { vm.navigateUp() }
-        BackHandler(enabled = vm.tab != LibraryViewModel.Tab.HOME && !(inLibrary && vm.canNavigateUp)) {
-            vm.tab = LibraryViewModel.Tab.HOME
-        }
-        MainShell(vm)
     }
 }

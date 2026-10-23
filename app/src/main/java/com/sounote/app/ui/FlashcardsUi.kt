@@ -179,7 +179,7 @@ fun StudyDialog(
     cards: List<Card>,
     image: (Card) -> File?,
     onReview: (Card, Boolean) -> Unit,
-    onGoToPage: (Int) -> Unit,
+    onGoToPage: (Card) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var queue by remember { mutableStateOf(cards.shuffled()) }
@@ -234,7 +234,7 @@ fun StudyDialog(
                             textAlign = TextAlign.Center,
                         )
                         if (card.page >= 0) {
-                            TextButton(onClick = { onGoToPage(card.page) }) { Text("Sayfa ${card.page + 1}'e git") }
+                            TextButton(onClick = { onGoToPage(card) }) { Text("Sayfa ${card.page + 1}'e git") }
                         }
                     }
                 }

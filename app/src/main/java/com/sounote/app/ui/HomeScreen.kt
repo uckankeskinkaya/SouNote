@@ -2,6 +2,9 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.material3.ButtonDefaults
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material.icons.filled.Star
@@ -184,6 +187,9 @@ fun HomeScreen(vm: LibraryViewModel) {
     var assistant by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
     var gradesOpen by remember { mutableStateOf(false) }
+    // Bugünkü tekrar: açılınca kartlar yüklenir
+    var review by remember { mutableStateOf<List<Pair<DocRef, com.sounote.app.data.Card>>?>(null) }
+    val scope = rememberCoroutineScope()
     var renaming by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var deletingText by remember { mutableStateOf<TextNote?>(null) }
@@ -263,6 +269,12 @@ fun HomeScreen(vm: LibraryViewModel) {
                     Appear(4) { BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge) }
                 }
 
+                if (vm.dueCount > 0) {
+                    Appear(4, Modifier.pressScale(0.98f)) {
+                        ReviewCard(vm.dueCount) { scope.launch { review = vm.dueCards().ifEmpty { null } } }
+                    }
+                }
+
                 val last = recent.firstOrNull()
                 if (empty) {
                     Appear(5) { StartCard(onNotebook = { newNotebook = true }, onImport = importPdf) }
@@ -338,6 +350,22 @@ fun HomeScreen(vm: LibraryViewModel) {
 
     if (assistant) AssistantDialog(vm, AssistantSource.General) { assistant = false }
     if (searchOpen) SearchDialog(vm) { searchOpen = false }
+    review?.let { list ->
+        val byId = remember(list) { list.associate { it.second.id to it.first } }
+        StudyDialog(
+            cards = list.map { it.second },
+            image = { c -> byId[c.id]?.let { vm.cardImage(it, c) } },
+            onReview = { c, known -> byId[c.id]?.let { vm.reviewAny(it, c, known) } },
+            onGoToPage = { c ->
+                review = null
+                byId[c.id]?.let { vm.openAt(it, c.page) }
+            },
+            onDismiss = {
+                review = null
+                vm.refreshDue()
+            },
+        )
+    }
     if (gradesOpen) GradesDialog(vm) { gradesOpen = false }
     renaming?.let { doc ->
         var text by remember(doc.id) { mutableStateOf(doc.title) }
@@ -490,6 +518,34 @@ private fun ContinueCard(
             )
         }
         Button(onClick = onOpen) { Text("Devam et") }
+    }
+}
+
+/** Bütün belgelerde tekrar zamanı gelmiş bilgi kartları. */
+@Composable
+private fun ReviewCard(count: Int, onStart: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF7048C8), Color(0xFF2F5BD3))))
+            .clickable(onClick = onStart)
+            .padding(18.dp),
+    ) {
+        Text("🃏", fontSize = 34.sp)
+        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+            Text("Bugünkü tekrar", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                "$count bilgi kartının tekrar zamanı geldi. Birkaç dakikada bitir, unutmadan pekiştir.",
+                color = Color.White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Button(
+            onClick = onStart,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2F5BD3)),
+        ) { Text("Başla") }
     }
 }
 

@@ -1,0 +1,1259 @@
+{
+ "updated": "2026-10-23",
+ "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz). Uygulama bu dosyayı GitHub'dan okur.",
+ "levels": [
+  "L1",
+  "L2",
+  "L3",
+  "L4"
+ ],
+ "courses": [
+  {
+   "id": "grammar",
+   "name": "Grammar",
+   "emoji": "🧩",
+   "color": "#2F5BD3",
+   "topics": [
+    {
+     "id": "narrative",
+     "name": "Narrative Tenses",
+     "resources": [
+      {
+       "title": "HANDOUT 1 (Narrative Tenses)",
+       "url": "https://drive.google.com/file/d/1vw-gAUFCWDxYUW-ARF9HvrnE6Ctzi99h/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "HANDOUT 2 (Narrative Tenses - Rewrite)",
+       "url": "https://drive.google.com/file/d/19FARQZFfOGOUxlLbsgGhyo2SlXiRlVbv/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Narrative tenses",
+       "url": "https://drive.google.com/file/d/1aXGA276luSearT_kQ3N7y6Yqvl2FPjlr/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Past perfect vs past simple exercises",
+       "url": "https://drive.google.com/file/d/19jAxggsC5gJmPSd6rTHxG_n5z6SZCVdo/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "perfect",
+     "name": "Present Perfect & Continuous / Past Simple",
+     "resources": [
+      {
+       "title": "PPT (Present Perfect Continuous)",
+       "url": "https://drive.google.com/file/d/13LGwFhGdaBz6gQkLteBwpdHPvURQ7_JX/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)",
+       "url": "https://drive.google.com/file/d/1TZ8I2SZQitw-eWcftwQVnMpJShibRybs/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Present Perfect Continuous board game)",
+       "url": "https://drive.google.com/file/d/18qqY69R8-_MzMe55C0hE-6NUZpKNEcJu/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Past simple vs present perfect",
+       "url": "https://drive.google.com/file/d/1nW5e-cO0DiRfwcCSlR4L-jKH7GrfC77v/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Present Perfect Simple vs Present Perfect Progressive",
+       "url": "https://drive.google.com/file/d/1LZt5GhZ8G1Z4D0S0rcpGS0XdwOM-rtrX/view",
+       "kind": "docx"
+      },
+      {
+       "title": "Simple vs progressive chart",
+       "url": "https://drive.google.com/file/d/1QbEzUBlpn2wfIPVu3hG7a0wJFkUeGiMS/view",
+       "kind": "docx"
+      },
+      {
+       "title": "Stative verbs",
+       "url": "https://drive.google.com/file/d/178GE6sEqTvkRt4OPBGrjCjWSu2m3uFG_/view",
+       "kind": "docx"
+      }
+     ]
+    },
+    {
+     "id": "verbpatterns",
+     "name": "Verb Patterns",
+     "resources": [
+      {
+       "title": "PPT (Verb Patterns)",
+       "url": "https://drive.google.com/file/d/1g1ls0o6_FOSA_Vfn3ABtJ9ZWuxKLQXWd/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "HANDOUT (Verb Patterns)",
+       "url": "https://drive.google.com/file/d/1cfNqFDQf88hJ9GtF6YQHYtvtjRZAT7H1/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "ACTIVITY HANDOUT 1 (Verb Patterns)",
+       "url": "https://drive.google.com/file/d/1FRV0clrmOnAcPE9rtMbFHSAjbC1qtKPt/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "ACTIVITY HANDOUT 2 (Verb Patterns)",
+       "url": "https://drive.google.com/file/d/1cuI_rOkoz63rETncgvVguChR0KqCg7NU/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Gerund / infinitive verbs list",
+       "url": "https://drive.google.com/file/d/1SaLEtFVfkI1BkDzEZlDaJrnqxf9BveCg/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "relative",
+     "name": "Relative Clauses",
+     "resources": [
+      {
+       "title": "PPT (Relative Clauses)",
+       "url": "https://drive.google.com/file/d/1TXOhEumYaWnhRKCxRUpLJDW90DShD0rD/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (V-ing / to infinitive with Relative Clauses)",
+       "url": "https://drive.google.com/file/d/1N2MLZSfpH2x5ZAjMhBnQdBukmRqeEl3d/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "HANDOUT (Relative Clauses - Rewrite)",
+       "url": "https://drive.google.com/file/d/1G-u3OSbBg-oCOabj8IrSigtIDuEIgU4-/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Relative Clauses board game)",
+       "url": "https://drive.google.com/file/d/1ZLZSx09BVUPuWmy-LI_jb93Ym2YKrC01/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Relative clauses context",
+       "url": "https://drive.google.com/file/d/1kMuFR99gekyniwUVy6Z3qG_yLdxSGJXX/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "conditionals",
+     "name": "Conditional Structures",
+     "resources": [
+      {
+       "title": "PPT (Conditional Structures)",
+       "url": "https://drive.google.com/file/d/15sIiDUTPpTbeL_OC_ULszgqV_d_lESD2/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "HANDOUT 1 (Conditional Structures)",
+       "url": "https://drive.google.com/file/d/1fpeQckh3OgMXMcPHeo7X5KqjKNxrBVX3/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "HANDOUT 2 (Rewrite Conditional Structures)",
+       "url": "https://drive.google.com/file/d/1UKgjhsxZa-mwGIkBtUUhR8A1BBQX-ifr/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "modals",
+     "name": "Necessity, Obligation, Permission",
+     "resources": [
+      {
+       "title": "PPT (Necessity, Obligation, Permission)",
+       "url": "https://drive.google.com/file/d/18GnLbVfnqglCJOa5RN0-tGD_7POwxXL4/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Necessity, Obligation, Permission)",
+       "url": "https://drive.google.com/file/d/1Asum7vpcwyhmg3uXSGqlEHn3XmXzAnc0/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "except",
+     "name": "except for / apart from / not even",
+     "resources": [
+      {
+       "title": "PPT (except for, apart from, not even)",
+       "url": "https://drive.google.com/file/d/1I0SQEbWuhXFD8Sdp1mzfyop_7Z6xzbcO/view",
+       "kind": "pptx"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "vocabulary",
+   "name": "Vocabulary",
+   "emoji": "🔤",
+   "color": "#8E63CE",
+   "topics": [
+    {
+     "id": "vocab-u1",
+     "name": "Unit 1 (1A)",
+     "resources": [
+      {
+       "title": "HANDOUT (Vocabulary B1+ U1A)",
+       "url": "https://drive.google.com/file/d/1XQJTKOzd7yHErfJDtZuXIhw_g87EF6en/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "vocab-u2",
+     "name": "Unit 2 (2A–2D)",
+     "resources": [
+      {
+       "title": "HANDOUT (Vocabulary 2A B)",
+       "url": "https://drive.google.com/file/d/1qOJI2tjA68RE-9fe9c4uxw8MwmAqF-79/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "HANDOUT (Vocabulary How to Activity B1+ U2C)",
+       "url": "https://drive.google.com/file/d/1SYSkf2Y_iTIBXhVGGs-eeVztSf0EOsFL/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "HANDOUT (Vocabulary B1+ U2D)",
+       "url": "https://drive.google.com/file/d/1FfLvcPj1FU2s9H4ogZYauewNoGmg5sLU/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "HANDOUT (Vocabulary and How to)",
+       "url": "https://drive.google.com/file/d/1RqEh14Pf4V2MxzMk9VMFyLYEFtwYcH5K/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "vocab-u3",
+     "name": "Unit 3 (3A)",
+     "resources": [
+      {
+       "title": "HANDOUT (Vocabulary B1+ U3A)",
+       "url": "https://drive.google.com/file/d/12OGxdDpVOxCltlWX4WIn0JoAcIcaHFHH/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "vocab-general",
+     "name": "Kelime öğrenme",
+     "resources": [
+      {
+       "title": "HANDOUT (Vocabulary)",
+       "url": "https://drive.google.com/file/d/1Rt9SayzcAfkSa25gJV-PKEyEd9e47sSt/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "PPT (Vocabulary - So What Do You Study)",
+       "url": "https://drive.google.com/file/d/1VuSRCy-Cpk-j1AckI4oELUsp2U5U5c1i/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "Knowing a word",
+       "url": "https://drive.google.com/file/d/1A8I5xcHPunn6rv3E_LLLNfKa2j_BXiaM/view",
+       "kind": "pptx"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "reading",
+   "name": "Reading",
+   "emoji": "📖",
+   "color": "#3FA36B",
+   "topics": [
+    {
+     "id": "reading-strategies",
+     "name": "Reading Strategies (I–III)",
+     "resources": [
+      {
+       "title": "PPT (Reading Strategies I - Introduction)",
+       "url": "https://drive.google.com/file/d/1SBDT-c46y4686M3W35oKnAFquHG8qXX4/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)",
+       "url": "https://drive.google.com/file/d/1sj-tkS1uZ6oVvTSYo5m5L7_GIyIPWYcY/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Reading Strategies III- Pronoun Reference)",
+       "url": "https://drive.google.com/file/d/1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t/view",
+       "kind": "pptx"
+      }
+     ]
+    },
+    {
+     "id": "reading-practice",
+     "name": "Reading alıştırmaları",
+     "resources": [
+      {
+       "title": "HANDOUT (Reading)",
+       "url": "https://drive.google.com/file/d/1z0hnttun7uK0lxngfKoU6FJtyztzY-jl/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "HANDOUT (Reading) 2",
+       "url": "https://drive.google.com/file/d/1DvFvEcJ7wuxyR_mAavKdBmu6BladwkyK/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Reading practice",
+       "url": "https://drive.google.com/file/d/1IOzRZxl7kWKB8k0I8GRaLhFUORmU7s8K/view",
+       "kind": "pdf"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "listening",
+   "name": "Listening",
+   "emoji": "🎧",
+   "color": "#3AA6B9",
+   "topics": [
+    {
+     "id": "listening-strategies",
+     "name": "Listening Strategies",
+     "resources": [
+      {
+       "title": "PPT (Listening Strategies I - Introduction)",
+       "url": "https://drive.google.com/file/d/1ofKtAlr9IWtDtIMln3O7PksihHQmgKXL/view",
+       "kind": "pptx"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "writing",
+   "name": "Writing",
+   "emoji": "✍️",
+   "color": "#E0893A",
+   "topics": [
+    {
+     "id": "essay-structure",
+     "name": "Opinion Essay: giriş, gelişme, sonuç",
+     "resources": [
+      {
+       "title": "WRITING HANDOUT (Introductory Paragraph)",
+       "url": "https://drive.google.com/file/d/1nUH6_w6YDrYSraQ43d84D8ZOYJT_Hy7O/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "WRITING HANDOUT (Body Paragraphs)",
+       "url": "https://drive.google.com/file/d/1zL-Tyf42X-RPoUzlead8Sz_FqNyoqw4D/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "WRITING HANDOUT (Concluding Paragraph)",
+       "url": "https://drive.google.com/file/d/1stTHvWIB4TpL3kxI1nI0CpCNpIg9EOuG/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "WRITING HANDOUT (Points to Notice)",
+       "url": "https://drive.google.com/file/d/11eGwGk0WCJa87pTNAv-TIR3DxRsloxku/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "paragraph-to-essay",
+     "name": "Opinion Paragraph → Opinion Essay",
+     "resources": [
+      {
+       "title": "PPT (From Opinion Paragraph to Opinion Essay)",
+       "url": "https://drive.google.com/file/d/18hQkuiQ9V2Ha05t4dSWOLFAPJTj6_VkK/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)",
+       "url": "https://drive.google.com/file/d/1lVmyOZtMdQ_0tyQpEUjZNQq7lOzt6qKi/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "essay-samples",
+     "name": "Örnek essay'ler ve pratik",
+     "resources": [
+      {
+       "title": "WRITING HANDOUT (Sample Opinion Essays)",
+       "url": "https://drive.google.com/file/d/1QLiMlgvNJU5mKqZ6BNQWGaBixiTkNuUZ/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "PPT WRITING (Sample Opinion Essays)",
+       "url": "https://drive.google.com/file/d/1hTGR11zxLHgN1i9BmS5LacfgrXeRxeHk/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "WRITING HANDOUT (Opinion Essay) Practice I",
+       "url": "https://drive.google.com/file/d/1mVghXEmvIUepkosxNDXvdvDnKqHN9Bec/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Opinion essay peer evaluation checklist",
+       "url": "https://drive.google.com/file/d/1s8UchG_rfp8vsoVz8Vvzbftx7AaA_zJc/view",
+       "kind": "docx"
+      }
+     ]
+    },
+    {
+     "id": "linkers",
+     "name": "Linkers (bağlaçlar)",
+     "resources": [
+      {
+       "title": "WRITING HANDOUT (Opinion Essay Linkers)",
+       "url": "https://drive.google.com/file/d/15AphUXD7sQD2ObTBvmT5oUwykRFNeAAI/view",
+       "kind": "pdf"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "speaking",
+   "name": "Speaking",
+   "emoji": "🗣️",
+   "color": "#D65B7F",
+   "topics": [
+    {
+     "id": "speaking-topics",
+     "name": "Speaking konuları",
+     "resources": [
+      {
+       "title": "PPT SPEAKING (Talking about Yourself)",
+       "url": "https://drive.google.com/file/d/1pGj32tqSGoQ4TIq8DDcCBrgJ3MoLJbc4/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Habits)",
+       "url": "https://drive.google.com/file/d/1x6WomYu8ZQEZnMB2z93cv3WHAyBW129m/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Pet Hates)",
+       "url": "https://drive.google.com/file/d/1IHA02eMFtq3GZqW48k2ouvorxF8qNIeB/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Learning)",
+       "url": "https://drive.google.com/file/d/1BJkYGnD5kDW8cdNZTm8AxILKPcsYread/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Work Life)",
+       "url": "https://drive.google.com/file/d/1l-jweFW3QchWIkE9jIqrzGW1ErpEpCC2/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (The Mic is Yours)",
+       "url": "https://drive.google.com/file/d/17s_izwe8xz880uEz-C8agQ45pj2CJUGY/view",
+       "kind": "pptx"
+      }
+     ]
+    },
+    {
+     "id": "speaking-tips",
+     "name": "Konuşmayı geliştirme",
+     "resources": [
+      {
+       "title": "TELL ME MORE (Perfect speaking)",
+       "url": "https://drive.google.com/file/d/13yxe2AvpNjT1QpD3C6Px0RzS8cNc2zUZ/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "PPT (Using AI to Learn English)",
+       "url": "https://drive.google.com/file/d/1gP6ozCIo1QBWGNl9rcgbdnTIra9anRRT/view",
+       "kind": "pptx"
+      }
+     ]
+    },
+    {
+     "id": "presentation",
+     "name": "Sunum ve grup projesi",
+     "resources": [
+      {
+       "title": "PPT (Group Project: Our Class Our Story)",
+       "url": "https://drive.google.com/file/d/1a6rxpbgYHlWfIyP8hOPNEfGz0cHZStqf/view",
+       "kind": "pptx"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "units",
+   "name": "Ünite materyalleri",
+   "emoji": "🧭",
+   "color": "#5B7FD6",
+   "topics": [
+    {
+     "id": "unit-habits",
+     "name": "Habits / The Hoarding Habit",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (Habits)",
+       "url": "https://drive.google.com/file/d/15yJsxyWNouJK1YDmcB7YFPVYO_rovyzr/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "INTEGRATED HANDOUT (The Hoarding Habit)",
+       "url": "https://drive.google.com/file/d/1l8Yow9IGSUcqS_D7xQa98GknSxtWLkaj/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Video 1 - The Hoarding Habit",
+       "url": "https://drive.google.com/file/d/1cYE7L6dB7A74dHvXjFfHXGwGNL3BHhQb/view",
+       "kind": "video"
+      },
+      {
+       "title": "Video 2 - Hoarder Denise's House Tour",
+       "url": "https://drive.google.com/file/d/1Gg_kW-o8pFEe93vi79b__oyP7phwgwYZ/view",
+       "kind": "video"
+      }
+     ]
+    },
+    {
+     "id": "unit-work",
+     "name": "Work Life",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (Work Life)",
+       "url": "https://drive.google.com/file/d/1UlfvBdR1uffoTKis29FO3fwj1kkVXX8S/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "PPT (From University to the Office)",
+       "url": "https://drive.google.com/file/d/1yYZ9df3kBHk1FEdp9S5prjgRjur9sh2I/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "Why does Japan work so hard (video)",
+       "url": "https://drive.google.com/file/d/1uaaQqmrPAHVg7dctN2lvIz3eQF_l07_h/view",
+       "kind": "video"
+      }
+     ]
+    },
+    {
+     "id": "unit-change",
+     "name": "Big Changes / The New Normal",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (Big Changes in History)",
+       "url": "https://drive.google.com/file/d/1_9JhHQsR0xzMDlZ5A4Y4SgO0Z4VerCfZ/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "INTEGRATED HANDOUT (The New Normal)",
+       "url": "https://drive.google.com/file/d/18c9r8CQhZS4ZaVvNHQRzm6eVgEW8Fsug/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "unit-future",
+     "name": "University of the Future / Algorithm",
+     "resources": [
+      {
+       "title": "ACTIVITY HANDOUT (The University of the Future)",
+       "url": "https://drive.google.com/file/d/1ct4nmT5QlK-7T4DWClU82BNs5-KKj1lG/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "INTEGRATED HANDOUT (The Algorithm Knows You)",
+       "url": "https://drive.google.com/file/d/1zYt2XUdXQ2-U61wwm3-FyeWMKXp5tYVe/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "unit-video",
+     "name": "Video etkinlikleri",
+     "resources": [
+      {
+       "title": "ACTIVITY HANDOUT (Video)",
+       "url": "https://drive.google.com/file/d/1OtEPyJaPXnaR9w_wvpXgg8WKDhZWeyL8/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "Video (Activity)",
+       "url": "https://drive.google.com/file/d/13z-hdjarPJrzeFbP0_qGgOE8hLbl3uUe/view",
+       "kind": "video"
+      },
+      {
+       "title": "Activity handout video",
+       "url": "https://drive.google.com/file/d/1p8rd01O3PjbeXqeWiYvTlnz6hkL3yyiR/view",
+       "kind": "video"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "exam-prep",
+   "name": "Sınav hazırlık",
+   "emoji": "🎯",
+   "color": "#C62828",
+   "topics": [
+    {
+     "id": "quiz1-l4",
+     "name": "L4 Quiz 1 hazırlık",
+     "resources": [
+      {
+       "title": "L4 Quiz 1 özet kağıdı",
+       "url": "https://drive.google.com/file/d/1fTyQw7bA_uS3d-OdN6qpvEnPxgbLiqk0/view",
+       "kind": "pdf"
+      },
+      {
+       "title": "L4 Quiz 1 Grammar çalışma kağıdı",
+       "url": "https://drive.google.com/file/d/1v1QyueMgQW6cbB3j4jMu18mSmbfpott8/view",
+       "kind": "docx"
+      },
+      {
+       "title": "L4 Quiz 1 deneme testi",
+       "url": "https://drive.google.com/file/d/1pX5oJG6QAipxCETROpZ_-PM95qoVIBjg/view",
+       "kind": "html"
+      }
+     ]
+    },
+    {
+     "id": "revision",
+     "name": "Genel tekrar (B1)",
+     "resources": [
+      {
+       "title": "REVISION HANDOUT (B1)",
+       "url": "https://drive.google.com/file/d/12XEaPoG-DC7c3ToyWE9_7hC733RIp1QD/view",
+       "kind": "pdf"
+      }
+     ]
+    },
+    {
+     "id": "program",
+     "name": "Haftalık program ve ders saatleri",
+     "resources": [
+      {
+       "title": "PPT (Haftalık Ders Programı ve İçeriği)",
+       "url": "https://drive.google.com/file/d/1GxsUITQQbwG84gLK3bYAdIN9cvzDEKNX/view",
+       "kind": "pptx"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "exams": [
+  {
+   "id": "we1-l1",
+   "course": "İngilizce",
+   "title": "Writing Exam 1 · Daily Routine",
+   "date": "2026-10-12",
+   "time": "13:40",
+   "slot": "5. ders",
+   "levels": [
+    "L1"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": []
+  },
+  {
+   "id": "quiz1",
+   "course": "İngilizce",
+   "title": "Quiz 1",
+   "date": "2026-10-16",
+   "time": "11:45",
+   "slot": "4. ders",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "L4 konuları: narrative tenses, present perfect, verb patterns, relative clauses, Unit 1–2 kelimeler, reading",
+   "topics": [
+    "narrative",
+    "perfect",
+    "verbpatterns",
+    "relative",
+    "except",
+    "vocab-u1",
+    "vocab-u2",
+    "reading-strategies",
+    "quiz1-l4"
+   ]
+  },
+  {
+   "id": "st1-topic-l34",
+   "course": "İngilizce",
+   "title": "Speaking Task 1 konu ataması",
+   "date": "2026-10-19",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L3",
+    "L4"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "speaking-topics"
+   ]
+  },
+  {
+   "id": "we1-l2",
+   "course": "İngilizce",
+   "title": "Writing Exam 1 · Narrative Paragraph",
+   "date": "2026-10-23",
+   "time": "11:45",
+   "slot": "4. ders",
+   "levels": [
+    "L2"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "narrative"
+   ]
+  },
+  {
+   "id": "st1-topic-l12",
+   "course": "İngilizce",
+   "title": "Speaking Task 1 konu ataması",
+   "date": "2026-11-02",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L1",
+    "L2"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "speaking-topics"
+   ]
+  },
+  {
+   "id": "we1-l3",
+   "course": "İngilizce",
+   "title": "Writing Exam 1 · Opinion Paragraph",
+   "date": "2026-11-06",
+   "time": "11:45",
+   "slot": "4. ders",
+   "levels": [
+    "L3"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "paragraph-to-essay",
+    "linkers"
+   ]
+  },
+  {
+   "id": "we1-l4",
+   "course": "İngilizce",
+   "title": "Writing Exam 1 · Opinion Essay",
+   "date": "2026-11-06",
+   "time": "11:45",
+   "slot": "4. ders",
+   "levels": [
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "essay-structure",
+    "paragraph-to-essay",
+    "essay-samples",
+    "linkers"
+   ]
+  },
+  {
+   "id": "mp1-topic",
+   "course": "İngilizce",
+   "title": "Mini Presentation konu ataması · Grup 1",
+   "date": "2026-11-09",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L3"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "p1-topic",
+   "course": "İngilizce",
+   "title": "Presentation konu ataması · Grup 1",
+   "date": "2026-11-09",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L4"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "pt1",
+   "course": "İngilizce",
+   "title": "Progress Test 1",
+   "date": "2026-11-13",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "Saat duyurulacak",
+   "topics": []
+  },
+  {
+   "id": "mp2-topic",
+   "course": "İngilizce",
+   "title": "Mini Presentation konu ataması · Grup 2",
+   "date": "2026-11-16",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L3"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "p2-topic",
+   "course": "İngilizce",
+   "title": "Presentation konu ataması · Grup 2",
+   "date": "2026-11-16",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L4"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "st1-sub-l34",
+   "course": "İngilizce",
+   "title": "Speaking Task 1 teslim",
+   "date": "2026-11-16",
+   "time": "17:00",
+   "slot": "17:00'ye kadar",
+   "levels": [
+    "L3",
+    "L4"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "speaking-topics",
+    "speaking-tips"
+   ]
+  },
+  {
+   "id": "mp3-topic",
+   "course": "İngilizce",
+   "title": "Mini Presentation konu ataması · Grup 3",
+   "date": "2026-11-23",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L3"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "p3-topic",
+   "course": "İngilizce",
+   "title": "Presentation konu ataması · Grup 3",
+   "date": "2026-11-23",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L4"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "mp1",
+   "course": "İngilizce",
+   "title": "Mini Presentation · Grup 1",
+   "date": "2026-11-23",
+   "time": "09:00",
+   "slot": "10. hafta (23–27 Kasım)",
+   "levels": [
+    "L3"
+   ],
+   "kind": "presentation",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "p1",
+   "course": "İngilizce",
+   "title": "Presentation · Grup 1",
+   "date": "2026-11-23",
+   "time": "09:00",
+   "slot": "10. hafta (23–27 Kasım)",
+   "levels": [
+    "L4"
+   ],
+   "kind": "presentation",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "quiz2",
+   "course": "İngilizce",
+   "title": "Quiz 2",
+   "date": "2026-11-27",
+   "time": "11:45",
+   "slot": "4. ders",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": []
+  },
+  {
+   "id": "st1-sub-l12",
+   "course": "İngilizce",
+   "title": "Speaking Task 1 teslim",
+   "date": "2026-11-30",
+   "time": "17:00",
+   "slot": "17:00'ye kadar",
+   "levels": [
+    "L1",
+    "L2"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "speaking-topics",
+    "speaking-tips"
+   ]
+  },
+  {
+   "id": "st2-topic-l12",
+   "course": "İngilizce",
+   "title": "Speaking Task 2 (Role-play) konu ataması",
+   "date": "2026-11-30",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L1",
+    "L2"
+   ],
+   "kind": "task",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "speaking-topics"
+   ]
+  },
+  {
+   "id": "mp2",
+   "course": "İngilizce",
+   "title": "Mini Presentation · Grup 2",
+   "date": "2026-11-30",
+   "time": "09:00",
+   "slot": "11. hafta (30 Kasım–4 Aralık)",
+   "levels": [
+    "L3"
+   ],
+   "kind": "presentation",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "p2",
+   "course": "İngilizce",
+   "title": "Presentation · Grup 2",
+   "date": "2026-11-30",
+   "time": "09:00",
+   "slot": "11. hafta (30 Kasım–4 Aralık)",
+   "levels": [
+    "L4"
+   ],
+   "kind": "presentation",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "st2",
+   "course": "İngilizce",
+   "title": "Speaking Task 2 · Role-play (sınıfta)",
+   "date": "2026-12-07",
+   "time": "09:00",
+   "slot": "12. hafta (7–11 Aralık)",
+   "levels": [
+    "L1",
+    "L2"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "speaking-topics"
+   ]
+  },
+  {
+   "id": "mp3",
+   "course": "İngilizce",
+   "title": "Mini Presentation · Grup 3",
+   "date": "2026-12-07",
+   "time": "09:00",
+   "slot": "12. hafta (7–11 Aralık)",
+   "levels": [
+    "L3"
+   ],
+   "kind": "presentation",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "p3",
+   "course": "İngilizce",
+   "title": "Presentation · Grup 3",
+   "date": "2026-12-07",
+   "time": "09:00",
+   "slot": "12. hafta (7–11 Aralık)",
+   "levels": [
+    "L4"
+   ],
+   "kind": "presentation",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "presentation"
+   ]
+  },
+  {
+   "id": "pt2",
+   "course": "İngilizce",
+   "title": "Progress Test 2",
+   "date": "2026-12-18",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "Saat duyurulacak",
+   "topics": []
+  },
+  {
+   "id": "we2-l1",
+   "course": "İngilizce",
+   "title": "Writing Exam 2 · Narrative Paragraph",
+   "date": "2026-12-21",
+   "time": "13:40",
+   "slot": "5. ders",
+   "levels": [
+    "L1"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "narrative"
+   ]
+  },
+  {
+   "id": "we2-l2",
+   "course": "İngilizce",
+   "title": "Writing Exam 2 · Opinion Paragraph",
+   "date": "2026-12-21",
+   "time": "13:40",
+   "slot": "5. ders",
+   "levels": [
+    "L2"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "paragraph-to-essay",
+    "linkers"
+   ]
+  },
+  {
+   "id": "we2-l3",
+   "course": "İngilizce",
+   "title": "Writing Exam 2 · Opinion Paragraph",
+   "date": "2026-12-21",
+   "time": "13:40",
+   "slot": "5. ders",
+   "levels": [
+    "L3"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "paragraph-to-essay",
+    "linkers"
+   ]
+  },
+  {
+   "id": "we2-l4",
+   "course": "İngilizce",
+   "title": "Writing Exam 2 · Opinion Essay",
+   "date": "2026-12-21",
+   "time": "13:40",
+   "slot": "5. ders",
+   "levels": [
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "essay-structure",
+    "paragraph-to-essay",
+    "essay-samples",
+    "linkers"
+   ]
+  },
+  {
+   "id": "makeup",
+   "course": "İngilizce",
+   "title": "Quiz ve Progress Test telafi",
+   "date": "2026-12-28",
+   "time": "09:00",
+   "slot": "",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": []
+  },
+  {
+   "id": "gateway",
+   "course": "İngilizce",
+   "title": "Gateway Exam",
+   "date": "2027-01-04",
+   "time": "09:00",
+   "slot": "4–6 Ocak",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "revision"
+   ]
+  },
+  {
+   "id": "proficiency",
+   "course": "İngilizce",
+   "title": "Proficiency Exam",
+   "date": "2027-01-11",
+   "time": "09:00",
+   "slot": "11–12 Ocak",
+   "levels": [
+    "L1",
+    "L2",
+    "L3",
+    "L4"
+   ],
+   "kind": "exam",
+   "place": "",
+   "notes": "",
+   "topics": [
+    "revision"
+   ]
+  }
+ ]
+}

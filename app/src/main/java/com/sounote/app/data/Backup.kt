@@ -16,7 +16,7 @@ import java.util.zip.ZipOutputStream
  * Bağlı klasörlerin kendisi yedeğe girmez (zaten tablette duruyorlar), not alınmış olanların kopyası girer.
  */
 object Backup {
-    private val PARTS = listOf("library.json", "docs", "ink", TextNoteStore.DIR)
+    private val PARTS = listOf("library.json", "docs", "ink", TextNoteStore.DIR, ExamStore.FILE)
     private const val MARKER = "sounote-yedek.txt"
 
     /** Kütüphanenin o anki hali için kısa bir iz: değişmediyse otomatik yedek tekrar alınmaz. */

@@ -28,6 +28,12 @@ import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
 import com.sounote.app.data.NaturalOrder
 import com.sounote.app.data.UserFolder
+import com.sounote.app.data.CatalogRepo
+import com.sounote.app.data.Course
+import com.sounote.app.data.Exam
+import com.sounote.app.data.ExamStore
+import com.sounote.app.data.Resource
+import com.sounote.app.data.Topic
 import com.sounote.app.ui.ColorTheme
 import com.sounote.app.data.TextNote
 import com.sounote.app.data.TextNotePdf
@@ -146,7 +152,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- Ana ekran: sekmeler, tanıtım, kullanıcı adı ----
 
-    enum class Tab { HOME, LIBRARY, SETTINGS }
+    enum class Tab { HOME, LIBRARY, COURSES, EXAMS, SETTINGS }
 
     /** Belge kapanınca aynı sekmeye dönülsün diye burada tutulur. */
     var tab by mutableStateOf(Tab.HOME)
@@ -282,6 +288,115 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 message = "Deftere çevrilemedi"
             }
         }
+    }
+
+    // ---- Ortak ders kataloğu ve sınavlar ----
+
+    var catalog by mutableStateOf(CatalogRepo.cached(app))
+        private set
+    var catalogLoading by mutableStateOf(false)
+        private set
+    var catalogError by mutableStateOf<String?>(null)
+        private set
+    private val examStore = ExamStore(app)
+    var myExams by mutableStateOf(examStore.load())
+        private set
+    var remindersOn by mutableStateOf(ExamReminders.enabled(app))
+        private set
+    /** Sınavlar ekranından bir konuya gidilince Dersler ekranında açılacak konu. */
+    var focusTopic by mutableStateOf<String?>(null)
+
+    /** İndirilmekte olan kaynağın adresi. */
+    var downloading by mutableStateOf<String?>(null)
+        private set
+
+    /** Kullanıcının kuru (L1–L4); boşsa bütün kurların sınavları görünür. */
+    var userLevel by mutableStateOf(prefs.getString("userLevel", null) ?: "")
+        private set
+
+    fun updateUserLevel(level: String) {
+        userLevel = level
+        prefs.edit().putString("userLevel", level).apply()
+        viewModelScope.launch(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams) }
+    }
+
+    private fun forMyLevel(e: Exam) = userLevel.isEmpty() || e.levels.isEmpty() || userLevel in e.levels
+
+    /** Kendi eklediklerim + ortak katalogdakiler (kurumun), tarihe göre. */
+    val allExams: List<Exam> get() = (myExams + catalog.exams.filter(::forMyLevel)).sortedBy { it.time }
+
+    init {
+        refreshCatalog(quiet = true)
+    }
+
+    fun refreshCatalog(quiet: Boolean = false) {
+        if (catalogLoading) return
+        viewModelScope.launch {
+            catalogLoading = true
+            val result = withContext(Dispatchers.IO) { runCatching { CatalogRepo.fetch(getApplication()) } }
+            catalogLoading = false
+            result.onSuccess {
+                catalog = it
+                catalogError = null
+                withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams) }
+            }.onFailure {
+                catalogError = "İnternete bağlanılamadı; son indirilen liste gösteriliyor"
+                if (!quiet) message = catalogError
+            }
+        }
+    }
+
+    fun saveExam(exam: Exam) {
+        myExams = (myExams.filter { it.id != exam.id } + exam).sortedBy { it.time }
+        persistExams()
+    }
+
+    fun deleteExam(exam: Exam) {
+        myExams = myExams.filter { it.id != exam.id }
+        persistExams()
+    }
+
+    private fun persistExams() {
+        val list = myExams
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { examStore.save(list) }.onFailure { ErrorLog.record("Sınavlar kaydedilemedi", it) }
+            ExamReminders.schedule(getApplication(), allExams)
+        }
+    }
+
+    fun updateReminders(on: Boolean) {
+        remindersOn = on
+        viewModelScope.launch(Dispatchers.IO) { ExamReminders.setEnabled(getApplication(), on) }
+    }
+
+    /** Katalogdaki PDF'i indirip dersin klasörüne koyar ve açar. */
+    fun downloadResource(course: Course, topic: Topic, res: Resource) {
+        if (downloading != null) return
+        viewModelScope.launch {
+            downloading = res.url
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val folder = repo.userFolders().find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) }
+                        ?: repo.createFolder(course.name, null, course.color, course.emoji)
+                    val doc = repo.createDocument(res.title.ifBlank { topic.name }, folder.id) { CatalogRepo.download(res, it) }
+                    repo.setTags(doc.id, listOf(course.name, topic.name).map { it.lowercase(java.util.Locale.forLanguageTag("tr")) })
+                    doc
+                }
+            }
+            downloading = null
+            imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+            userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
+            result.onSuccess { open(it) }.onFailure {
+                ErrorLog.record("Kaynak indirilemedi", it)
+                message = "İndirilemedi: ${it.message ?: "bağlantı hatası"}"
+            }
+        }
+    }
+
+    /** Bu kaynak daha önce indirildi mi (aynı adla dersin klasöründe). */
+    fun downloadedDoc(course: Course, res: Resource): DocRef? {
+        val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return null
+        return imported.find { it.folderId == folder.id && it.title == res.title }
     }
 
     /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */

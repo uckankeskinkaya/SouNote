@@ -11,7 +11,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 /** Ders kaynağı: Drive dosyası, PDF bağlantısı ya da web sayfası. */
-data class Resource(val title: String, val url: String, val kind: String) {
+/** [week]: dersin kaçıncı haftasının kaynağı (0 = belirtilmemiş). */
+data class Resource(val title: String, val url: String, val kind: String, val week: Int = 0) {
     val isPdf get() = kind == "pdf"
     /** Drive paylaşım bağlantısından dosya kimliği. */
     val driveId: String?
@@ -60,7 +61,16 @@ data class Catalog(
     val courses: List<Course>,
     val exams: List<Exam>,
     val levels: List<String> = emptyList(),
+    /** Dönemin ilk haftasının pazartesisi (epoch ms; 0 = yok). */
+    val termStart: Long = 0L,
 ) {
+    /** [time] dönemin kaçıncı haftasında (1'den başlar; dönem öncesi 0). */
+    fun weekOf(time: Long): Int =
+        if (termStart == 0L || time < termStart) 0 else ((time - termStart) / (7L * 24 * 60 * 60 * 1000)).toInt() + 1
+
+    /** Haftanın pazartesisi. */
+    fun weekStart(week: Int): Long = termStart + (week - 1) * 7L * 24 * 60 * 60 * 1000
+
     fun topic(id: String): Pair<Course, Topic>? {
         for (c in courses) c.topics.find { it.id == id }?.let { return c to it }
         return null
@@ -123,7 +133,7 @@ object CatalogRepo {
                         id = t.getString("id"),
                         name = t.optString("name"),
                         resources = t.optJSONArray("resources").objects().map { r ->
-                            Resource(r.optString("title"), r.optString("url"), r.optString("kind", "link"))
+                            Resource(r.optString("title"), r.optString("url"), r.optString("kind", "link"), r.optInt("week"))
                         },
                     )
                 },
@@ -145,7 +155,10 @@ object CatalogRepo {
                 slot = e.optString("slot"),
             )
         }
-        return Catalog(o.optString("updated"), courses, exams, o.optJSONArray("levels").strings())
+        return Catalog(
+            o.optString("updated"), courses, exams, o.optJSONArray("levels").strings(),
+            parseTime(o.optString("termStart"), "00:00") ?: 0L,
+        )
     }
 
     fun parseTime(date: String, time: String): Long? = runCatching {

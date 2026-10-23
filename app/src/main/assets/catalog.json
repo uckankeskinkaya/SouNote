@@ -1,12 +1,7 @@
 {
- "updated": "2026-10-23",
- "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
- "levels": [
-  "L1",
-  "L2",
-  "L3",
-  "L4"
- ],
+ "updated": "2026-10-23b",
+ "termStart": "2026-09-21",
+ "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
   {
    "id": "grammar",
@@ -659,33 +654,12 @@
  ],
  "exams": [
   {
-   "id": "we1-l1",
-   "course": "İngilizce",
-   "title": "Writing Exam 1 · Daily Routine",
-   "date": "2026-10-12",
-   "time": "13:40",
-   "slot": "5. ders",
-   "levels": [
-    "L1"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": []
-  },
-  {
    "id": "quiz1",
    "course": "İngilizce",
    "title": "Quiz 1",
    "date": "2026-10-16",
    "time": "11:45",
    "slot": "4. ders",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "L4 konuları: narrative tenses, present perfect, verb patterns, relative clauses, Unit 1–2 kelimeler, reading",
@@ -708,68 +682,11 @@
    "date": "2026-10-19",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L3",
-    "L4"
-   ],
    "kind": "task",
    "place": "",
    "notes": "",
    "topics": [
     "speaking-topics"
-   ]
-  },
-  {
-   "id": "we1-l2",
-   "course": "İngilizce",
-   "title": "Writing Exam 1 · Narrative Paragraph",
-   "date": "2026-10-23",
-   "time": "11:45",
-   "slot": "4. ders",
-   "levels": [
-    "L2"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "narrative"
-   ]
-  },
-  {
-   "id": "st1-topic-l12",
-   "course": "İngilizce",
-   "title": "Speaking Task 1 konu ataması",
-   "date": "2026-11-02",
-   "time": "09:00",
-   "slot": "",
-   "levels": [
-    "L1",
-    "L2"
-   ],
-   "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "speaking-topics"
-   ]
-  },
-  {
-   "id": "we1-l3",
-   "course": "İngilizce",
-   "title": "Writing Exam 1 · Opinion Paragraph",
-   "date": "2026-11-06",
-   "time": "11:45",
-   "slot": "4. ders",
-   "levels": [
-    "L3"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "paragraph-to-essay",
-    "linkers"
    ]
   },
   {
@@ -779,9 +696,6 @@
    "date": "2026-11-06",
    "time": "11:45",
    "slot": "4. ders",
-   "levels": [
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "",
@@ -793,32 +707,12 @@
    ]
   },
   {
-   "id": "mp1-topic",
-   "course": "İngilizce",
-   "title": "Mini Presentation konu ataması · Grup 1",
-   "date": "2026-11-09",
-   "time": "09:00",
-   "slot": "",
-   "levels": [
-    "L3"
-   ],
-   "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "presentation"
-   ]
-  },
-  {
    "id": "p1-topic",
    "course": "İngilizce",
    "title": "Presentation konu ataması · Grup 1",
    "date": "2026-11-09",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L4"
-   ],
    "kind": "task",
    "place": "",
    "notes": "",
@@ -833,33 +727,10 @@
    "date": "2026-11-13",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "Saat duyurulacak",
    "topics": []
-  },
-  {
-   "id": "mp2-topic",
-   "course": "İngilizce",
-   "title": "Mini Presentation konu ataması · Grup 2",
-   "date": "2026-11-16",
-   "time": "09:00",
-   "slot": "",
-   "levels": [
-    "L3"
-   ],
-   "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "presentation"
-   ]
   },
   {
    "id": "p2-topic",
@@ -868,9 +739,6 @@
    "date": "2026-11-16",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L4"
-   ],
    "kind": "task",
    "place": "",
    "notes": "",
@@ -885,10 +753,6 @@
    "date": "2026-11-16",
    "time": "17:00",
    "slot": "17:00'ye kadar",
-   "levels": [
-    "L3",
-    "L4"
-   ],
    "kind": "task",
    "place": "",
    "notes": "",
@@ -898,50 +762,13 @@
    ]
   },
   {
-   "id": "mp3-topic",
-   "course": "İngilizce",
-   "title": "Mini Presentation konu ataması · Grup 3",
-   "date": "2026-11-23",
-   "time": "09:00",
-   "slot": "",
-   "levels": [
-    "L3"
-   ],
-   "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "presentation"
-   ]
-  },
-  {
    "id": "p3-topic",
    "course": "İngilizce",
    "title": "Presentation konu ataması · Grup 3",
    "date": "2026-11-23",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L4"
-   ],
    "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "presentation"
-   ]
-  },
-  {
-   "id": "mp1",
-   "course": "İngilizce",
-   "title": "Mini Presentation · Grup 1",
-   "date": "2026-11-23",
-   "time": "09:00",
-   "slot": "10. hafta (23–27 Kasım)",
-   "levels": [
-    "L3"
-   ],
-   "kind": "presentation",
    "place": "",
    "notes": "",
    "topics": [
@@ -955,9 +782,6 @@
    "date": "2026-11-23",
    "time": "09:00",
    "slot": "10. hafta (23–27 Kasım)",
-   "levels": [
-    "L4"
-   ],
    "kind": "presentation",
    "place": "",
    "notes": "",
@@ -972,70 +796,10 @@
    "date": "2026-11-27",
    "time": "11:45",
    "slot": "4. ders",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "",
    "topics": []
-  },
-  {
-   "id": "st1-sub-l12",
-   "course": "İngilizce",
-   "title": "Speaking Task 1 teslim",
-   "date": "2026-11-30",
-   "time": "17:00",
-   "slot": "17:00'ye kadar",
-   "levels": [
-    "L1",
-    "L2"
-   ],
-   "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "speaking-topics",
-    "speaking-tips"
-   ]
-  },
-  {
-   "id": "st2-topic-l12",
-   "course": "İngilizce",
-   "title": "Speaking Task 2 (Role-play) konu ataması",
-   "date": "2026-11-30",
-   "time": "09:00",
-   "slot": "",
-   "levels": [
-    "L1",
-    "L2"
-   ],
-   "kind": "task",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "speaking-topics"
-   ]
-  },
-  {
-   "id": "mp2",
-   "course": "İngilizce",
-   "title": "Mini Presentation · Grup 2",
-   "date": "2026-11-30",
-   "time": "09:00",
-   "slot": "11. hafta (30 Kasım–4 Aralık)",
-   "levels": [
-    "L3"
-   ],
-   "kind": "presentation",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "presentation"
-   ]
   },
   {
    "id": "p2",
@@ -1044,44 +808,6 @@
    "date": "2026-11-30",
    "time": "09:00",
    "slot": "11. hafta (30 Kasım–4 Aralık)",
-   "levels": [
-    "L4"
-   ],
-   "kind": "presentation",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "presentation"
-   ]
-  },
-  {
-   "id": "st2",
-   "course": "İngilizce",
-   "title": "Speaking Task 2 · Role-play (sınıfta)",
-   "date": "2026-12-07",
-   "time": "09:00",
-   "slot": "12. hafta (7–11 Aralık)",
-   "levels": [
-    "L1",
-    "L2"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "speaking-topics"
-   ]
-  },
-  {
-   "id": "mp3",
-   "course": "İngilizce",
-   "title": "Mini Presentation · Grup 3",
-   "date": "2026-12-07",
-   "time": "09:00",
-   "slot": "12. hafta (7–11 Aralık)",
-   "levels": [
-    "L3"
-   ],
    "kind": "presentation",
    "place": "",
    "notes": "",
@@ -1096,9 +822,6 @@
    "date": "2026-12-07",
    "time": "09:00",
    "slot": "12. hafta (7–11 Aralık)",
-   "levels": [
-    "L4"
-   ],
    "kind": "presentation",
    "place": "",
    "notes": "",
@@ -1113,69 +836,10 @@
    "date": "2026-12-18",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "Saat duyurulacak",
    "topics": []
-  },
-  {
-   "id": "we2-l1",
-   "course": "İngilizce",
-   "title": "Writing Exam 2 · Narrative Paragraph",
-   "date": "2026-12-21",
-   "time": "13:40",
-   "slot": "5. ders",
-   "levels": [
-    "L1"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "narrative"
-   ]
-  },
-  {
-   "id": "we2-l2",
-   "course": "İngilizce",
-   "title": "Writing Exam 2 · Opinion Paragraph",
-   "date": "2026-12-21",
-   "time": "13:40",
-   "slot": "5. ders",
-   "levels": [
-    "L2"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "paragraph-to-essay",
-    "linkers"
-   ]
-  },
-  {
-   "id": "we2-l3",
-   "course": "İngilizce",
-   "title": "Writing Exam 2 · Opinion Paragraph",
-   "date": "2026-12-21",
-   "time": "13:40",
-   "slot": "5. ders",
-   "levels": [
-    "L3"
-   ],
-   "kind": "exam",
-   "place": "",
-   "notes": "",
-   "topics": [
-    "paragraph-to-essay",
-    "linkers"
-   ]
   },
   {
    "id": "we2-l4",
@@ -1184,9 +848,6 @@
    "date": "2026-12-21",
    "time": "13:40",
    "slot": "5. ders",
-   "levels": [
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "",
@@ -1204,12 +865,6 @@
    "date": "2026-12-28",
    "time": "09:00",
    "slot": "",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "",
@@ -1222,12 +877,6 @@
    "date": "2027-01-04",
    "time": "09:00",
    "slot": "4–6 Ocak",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "",
@@ -1242,12 +891,6 @@
    "date": "2027-01-11",
    "time": "09:00",
    "slot": "11–12 Ocak",
-   "levels": [
-    "L1",
-    "L2",
-    "L3",
-    "L4"
-   ],
    "kind": "exam",
    "place": "",
    "notes": "",

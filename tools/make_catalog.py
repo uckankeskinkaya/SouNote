@@ -183,7 +183,9 @@ exams=[
  E("gateway","Gateway Exam","2027-01-04","09:00",ALL,"exam","4–6 Ocak",topics=["revision"]),
  E("proficiency","Proficiency Exam","2027-01-11","09:00",ALL,"exam","11–12 Ocak",topics=["revision"]),
 ]
-cat={"updated":"2026-10-23","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
-     "levels":ALL,"courses":courses,"exams":exams}
+# Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
+exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
+cat={"updated":"2026-10-23b","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+     "courses":courses,"exams":exams}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

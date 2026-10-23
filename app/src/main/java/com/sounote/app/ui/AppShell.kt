@@ -166,6 +166,7 @@ fun MainShell(vm: LibraryViewModel) {
     }
 
     CrashDialog()
+    UpdateDialogs(vm)
 }
 
 /** Önceki açılışta çöktüyse raporu paylaşma penceresi. */

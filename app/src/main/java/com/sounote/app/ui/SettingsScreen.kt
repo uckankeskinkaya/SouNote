@@ -290,6 +290,12 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 }
                 item {
                     Group("Yardım") {
+                        SettingRow(
+                            "🔄", "Güncellemeleri denetle",
+                            subtitle = "Sürüm ${vm.installedVersion}" + (vm.update?.let { " · yeni sürüm var: ${it.name}" } ?: ""),
+                            onClick = { vm.checkUpdate(manual = true) },
+                        )
+                        RowDivider()
                         SettingRow("❓", "Nasıl kullanılır?", subtitle = "Hareketler ve kısayollar", onClick = { helpDialog = true })
                         RowDivider()
                         SettingRow("✨", "Tanıtımı tekrar göster", onClick = { vm.replayOnboarding() })
@@ -301,7 +307,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 }
                 item {
                     Group("Arkadaşınla paylaş") {
-                        SettingRow("🔗", "İndirme bağlantısını paylaş", subtitle = "Depo gizli olduğu sürece sadece GitHub erişimi olanlar indirebilir", onClick = { shareLink() })
+                        SettingRow("🔗", "İndirme bağlantısını paylaş", subtitle = "Bağlantıya tıklayan herkes en yeni sürümü indirir", onClick = { shareLink() })
                         RowDivider()
                         SettingRow(
                             "📲", "Uygulamayı dosya olarak gönder",

@@ -2,6 +2,10 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.draw.clip
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -104,6 +108,9 @@ fun InkToolbar(
                     leading()
                     Separator()
                 }
+                // Kalemi olmayanlar için en başta, hemen görünür
+                FingerToggle(state.fingerDraw) { onChange(state.copy(fingerDraw = !state.fingerDraw)) }
+                Separator()
                 ToolChip("Kalem", state.tool == Tool.PEN, vector = Icons.Default.Edit) {
                     onChange(state.copy(tool = Tool.PEN))
                 }
@@ -144,12 +151,6 @@ fun InkToolbar(
                 )
                 Separator()
                 Favorites(state, onChange)
-                Separator()
-                FilterChip(
-                    selected = state.fingerDraw,
-                    onClick = { onChange(state.copy(fingerDraw = !state.fingerDraw)) },
-                    label = { Text("Parmakla çiz") },
-                )
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             ToolbarRow {
@@ -549,6 +550,36 @@ private fun SelectionOptions(state: ToolState, sel: SelectionUi, onCustomColor: 
 
 // ---- Ortak parçalar ----
 
+/** Parmakla yazma anahtarı: açıkken tek parmak çizer, iki parmak kaydırır. */
+@Composable
+private fun FingerToggle(on: Boolean, onClick: () -> Unit) {
+    val bg by androidx.compose.animation.animateColorAsState(
+        if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+        label = "finger",
+    )
+    val fg = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .pressScale()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = if (on) "Parmakla yaz açık" else "Parmakla yaz kapalı" }
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+    ) {
+        Text("👆", fontSize = 16.sp)
+        Text(
+            if (on) " Parmakla yaz: açık" else " Parmakla yaz",
+            color = fg,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+    }
+}
+
+/** Telefonda araçlar sadece simge; seçili olanın adı görünür (satır kısa kalsın). */
 @Composable
 private fun ToolChip(
     label: String,
@@ -557,10 +588,12 @@ private fun ToolChip(
     @DrawableRes drawable: Int = 0,
     onClick: () -> Unit,
 ) {
+    val narrow = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) },
+        modifier = Modifier.semantics { contentDescription = label },
+        label = { if (!narrow || selected) Text(label) },
         leadingIcon = {
             val m = Modifier.size(18.dp)
             if (vector != null) Icon(vector, null, m) else Icon(painterResource(drawable), null, m)

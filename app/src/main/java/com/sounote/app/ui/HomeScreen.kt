@@ -2,6 +2,8 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.ButtonDefaults
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -239,55 +241,18 @@ fun HomeScreen(vm: LibraryViewModel) {
                     )
                 }
 
-                val now = System.currentTimeMillis()
-                val nextExams = vm.allExams.filter { it.time > now }.take(3)
-                if (nextExams.isNotEmpty()) {
-                    Appear(1) { Section("Yaklaşan sınav ve ödevler", action = "Takvim") { vm.tab = LibraryViewModel.Tab.EXAMS } }
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        nextExams.forEachIndexed { i, e ->
-                            Appear(2 + i, Modifier.pressScale(0.98f)) {
-                                ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
-                            }
-                        }
-                    }
-                }
-
-                // Bu haftanın kaynakları henüz girilmediyse (ör. hafta sonu) en son dolu hafta gösterilir.
-                val (week, weekTasks) = remember(vm.catalog) {
-                    val now = vm.catalog.weekOf(System.currentTimeMillis())
-                    (now downTo 1).asSequence().map { it to vm.weekTasks(it) }.firstOrNull { it.second.isNotEmpty() } ?: (0 to emptyList())
-                }
-                if (weekTasks.isNotEmpty()) {
-                    Appear(4) {
-                        WeekTasksCard(week, weekTasks, vm.doneItems, onToggle = vm::toggleDone) {
-                            vm.coursesByWeek = true
-                            vm.tab = LibraryViewModel.Tab.COURSES
-                        }
-                    }
-                }
-
-                if (vm.showBackupNudge) {
-                    Appear(4) { BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge) }
-                }
-
-                if (vm.dueCount > 0) {
-                    Appear(4, Modifier.pressScale(0.98f)) {
-                        ReviewCard(vm.dueCount) { scope.launch { review = vm.dueCards().ifEmpty { null } } }
-                    }
-                }
-
-                val last = recent.firstOrNull()
-                if (empty) {
-                    Appear(5) { StartCard(onNotebook = { newNotebook = true }, onImport = importPdf) }
-                } else if (last != null) {
-                    Appear(5, Modifier.pressScale(0.98f)) {
-                        ContinueCard(last, vm.lastPage(last), vm.lastOpened(last), menu = { d -> docMenu(last, d) }) { vm.open(last) }
-                    }
-                }
-
-                Appear(6) { Section("Hızlı başla") }
+                Appear(1) { Section("Hızlı başla") }
                 QuickActions(
                     listOf(
+                        // Kalemi olmayanlar için: tek dokunuşla parmakla yazma
+                        QuickAction(
+                            painterResource(R.drawable.ic_touch), "Parmakla yaz",
+                            "Kalemin yoksa aç: tek parmak çizer, iki parmak kaydırır", Color(0xFF00796B),
+                            toggled = vm.tools.fingerDraw,
+                        ) {
+                            vm.updateTools(vm.tools.copy(fingerDraw = !vm.tools.fingerDraw))
+                            vm.showMessage(if (vm.tools.fingerDraw) "Parmakla yazma açık: tek parmak çizer, iki parmak kaydırır" else "Parmakla yazma kapalı: sadece kalem çizer")
+                        },
                         QuickAction(rememberVectorPainter(Icons.Default.Add), "Yeni defter", "Şablonlu boş sayfalar", Color(0xFF2F5BD3)) {
                             newNotebook = true
                         },
@@ -314,6 +279,61 @@ fun HomeScreen(vm: LibraryViewModel) {
                         },
                     ),
                 )
+
+                if (vm.showBackupNudge) {
+                    Appear(4) { BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge) }
+                }
+
+                if (vm.dueCount > 0) {
+                    Appear(4, Modifier.pressScale(0.98f)) {
+                        ReviewCard(vm.dueCount) { scope.launch { review = vm.dueCards().ifEmpty { null } } }
+                    }
+                }
+
+                val last = recent.firstOrNull()
+                if (empty) {
+                    Appear(5) { StartCard(onNotebook = { newNotebook = true }, onImport = importPdf) }
+                } else if (last != null) {
+                    Appear(5, Modifier.pressScale(0.98f)) {
+                        ContinueCard(last, vm.lastPage(last), vm.lastOpened(last), menu = { d -> docMenu(last, d) }) { vm.open(last) }
+                    }
+                }
+
+                val now = System.currentTimeMillis()
+                val nextExams = vm.allExams.filter { it.time > now }.take(if (narrow) 5 else 3)
+                if (nextExams.isNotEmpty()) {
+                    Appear(5) { Section("Yaklaşan sınav ve ödevler", action = "Takvim") { vm.tab = LibraryViewModel.Tab.EXAMS } }
+                    if (narrow) {
+                        // Telefonda yan yana kaydırılan küçük kartlar (alt alta üç büyük kart çok yer kaplıyordu)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(end = 8.dp)) {
+                            itemsIndexed(nextExams, key = { _, e -> e.id }) { i, e ->
+                                ExamMini(e, Modifier.appear(6 + i).pressScale()) { vm.tab = LibraryViewModel.Tab.EXAMS }
+                            }
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            nextExams.forEachIndexed { i, e ->
+                                Appear(6 + i, Modifier.pressScale(0.98f)) {
+                                    ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bu haftanın kaynakları henüz girilmediyse (ör. hafta sonu) en son dolu hafta gösterilir.
+                val (week, weekTasks) = remember(vm.catalog) {
+                    val now = vm.catalog.weekOf(System.currentTimeMillis())
+                    (now downTo 1).asSequence().map { it to vm.weekTasks(it) }.firstOrNull { it.second.isNotEmpty() } ?: (0 to emptyList())
+                }
+                if (weekTasks.isNotEmpty()) {
+                    Appear(4) {
+                        WeekTasksCard(week, weekTasks, vm.doneItems, onToggle = vm::toggleDone) {
+                            vm.coursesByWeek = true
+                            vm.tab = LibraryViewModel.Tab.COURSES
+                        }
+                    }
+                }
 
                 if (recent.size > 1) {
                     Appear(9) { Section("Son açılanlar", action = "Kütüphane") { vm.tab = LibraryViewModel.Tab.LIBRARY } }
@@ -497,15 +517,16 @@ private fun ContinueCard(
         DateUtils.getRelativeTimeSpanString(openedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
     val thumbShape = RoundedCornerShape(8.dp)
+    val narrow = LocalConfiguration.current.screenWidthDp < 600
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
-        modifier = Modifier.fillMaxWidth().card().combinedClickable(onClick = onOpen, onLongClick = { menuOpen = true }).padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (narrow) 12.dp else 20.dp),
+        modifier = Modifier.fillMaxWidth().card().combinedClickable(onClick = onOpen, onLongClick = { menuOpen = true }).padding(if (narrow) 12.dp else 16.dp),
     ) {
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }
         Box(
             Modifier
-                .width(84.dp)
+                .width(if (narrow) 52.dp else 84.dp)
                 .aspectRatio(0.75f)
                 .clip(thumbShape)
                 .background(Color.White)
@@ -514,15 +535,28 @@ private fun ContinueCard(
             Thumbnail(doc)
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
-            Text("Kaldığın yerden devam et", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(doc.title, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text("Kaldığın yerden devam et", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+            Text(
+                doc.title,
+                style = if (narrow) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = if (narrow) 1 else 2,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 "Sayfa ${page + 1} · $ago",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Button(onClick = onOpen) { Text("Devam et") }
+        if (narrow) {
+            androidx.compose.material3.FilledIconButton(onClick = onOpen) {
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Devam et")
+            }
+        } else {
+            Button(onClick = onOpen) { Text("Devam et") }
+        }
     }
 }
 
@@ -566,8 +600,9 @@ private fun WeekTasksCard(
     val doneCount = tasks.count { it.first in done }
     val progress by animateFloatAsState(doneCount / tasks.size.toFloat(), tween(600), label = "weekTasks")
     // Yeni işaretlenen satır hemen kaybolmasın: kart açıkken görünen satırlar sabit kalır.
-    val shown = remember(tasks) { tasks.filter { it.first !in done }.take(4).ifEmpty { tasks.takeLast(2) } }
-    Column(Modifier.fillMaxWidth().card().padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    val narrow = LocalConfiguration.current.screenWidthDp < 600
+    val shown = remember(tasks) { tasks.filter { it.first !in done }.take(if (narrow) 3 else 4).ifEmpty { tasks.takeLast(2) } }
+    Column(Modifier.fillMaxWidth().card().padding(if (narrow) 14.dp else 20.dp), verticalArrangement = Arrangement.spacedBy(if (narrow) 2.dp else 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Hafta $week listesi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -649,7 +684,7 @@ private fun BackupNudge(onPick: () -> Unit, onLater: () -> Unit) {
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
             Text(
-                "Otomatik yedeği aç: her gün bütün notların seçtiğin klasöre (ör. Drive) yedeklenir. Tablet bozulsa da kaybolmaz.",
+                "Otomatik yedeği aç: notların her gün seçtiğin klasöre yedeklenir.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
@@ -683,17 +718,24 @@ private class QuickAction(
     val title: String,
     val text: String,
     val color: Color,
+    /** Aç/kapa kutusu için: null değilse kutuda "Açık/Kapalı" görünür ve açıkken renkli olur. */
+    val toggled: Boolean? = null,
     val onClick: () -> Unit,
 )
 
 @Composable
 private fun QuickActions(actions: List<QuickAction>) {
     BoxWithConstraints {
-        val columns = if (maxWidth > 900.dp) 5 else if (maxWidth > 640.dp) 3 else 2
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Telefonda 3 sütun kompakt kutu (açıklamasız); tablette açıklamalı geniş kutular.
+        val compact = maxWidth < 600.dp
+        val columns = if (maxWidth > 900.dp) 5 else if (compact) 3 else 4
+        Column(verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp)) {
             actions.chunked(columns).forEachIndexed { r, row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    row.forEachIndexed { c, a -> ActionTile(a, Modifier.weight(1f).appear(7 + r * columns + c).pressScale()) }
+                Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp)) {
+                    row.forEachIndexed { c, a ->
+                        val m = Modifier.weight(1f).appear(2 + r * columns + c).pressScale()
+                        if (compact) CompactTile(a, m) else ActionTile(a, m)
+                    }
                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
@@ -702,18 +744,69 @@ private fun QuickActions(actions: List<QuickAction>) {
 }
 
 @Composable
-private fun ActionTile(a: QuickAction, modifier: Modifier) {
+private fun CompactTile(a: QuickAction, modifier: Modifier) {
+    val on = a.toggled == true
     Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = modifier.card().clickable(onClick = a.onClick).padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (on) a.color.copy(alpha = 0.16f) else cardBackground())
+            .border(
+                if (on) 2.dp else 1.dp,
+                if (on) a.color else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                RoundedCornerShape(20.dp),
+            )
+            .clickable(onClick = a.onClick)
+            .padding(vertical = 12.dp, horizontal = 6.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(a.color.copy(alpha = 0.15f)),
+            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(if (on) a.color else a.color.copy(alpha = 0.15f)),
         ) {
-            Icon(a.icon, contentDescription = null, tint = a.color, modifier = Modifier.size(24.dp))
+            Icon(a.icon, contentDescription = null, tint = if (on) Color.White else a.color, modifier = Modifier.size(22.dp))
         }
-        Text(a.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(
+            a.title,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (a.toggled != null) {
+            Text(
+                if (on) "Açık" else "Kapalı",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (on) a.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionTile(a: QuickAction, modifier: Modifier) {
+    val on = a.toggled == true
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = modifier
+            .card()
+            .then(if (on) Modifier.background(a.color.copy(alpha = 0.12f)) else Modifier)
+            .clickable(onClick = a.onClick)
+            .padding(18.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(if (on) a.color else a.color.copy(alpha = 0.15f)),
+        ) {
+            Icon(a.icon, contentDescription = null, tint = if (on) Color.White else a.color, modifier = Modifier.size(24.dp))
+        }
+        Text(
+            a.title + if (a.toggled != null) (if (on) " · Açık" else " · Kapalı") else "",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
         Text(
             a.text,
             style = MaterialTheme.typography.bodySmall,
@@ -724,10 +817,46 @@ private fun ActionTile(a: QuickAction, modifier: Modifier) {
     }
 }
 
+/** Telefonda yaklaşan sınav: yan yana kaydırılan küçük kart. */
+@Composable
+private fun ExamMini(e: com.sounote.app.data.Exam, modifier: Modifier, onClick: () -> Unit) {
+    val day = remember(e.time) { SimpleDateFormat("d MMM", TR).format(Date(e.time)) }
+    val c = countdownColor(e.time)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .width(210.dp)
+            .card()
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(e.kindEmoji, fontSize = 18.sp)
+            Text(day, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).padding(start = 6.dp))
+            Text(
+                countdownText(e.time),
+                color = c,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(c.copy(alpha = 0.12f)).padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        }
+        Text(
+            e.title.ifBlank { e.course },
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.height(40.dp),
+        )
+    }
+}
+
 @Composable
 private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
     val dayName = remember { SimpleDateFormat("EEE", TR) }
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
+    val compactChart = LocalConfiguration.current.screenWidthDp < 600
     // Çubuklar açılışta aşağıdan büyür.
     val grow = remember { Animatable(0f) }
     LaunchedEffect(Unit) { grow.animateTo(1f, tween(700, delayMillis = 250, easing = FastOutSlowInEasing)) }
@@ -748,7 +877,7 @@ private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
                     Box(
                         Modifier
                             .width(18.dp)
-                            .height((84f * ms / max * grow.value).dp.coerceAtLeast(4.dp))
+                            .height(((if (compactChart) 56f else 84f) * ms / max * grow.value).dp.coerceAtLeast(4.dp))
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),

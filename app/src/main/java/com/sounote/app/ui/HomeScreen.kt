@@ -238,6 +238,8 @@ fun HomeScreen(vm: LibraryViewModel) {
                         greeting = greeting(vm.userName),
                         todayMs = days.first().second,
                         docCount = vm.imported.size,
+                        streak = vm.streak,
+                        activeToday = vm.activeToday,
                     )
                 }
 
@@ -358,12 +360,12 @@ fun HomeScreen(vm: LibraryViewModel) {
                 BoxWithConstraints(Modifier.appear(11)) {
                     if (maxWidth > 640.dp) {
                         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                            WeekCard(days, Modifier.weight(1f))
+                            WeekCard(days, vm, Modifier.weight(1f))
                             TipCard(Modifier.weight(1f))
                         }
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                            WeekCard(days, Modifier.fillMaxWidth())
+                            WeekCard(days, vm, Modifier.fillMaxWidth())
                             TipCard(Modifier.fillMaxWidth())
                         }
                     }
@@ -432,7 +434,7 @@ fun HomeScreen(vm: LibraryViewModel) {
 }
 
 @Composable
-private fun Hero(greeting: String, todayMs: Long, docCount: Int) {
+private fun Hero(greeting: String, todayMs: Long, docCount: Int, streak: Int, activeToday: Boolean) {
     val date = remember { SimpleDateFormat("d MMMM EEEE", TR).format(Date()) }
     val motto = remember { MOTTOS[dayOfYear() % MOTTOS.size] }
     val hero = LocalColorTheme.current.heroColors
@@ -473,6 +475,13 @@ private fun Hero(greeting: String, todayMs: Long, docCount: Int) {
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 10.dp),
                 ) {
+                    HeroChip(
+                        when {
+                            streak > 0 && activeToday -> "🔥 $streak gün seri"
+                            streak > 0 -> "🔥 $streak gün · bugün çalış, seri bozulmasın"
+                            else -> "🔥 Seriye bugün başla"
+                        },
+                    )
                     HeroChip("⏱ Bugün ${formatStudy(todayMs)}")
                     HeroChip("📚 $docCount belge")
                 }
@@ -853,7 +862,7 @@ private fun ExamMini(e: com.sounote.app.data.Exam, modifier: Modifier, onClick: 
 }
 
 @Composable
-private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
+private fun WeekCard(days: List<Pair<Long, Long>>, vm: LibraryViewModel, modifier: Modifier) {
     val dayName = remember { SimpleDateFormat("EEE", TR) }
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
     val compactChart = LocalConfiguration.current.screenWidthDp < 600
@@ -866,6 +875,11 @@ private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
             "Toplam ${formatStudy(days.sumOf { it.second })} çalıştın",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            "🔥 Seri: ${vm.streak} gün · En uzun: ${vm.bestStreak} gün",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
         )
         Row(
             verticalAlignment = Alignment.Bottom,
@@ -889,6 +903,8 @@ private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
                         color = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 6.dp),
                     )
+                    // Seriye sayılan gün
+                    Text(if (vm.isActiveDay(t)) "🔥" else "·", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

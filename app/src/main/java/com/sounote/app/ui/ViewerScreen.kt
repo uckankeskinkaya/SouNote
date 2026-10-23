@@ -79,6 +79,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.FileProvider
 import com.sounote.app.LibraryViewModel
@@ -124,6 +125,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var pomodoroDialog by remember { mutableStateOf(false) }
     // Bilgi kartları
     var cardsDialog by remember { mutableStateOf(false) }
+    var assistantOpen by remember { mutableStateOf(false) }
     // Kayda bağlı çizgiye dokununca: (dosya adı, an, dokunma sayacı)
     var audioPlay by remember { mutableStateOf<Triple<String, Long, Int>?>(null) }
     var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
@@ -334,6 +336,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                     IconButton(onClick = { vm.togglePagePanel() }) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
+                    }
+                    IconButton(onClick = { assistantOpen = true }) {
+                        Text("🤖", fontSize = 20.sp)
                     }
                     IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
                         Icon(Icons.Default.Search, contentDescription = "Ara")
@@ -647,6 +652,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             }
             }
         }
+    }
+
+    if (assistantOpen) {
+        AssistantDialog(
+            vm,
+            AssistantSource.Document(doc, page?.first ?: 0, page?.second ?: 1),
+            onDismiss = { assistantOpen = false },
+        )
     }
 
     if (exportDialog.second) {

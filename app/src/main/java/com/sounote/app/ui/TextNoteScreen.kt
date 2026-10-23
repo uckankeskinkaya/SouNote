@@ -175,6 +175,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     }
     var focusIdx by remember(note.id) { mutableStateOf(parts.indexOfLast { it is EditorPart.Text }) }
     var pad by remember { mutableStateOf(false) }
+    var assistant by remember { mutableStateOf(false) }
     var editingSketch by remember { mutableStateOf<Sketch?>(null) }
     val sketchCache = remember(note.id) { mutableStateMapOf<String, Sketch>() }
     val scope = rememberCoroutineScope()
@@ -342,6 +343,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             ) {
+                AssistChip(onClick = { assistant = true }, label = { Text("🤖 Asistan") })
                 AssistChip(onClick = { pad = !pad }, label = { Text(if (pad) "✍️ Kalemle yaz (açık)" else "✍️ Kalemle yaz") })
                 AssistChip(onClick = { editingSketch = Sketch(Sketches.newId(), emptyList()) }, label = { Text("🎨 Çizim ekle") })
                 AssistChip(onClick = { updateFocused { setLinePrefix(it, CHECK_OPEN) } }, label = { Text("☐ Yapılacak") })
@@ -443,6 +445,14 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 )
             }
         }
+    }
+
+    if (assistant) {
+        AssistantDialog(
+            vm,
+            AssistantSource.Note(title.ifBlank { "Başlıksız not" }, note.copy(body = bodyText).plainBody),
+            onDismiss = { assistant = false },
+        )
     }
 
     editingSketch?.let { sk ->

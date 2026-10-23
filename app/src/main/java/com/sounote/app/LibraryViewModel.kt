@@ -399,6 +399,21 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         return imported.find { it.folderId == folder.id && it.title == res.title }
     }
 
+    // ---- Yardımcı asistan ----
+
+    var assistantConfig by mutableStateOf(com.sounote.app.data.AssistantConfig.load(app))
+        private set
+
+    fun updateAssistantConfig(c: com.sounote.app.data.AssistantConfig) {
+        com.sounote.app.data.AssistantConfig.save(getApplication(), c)
+        assistantConfig = com.sounote.app.data.AssistantConfig.load(getApplication())
+    }
+
+    /** Belgenin metni (asistana bağlam): [from]..[to] sayfaları. */
+    suspend fun documentText(doc: DocRef, from: Int, to: Int): String = withContext(Dispatchers.IO) {
+        com.sounote.app.data.PdfText.extract(getApplication(), repo.resolveForOpen(doc).uri, from, to)
+    }
+
     /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */
     var keyHandler: ((android.view.KeyEvent) -> Boolean)? = null
 

@@ -35,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -149,6 +150,7 @@ fun HomeScreen(vm: LibraryViewModel) {
         }
     }
     var newNotebook by remember { mutableStateOf(false) }
+    var assistant by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var deletingText by remember { mutableStateOf<TextNote?>(null) }
@@ -219,6 +221,9 @@ fun HomeScreen(vm: LibraryViewModel) {
                         QuickAction(painterResource(R.drawable.ic_text), "Yazılı not", "Klavyeyle not, yapılacaklar", Color(0xFF8E63CE)) {
                             vm.newTextNote()
                         },
+                        QuickAction(rememberVectorPainter(Icons.Default.Face), "Asistan", "İngilizce ve ders soruları sor", Color(0xFF00796B)) {
+                            assistant = true
+                        },
                         QuickAction(painterResource(R.drawable.ic_pdf), "PDF içe aktar", "Ders notlarını getir", Color(0xFFD64545)) {
                             importPdf()
                         },
@@ -265,6 +270,7 @@ fun HomeScreen(vm: LibraryViewModel) {
         }
     }
 
+    if (assistant) AssistantDialog(vm, AssistantSource.General) { assistant = false }
     renaming?.let { doc ->
         var text by remember(doc.id) { mutableStateOf(doc.title) }
         AlertDialog(

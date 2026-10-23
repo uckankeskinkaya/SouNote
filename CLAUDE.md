@@ -4,7 +4,7 @@ Kullanıcıyla Türkçe konuş. Kısa ve net ol.
 
 ## Amaç
 Ders notlarımı (PDF, Word) içe aktarıp üstünde kalemle çalışacağım kişisel bir Android uygulaması. Ücretli uygulama almak yerine kendim yapıyorum.
-Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.note (StarNote) — incele, temel deneyimi hedefliyoruz, AI özellikleri kapsam dışı.
+Referans: https://play.google.com/store/apps/details?id=com.onyx.galaxy.global.note (StarNote) — incele, temel deneyimi hedefliyoruz. (AI başta kapsam dışıydı; kullanıcı sonradan yardımcı asistan istedi.)
 
 ## Ortam
 - Cihaz: Xiaomi Pad 7 Pro (Android 16 / HyperOS 3) + kalem. Bilgisayar yok, her şey tablette.
@@ -81,6 +81,11 @@ Drive dosyaları herkese açık değilse indirme/açma sadece sahibinde çalış
 
 Eklendi (🧪, build-34+): yazılı notta çizim alanı (gövdede \uFFFCsketch:<id> satırı; filesDir/texts/sketch/<id>.json; PDF'e de çizilir)
 ve kalemle yazma paneli (ML Kit digital-ink-recognition 18.1.0, "tr" modeli ilk kullanımda indirilir).
+
+Eklendi (🧪, build-36+): yardımcı asistan (AssistantDialog; OpenAI uyumlu /chat/completions, ayarlar cihazda prefs "assistant":
+adres/model/anahtar, anahtar APK'ya gömülmez). Sistem talimatı uygulama özelliklerini, L4 konularını ve yaklaşan sınavları içerir;
+belgeden açılınca PDF metni (PDFBox PDFTextStripper; bu sayfa / tüm belge), yazılı nottan açılınca not metni bağlam olarak gider.
+Kullanıcı Evren (e-devlet destekli) üzerinden DeepSeek anahtarı almayı düşünüyor; adres/model adını oradan girecek.
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

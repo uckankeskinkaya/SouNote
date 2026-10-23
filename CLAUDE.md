@@ -48,7 +48,11 @@ yazı kalın + arka plan (InkStore v3), silgi yazı/resim de silebilir, Cornell 
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
-İmza anahtarı keystore/sounote.jks — değiştirme, yoksa güncelleme kurulmaz ve notlar gider.
+İmza anahtarı keystore/sounote.jks — değiştirme/silme, yoksa güncelleme kurulmaz ve notlar gider.
+İmza anahtar değişimi (kullanıcı onayladı, 23 Ekim): eski anahtar herkese açık repoda olduğundan yeni anahtar keystore/sounote2.p12.enc
+(şifreli; şifre sadece GitHub gizli değeri SIGNING_PASSWORD) + geçiş kaydı keystore/lineage.bin (keygen.yml, tek seferlik).
+build.yml APK'yı apksigner ile eski+yeni anahtar ve lineage (--rotation-min-sdk-version 28) ile yeniden imzalar; smoke eski anahtarlı
+APK'nın yeni sürümün üstüne kurulamadığını dener. Bu iki dosya ve gizli değer de asla değiştirilmez/yeniden üretilmez.
 
 Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu gönderirse önce onu düzelt.
 Eklendi (🧪, build-17+): seçimi döndürme (lasso üst tutamaç; TextBox/ImageItem.rotation, InkStore v4), akıllı fosforlu (Android 15+ metin alanları,

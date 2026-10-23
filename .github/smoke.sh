@@ -4,6 +4,13 @@
 set -x
 P=com.sounote.app
 mkdir -p shots
+# İmza testi: eski sürümün üstüne kurulmalı; sadece eski (herkese açık) anahtarla imzalı APK ise üstüne kurulamamalı.
+if [ -f old/rotated ]; then
+  adb install old/SouNote-oldkey.apk || { echo "HATA: eski anahtarlı APK kurulamadı"; exit 1; }
+  adb install -r a/SouNote.apk || { echo "HATA: yeni imzalı sürüm eski sürümün üstüne kurulamadı"; exit 1; }
+  if adb install -r old/SouNote-oldkey.apk; then echo "HATA: eski anahtarlı APK yeni sürümün üstüne kuruldu"; exit 1; fi
+  echo "İmza değişimi testi geçti"
+fi
 adb install -r a/SouNote.apk || exit 1
 adb shell pm grant $P android.permission.POST_NOTIFICATIONS || true
 adb logcat -b crash -c || true

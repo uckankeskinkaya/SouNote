@@ -424,7 +424,7 @@ private fun StartCard(onNotebook: () -> Unit, onImport: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 4.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
             Button(onClick = onNotebook) { Text("Yeni defter") }
             OutlinedButton(onClick = onImport) { Text("PDF içe aktar") }
         }

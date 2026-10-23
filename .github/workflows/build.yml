@@ -11,6 +11,8 @@ on:
       - ".github/workflows/video.yml"
       - ".github/workflows/publish.yml"
       - ".github/workflows/site.yml"
+      - ".github/workflows/keygen.yml"
+      - ".github/keygen/**"
   workflow_dispatch:
 
 permissions:
@@ -38,11 +40,41 @@ jobs:
           ./gradlew assembleRelease --build-cache --parallel
           cp app/build/outputs/apk/release/app-release.apk SouNote.apk
 
+      # Anahtar değişimi (APK imza şeması v3): eski anahtar herkese açık olduğu için yeni, gizli anahtara geçildi.
+      # APK eski + yeni anahtar ve geçiş kaydıyla imzalanır: eski sürümlerin üstüne kurulur, ama sadece eski
+      # anahtarla imzalanmış (sahte) bir APK artık bu sürümün üstüne kurulamaz.
+      - name: Yeni anahtarla imzala
+        env:
+          PW: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p old
+          cp SouNote.apk old/SouNote-oldkey.apk
+          if [ ! -f keystore/sounote2.p12.enc ]; then echo "::notice::Yeni anahtar henüz yok; eski anahtarla imzalandı."; exit 0; fi
+          if [ -z "$PW" ]; then echo "::error::SIGNING_PASSWORD gizli değeri yok; yeni anahtar olmadan derlenen sürüm güncellenmiş cihazlara kurulamaz."; exit 1; fi
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in keystore/sounote2.p12.enc -out "$tmp/new.p12" -pass env:PW
+          "$BT/apksigner" sign \
+            --ks keystore/sounote.jks --ks-pass pass:sounote --key-pass pass:sounote --ks-key-alias sounote \
+            --next-signer --ks "$tmp/new.p12" --ks-pass env:PW --ks-key-alias sounote2 \
+            --lineage keystore/lineage.bin --rotation-min-sdk-version 28 \
+            --out SouNote.apk old/SouNote-oldkey.apk
+          "$BT/apksigner" verify -v --print-certs SouNote.apk | grep -E "Verified using|certificate SHA-256" | head -8
+          touch old/rotated
+
       - name: Artifact olarak yükle
         uses: actions/upload-artifact@v4
         with:
           name: SouNote-apk
           path: SouNote.apk
+
+      - name: Eski anahtarlı kopya (imza testi için)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SouNote-oldkey
+          path: old
+          retention-days: 3
 
   # Her push bir TEST sürümü (ön sürüm) üretir: sadece yönetici (test kanalını açan) alır.
   # Herkese gitmesi için "Sürümü yayınla" iş akışı çalıştırılır (publish.yml).
@@ -128,6 +160,11 @@ jobs:
         with:
           name: SouNote-apk
           path: a
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: SouNote-oldkey
+          path: old
 
       - name: KVM
         run: |

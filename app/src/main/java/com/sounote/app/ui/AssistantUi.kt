@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +58,7 @@ import com.sounote.app.data.AssistantClient
 import com.sounote.app.data.AssistantConfig
 import com.sounote.app.data.ChatMessage
 import com.sounote.app.data.DocRef
+import com.sounote.app.data.TermsNotAcceptedException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -89,18 +92,15 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
     var docScope by remember { mutableStateOf(0) }
     val docTexts = remember { HashMap<Int, String>() }
     var setup by remember { mutableStateOf(!vm.assistantConfig.ready) }
+    // Servis kullanım şartlarının onayını istiyorsa: metni ve sürümü
+    var terms by remember { mutableStateOf<Pair<String, Int>?>(null) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size, busy) { if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1 + if (busy) 1 else 0) }
 
-    fun send(text: String) {
-        val q = text.trim()
-        if (q.isEmpty() || busy) return
-        input = ""
-        error = null
-        messages += ChatMessage("user", q)
-        histories[source.key()] = messages.toList()
+    fun ask() {
         busy = true
+        error = null
         scope.launch {
             val result = runCatching {
                 val contextText = when (source) {
@@ -130,10 +130,59 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
                 messages += ChatMessage("assistant", it.ifBlank { "(boş cevap)" })
                 histories[source.key()] = messages.toList()
             }.onFailure {
+                if (it is TermsNotAcceptedException) {
+                    runCatching { withContext(Dispatchers.IO) { AssistantClient.termsText(vm.assistantConfig) } }
+                        .onSuccess { t -> terms = t }
+                        .onFailure { e -> error = "Servisin kullanım şartlarını onaylaman gerekiyor ama metin alınamadı: ${e.message}" }
+                    return@onFailure
+                }
                 ErrorLog.record("Asistan", it)
                 error = it.message ?: "Bağlantı hatası"
             }
         }
+    }
+
+    fun send(text: String) {
+        val q = text.trim()
+        if (q.isEmpty() || busy) return
+        input = ""
+        error = null
+        messages += ChatMessage("user", q)
+        histories[source.key()] = messages.toList()
+        ask()
+    }
+
+    terms?.let { (text, version) ->
+        AlertDialog(
+            onDismissRequest = { terms = null },
+            title = { Text("Kullanım şartları") },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    Text(
+                        "Asistan servisi ilk kullanımdan önce şartlarını onaylamanı istiyor. Okuyup kabul edersen bir daha sorulmaz.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    terms = null
+                    busy = true
+                    scope.launch {
+                        runCatching { withContext(Dispatchers.IO) { AssistantClient.acceptTerms(vm.assistantConfig, version) } }
+                            .onSuccess { if (messages.lastOrNull()?.role == "user") ask() else busy = false }
+                            .onFailure {
+                                busy = false
+                                ErrorLog.record("Asistan şartlar", it)
+                                error = it.message
+                            }
+                    }
+                }) { Text("Kabul ediyorum") }
+            },
+            dismissButton = { TextButton(onClick = { terms = null }) { Text("Vazgeç") } },
+        )
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -311,7 +360,7 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
     ) {
         Text("Asistan ayarları", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
         Text(
-            "OpenAI uyumlu bir sohbet servisi gerekir (ör. DeepSeek). Servisin verdiği adresi, model adını ve API anahtarını gir. " +
+            "OpenAI uyumlu bir sohbet servisi gerekir. Evren anahtarı (evren_llm_…) için \"Evren\" düğmesine bas, anahtarı yapıştır, kaydet. " +
                 "Anahtar sadece bu cihazda saklanır, uygulamayla birlikte paylaşılmaz.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -328,10 +377,14 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = {
-                url = "https://api.deepseek.com"
-                model = "deepseek-chat"
-            }) { Text("DeepSeek varsayılanı") }
-            Button(onClick = { onSave(AssistantConfig(url, model, key)) }, enabled = url.isNotBlank() && model.isNotBlank() && key.isNotBlank()) {
+                url = AssistantConfig.EVREN_URL
+                model = AssistantConfig.EVREN_MODEL
+            }) { Text("Evren") }
+            TextButton(onClick = {
+                url = AssistantConfig.DEEPSEEK_URL
+                model = AssistantConfig.DEEPSEEK_MODEL
+            }) { Text("DeepSeek") }
+            Button(onClick = { onSave(AssistantConfig(url, model, key).fixed()) }, enabled = url.isNotBlank() && model.isNotBlank() && key.isNotBlank()) {
                 Text("Kaydet")
             }
         }

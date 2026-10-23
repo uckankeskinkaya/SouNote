@@ -187,6 +187,7 @@ fun HomeScreen(vm: LibraryViewModel) {
     var assistant by remember { mutableStateOf(false) }
     var searchOpen by remember { mutableStateOf(false) }
     var gradesOpen by remember { mutableStateOf(false) }
+    var writingOpen by remember { mutableStateOf(false) }
     // Bugünkü tekrar: açılınca kartlar yüklenir
     var review by remember { mutableStateOf<List<Pair<DocRef, com.sounote.app.data.Card>>?>(null) }
     val scope = rememberCoroutineScope()
@@ -299,6 +300,9 @@ fun HomeScreen(vm: LibraryViewModel) {
                         QuickAction(rememberVectorPainter(Icons.Default.Face), "Asistan", "İngilizce ve ders soruları sor", Color(0xFF00796B)) {
                             assistant = true
                         },
+                        QuickAction(painterResource(R.drawable.ic_text), "Writing", "Essay yaz, asistan puanlasın", Color(0xFFC2357A)) {
+                            writingOpen = true
+                        },
                         QuickAction(rememberVectorPainter(Icons.Default.Star), "Ortalama", "Notlarını gir, geçmek için gerekeni gör", Color(0xFFC2570C)) {
                             gradesOpen = true
                         },
@@ -367,6 +371,7 @@ fun HomeScreen(vm: LibraryViewModel) {
         )
     }
     if (gradesOpen) GradesDialog(vm) { gradesOpen = false }
+    if (writingOpen) WritingScreen(vm) { writingOpen = false }
     renaming?.let { doc ->
         var text by remember(doc.id) { mutableStateOf(doc.title) }
         AlertDialog(

@@ -54,7 +54,7 @@ jobs:
           key: avd-36-pixel6-v1
 
       - name: Sahneleri kaydet
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 36
           target: google_apis

@@ -34,7 +34,7 @@ object PdfExporter {
     /** [pages] verilirse sadece o sayfalar (0'dan başlayan) yeni PDF'te kalır. */
     fun export(
         context: Context, source: Uri, ink: Map<Int, PageContent>, imagesDir: File, target: File,
-        pages: IntRange? = null,
+        pages: Set<Int>? = null,
     ) {
         PDFBoxResourceLoader.init(context.applicationContext)
         val sizes = pageSizes(context, source, ink.keys)

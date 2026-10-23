@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                 LibraryViewModel.ThemeMode.DARK -> true
                 LibraryViewModel.ThemeMode.SYSTEM -> null
             }
-            SouNoteTheme(dark) {
+            SouNoteTheme(dark, vm.colorTheme) {
                 Box(Modifier.fillMaxSize()) {
                     SouNoteApp(vm)
                     // Kilit ekranı üstte durur; altındaki belge açık kalır, kilit açılınca kaldığı yerden devam.

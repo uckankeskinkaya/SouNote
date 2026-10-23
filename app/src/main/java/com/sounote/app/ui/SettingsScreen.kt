@@ -8,6 +8,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -168,6 +171,30 @@ fun SettingsScreen(vm: LibraryViewModel) {
                             }
                         }
                         RowDivider()
+                        SettingRow("🌈", "Renk", subtitle = vm.colorTheme.label)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(start = 68.dp, end = 16.dp, bottom = 14.dp),
+                        ) {
+                            ColorTheme.entries.forEach { c ->
+                                val selected = vm.colorTheme == c
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(c.swatch)
+                                        .border(if (selected) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                        .clickable { vm.updateColorTheme(c) },
+                                ) {
+                                    if (selected) Text("✓", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        RowDivider()
                         SwitchRow(
                             "🌙", "Gece okuma",
                             "Belgelerde renkleri ters çevirir, karanlıkta gözü yormaz",
@@ -208,6 +235,20 @@ fun SettingsScreen(vm: LibraryViewModel) {
                         SettingRow("💾", "Şimdi yedekle", subtitle = "Bütün belgeler ve notlar tek bir zip dosyasına", onClick = {
                             val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
                             backupLauncher.launch("SouNote-yedek-$date.zip")
+                        })
+                        RowDivider()
+                        SettingRow("📤", "Drive'a yedekle", subtitle = "Yedeği Google Drive'a (ya da başka bir yere) gönder", onClick = {
+                            vm.backupToShare { file ->
+                                val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/zip"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                val drive = Intent(send).setPackage("com.google.android.apps.docs")
+                                val target = if (drive.resolveActivity(context.packageManager) != null) drive else Intent.createChooser(send, "Yedeği gönder")
+                                runCatching { context.startActivity(target) }.onFailure { context.startActivity(Intent.createChooser(send, "Yedeği gönder")) }
+                            }
                         })
                         RowDivider()
                         SettingRow(

@@ -655,9 +655,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             pageCount = page?.second ?: 1,
             currentPage = page?.first ?: 0,
             toFile = toFile,
-            onExport = { range ->
+            inkPages = remember { ink.snapshot().filterValues { !it.isEmpty }.keys },
+            bookmarkPages = vm.bookmarks,
+            onExport = { pages, label ->
                 exportDialog = false to false
-                vm.export(doc, range) { file ->
+                vm.export(doc, pages, label) { file ->
                     if (toFile) {
                         pendingExport = file
                         saveLauncher.launch(file.name)

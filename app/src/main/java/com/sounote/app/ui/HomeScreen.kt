@@ -51,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
@@ -296,7 +297,8 @@ fun HomeScreen(vm: LibraryViewModel) {
 private fun Hero(greeting: String, todayMs: Long, docCount: Int) {
     val date = remember { SimpleDateFormat("d MMMM EEEE", TR).format(Date()) }
     val motto = remember { MOTTOS[dayOfYear() % MOTTOS.size] }
-    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Brand.gradient)) {
+    val hero = LocalColorTheme.current.heroColors
+    Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Brush.linearGradient(hero))) {
         Canvas(Modifier.matchParentSize()) {
             drawCircle(Color.White.copy(alpha = 0.08f), radius = size.height * 0.9f, center = Offset(size.width * 0.95f, 0f))
             drawCircle(Color.White.copy(alpha = 0.06f), radius = size.height * 0.45f, center = Offset(size.width * 0.72f, size.height * 1.05f))

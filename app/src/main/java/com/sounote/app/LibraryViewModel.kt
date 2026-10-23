@@ -318,7 +318,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun updateUserLevel(level: String) {
         userLevel = level
         prefs.edit().putString("userLevel", level).apply()
-        viewModelScope.launch(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams) }
+        viewModelScope.launch(Dispatchers.IO) {
+            ExamReminders.schedule(getApplication(), allExams)
+            ExamWidget.updateAll(getApplication())
+        }
     }
 
     private fun forMyLevel(e: Exam) = userLevel.isEmpty() || e.levels.isEmpty() || userLevel in e.levels
@@ -385,6 +388,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 catalog = it
                 catalogError = null
                 withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams) }
+                ExamWidget.updateAll(getApplication())
             }.onFailure {
                 catalogError = "İnternete bağlanılamadı; son indirilen liste gösteriliyor"
                 if (!quiet) message = catalogError
@@ -407,6 +411,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { examStore.save(list) }.onFailure { ErrorLog.record("Sınavlar kaydedilemedi", it) }
             ExamReminders.schedule(getApplication(), allExams)
+            ExamWidget.updateAll(getApplication())
         }
     }
 
@@ -537,6 +542,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putLong("study_$id", studyTime(id) + ms)
             .putLong("studyday_$day", prefs.getLong("studyday_$day", 0L) + ms)
             .apply()
+        ExamWidget.updateAll(getApplication())
     }
 
     fun studyTime(docId: String) = prefs.getLong("study_$docId", 0L)
@@ -887,6 +893,19 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString("autoBackupTree", tree.toString()).remove("autoBackupFp").apply()
         autoBackupFolder = tree.toString()
         runAutoBackup(force = true)
+    }
+
+    /** Otomatik yedek kapalıyken ve korunacak bir şey varken ana sayfada öneri kartı (Sonra = 7 gün sus). */
+    var backupNudgeUntil by mutableStateOf(prefs.getLong("backupNudgeUntil", 0L))
+        private set
+
+    val showBackupNudge: Boolean
+        get() = autoBackupFolder == null && System.currentTimeMillis() > backupNudgeUntil &&
+            (imported.isNotEmpty() || textNotes.isNotEmpty())
+
+    fun snoozeBackupNudge() {
+        backupNudgeUntil = System.currentTimeMillis() + 7 * 86_400_000L
+        prefs.edit().putLong("backupNudgeUntil", backupNudgeUntil).apply()
     }
 
     fun disableAutoBackup() {

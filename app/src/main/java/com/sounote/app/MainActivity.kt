@@ -164,7 +164,7 @@ class MainActivity : ComponentActivity() {
             Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
             else -> null
         }
-        if (uri != null) vm.importPdfs(listOf(uri), openAfter = true)
+        if (uri != null) vm.importShared(uri)
     }
 }
 

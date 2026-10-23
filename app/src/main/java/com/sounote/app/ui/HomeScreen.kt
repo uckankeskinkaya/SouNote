@@ -189,6 +189,10 @@ fun HomeScreen(vm: LibraryViewModel) {
             text = { Text("Notlu PDF'i paylaş") },
             onClick = { dismiss(); vm.export(doc) { sharePdfFile(context, it) } },
         )
+        DropdownMenuItem(
+            text = { Text("SouNote'lu arkadaşa gönder") },
+            onClick = { dismiss(); vm.sharePackage(doc) { sharePackageFile(context, it) } },
+        )
         DropdownMenuItem(text = { Text("Sil", color = MaterialTheme.colorScheme.error) }, onClick = { dismiss(); deleting = doc })
     }
     val importPdf = { pickPdfs.launch(arrayOf("application/pdf")) }

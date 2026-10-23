@@ -369,6 +369,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         }
                         DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
                             DropdownMenuItem(
+                                text = { Text("SouNote'lu arkadaşa gönder (notlar düzenlenebilir)") },
+                                onClick = {
+                                    exportMenu = false
+                                    vm.sharePackage(doc) { sharePackageFile(context, it) }
+                                },
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Notlu PDF'i paylaş…") },
                                 onClick = {
                                     exportMenu = false

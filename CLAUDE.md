@@ -93,6 +93,13 @@ görüntüler shots-tmp dalına itilir). Dar ekranda: sınav kartında geri say�
 Eklendi (🧪, build-48+): animasyonlar (ui/Motion.kt: pressScale, appear/Appear sırayla belirme, sekme ve ekran geçişleri MainActivity Screen + AnimatedContent),
 süzülen karşılama daireleri, büyüyen haftalık çubuklar, kapak Crossfade, listelerde animateItem, yaklaşan (≤2 gün) sınav nabzı.
 Belge ekranındaki paneller bilerek animasyonsuz (PDF görünümü yeniden boyutlanıp takılmasın).
+Sürüm 1.0 (🧪, build-51+; repo artık herkese açık): versionName 1.0.<run>; güncelleme denetimi (Updates.kt, GitHub releases/latest API, 6 saatte bir;
+release notu = commit mesajı, notes.md) + "Yenilikler" penceresi (UpdateDialogs.kt, prefs seenMajor); katalog her release'e catalog.json olarak
+eklenir, uygulama releases/latest/download/catalog.json'dan çeker (main geride olduğu için raw main kullanılmadı); build.yml concurrency: release.
+Ana sayfada otomatik yedek önerisi (7 gün ertelenir), ana ekran widget'ı (ExamWidget, RemoteViews; sınav/çalışma değişince updateAll),
+asistanda "🃏 Kart üret" (generateCards → JSON [{q,a}], önizle → addGeneratedCards), haftalık liste (prefs weekDone StringSet; Dersler/Haftalar'da
+onay kutuları + ilerleme, ana sayfada "Hafta N listesi"), not paylaşma: .sounote paketi (SouNotePackage: manifest.json + document.pdf + ink/, ses hariç;
+VIEW/SEND octet-stream/zip → vm.importShared; yeni kimlikle createDocument).
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

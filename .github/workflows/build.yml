@@ -13,8 +13,7 @@ on:
       - ".github/workflows/site.yml"
       - ".github/workflows/keygen.yml"
       - ".github/keygen/**"
-      - ".github/convert/**"
-      - ".github/workflows/convert.yml"
+      - ".github/workflows/cleanup-kaynaklar.yml"
   workflow_dispatch:
 
 permissions:

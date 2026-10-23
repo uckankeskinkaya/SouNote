@@ -100,6 +100,13 @@ Ana sayfada otomatik yedek önerisi (7 gün ertelenir), ana ekran widget'ı (Exa
 asistanda "🃏 Kart üret" (generateCards → JSON [{q,a}], önizle → addGeneratedCards), haftalık liste (prefs weekDone StringSet; Dersler/Haftalar'da
 onay kutuları + ilerleme, ana sayfada "Hafta N listesi"), not paylaşma: .sounote paketi (SouNotePackage: manifest.json + document.pdf + ink/, ses hariç;
 VIEW/SEND octet-stream/zip → vm.importShared; yeni kimlikle createDocument).
+Eklendi (🧪, build-60+): genel arama (SearchIndex: filesDir/search/<id>-<stamp>.txt, sayfalar \f ile; SearchDialog; ana sayfada arama çubuğu),
+not ortalaması (Grades/GradeStore filesDir/grades.json, yedeğe girer; GradesDialog; Ankara Ü. şablonu: kur içi %40 [Quiz 10, PT 20, Quiz 10, PT 20,
+Sözlü 10+10, Yazma 10+10] + Kur Atlama Sınavı %60 [LRU 60, Yazma 20, Sözlü 20], geçme 70; Güz Yeterlik ayrıca 70; kaynak: Öğrenci El Kitabı 2026-2027).
+CI (build.yml): build → release (test beklemeden, ~4 dk) ve paralel smoke (emülatör, AVD snapshot önbelleği, .github/smoke.sh); smoke başarısızsa
+rollback işi sürümü ön sürüme çeker. Gradle cache-read-only: false. Derleme sırasında dal ilerlediyse release atlanır (GITHUB_TOKEN eski commit'e
+etiket koyamıyor: "workflows" izni ister). Smoke ekran görüntüleri "screenshots" dalına itilir.
+İndirme sayfası docs/index.html (+ docs/img), GitHub Pages: Settings → Pages → main /docs (kullanıcı açmalı). README yenilendi.
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

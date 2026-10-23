@@ -22,12 +22,15 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # Önbellek bu dalda da yazılsın (varsayılan: sadece ana dalda yazar; burada hiç kullanılmıyordu).
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: APK derle
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace
+          ./gradlew assembleRelease --build-cache --parallel
           cp app/build/outputs/apk/release/app-release.apk SouNote.apk
 
       - name: Artifact olarak yükle
@@ -36,11 +39,58 @@ jobs:
           name: SouNote-apk
           path: SouNote.apk
 
-  # Her derleme emülatörde açılıp ekranları gezer; çökerse release yapılmaz (arkadaşlara bozuk sürüm gitmez).
+  # APK test beklemeden yayınlanır (derlemeden ~1 dk sonra hazır).
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    outputs:
+      published: ${{ steps.tip.outputs.latest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: SouNote-apk
+          path: .
+
+      # GitHub, derleme sürerken dal ilerlediyse eski commit'e etiket koydurmuyor (workflows izni ister).
+      # O durumda bu derleme yayınlanmaz; daha yeni commit'in derlemesi yayınlar.
+      - name: Dalın en yeni commit'i mi?
+        id: tip
+        run: |
+          tip=$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)
+          if [ "$tip" = "$GITHUB_SHA" ]; then echo "latest=true" >> "$GITHUB_OUTPUT"; else echo "::notice::Daha yeni commit var ($tip); bu derleme yayınlanmıyor."; fi
+
+      - name: Sürüm notu
+        if: steps.tip.outputs.latest == 'true'
+        run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md
+
+      - name: Release oluştur
+        if: steps.tip.outputs.latest == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: SouNote 1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
+          prerelease: false
+          make_latest: true
+          # Uygulamadaki "Yeni sürüm" penceresi bu metni gösterir.
+          body_path: notes.md
+          # catalog.json: uygulama açılışta haftalık kaynakları buradan günceller (releases/latest/download/catalog.json).
+          files: |
+            SouNote.apk
+            app/src/main/assets/catalog.json
+
+  # Yayınla aynı anda emülatörde çökme testi. Uygulama çökerse sürüm "ön sürüm" yapılır:
+  # releases/latest (indirme bağlantısı ve uygulamadaki güncelleme bildirimi) bir önceki sağlam sürüme döner.
   smoke:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -55,6 +105,29 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Açılmış emülatörün kaydı (snapshot) önbellekte: her seferinde sıfırdan açılmaz.
+      - name: Emülatör önbelleği
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-36-pixel6-v1
+
+      - name: Emülatör kaydı oluştur
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: echo "Emülatör kaydı hazır"
+
       - name: Emülatörde çökme testi
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -62,8 +135,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: bash ./.github/smoke.sh
 
       - name: Ekran görüntüleri
@@ -85,47 +159,17 @@ jobs:
           git add -A; git commit -qm "build ${{ github.run_number }}" || exit 0
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" screenshots
 
-  release:
-    needs: [build, smoke]
+  # Test başarısızsa yayınlanan sürümü geri çek (ön sürüm yap).
+  rollback:
+    needs: [release, smoke]
+    if: failure() && needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
-    # Aynı anda iki derleme release oluşturmaya çalışıp çakışmasın.
-    concurrency:
-      group: release
-      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: SouNote-apk
-          path: .
-
-      # GitHub, derleme sürerken dal ilerlediyse eski commit'e etiket koydurmuyor (workflows izni ister).
-      # O durumda bu derleme yayınlanmaz; daha yeni commit'in derlemesi yayınlar.
-      - name: Dalın en yeni commit'i mi?
-        id: tip
+      - name: Sürümü ön sürüme çek
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          tip=$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)
-          if [ "$tip" = "$GITHUB_SHA" ]; then echo "latest=true" >> "$GITHUB_OUTPUT"; else echo "::notice::Daha yeni commit var ($tip); bu derleme yayınlanmıyor."; fi
-
-      - name: Sürüm notu
-        if: steps.tip.outputs.latest == 'true'
-        run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md
-
-      # Tabletten zip açmadan indirmek için: Releases sayfasında doğrudan APK.
-      - name: Release oluştur
-        if: steps.tip.outputs.latest == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: SouNote 1.0.${{ github.run_number }}
-          target_commitish: ${{ github.sha }}
-          # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
-          prerelease: false
-          make_latest: true
-          # Uygulamadaki "Yeni sürüm" penceresi bu metni gösterir.
-          body_path: notes.md
-          # catalog.json: uygulama açılışta haftalık kaynakları buradan günceller (releases/latest/download/catalog.json).
-          files: |
-            SouNote.apk
-            app/src/main/assets/catalog.json
+          gh release edit "build-${{ github.run_number }}" -R "${{ github.repository }}" --prerelease --latest=false \
+            --notes "⚠️ Bu derleme çökme testinden geçemedi; indirme bağlantısı önceki sürüme döndü."
+          prev=$(gh release list -R "${{ github.repository }}" --exclude-pre-releases --exclude-drafts --limit 1 --json tagName -q '.[0].tagName')
+          [ -n "$prev" ] && gh release edit "$prev" -R "${{ github.repository }}" --latest

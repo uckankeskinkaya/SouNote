@@ -1,0 +1,26 @@
+name: Release izni testi (geçici)
+on:
+  push:
+    paths: [".github/workflows/probe.yml"]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - run: |
+          set -x
+          gh api repos/$R/releases/latest -q .tag_name || true
+          echo "--- tag ref at main"
+          gh api -X POST repos/$R/git/refs -f ref=refs/tags/probe-main -f sha=$(gh api repos/$R/commits/main -q .sha) || true
+          echo "--- tag ref at this commit"
+          gh api -X POST repos/$R/git/refs -f ref=refs/tags/probe-head -f sha=$GITHUB_SHA || true
+          echo "--- release at main"
+          gh api -X POST repos/$R/releases -f tag_name=probe-rel-main -f target_commitish=main -F draft=true || true
+          echo "--- release at head"
+          gh api -X POST repos/$R/releases -f tag_name=probe-rel-head -f target_commitish=$GITHUB_SHA -F draft=true || true
+          echo "--- release at build-52 commit"
+          gh api -X POST repos/$R/releases -f tag_name=probe-rel-52 -f target_commitish=3e0ebe43656bb942f5cc73eb32752bfe7ec6a740 -F draft=true || true

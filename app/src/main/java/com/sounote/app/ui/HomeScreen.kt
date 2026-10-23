@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -182,6 +183,9 @@ fun HomeScreen(vm: LibraryViewModel) {
                         QuickAction(rememberVectorPainter(Icons.Default.Edit), "Hızlı not", "Hemen yazmaya başla", Color(0xFFE0893A)) {
                             vm.quickNote()
                         },
+                        QuickAction(painterResource(R.drawable.ic_text), "Yazılı not", "Klavyeyle not, yapılacaklar", Color(0xFF8E63CE)) {
+                            vm.newTextNote()
+                        },
                         QuickAction(painterResource(R.drawable.ic_pdf), "PDF içe aktar", "Ders notlarını getir", Color(0xFFD64545)) {
                             importPdf()
                         },
@@ -196,6 +200,15 @@ fun HomeScreen(vm: LibraryViewModel) {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(end = 8.dp)) {
                         items(recent, key = { it.id }) { doc ->
                             Box(Modifier.width(132.dp)) { DocCard(doc, onClick = { vm.open(doc) }) }
+                        }
+                    }
+                }
+
+                if (vm.textNotes.isNotEmpty()) {
+                    Section("Yazılı notlar", action = "Yeni not") { vm.newTextNote() }
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(end = 8.dp)) {
+                        items(vm.textNotes.take(12), key = { "t" + it.id }) { n ->
+                            Box(Modifier.width(132.dp)) { TextNoteCard(n, onClick = { vm.openTextNote(n) }) }
                         }
                     }
                 }
@@ -335,11 +348,12 @@ private class QuickAction(
 @Composable
 private fun QuickActions(actions: List<QuickAction>) {
     BoxWithConstraints {
-        val columns = if (maxWidth > 640.dp) 4 else 2
+        val columns = if (maxWidth > 900.dp) 5 else if (maxWidth > 640.dp) 3 else 2
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             actions.chunked(columns).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     row.forEach { a -> ActionTile(a, Modifier.weight(1f)) }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }

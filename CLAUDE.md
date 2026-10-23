@@ -65,5 +65,8 @@ Eklendi (🧪, build-21+): ana menü (MainShell: Ana sayfa / Kütüphane / Ayarl
 ilk açılışta tanıtım (OnboardingScreen, 5 sayfa: ad, kalem/parmak, tema; prefs onboarded, userName), ana sayfa (karşılama, kaldığın yer, hızlı başla,
 son açılanlar, haftalık çalışma, ipucu), ayarlar sayfası (kütüphanedeki ⋮ menüsü buraya taşındı), arkadaşla paylaş (indirme bağlantısı + APK dosyası),
 yeni simge (gradyan zemin, temalı tek renk), açılış ekranı (values-v31 windowSplashScreen*). Release'ler artık Latest: releases/latest/download/SouNote.apk.
+APK'da dex sıkıştırılmış (packaging.dex.useLegacyPackaging): sıkıştırılmamış classes.dex tablete inerken bozuluyordu (CRC hatası, build-20..22).
+Eklendi (🧪, build-24+): yazılı notlar (klavyeyle; TextNoteStore filesDir/texts/<id>.json, yedeğe girer; yapılacak/madde listesi, tarih,
+yazı boyutu, sabitle, metin/PDF paylaş, "Deftere çevir" = PDF olarak kütüphaneye ekler; TextNoteScreen, VM.openText).
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

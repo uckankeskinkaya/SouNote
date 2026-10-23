@@ -280,7 +280,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Yazılı not") },
+                title = { Text("Yazılı not", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = ::close) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")

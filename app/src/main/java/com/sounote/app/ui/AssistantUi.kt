@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -541,7 +542,7 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = {
                 url = AssistantConfig.EVREN_URL
                 model = AssistantConfig.EVREN_MODEL
@@ -550,8 +551,9 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                 url = AssistantConfig.DEEPSEEK_URL
                 model = AssistantConfig.DEEPSEEK_MODEL
             }) { Text("DeepSeek") }
+            Spacer(Modifier.weight(1f))
             Button(onClick = { onSave(AssistantConfig(url, model, key).fixed()) }, enabled = url.isNotBlank() && model.isNotBlank() && key.isNotBlank()) {
-                Text("Kaydet")
+                Text("Kaydet", maxLines = 1, softWrap = false)
             }
         }
     }

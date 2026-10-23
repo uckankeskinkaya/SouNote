@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/probe.yml"
       - ".github/shots.sh"
+      - "app/**"
 
 permissions:
   contents: write
@@ -12,14 +13,21 @@ permissions:
 jobs:
   shots:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 70
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: APK'yı indir
-        run: gh release download build-${{ vars.SHOT_BUILD || '37' }} -R ${{ github.repository }} -p SouNote.apk -D a
+      - name: Bu commit'in APK'sını bekle ve indir
+        run: |
+          for i in $(seq 1 60); do
+            tag=$(gh release view -R ${{ github.repository }} --json tagName -q .tagName || true)
+            sha=$(gh api repos/${{ github.repository }}/commits/$tag -q .sha 2>/dev/null || true)
+            if [ "$sha" = "$GITHUB_SHA" ]; then gh release download $tag -R ${{ github.repository }} -p SouNote.apk -D a; echo "$tag"; exit 0; fi
+            sleep 30
+          done
+          exit 1
 
       - name: KVM
         run: |

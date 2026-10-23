@@ -44,7 +44,7 @@ anim() { for k in window_animation_scale transition_animation_scale animator_dur
 declare -A POS
 learn_home() {
   anim 0; home_top; sleep 1
-  for t in "Ortalama" "Writing" "Ara" "Yeni defter"; do POS[$t]=$(find_xy "$t"); echo "konum $t: ${POS[$t]}"; done
+  for t in "Ortalama" "Writing" "Belgelerde*" "Yeni defter"; do POS[$t]=$(find_xy "$t"); echo "konum $t: ${POS[$t]}"; done
   anim 1
 }
 tap_home() { if [ -n "${POS[$1]}" ]; then adb shell input tap ${POS[$1]}; sleep 1; else tap "$1"; fi; }
@@ -119,6 +119,8 @@ rec 06-writing 16
 tap_home "Writing"; sleep 2.5; anim 0; tap "Opinion Essay"; sleep 2.5
 tap "Social media does more*"; sleep 2.5
 anim 1
+# Yazı alanına dokun (klavye açılsın), sonra yaz
+adb shell input tap 540 1500; sleep 1.5
 adb shell input text "Nowadays%smany%syoung%speople%sspend%shours%son%ssocial%smedia.%sIn%smy%sopinion,%sit%sdoes%smore%sharm%sthan%sgood."
 sleep 3
 stop 06-writing
@@ -134,7 +136,7 @@ adb shell input keyevent KEYCODE_BACK; sleep 1
 # 8) Arama
 home_top
 rec 08-arama 10
-tap_home "Ara"; sleep 3.5; adb shell input text "not"; sleep 4
+tap_home "Belgelerde*"; sleep 3.5; adb shell input text "not"; sleep 4
 stop 08-arama
 
 ls -la scenes

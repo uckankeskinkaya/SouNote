@@ -40,9 +40,11 @@ jobs:
           NOTES: ${{ inputs.notes }}
           BUILD: ${{ inputs.build }}
         run: |
-          if [ -n "$BUILD" ]; then tag="build-$BUILD"; else
-            tag=$(gh api "repos/$R/releases?per_page=30" -q '[.[] | select(.prerelease and (.tag_name | startswith("build-")))][0].tag_name')
+          if [ -z "$BUILD" ]; then
+            gh release download test -R "$R" -p test.json -D t
+            BUILD=$(python3 -c "import json; print(json.load(open('t/test.json'))['build'])")
           fi
+          tag="build-$BUILD"
           [ -n "$tag" ] || { echo "::error::Test sürümü bulunamadı"; exit 1; }
           body=$(gh release view "$tag" -R "$R" --json body -q .body)
           if echo "$body" | grep -q "⚠️"; then echo "::error::$tag çökme testinden geçmemiş; yayınlanmaz"; exit 1; fi

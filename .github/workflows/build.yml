@@ -81,6 +81,22 @@ jobs:
           body_path: notes.md
           files: SouNote.apk
 
+      # Sabit "test" kanalı: en yeni test APK'sı + test.json (GitHub sürüm listesi ön sürümleri güvenilir göstermiyor;
+      # uygulamanın yönetici modu, video ve "Sürümü yayınla" en yeni test sürümünü buradan okur).
+      - name: Test kanalını güncelle
+        if: steps.tip.outputs.latest == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="${{ github.repository }}"
+          N="${{ github.run_number }}"
+          python3 -c "import json,sys; print(json.dumps({'build': int(sys.argv[1]), 'name': 'Test 1.0.' + sys.argv[1], 'notes': open('notes.md').read().strip(), 'sha': sys.argv[2]}, ensure_ascii=False))" "$N" "$GITHUB_SHA" > test.json
+          if ! gh release view test -R "$R" >/dev/null 2>&1; then
+            gh release create test -R "$R" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Test kanalı" --notes "Yönetici için en yeni test derlemesi (otomatik güncellenir)."
+          fi
+          gh release upload test SouNote.apk test.json -R "$R" --clobber
+
       # Haftalık ders kataloğu ayrı kanalda ("catalog" etiketi): yayın beklemeden herkese gider.
       - name: Kataloğu güncelle
         if: steps.tip.outputs.latest == 'true'

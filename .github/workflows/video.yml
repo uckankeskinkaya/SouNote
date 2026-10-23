@@ -26,13 +26,15 @@ jobs:
       - name: En yeni APK
         run: |
           # Bu commit'in derlemesi yayınlanana kadar bekle (en fazla ~10 dk), yoksa en yeni derleme
+          n=$(gh api "repos/$R/actions/runs?head_sha=$GITHUB_SHA" -q '[.workflow_runs[] | select(.name == "APK derle")][0].run_number')
+          tag=""
           for i in $(seq 1 40); do
-            tag=$(gh api "repos/$R/releases?per_page=20" -q "[.[] | select(.target_commitish == \"$GITHUB_SHA\")][0].tag_name")
-            [ -n "$tag" ] && [ "$tag" != "null" ] && break
+            if [ -n "$n" ] && gh release view "build-$n" -R "$R" >/dev/null 2>&1; then tag="build-$n"; break; fi
             sleep 15
           done
-          if [ -z "$tag" ] || [ "$tag" = "null" ]; then
-            tag=$(gh api "repos/$R/releases?per_page=20" -q '[.[] | select(.tag_name | startswith("build-"))] | sort_by(.tag_name | ltrimstr("build-") | tonumber) | last | .tag_name')
+          if [ -z "$tag" ]; then
+            # Bu commit yayınlanmadıysa test kanalındaki en yeni APK
+            gh release download test -R "$R" -p SouNote.apk -D a && exit 0
           fi
           echo "APK: $tag"
           gh release download "$tag" -R "$R" -p SouNote.apk -D a

@@ -19,16 +19,26 @@ import java.util.Locale
 data class AssistantConfig(val baseUrl: String, val model: String, val apiKey: String) {
     val ready get() = baseUrl.isNotBlank() && model.isNotBlank() && apiKey.isNotBlank()
 
+    /** Evren anahtarı (evren_llm_…) başka bir adrese girildiyse Evren adresine çevirir. */
+    fun fixed(): AssistantConfig =
+        if (apiKey.trim().startsWith("evren_llm_") && !baseUrl.contains("ssyz.org.tr")) {
+            copy(baseUrl = EVREN_URL, model = if (model.isBlank() || model.startsWith("deepseek-chat")) EVREN_MODEL else model)
+        } else this
+
     companion object {
         private const val PREFS = "assistant"
+        const val EVREN_URL = "https://evren-llmapi.ssyz.org.tr/v1"
+        const val EVREN_MODEL = "auto"
+        const val DEEPSEEK_URL = "https://api.deepseek.com"
+        const val DEEPSEEK_MODEL = "deepseek-chat"
 
         fun load(context: Context): AssistantConfig {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             return AssistantConfig(
-                p.getString("baseUrl", null) ?: "https://api.deepseek.com",
-                p.getString("model", null) ?: "deepseek-chat",
+                p.getString("baseUrl", null) ?: EVREN_URL,
+                p.getString("model", null) ?: EVREN_MODEL,
                 p.getString("apiKey", null) ?: "",
-            )
+            ).fixed()
         }
 
         fun save(context: Context, c: AssistantConfig) {
@@ -40,6 +50,9 @@ data class AssistantConfig(val baseUrl: String, val model: String, val apiKey: S
         }
     }
 }
+
+/** Evren gibi servislerde ilk kullanımdan önce kullanım şartlarının onaylanması gerekir (403 terms_not_accepted). */
+class TermsNotAcceptedException(message: String) : IOException(message)
 
 data class ChatMessage(val role: String, val content: String)
 
@@ -65,6 +78,7 @@ object AssistantClient {
             val text = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (code !in 200..299) {
                 val msg = runCatching { JSONObject(text).getJSONObject("error").optString("message") }.getOrNull()
+                if (code == 403 && text.contains("terms_not_accepted")) throw TermsNotAcceptedException(msg ?: "Kullanım şartları onaylanmamış")
                 throw IOException(
                     when (code) {
                         401, 403 -> "Anahtar geçersiz ya da yetkisiz (HTTP $code)"
@@ -78,6 +92,44 @@ object AssistantClient {
         } finally {
             c.disconnect()
         }
+    }
+
+    private fun base(config: AssistantConfig) = config.baseUrl.trim().trimEnd('/').removeSuffix("/chat/completions")
+
+    private fun request(config: AssistantConfig, path: String, body: JSONObject?): Pair<Int, String> {
+        val c = URL(base(config) + path).openConnection() as HttpURLConnection
+        try {
+            c.connectTimeout = 15_000
+            c.readTimeout = 30_000
+            c.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
+            if (body != null) {
+                c.requestMethod = "POST"
+                c.doOutput = true
+                c.setRequestProperty("Content-Type", "application/json")
+                c.outputStream.use { it.write(body.toString().toByteArray()) }
+            }
+            val code = c.responseCode
+            val text = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+            return code to text
+        } finally {
+            c.disconnect()
+        }
+    }
+
+    /** Kullanım şartlarının metni ve sürümü (GET /terms/text). */
+    fun termsText(config: AssistantConfig): Pair<String, Int> {
+        val (code, text) = request(config, "/terms/text", null)
+        if (code !in 200..299) throw IOException("Şartlar alınamadı (HTTP $code)")
+        val json = runCatching { JSONObject(text) }.getOrNull() ?: return text.trim() to 1
+        val body = listOf("text", "content", "terms", "metin").firstNotNullOfOrNull { k -> json.optString(k).takeIf { it.isNotBlank() } }
+            ?: json.toString(2)
+        return body.trim() to json.optInt("version", 1)
+    }
+
+    /** Kullanıcı kabul ettikten sonra şartları onaylar (POST /terms/accept). */
+    fun acceptTerms(config: AssistantConfig, version: Int) {
+        val (code, text) = request(config, "/terms/accept", JSONObject().put("version", version))
+        if (code !in 200..299) throw IOException("Onay gönderilemedi (HTTP $code): ${text.take(200)}")
     }
 
     /** Asistanın uygulamayı, kullanıcıyı ve sınav takvimini tanıması için sistem talimatı. */

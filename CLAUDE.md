@@ -85,7 +85,8 @@ ve kalemle yazma paneli (ML Kit digital-ink-recognition 18.1.0, "tr" modeli ilk 
 Eklendi (🧪, build-36+): yardımcı asistan (AssistantDialog; OpenAI uyumlu /chat/completions, ayarlar cihazda prefs "assistant":
 adres/model/anahtar, anahtar APK'ya gömülmez). Sistem talimatı uygulama özelliklerini, L4 konularını ve yaklaşan sınavları içerir;
 belgeden açılınca PDF metni (PDFBox PDFTextStripper; bu sayfa / tüm belge), yazılı nottan açılınca not metni bağlam olarak gider.
-Kullanıcı Evren (e-devlet destekli) üzerinden DeepSeek anahtarı almayı düşünüyor; adres/model adını oradan girecek.
+Varsayılan servis Evren (SSYZ, e-devlet): https://evren-llmapi.ssyz.org.tr/v1, model "auto", anahtar evren_llm_…;
+ilk kullanımda 403 terms_not_accepted → /v1/terms/text gösterilir, kabul edilirse POST /v1/terms/accept {"version"} (build-37+).
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

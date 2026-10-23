@@ -649,8 +649,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onUndoGesture = { this.ink.undo() }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
-                                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                                        .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                    // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)
+                                    if (uri.scheme?.lowercase() !in setOf("http", "https", "mailto", "tel")) {
+                                        currentVm.showMessage("Bu bağlantı türü açılmıyor")
+                                    } else {
+                                        runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                            .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                    }
                                 }
                                 onFormSaved = { currentVm.showMessage("Form kaydedildi") }
                                 formSaveTarget = currentVm.formSaveTarget(doc)

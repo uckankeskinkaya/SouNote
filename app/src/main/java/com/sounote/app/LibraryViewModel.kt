@@ -28,6 +28,10 @@ import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
 import com.sounote.app.data.NaturalOrder
 import com.sounote.app.data.UserFolder
+import com.sounote.app.data.TextNote
+import com.sounote.app.data.TextNotePdf
+import com.sounote.app.data.TextNoteStore
+import kotlinx.coroutines.channels.Channel
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -138,6 +142,112 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun updateUserName(name: String) {
         userName = name.trim().take(30)
         prefs.edit().putString("userName", userName).apply()
+    }
+
+    // ---- Yazılı notlar (klavyeyle) ----
+
+    private val textStore = TextNoteStore(app)
+    var textNotes by mutableStateOf<List<TextNote>>(emptyList())
+        private set
+    var openText by mutableStateOf<TextNote?>(null)
+        private set
+    var textFontSize by mutableStateOf(prefs.getFloat("textNoteSize", 18f))
+        private set
+
+    /** Dosya yazmaları sırayla yapılsın (hızlı yazarken eski içerik yenisinin üstüne yazılmasın). */
+    private val textWrites = Channel<() -> Unit>(Channel.UNLIMITED)
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            for (write in textWrites) runCatching { write() }.onFailure { ErrorLog.record("Yazılı not kaydedilemedi", it) }
+        }
+    }
+
+    private suspend fun loadTextNotes() {
+        textNotes = withContext(Dispatchers.IO) { runCatching { textStore.list() }.getOrDefault(emptyList()) }
+    }
+
+    fun newTextNote() {
+        val now = System.currentTimeMillis()
+        openText = TextNote(java.util.UUID.randomUUID().toString(), "", "", now, now)
+    }
+
+    fun openTextNote(note: TextNote) {
+        openText = note
+    }
+
+    fun closeTextNote() {
+        openText = null
+    }
+
+    /** Değiştiyse kaydeder; başlık ve metin boşsa not silinir. */
+    fun saveTextNote(id: String, title: String, body: String) {
+        val old = textNotes.find { it.id == id } ?: openText?.takeIf { it.id == id }
+        val stored = textNotes.any { it.id == id }
+        if (title.isBlank() && body.isBlank()) {
+            if (stored) {
+                textNotes = textNotes.filter { it.id != id }
+                textWrites.trySend { textStore.delete(id) }
+            }
+            return
+        }
+        if (stored && old != null && old.title == title && old.body == body) return
+        val now = System.currentTimeMillis()
+        val note = TextNote(id, title, body, old?.created ?: now, now, old?.pinned ?: false)
+        textNotes = (textNotes.filter { it.id != id } + note).sortedWith(TextNoteStore.ORDER)
+        if (openText?.id == id) openText = note
+        textWrites.trySend { textStore.save(note) }
+    }
+
+    fun togglePinText(note: TextNote) {
+        val n = note.copy(pinned = !note.pinned)
+        textNotes = (textNotes.filter { it.id != n.id } + n).sortedWith(TextNoteStore.ORDER)
+        if (openText?.id == n.id) openText = n
+        textWrites.trySend { textStore.save(n) }
+    }
+
+    fun deleteTextNote(note: TextNote) {
+        textNotes = textNotes.filter { it.id != note.id }
+        if (openText?.id == note.id) openText = null
+        textWrites.trySend { textStore.delete(note.id) }
+        message = "\"${note.displayTitle}\" silindi"
+    }
+
+    fun updateTextFontSize(size: Float) {
+        textFontSize = size.coerceIn(12f, 32f)
+        prefs.edit().putFloat("textNoteSize", textFontSize).apply()
+    }
+
+    /** Notu PDF'e çevirir (paylaşmak için). */
+    fun textNotePdf(note: TextNote, onReady: (File) -> Unit) {
+        viewModelScope.launch {
+            val file = withContext(Dispatchers.IO) {
+                runCatching {
+                    val name = note.displayTitle.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(60)
+                    File(getApplication<Application>().cacheDir, "exports/$name.pdf").also { TextNotePdf.write(note, it) }
+                }.onFailure { ErrorLog.record("Not PDF'e çevrilemedi", it) }.getOrNull()
+            }
+            if (file != null) onReady(file) else message = "PDF oluşturulamadı"
+        }
+    }
+
+    /** Notu PDF defter olarak kütüphaneye ekler ve açar: üstüne kalemle çalışılabilir. */
+    fun textNoteToDocument(note: TextNote) {
+        viewModelScope.launch {
+            busy = true
+            val result = withContext(Dispatchers.IO) {
+                runCatching { repo.createDocument(note.displayTitle, null) { TextNotePdf.write(note, it) } }
+            }
+            busy = false
+            imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+            result.onSuccess {
+                openText = null
+                open(it)
+            }.onFailure {
+                ErrorLog.record("Not deftere çevrilemedi", it)
+                message = "Deftere çevrilemedi"
+            }
+        }
     }
 
     /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */
@@ -677,6 +787,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             currentFolder = null
             path = emptyList()
             refresh()
+            openText = null
             message = result.fold(
                 onSuccess = { "Yedek geri yüklendi" },
                 onFailure = { "Geri yüklenemedi: ${it.message ?: it.javaClass.simpleName}" },
@@ -1049,6 +1160,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             imported = imp
             rootFolders = roots
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
+            loadTextNotes()
             if (currentFolder != null && userFolders.none { it.id == currentFolder }) currentFolder = null
             orphans = withContext(Dispatchers.IO) { runCatching { repo.orphanedCopies() }.getOrDefault(emptyList()) }
             trash = withContext(Dispatchers.IO) {

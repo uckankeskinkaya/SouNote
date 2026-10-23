@@ -95,6 +95,7 @@ import androidx.compose.ui.unit.dp
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.R
 import com.sounote.app.data.DocRef
+import com.sounote.app.data.TextNote
 import com.sounote.app.data.FolderRef
 import com.sounote.app.pdf.PageTemplate
 import com.sounote.app.pdf.PaperColor
@@ -125,6 +126,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     var searching by remember { mutableStateOf(false) }
     var deletingOrphan by remember { mutableStateOf<DocRef?>(null) }
     var taggingDoc by remember { mutableStateOf<DocRef?>(null) }
+    var deletingText by remember { mutableStateOf<TextNote?>(null) }
     val context = LocalContext.current
 
     val inLinked = vm.path.isNotEmpty()
@@ -181,6 +183,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(text = { Text("Hızlı not") }, onClick = { menu = false; vm.quickNote() })
+                                DropdownMenuItem(text = { Text("Yazılı not (klavye)") }, onClick = { menu = false; vm.newTextNote() })
                                 DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { menu = false; newNotebook = true })
                                 DropdownMenuItem(text = { Text("Yeni klasör") }, onClick = { menu = false; newFolder = true })
                                 DropdownMenuItem(text = { Text("PDF içe aktar") }, onClick = { menu = false; importPdf() })
@@ -249,7 +252,16 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                         }
                     }
-                    if (fs.isEmpty() && ds.isEmpty()) fullWidth { Hint("Sonuç yok") }
+                    val ts = if (inLinked) emptyList() else vm.textNotes.filter {
+                        it.title.lowercase(TR).contains(query) || it.body.lowercase(TR).contains(query)
+                    }
+                    if (ts.isNotEmpty()) {
+                        fullWidth { SectionTitle("Yazılı notlar") }
+                        items(ts, key = { "sn" + it.id }) { n ->
+                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, onLongClick = { deletingText = n })
+                        }
+                    }
+                    if (fs.isEmpty() && ds.isEmpty() && ts.isEmpty()) fullWidth { Hint("Sonuç yok") }
                 } else if (inLinked) {
                     val listing = vm.listing
                     items(listing.folders, key = { "f" + it.documentId }) { f ->
@@ -323,6 +335,12 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             UserFolderCard(f, countIn(f), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
                         }
                     }
+                    if (folder == null && tag == null && vm.textNotes.isNotEmpty()) {
+                        fullWidth { SectionTitle("Yazılı notlar") }
+                        items(vm.textNotes, key = { "n" + it.id }) { n ->
+                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, onLongClick = { deletingText = n })
+                        }
+                    }
                     val docs = if (tag != null) emptyList() else vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
                     if (docs.isNotEmpty()) {
                         fullWidth { SectionTitle("Belgeler") }
@@ -353,7 +371,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             )
                         }
                     }
-                    if (tag == null && folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty()) {
+                    if (tag == null && folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty() && vm.textNotes.isEmpty()) {
                         fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder, onNewNotebook = { newNotebook = true }) }
                     } else if (folder != null && subfolders.isEmpty() && docs.isEmpty()) {
                         fullWidth {
@@ -464,6 +482,15 @@ fun LibraryScreen(vm: LibraryViewModel) {
             text = { Text("\"${doc.title}\" ve üzerindeki notlar kalıcı olarak silinecek.") },
             confirmButton = { TextButton(onClick = { vm.deleteOrphan(doc); deletingOrphan = null }) { Text("Sil") } },
             dismissButton = { TextButton(onClick = { deletingOrphan = null }) { Text("Vazgeç") } },
+        )
+    }
+    deletingText?.let { n ->
+        AlertDialog(
+            onDismissRequest = { deletingText = null },
+            title = { Text("Not silinsin mi?") },
+            text = { Text("\"${n.displayTitle}\" kalıcı olarak silinecek.") },
+            confirmButton = { TextButton(onClick = { vm.deleteTextNote(n); deletingText = null }) { Text("Sil") } },
+            dismissButton = { TextButton(onClick = { deletingText = null }) { Text("Vazgeç") } },
         )
     }
     unlinking?.let { f ->

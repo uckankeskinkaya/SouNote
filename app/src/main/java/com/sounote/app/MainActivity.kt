@@ -23,6 +23,7 @@ import androidx.core.content.IntentCompat
 import com.sounote.app.ui.LockScreen
 import com.sounote.app.ui.MainShell
 import com.sounote.app.ui.OnboardingScreen
+import com.sounote.app.ui.TextNoteScreen
 import com.sounote.app.ui.SouNoteTheme
 import com.sounote.app.ui.ViewerScreen
 
@@ -163,6 +164,10 @@ private fun SouNoteApp(vm: LibraryViewModel) {
         key(doc.id, vm.docVersion) {
             ViewerScreen(doc, vm)
         }
+    } else if (vm.openText != null) {
+        val text = vm.openText!!
+        BackHandler { vm.closeTextNote() }
+        key(text.id) { TextNoteScreen(text, vm) }
     } else if (!vm.onboarded) {
         OnboardingScreen(vm)
     } else {

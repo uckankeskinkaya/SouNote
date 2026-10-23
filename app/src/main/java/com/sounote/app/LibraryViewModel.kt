@@ -1373,6 +1373,67 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     /** Notlu PDF'i oluşturur; [onReady] dosyayla çağrılır (paylaşmak ya da kaydetmek için). */
+    /** Belgeyi notlarıyla .sounote paketi yapar (arkadaşına göndermek için). */
+    fun sharePackage(doc: DocRef, onReady: (File) -> Unit) {
+        if (exporting) return
+        viewModelScope.launch {
+            exporting = true
+            saveJob?.cancel()
+            flushInk()
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val source = repo.resolveForOpen(doc).uri
+                    val dir = File(app.cacheDir, "exports").apply { mkdirs() }
+                    dir.listFiles()?.forEach { it.delete() }
+                    val name = doc.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80)
+                    val target = File(dir, "$name.${com.sounote.app.data.SouNotePackage.EXTENSION}")
+                    val pdf = app.contentResolver.openInputStream(source) ?: throw java.io.IOException("PDF açılamadı")
+                    com.sounote.app.data.SouNotePackage.write(pdf, File(app.filesDir, "ink/${doc.id}"), doc.title, target)
+                    target
+                }
+            }
+            exporting = false
+            result.onSuccess(onReady).onFailure {
+                ErrorLog.record("Paket hazırlanamadı", it)
+                message = "Paket hazırlanamadı: ${it.message ?: it.javaClass.simpleName}"
+            }
+        }
+    }
+
+    /** Dışarıdan gelen dosya: SouNote paketiyse notlarıyla, değilse PDF olarak içe aktarılır. */
+    fun importShared(uri: Uri) {
+        val app = getApplication<Application>()
+        val name = runCatching {
+            app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
+                if (it.moveToFirst()) it.getString(0) else null
+            }
+        }.getOrNull()
+        if (!com.sounote.app.data.SouNotePackage.looksLikePackage(app, uri, name)) {
+            importPdfs(listOf(uri), openAfter = true)
+            return
+        }
+        viewModelScope.launch {
+            busy = true
+            val folder = currentFolder
+            val r = withContext(Dispatchers.IO) {
+                runCatching {
+                    com.sounote.app.data.SouNotePackage.read(app, uri, { title, write -> repo.createDocument(title, folder, write) }, { it.id })
+                }
+            }
+            busy = false
+            imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+            r.onSuccess { doc ->
+                message = "\"${doc.title}\" notlarıyla eklendi"
+                path = emptyList()
+                open(doc)
+            }.onFailure {
+                ErrorLog.record("Paket açılamadı", it)
+                message = it.message ?: "Paket açılamadı"
+            }
+        }
+    }
+
     fun export(doc: DocRef, pages: Set<Int>? = null, label: String = "", onReady: (File) -> Unit) {
         if (exporting) return
         viewModelScope.launch {

@@ -219,6 +219,10 @@ fun LibraryScreen(vm: LibraryViewModel) {
                 DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
                 DropdownMenuItem(text = { Text("Klasöre taşı") }, onClick = { dismiss(); movingDoc = doc })
                 DropdownMenuItem(text = { Text("Etiketler") }, onClick = { dismiss(); taggingDoc = doc })
+                DropdownMenuItem(
+                    text = { Text("SouNote'lu arkadaşa gönder") },
+                    onClick = { dismiss(); vm.sharePackage(doc) { sharePackageFile(context, it) } },
+                )
                 DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deleting = doc })
             }
             val folderMenu: @Composable (UserFolder, () -> Unit) -> Unit = { f, dismiss ->

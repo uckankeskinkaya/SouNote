@@ -582,6 +582,18 @@ internal fun sharePdfFile(context: android.content.Context, file: java.io.File) 
     context.startActivity(Intent.createChooser(send, "PDF'i paylaş"))
 }
 
+/** SouNote paketini (notlu belge) paylaşır: arkadaşın SouNote ile açınca notlar düzenlenebilir gelir. */
+internal fun sharePackageFile(context: android.content.Context, file: java.io.File) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "application/octet-stream"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        putExtra(Intent.EXTRA_TEXT, "SouNote ile aç: notlarımla birlikte gelir 📒")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(send, "Notlu belgeyi gönder"))
+}
+
 /** Yazılı not kartına basılı tutunca: aç, sabitle, paylaş, deftere çevir, sil. */
 @Composable
 internal fun TextNoteMenuItems(note: TextNote, vm: LibraryViewModel, dismiss: () -> Unit, onDelete: () -> Unit) {

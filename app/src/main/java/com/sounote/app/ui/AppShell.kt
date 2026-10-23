@@ -81,7 +81,8 @@ private fun TabLabel(label: String) {
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Clip,
-        style = MaterialTheme.typography.labelMedium.copy(fontSize = (12f / maxOf(1f, scale / 1.1f)).sp),
+        // Büyük yazı ayarında da 5 sekme sığsın: en fazla ~12 birim
+        style = MaterialTheme.typography.labelMedium.copy(fontSize = (if (scale > 1.05f) 12f / scale else 12f).sp),
     )
 }
 

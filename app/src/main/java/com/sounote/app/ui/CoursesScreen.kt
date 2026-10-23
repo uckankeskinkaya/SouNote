@@ -47,6 +47,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -133,11 +136,13 @@ private fun EmptyCatalog(vm: LibraryViewModel) {
 private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Course) -> Unit) {
     val now = System.currentTimeMillis()
     val upcoming = vm.allExams.filter { it.time > now }
+    val narrow = LocalConfiguration.current.screenWidthDp < 600
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(170.dp),
-        contentPadding = PaddingValues(20.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        // Telefonda da iki sütun kalsın (tek sütunda kartlar dev oluyordu).
+        columns = GridCells.Adaptive(150.dp),
+        contentPadding = PaddingValues(if (narrow) 12.dp else 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (narrow) 10.dp else 16.dp),
+        verticalArrangement = Arrangement.spacedBy(if (narrow) 10.dp else 16.dp),
         modifier = Modifier.widthIn(max = 1100.dp).fillMaxSize(),
     ) {
         if (vm.catalog.termStart != 0L) {
@@ -290,9 +295,9 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
 
 @Composable
 private fun ViewSwitch(byWeek: Boolean, onTopics: () -> Unit, onWeeks: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        androidx.compose.material3.FilterChip(selected = !byWeek, onClick = onTopics, label = { Text("📚 Konulara göre") })
-        androidx.compose.material3.FilterChip(selected = byWeek, onClick = onWeeks, label = { Text("🗓️ Haftalara göre") })
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        androidx.compose.material3.FilterChip(selected = !byWeek, onClick = onTopics, label = { Text("📚 Konular", maxLines = 1) })
+        androidx.compose.material3.FilterChip(selected = byWeek, onClick = onWeeks, label = { Text("🗓️ Haftalar", maxLines = 1) })
     }
 }
 

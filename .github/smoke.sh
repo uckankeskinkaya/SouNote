@@ -26,7 +26,7 @@ PY
 tap() {
   for k in 1 2 3; do
     xy=$(find_xy "$1"); if [ -n "$xy" ]; then adb shell input tap $xy; sleep 0.7; return 0; fi
-    adb shell input swipe 540 1600 540 800 200; sleep 0.5
+    adb shell input swipe 540 1600 540 800 200; sleep 1.2
   done
   echo "bulunamadı: $1"
 }

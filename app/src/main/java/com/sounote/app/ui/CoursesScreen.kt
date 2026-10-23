@@ -263,13 +263,7 @@ private fun TopicCard(
 
 @Composable
 private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res: Resource, onOpenLink: (Resource) -> Unit) {
-    val icon = when (res.kind) {
-        "pdf" -> "📄"
-        "pptx" -> "📊"
-        "docx" -> "📝"
-        "video" -> "🎬"
-        else -> "🔗"
-    }
+    val icon = kindIcon(res.kind)
     val local = vm.downloadedDoc(course, res)
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -312,6 +306,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
     val lastWeek = maxOf(
         exams.maxOfOrNull { catalog.weekOf(it.time) } ?: 0,
         resources.maxOfOrNull { it.third.week } ?: 0,
+        catalog.weekItems.maxOfOrNull { it.week } ?: 0,
     )
     val current = catalog.weekOf(System.currentTimeMillis())
     val fmt = remember { java.text.SimpleDateFormat("d MMM", java.util.Locale.forLanguageTag("tr")) }
@@ -329,6 +324,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
             val start = catalog.weekStart(week)
             val weekExams = exams.filter { catalog.weekOf(it.time) == week }
             val weekRes = resources.filter { it.third.week == week }
+            val weekMissing = catalog.weekItems.filter { it.week == week }
             val isNow = week == current
             Column(
                 Modifier
@@ -356,12 +352,42 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                         fontWeight = FontWeight.SemiBold,
                     )
                 }
-                weekRes.forEach { (c, t, r) ->
-                    ResourceRow(vm, c, t, r) { res ->
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                // Gün gün: Pazartesi … Cuma, sonra kendi çalışman
+                for (day in listOf(1, 2, 3, 4, 5, 0)) {
+                    val rows = weekRes.filter { it.third.day == day }.map { it.third.order to it } +
+                        weekMissing.filter { it.day == day }.map { it.order to it }
+                    if (rows.isEmpty()) continue
+                    Text(
+                        DAY_NAMES[day],
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                    rows.sortedBy { it.first }.forEach { (_, item) ->
+                        if (item is Triple<*, *, *>) {
+                            @Suppress("UNCHECKED_CAST")
+                            val (c, t, r) = item as Triple<Course, Topic, Resource>
+                            ResourceRow(vm, c, t, r) { res ->
+                                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                            }
+                        } else if (item is com.sounote.app.data.WeekItem) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                            ) {
+                                Text(kindIcon(item.kind), fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
+                                Text(
+                                    item.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                                )
+                                Text("Drive'da yok", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                            }
+                        }
                     }
                 }
-                if (weekExams.isEmpty() && weekRes.isEmpty()) {
+                if (weekExams.isEmpty() && weekRes.isEmpty() && weekMissing.isEmpty()) {
                     Text("Bu hafta için kayıt yok", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -376,4 +402,18 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
             }
         }
     }
+}
+
+private val DAY_NAMES = mapOf(
+    1 to "Pazartesi", 2 to "Salı", 3 to "Çarşamba", 4 to "Perşembe", 5 to "Cuma", 0 to "Kendi çalışman (self-study)",
+)
+
+private fun kindIcon(kind: String) = when (kind) {
+    "pdf" -> "📄"
+    "pptx" -> "📊"
+    "docx" -> "📝"
+    "video" -> "🎬"
+    "audio" -> "🎧"
+    "html" -> "🧪"
+    else -> "🔗"
 }

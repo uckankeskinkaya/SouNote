@@ -8,6 +8,7 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1IOzRZxl7kWKB8k0I8GRaLhFUORmU7s8K|Reading practice|pdf
 1s8UchG_rfp8vsoVz8Vvzbftx7AaA_zJc|Opinion essay peer evaluation checklist|docx
 1kMuFR99gekyniwUVy6Z3qG_yLdxSGJXX|Relative clauses context|pdf
+1c-C_lOjDPiy5E3kjmW4Ykw72sYkUaGW_|Relative clauses context (Word)|docx
 1LZt5GhZ8G1Z4D0S0rcpGS0XdwOM-rtrX|Present Perfect Simple vs Present Perfect Progressive|docx
 13yxe2AvpNjT1QpD3C6Px0RzS8cNc2zUZ|TELL ME MORE (Perfect speaking)|pdf
 1nW5e-cO0DiRfwcCSlR4L-jKH7GrfC77v|Past simple vs present perfect|pdf
@@ -100,7 +101,7 @@ courses = [
    {"id":"narrative","name":"Narrative Tenses","resources":R("HANDOUT 1 (Narrative Tenses)","HANDOUT 2 (Narrative Tenses - Rewrite)","Narrative tenses","Past perfect vs past simple exercises")},
    {"id":"perfect","name":"Present Perfect & Continuous / Past Simple","resources":R("PPT (Present Perfect Continuous)","HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)","ACTIVITY HANDOUT (Present Perfect Continuous board game)","Past simple vs present perfect","Present Perfect Simple vs Present Perfect Progressive","Simple vs progressive chart","Stative verbs")},
    {"id":"verbpatterns","name":"Verb Patterns","resources":R("PPT (Verb Patterns)","HANDOUT (Verb Patterns)","ACTIVITY HANDOUT 1 (Verb Patterns)","ACTIVITY HANDOUT 2 (Verb Patterns)","Gerund / infinitive verbs list")},
-   {"id":"relative","name":"Relative Clauses","resources":R("PPT (Relative Clauses)","PPT (V-ing / to infinitive with Relative Clauses)","HANDOUT (Relative Clauses - Rewrite)","ACTIVITY HANDOUT (Relative Clauses board game)","Relative clauses context")},
+   {"id":"relative","name":"Relative Clauses","resources":R("PPT (Relative Clauses)","PPT (V-ing / to infinitive with Relative Clauses)","HANDOUT (Relative Clauses - Rewrite)","ACTIVITY HANDOUT (Relative Clauses board game)","Relative clauses context","Relative clauses context (Word)")},
    {"id":"conditionals","name":"Conditional Structures","resources":R("PPT (Conditional Structures)","HANDOUT 1 (Conditional Structures)","HANDOUT 2 (Rewrite Conditional Structures)")},
    {"id":"modals","name":"Necessity, Obligation, Permission","resources":R("PPT (Necessity, Obligation, Permission)","ACTIVITY HANDOUT (Necessity, Obligation, Permission)")},
    {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)")},
@@ -142,6 +143,46 @@ courses = [
    {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)")},
  ]},
 ]
+# ---- Haftalık program (Harmanlanmış Eğitim, L4 Fall). gün: 1=Pzt … 5=Cuma, 0=kendi çalışman (self-study) ----
+# Drive'da olan dosyalar başlığıyla, olmayanlar ("!" ile) sadece listede görünür.
+WEEKS = {
+ 1: [(0,"Stative verbs"),(0,"Simple vs progressive chart"),(0,"Knowing a word"),
+     (0,"!tense-review-1|pdf"),(0,"!common mistakes in writing|pdf"),(0,"!Knowing a word worksheet|docx")],
+ 2: [(1,"Activity handout video"),(1,"ACTIVITY HANDOUT (Video)"),(1,"HANDOUT (Vocabulary B1+ U1A)"),(1,"!HANDOUT 1 (Narrative Tenses) Listening PART I|audio"),
+     (1,"HANDOUT 1 (Narrative Tenses)"),(1,"HANDOUT 2 (Narrative Tenses - Rewrite)"),(1,"!Narrative Tenses|pptx"),(1,"PPT SPEAKING (Talking about Yourself)"),
+     (2,"HANDOUT (Reading)"),(2,"!Introduction to Academic Writing|pptx"),(2,"PPT (From Opinion Paragraph to Opinion Essay)"),(2,"WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)"),
+     (3,"ACTIVITY HANDOUT 1 (Verb Patterns)"),(3,"ACTIVITY HANDOUT 2 (Verb Patterns)"),(3,"HANDOUT (Verb Patterns)"),(3,"PPT (Verb Patterns)"),(3,"!Video - Verb Patterns|video"),
+     (4,"HANDOUT (Vocabulary and How to)"),(4,"PPT (except for, apart from, not even)"),
+     (5,"INTEGRATED HANDOUT (The Hoarding Habit)"),(5,"!Listening Track|audio"),(5,"Video 1 - The Hoarding Habit"),(5,"Video 2 - Hoarder Denise's House Tour"),
+     (0,"Narrative tenses"),(0,"Past perfect vs past simple exercises"),(0,"!Past perfect tense - explanation|link"),(0,"!GERUNDS and INFINITIVES (7 verbs)|pdf"),(0,"Gerund / infinitive verbs list")],
+ 3: [(1,"ACTIVITY HANDOUT (Present Perfect Continuous board game)"),(1,"HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)"),(1,"PPT (Present Perfect Continuous)"),
+     (2,"INTEGRATED HANDOUT (The New Normal)"),(2,"Video (Activity)"),
+     (3,"INTEGRATED HANDOUT (Habits)"),(3,"PPT SPEAKING (Habits)"),(3,"WRITING HANDOUT (Opinion Essay Linkers)"),
+     (4,"ACTIVITY HANDOUT (Relative Clauses board game)"),(4,"HANDOUT (Relative Clauses - Rewrite)"),(4,"PPT (Relative Clauses)"),(4,"PPT (V-ing / to infinitive with Relative Clauses)"),
+     (5,"!ARE YOU A PEOPLE PLEASER - QUIZ|pdf"),(5,"HANDOUT (Vocabulary 2A B)"),(5,"!people_pleaser_quiz|html"),(5,"PPT (Reading Strategies I - Introduction)"),
+     (0,"Past simple vs present perfect"),(0,"Present Perfect Simple vs Present Perfect Progressive"),(0,"TELL ME MORE (Perfect speaking)"),
+     (0,"Relative clauses context (Word)"),(0,"Relative clauses context"),(0,"!Reading comprehension|pdf")],
+ 4: [(1,"HANDOUT (Vocabulary How to Activity B1+ U2C)"),(1,"!PET HATES - QUIZ|pdf"),(1,"PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)"),(1,"PPT SPEAKING (Pet Hates)"),
+     (2,"HANDOUT (Vocabulary B1+ U2D)"),(2,"INTEGRATED HANDOUT (Big Changes in History)"),(2,"!Top 10 Historical Events That Changed the World|video"),
+     (3,"!Reading Speaking Activity (Stereotypes)|pdf"),(3,"WRITING HANDOUT (Introductory Paragraph)"),
+     (4,"!Reading Speaking Activity|pdf"),(4,"WRITING HANDOUT (Body Paragraphs)"),
+     (5,"!Opinion Essay Rating Scale Scoring Guideline|pdf"),(5,"WRITING HANDOUT (Concluding Paragraph)"),(5,"WRITING HANDOUT (Points to Notice)")],
+}
+byTitle={}
+for c in courses:
+    for t in c["topics"]:
+        for r in t["resources"]: byTitle[r["title"]]=r
+weekItems=[]
+for w,items in WEEKS.items():
+    for order,(day,title) in enumerate(items):
+        if title.startswith("!"):
+            name,kind=title[1:].split("|")
+            weekItems.append({"week":w,"day":day,"title":name,"kind":kind,"order":order})
+        else:
+            r=byTitle[title]  # yoksa KeyError: başlığı düzelt
+            assert "week" not in r, title
+            r["week"]=w; r["day"]=day; r["order"]=order
+
 missing=set(F)-used
 assert not missing, missing
 
@@ -185,7 +226,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-23b","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
-     "courses":courses,"exams":exams}
+cat={"updated":"2026-10-23c","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+     "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

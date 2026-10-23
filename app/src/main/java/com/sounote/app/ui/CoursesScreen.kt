@@ -170,7 +170,7 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
                     .padding(16.dp),
             ) {
                 Text(c.emoji, fontSize = 36.sp)
-                Text(c.name, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(c.name, color = Color.White, style = if (narrow) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
                     "${c.topics.size} konu · ${c.topics.sumOf { it.resources.size }} kaynak",
                     color = Color.White.copy(alpha = 0.85f),

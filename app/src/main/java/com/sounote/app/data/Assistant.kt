@@ -57,8 +57,17 @@ class TermsNotAcceptedException(message: String) : IOException(message)
 data class ChatMessage(val role: String, val content: String)
 
 object AssistantClient {
-    /** /chat/completions çağrısı; cevabın metnini döndürür. */
-    fun chat(config: AssistantConfig, messages: List<ChatMessage>): String {
+    /** /chat/completions çağrısı; cevabın metnini döndürür. Evren 429'da birkaç saniye bekletir: bir kez tekrar denenir. */
+    fun chat(config: AssistantConfig, messages: List<ChatMessage>): String =
+        try {
+            chatOnce(config, messages)
+        } catch (e: IOException) {
+            if (e is TermsNotAcceptedException || e.message?.contains("HTTP 429") != true) throw e
+            Thread.sleep(5_000)
+            chatOnce(config, messages)
+        }
+
+    private fun chatOnce(config: AssistantConfig, messages: List<ChatMessage>): String {
         val base = config.baseUrl.trim().trimEnd('/')
         val url = if (base.endsWith("/chat/completions")) base else "$base/chat/completions"
         val body = JSONObject()
@@ -81,9 +90,10 @@ object AssistantClient {
                 if (code == 403 && text.contains("terms_not_accepted")) throw TermsNotAcceptedException(msg ?: "Kullanım şartları onaylanmamış")
                 throw IOException(
                     when (code) {
-                        401, 403 -> "Anahtar geçersiz ya da yetkisiz (HTTP $code)"
+                        401 -> "Anahtar yanlış ya da iptal edilmiş. Evren → API Anahtarları'ndan yeni anahtar oluşturup asistan ayarlarına yapıştır (HTTP 401)"
+                        403 -> "Bu anahtarın erişim izni yok (HTTP 403)"
                         404 -> "Adres ya da model bulunamadı (HTTP 404)"
-                        429 -> "Çok fazla istek ya da kota doldu (HTTP 429)"
+                        429 -> "Evren şu an yoğun ya da günlük kullanım sınırın doldu. Biraz bekleyip tekrar dene (HTTP 429)"
                         else -> "Servis hatası (HTTP $code)"
                     } + (msg?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""),
                 )

@@ -122,6 +122,11 @@ Katalog ayrı kanal: "catalog" etiketli release'in catalog.json'u her derlemede 
 Eklendi (🧪, build-62+): Bugünkü tekrar (vm.dueCards/reviewAny, ana sayfa kartı), Writing pratiği (Essays.kt, EssayStore filesDir/essays yedeğe girer,
 AssistantClient.gradeEssay JSON 5 ölçüt × 20, WritingScreen: liste → konu → süreli editör → değerlendirme).
 
+Eklendi (🧪, build-84+): asistan kurulum rehberi (ui/AssistantSetup.kt: Evren'i aç → evren.ssyz.org.tr/api-keys, e-Devlet, anahtar yapıştır,
+"Kaydet ve dene"; Evren 1 Kasım 2026'ya kadar ücretsiz, günlük kota; 429'da 5 sn bekleyip bir kez yeniden dener), çalışma serisi
+(prefs activeDays StringSet + bestStreak; belgede 5 dk, kart tekrarı, Writing, haftalık liste işareti, yazılı not günü sayar; ana sayfa Hero + WeekCard),
+sitede Play Protect uyarısı + VirusTotal (APK digest'iyle rapor bağlantısı), arkadaşla paylaş metninde aynı uyarı.
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·

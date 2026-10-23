@@ -221,6 +221,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Değiştiyse kaydeder; başlık ve metin boşsa not silinir. */
     fun saveTextNote(id: String, title: String, body: String) {
         if (id in deletedTextIds) return
+        if (body.isNotBlank()) markActive()
         val old = textNotes.find { it.id == id } ?: openText?.takeIf { it.id == id }
         val stored = textNotes.any { it.id == id }
         if (title.isBlank() && body.isBlank()) {
@@ -315,6 +316,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun saveEssay(e: com.sounote.app.data.Essay) {
+        if (e.text.isNotBlank()) markActive()
         essays = (listOf(e) + essays.filter { it.id != e.id }).sortedByDescending { it.updated }
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { essayStore.save(e) }.onFailure { ErrorLog.record("Yazı kaydedilemedi", it) }
@@ -348,6 +350,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     fun toggleDone(key: String) {
+        if (key !in doneItems) markActive()
         doneItems = if (key in doneItems) doneItems - key else doneItems + key
         prefs.edit().putStringSet("weekDone", doneItems).apply()
     }
@@ -702,6 +705,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putLong("study_$id", studyTime(id) + ms)
             .putLong("studyday_$day", prefs.getLong("studyday_$day", 0L) + ms)
             .apply()
+        if (prefs.getLong("studyday_$day", 0L) >= STREAK_MIN_STUDY) markActive()
         ExamWidget.updateAll(getApplication())
     }
 
@@ -718,6 +722,55 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun dayKey(t: Long) = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(java.util.Date(t))
+
+    // ---- Çalışma serisi ----
+
+    /**
+     * Çalışılan günler (yyyy-MM-dd). Bir gün sayılır: belgede 5 dk çalışma, kart tekrarı, Writing, haftalık listeden
+     * işaretleme ya da yazılı not. Önceki sürümlerden kalan çalışma süreleri de (5 dk ve üstü) sayılır.
+     */
+    var activeDays by mutableStateOf(loadActiveDays())
+        private set
+
+    private fun loadActiveDays(): Set<String> {
+        val saved = prefs.getStringSet("activeDays", emptySet())!!.toSet()
+        val fromStudy = prefs.all.filter { (k, v) -> k.startsWith("studyday_") && (v as? Long ?: 0L) >= STREAK_MIN_STUDY }
+            .keys.map { it.removePrefix("studyday_") }
+        return saved + fromStudy
+    }
+
+    /** Bugünü çalışılmış say; seri 3, 7, 14, 30… güne ulaşınca kutlar. */
+    fun markActive() {
+        val today = dayKey(System.currentTimeMillis())
+        if (today in activeDays) return
+        // Bir yıldan eskileri tutma (yyyy-MM-dd metin olarak da sıralanır).
+        val oldest = dayKey(System.currentTimeMillis() - 400L * 24 * 60 * 60 * 1000)
+        activeDays = (activeDays + today).filter { it >= oldest }.toSet()
+        val s = streak
+        prefs.edit()
+            .putStringSet("activeDays", activeDays)
+            .putInt("bestStreak", maxOf(prefs.getInt("bestStreak", 0), s))
+            .apply()
+        if (s in STREAK_MILESTONES) showMessage("🔥 $s günlük seri! Böyle devam")
+    }
+
+    val activeToday: Boolean get() = dayKey(System.currentTimeMillis()) in activeDays
+
+    fun isActiveDay(t: Long) = dayKey(t) in activeDays
+
+    /** Bugün (ya da bugün henüz çalışılmadıysa dün) biten, art arda çalışılan gün sayısı. */
+    val streak: Int
+        get() {
+            val dayMs = 24L * 60 * 60 * 1000
+            val now = System.currentTimeMillis()
+            val days = activeDays
+            var i = if (dayKey(now) in days) 0 else 1
+            var n = 0
+            while (dayKey(now - i * dayMs) in days) { n++; i++ }
+            return n
+        }
+
+    val bestStreak: Int get() = maxOf(prefs.getInt("bestStreak", 0), streak)
 
     // ---- Pomodoro ----
 
@@ -956,6 +1009,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun reviewCard(doc: DocRef, card: Card, known: Boolean) {
+        markActive()
         val updated = Flashcards.review(card, known)
         saveCards(doc, cards.map { if (it.id == card.id) updated else it })
     }
@@ -979,6 +1033,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Herhangi bir belgenin kartını değerlendirir (belge açık olmasa da). */
     fun reviewAny(doc: DocRef, card: Card, known: Boolean) {
+        markActive()
         if (openDoc?.id == doc.id) {
             reviewCard(doc, card, known)
         } else {
@@ -1847,5 +1902,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
         const val TRASH_DAYS = 30
         const val LOCK_AFTER_MS = 60_000L
+        /** Belgede bu kadar çalışılan gün seriye sayılır. */
+        private const val STREAK_MIN_STUDY = 5L * 60 * 1000
+        private val STREAK_MILESTONES = setOf(3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365)
     }
 }

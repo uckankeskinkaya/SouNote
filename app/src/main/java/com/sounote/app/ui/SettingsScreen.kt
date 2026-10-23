@@ -70,6 +70,7 @@ private val TR = Locale.forLanguageTag("tr")
 
 /** Arkadaşlara gönderilen indirme bağlantısı: her zaman en yeni sürüm. */
 private const val DOWNLOAD_URL = "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk"
+private const val SITE_URL = "https://uckankeskinkaya.github.io/SouNote/"
 
 /** Hata raporunu paylaşma penceresi (ayarlar ve çökme sonrası). */
 internal fun shareErrorReport(context: Context) {
@@ -109,9 +110,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
             type = "text/plain"
             putExtra(
                 Intent.EXTRA_TEXT,
-                "SouNote: PDF'lerin üstüne kalemle not alma uygulaması.\n" +
-                    "İndir (Android): $DOWNLOAD_URL\n" +
-                    "Kurarken \"bilinmeyen kaynaklardan yüklemeye izin ver\" demen gerekebilir.",
+                "SouNote: L4 hazırlık için ders notu, haftalık kaynak ve sınav uygulaması.\n" +
+                    "Kurulum ve tanıtım: $SITE_URL\n" +
+                    "Doğrudan indir (Android): $DOWNLOAD_URL\n\n" +
+                    "Play Store'da olmadığı için telefon \"bilinmeyen uygulama\" ya da Play Protect uyarısı verebilir; " +
+                    "\"Yine de yükle\" demen yeterli. İçin rahat etsin istersen APK'yı virustotal.com'a yükleyip taratabilirsin.",
             )
         }
         context.startActivity(Intent.createChooser(send, "SouNote'u paylaş"))

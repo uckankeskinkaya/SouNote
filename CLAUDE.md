@@ -107,6 +107,11 @@ CI (build.yml): build → release (test beklemeden, ~4 dk) ve paralel smoke (em�
 rollback işi sürümü ön sürüme çeker. Gradle cache-read-only: false. Derleme sırasında dal ilerlediyse release atlanır (GITHUB_TOKEN eski commit'e
 etiket koyamıyor: "workflows" izni ister). Smoke ekran görüntüleri "screenshots" dalına itilir.
 İndirme sayfası docs/index.html (+ docs/img), GitHub Pages: Settings → Pages → main /docs (kullanıcı açmalı). README yenilendi.
+KURAL (kullanıcı istedi): her yeni özellikte docs/index.html "Neler yapabilirsin?" kartlarına ve README özellik tablosuna ekle.
+Sitenin "Yenilikler" bölümü GitHub release notlarını kendisi çeker (commit mesajının ilk satırı başlık); kullanıcıya dönük commit mesajları yaz,
+teknik olanları "CI:", "Geçici", "Notlar", "Derleme düzeltmesi" ile başlat (sitede gizlenir). Site main dalından yayınlanır: değişiklikler main'e girince güncellenir.
+Eklendi (🧪, build-62+): Bugünkü tekrar (vm.dueCards/reviewAny, ana sayfa kartı), Writing pratiği (Essays.kt, EssayStore filesDir/essays yedeğe girer,
+AssistantClient.gradeEssay JSON 5 ölçüt × 20, WritingScreen: liste → konu → süreli editör → değerlendirme).
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

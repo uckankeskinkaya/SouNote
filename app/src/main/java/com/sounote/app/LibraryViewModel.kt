@@ -304,6 +304,33 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var remindersOn by mutableStateOf(ExamReminders.enabled(app))
         private set
+    /** Dersler ekranı haftalara göre mi (ana sayfadaki haftalık listeden de açılır). */
+    var coursesByWeek by mutableStateOf(false)
+
+    // ---- Haftalık liste: tamamlanan kaynaklar ----
+
+    var doneItems by mutableStateOf(prefs.getStringSet("weekDone", emptySet())!!.toSet())
+        private set
+
+    fun toggleDone(key: String) {
+        doneItems = if (key in doneItems) doneItems - key else doneItems + key
+        prefs.edit().putStringSet("weekDone", doneItems).apply()
+    }
+
+    /** Haftanın yapılacakları: (anahtar, başlık, tür) — kaynaklar ve Drive'da olmayanlar, gün sırasıyla. */
+    fun weekTasks(week: Int): List<Triple<String, String, String>> {
+        val c = catalog
+        val res = c.courses.flatMap { co -> co.topics.flatMap { it.resources } }.filter { it.week == week }
+            .map { Triple(it.day, it.order, Triple(doneKey(it), it.title, it.kind)) }
+        val missing = c.weekItems.filter { it.week == week }
+            .map { Triple(it.day, it.order, Triple(doneKey(it), it.title, it.kind)) }
+        // Pazartesi..Cuma (1–5), self-study (0) en sonda
+        return (res + missing).sortedWith(compareBy({ if (it.first == 0) 9 else it.first }, { it.second })).map { it.third }.distinctBy { it.first }
+    }
+
+    fun doneKey(r: com.sounote.app.data.Resource) = "r:" + r.url.ifBlank { r.week.toString() + ":" + r.title }
+    fun doneKey(w: com.sounote.app.data.WeekItem) = "w:${w.week}:${w.title}"
+
     /** Sınavlar ekranından bir konuya gidilince Dersler ekranında açılacak konu. */
     var focusTopic by mutableStateOf<String?>(null)
 

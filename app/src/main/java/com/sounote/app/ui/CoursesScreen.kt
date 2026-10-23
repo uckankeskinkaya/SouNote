@@ -2,6 +2,10 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.Checkbox
+import androidx.compose.animation.core.animateFloatAsState
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -69,7 +73,7 @@ import com.sounote.app.data.Topic
 fun CoursesScreen(vm: LibraryViewModel) {
     var selected by remember { mutableStateOf<String?>(null) }
     var expanded by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var byWeek by remember { mutableStateOf(false) }
+    var byWeek by vm::coursesByWeek
     val catalog = vm.catalog
     val course = catalog.courses.find { it.id == selected }
 
@@ -354,6 +358,22 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                         )
                         if (isNow) Text("Bu hafta", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     }
+                    val tasks = vm.weekTasks(week)
+                    if (tasks.isNotEmpty()) {
+                        val done = tasks.count { it.first in vm.doneItems }
+                        val progress by animateFloatAsState(done / tasks.size.toFloat(), label = "week")
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            )
+                            Text(
+                                if (done == tasks.size) "  Tamam 🎉" else "  $done/${tasks.size}",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
                     weekExams.forEach { e ->
                         Text(
                             "${e.kindEmoji} ${e.title} · ${countdownText(e.time)}",
@@ -377,14 +397,22 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                             if (item is Triple<*, *, *>) {
                                 @Suppress("UNCHECKED_CAST")
                                 val tr = item as Triple<Course, Topic, Resource>
-                                ResourceRow(vm, tr.first, tr.second, tr.third) { res ->
-                                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                                val key = vm.doneKey(tr.third)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = key in vm.doneItems, onCheckedChange = { vm.toggleDone(key) })
+                                    Box(Modifier.weight(1f).graphicsLayer { alpha = if (key in vm.doneItems) 0.55f else 1f }) {
+                                        ResourceRow(vm, tr.first, tr.second, tr.third) { res ->
+                                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(res.url))) }
+                                        }
+                                    }
                                 }
                             } else if (item is com.sounote.app.data.WeekItem) {
+                                val key = vm.doneKey(item)
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(end = 16.dp, top = 2.dp, bottom = 2.dp),
                                 ) {
+                                    Checkbox(checked = key in vm.doneItems, onCheckedChange = { vm.toggleDone(key) })
                                     Text(kindIcon(item.kind), fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
                                     Text(
                                         item.title,

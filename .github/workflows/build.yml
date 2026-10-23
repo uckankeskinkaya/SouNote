@@ -5,6 +5,7 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/workflows/probe.yml"
+      - "docs/**"
   workflow_dispatch:
 
 permissions:

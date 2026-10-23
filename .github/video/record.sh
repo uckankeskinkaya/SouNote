@@ -117,7 +117,7 @@ learn_home
 home_top
 rec 06-writing 16
 tap_home "Writing"; sleep 2.5; anim 0; tap "Opinion Essay"; sleep 2.5
-tap "Social media does more harm than good to young people. Do you agree?"; sleep 2
+tap "Social media does more*"; sleep 2.5
 anim 1
 adb shell input text "Nowadays%smany%syoung%speople%sspend%shours%son%ssocial%smedia.%sIn%smy%sopinion,%sit%sdoes%smore%sharm%sthan%sgood."
 sleep 3
@@ -126,15 +126,15 @@ adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE
 
 # 7) Ortalama
 home_top
-rec 07-ortalama 10
-tap_home "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 2; slow_scroll 1500 1000; sleep 2
+rec 07-ortalama 12
+tap_home "Ortalama"; sleep 3.5; anim 0; tap "Bu hesabı kur"; anim 1; sleep 2; slow_scroll 1500 1000; sleep 2
 stop 07-ortalama
 adb shell input keyevent KEYCODE_BACK; sleep 1
 
 # 8) Arama
 home_top
-rec 08-arama 8
-tap_home "Ara"; sleep 2; adb shell input text "not"; sleep 3
+rec 08-arama 10
+tap_home "Ara"; sleep 3.5; adb shell input text "not"; sleep 4
 stop 08-arama
 
 ls -la scenes

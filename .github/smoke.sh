@@ -31,6 +31,8 @@ tap() {
   echo "bulunamadı: $1"
 }
 back() { adb shell input keyevent KEYCODE_BACK; sleep 1; }
+# Uygulamayı öne getirir (geri tuşuyla kapanmışsa yeniden açar).
+app() { adb shell am start -n $P/.MainActivity >/dev/null; sleep 2; }
 
 # 1) Tanıtım
 adb shell am start -W -n $P/.MainActivity; shot 01-tanitim
@@ -45,15 +47,17 @@ adb shell input swipe 540 1700 540 500 300; shot 04-ana-asagi
 # 3) Hızlı not (belge ekranı), geri
 adb shell am start -a $P.QUICK_NOTE -n $P/.MainActivity; sleep 4; shot 05-defter
 adb shell input swipe 300 900 700 1200 400; sleep 1
-back; back
+back
 
-# 4) Yazılı not, asistan, arama
-tap "Ana sayfa"; tap "Yazılı not"; sleep 2; adb shell input text "deneme"; shot 06-yazili-not; back; back
-tap "Ana sayfa"; tap "Asistan"; sleep 2; shot 07-asistan; back
-tap "Ana sayfa"; tap "Ara"; sleep 2; adb shell input text "test"; sleep 2; shot 08-arama; back; back
-tap "Ana sayfa"; tap "Ortalama"; sleep 2; shot 09-ortalama; back
+# 4) Yazılı not, asistan, arama, ortalama (her birinden önce uygulama öne getirilir)
+app; tap "Ana sayfa"; tap "Yazılı not"; sleep 2; adb shell input text "deneme"; shot 06-yazili-not; back; back
+app; tap "Ana sayfa"; tap "Asistan"; sleep 2; shot 07-asistan; back
+app; tap "Ana sayfa"; tap "Ara"; sleep 3; adb shell input text "handout"; sleep 3; shot 08-arama; back; back
+app; tap "Ana sayfa"; tap "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 1; shot 09-ortalama; back
+app; tap "Sınavlar"; tap "Not ortalamam"; sleep 2; shot 09b-ortalama; back
 
 # 5) Hızlı geçişler + döndürme
+app
 for t in Kütüphane Dersler Sınavlar Ayarlar "Ana sayfa" Dersler; do tap "$t"; done
 adb shell settings put system accelerometer_rotation 0; adb shell settings put system user_rotation 1; sleep 3; shot 10-yatay
 adb shell settings put system user_rotation 0; sleep 2

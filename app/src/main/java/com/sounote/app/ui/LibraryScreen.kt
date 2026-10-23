@@ -85,6 +85,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -414,9 +416,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
     if (newFolder) {
         FolderDialog(
             initial = null,
-            onSave = { name, color ->
+            onSave = { name, color, icon ->
                 newFolder = false
-                vm.createFolder(name, color)
+                vm.createFolder(name, color, icon)
             },
             onDismiss = { newFolder = false },
         )
@@ -424,9 +426,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
     folderDialog?.let { f ->
         FolderDialog(
             initial = f,
-            onSave = { name, color ->
+            onSave = { name, color, icon ->
                 folderDialog = null
-                vm.updateFolder(f, name, color)
+                vm.updateFolder(f, name, color, icon)
             },
             onDismiss = { folderDialog = null },
         )
@@ -528,14 +530,31 @@ private fun UserFolderCard(
                 .fillMaxWidth()
                 .aspectRatio(0.75f)
                 .clip(CardShape)
-                .background(Color(folder.color)),
+                .background(
+                    androidx.compose.ui.graphics.Brush.linearGradient(
+                        listOf(Color(folder.color), Color(folder.color).copy(alpha = 0.75f).compositeOver(Color.Black)),
+                    ),
+                ),
         ) {
-            Icon(
-                painterResource(R.drawable.ic_folder),
-                contentDescription = null,
-                tint = Color.White.copy(alpha = 0.9f),
-                modifier = Modifier.size(72.dp),
-            )
+            if (folder.icon.isNotEmpty()) {
+                Text(folder.icon, fontSize = 56.sp)
+                Text(
+                    folder.name,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(10.dp),
+                )
+            } else {
+                Icon(
+                    painterResource(R.drawable.ic_folder),
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.size(72.dp),
+                )
+            }
             Text(
                 "$count",
                 color = Color.White,
@@ -550,9 +569,10 @@ private fun UserFolderCard(
 
 /** Yeni klasör ya da klasörü düzenle: ad + renk. */
 @Composable
-private fun FolderDialog(initial: UserFolder?, onSave: (String, Int) -> Unit, onDismiss: () -> Unit) {
+private fun FolderDialog(initial: UserFolder?, onSave: (String, Int, String) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf(initial?.name ?: "") }
     var color by remember { mutableStateOf(initial?.color ?: FOLDER_COLORS[0]) }
+    var icon by remember { mutableStateOf(initial?.icon ?: "") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "Yeni klasör" else "Klasörü düzenle") },
@@ -581,12 +601,40 @@ private fun FolderDialog(initial: UserFolder?, onSave: (String, Int) -> Unit, on
                         )
                     }
                 }
+                Text("Kapak", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                ) {
+                    FOLDER_ICONS.forEach { e ->
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (icon == e) Color(color).copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { icon = e },
+                        ) {
+                            if (e.isEmpty()) {
+                                Icon(painterResource(R.drawable.ic_folder), contentDescription = null, modifier = Modifier.size(20.dp))
+                            } else {
+                                Text(e, fontSize = 20.sp)
+                            }
+                        }
+                    }
+                }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(name, color) }) { Text("Kaydet") } },
+        confirmButton = { TextButton(onClick = { onSave(name, color, icon) }) { Text("Kaydet") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
 }
+
+/** Ders klasörü kapakları için emojiler ("" = klasör simgesi). */
+private val FOLDER_ICONS = listOf(
+    "", "📘", "📗", "📕", "📙", "🧮", "📐", "🧪", "🧬", "⚛️", "🌍", "📜", "🏛️", "⚖️",
+    "💻", "🎨", "🎵", "🗣️", "📊", "🩺", "✏️", "⭐",
+)
 
 /** Hedef klasör seçimi (ağaç görünümü). [exclude]: kendisi ve altı seçilemez (klasör taşırken). */
 @Composable

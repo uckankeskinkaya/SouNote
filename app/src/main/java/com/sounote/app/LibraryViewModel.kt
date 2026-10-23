@@ -28,6 +28,7 @@ import com.sounote.app.data.FolderRef
 import com.sounote.app.data.LibraryRepository
 import com.sounote.app.data.NaturalOrder
 import com.sounote.app.data.UserFolder
+import com.sounote.app.ui.ColorTheme
 import com.sounote.app.data.TextNote
 import com.sounote.app.data.TextNotePdf
 import com.sounote.app.data.TextNoteStore
@@ -114,6 +115,33 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun updateTheme(mode: ThemeMode) {
         themeMode = mode
         prefs.edit().putString("theme", mode.name).apply()
+    }
+
+    var colorTheme by mutableStateOf(enumValueOrNull<ColorTheme>(prefs.getString("colorTheme", null)) ?: ColorTheme.BLUE)
+        private set
+
+    fun updateColorTheme(c: ColorTheme) {
+        colorTheme = c
+        prefs.edit().putString("colorTheme", c.name).apply()
+    }
+
+    /** Yedeği oluşturup Drive'a (ya da seçilen uygulamaya) gönderir. */
+    fun backupToShare(onReady: (File) -> Unit) {
+        viewModelScope.launch {
+            busy = true
+            saveJob?.cancel()
+            flushInk()
+            val file = withContext(Dispatchers.IO) {
+                runCatching {
+                    val dir = File(getApplication<Application>().cacheDir, "exports").apply { mkdirs() }
+                    dir.listFiles { f -> f.name.startsWith("SouNote-yedek") }?.forEach { it.delete() }
+                    val date = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(java.util.Date())
+                    File(dir, "SouNote-yedek-$date.zip").also { f -> f.outputStream().use { Backup.write(getApplication(), it) } }
+                }.onFailure { ErrorLog.record("Yedeklenemedi", it) }.getOrNull()
+            }
+            busy = false
+            if (file != null) onReady(file) else message = "Yedeklenemedi"
+        }
     }
 
     // ---- Ana ekran: sekmeler, tanıtım, kullanıcı adı ----
@@ -408,8 +436,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         currentFolder = id
     }
 
-    fun createFolder(name: String, color: Int) = folderOp { repo.createFolder(name.trim().ifEmpty { "Klasör" }, currentFolder, color) }
-    fun updateFolder(f: UserFolder, name: String, color: Int) = folderOp { repo.updateFolder(f.id, name.trim().ifEmpty { f.name }, color) }
+    fun createFolder(name: String, color: Int, icon: String = "") =
+        folderOp { repo.createFolder(name.trim().ifEmpty { "Klasör" }, currentFolder, color, icon) }
+    fun updateFolder(f: UserFolder, name: String, color: Int, icon: String = f.icon) =
+        folderOp { repo.updateFolder(f.id, name.trim().ifEmpty { f.name }, color, icon) }
     fun deleteFolder(f: UserFolder) = folderOp { repo.deleteFolder(f.id) }
     fun moveDoc(doc: DocRef, folderId: String?) = folderOp { repo.moveDoc(doc.id, folderId) }
     fun moveFolder(f: UserFolder, parentId: String?) = folderOp { repo.moveFolder(f.id, parentId) }
@@ -1111,7 +1141,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     /** Notlu PDF'i oluşturur; [onReady] dosyayla çağrılır (paylaşmak ya da kaydetmek için). */
-    fun export(doc: DocRef, pages: IntRange? = null, onReady: (File) -> Unit) {
+    fun export(doc: DocRef, pages: Set<Int>? = null, label: String = "", onReady: (File) -> Unit) {
         if (exporting) return
         viewModelScope.launch {
             exporting = true
@@ -1126,9 +1156,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     dir.listFiles()?.forEach { it.delete() }
                     val name = doc.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80)
                     val suffix = when {
+                        label.isNotEmpty() -> " $label"
                         pages == null -> ""
-                        pages.first == pages.last -> " s${pages.first + 1}"
-                        else -> " s${pages.first + 1}-${pages.last + 1}"
+                        pages.size == 1 -> " s${pages.first() + 1}"
+                        else -> " s${pages.min() + 1}-${pages.max() + 1}"
                     }
                     val target = File(dir, "$name (notlu)$suffix.pdf")
                     PdfExporter.export(getApplication(), source, snapshot, store.imagesDir(doc.id), target, pages)

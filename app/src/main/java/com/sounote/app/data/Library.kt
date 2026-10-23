@@ -36,6 +36,8 @@ data class UserFolder(
     val name: String,
     val parentId: String?,
     val color: Int,
+    /** Kapakta gösterilen emoji (boşsa klasör simgesi). */
+    val icon: String = "",
 )
 
 /** Bağlı bir klasör ya da onun alt klasörü. */
@@ -65,7 +67,7 @@ class LibraryRepository(private val context: Context) {
         /** Çöp kutusuna atıldığı zaman; 0 = kütüphanede. */
         var deletedAt: Long = 0L,
     )
-    private class FolderEntry(val id: String, var name: String, var parentId: String?, var color: Int)
+    private class FolderEntry(val id: String, var name: String, var parentId: String?, var color: Int, var icon: String = "")
     private class LinkedEntry(val uri: String, val name: String)
 
     private val docsDir = File(context.filesDir, "docs").apply { mkdirs() }
@@ -111,20 +113,21 @@ class LibraryRepository(private val context: Context) {
     // ---- Kullanıcı klasörleri ----
 
     fun userFolders(): List<UserFolder> = synchronized(lock) {
-        userFolders.map { UserFolder(it.id, it.name, it.parentId, it.color) }
+        userFolders.map { UserFolder(it.id, it.name, it.parentId, it.color, it.icon) }
     }
 
-    fun createFolder(name: String, parentId: String?, color: Int): UserFolder = synchronized(lock) {
-        val e = FolderEntry(UUID.randomUUID().toString(), name, parentId, color)
+    fun createFolder(name: String, parentId: String?, color: Int, icon: String = ""): UserFolder = synchronized(lock) {
+        val e = FolderEntry(UUID.randomUUID().toString(), name, parentId, color, icon)
         userFolders += e
         save()
-        UserFolder(e.id, e.name, e.parentId, e.color)
+        UserFolder(e.id, e.name, e.parentId, e.color, e.icon)
     }
 
-    fun updateFolder(id: String, name: String, color: Int) = synchronized(lock) {
+    fun updateFolder(id: String, name: String, color: Int, icon: String) = synchronized(lock) {
         userFolders.find { it.id == id }?.let {
             it.name = name
             it.color = color
+            it.icon = icon
             save()
         }
     }
@@ -417,6 +420,7 @@ class LibraryRepository(private val context: Context) {
                     userFolders += FolderEntry(
                         o.getString("id"), o.getString("name"),
                         o.optString("parent").ifEmpty { null }, o.optInt("color", DEFAULT_FOLDER_COLOR),
+                        o.optString("icon"),
                     )
                 }
             }
@@ -441,7 +445,7 @@ class LibraryRepository(private val context: Context) {
         })
         json.put("userFolders", JSONArray().apply {
             userFolders.forEach {
-                put(JSONObject().put("id", it.id).put("name", it.name).put("parent", it.parentId ?: "").put("color", it.color))
+                put(JSONObject().put("id", it.id).put("name", it.name).put("parent", it.parentId ?: "").put("color", it.color).put("icon", it.icon))
             }
         })
         // Önce geçici dosyaya yaz, sonra değiştir: yazarken kapanırsa eski kayıt bozulmaz.

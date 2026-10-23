@@ -80,9 +80,10 @@ Drive dosyaları herkese açık değilse indirme/açma sadece sahibinde çalış
 
 
 ## Devam eden iş (sonraki oturum)
-- Drive düzeni: Drive "Ingilizce calismalar" klasörü (id 1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) içinde "Hafta 01 · 21-27 Eylül", "Hafta 02 · 28 Eylül-4 Ekim" …
-  alt klasörleri aç, tools/make_catalog.py içindeki WEEKS eşlemesine göre dosyaları taşı (update_file parentId; dosya kimliği değişmez, katalog bozulmaz).
-  Hafta 1 = 21 Eylül 2026 pazartesi. Önceki oturumda bağlayıcının yazma izni yoktu.
+- Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
+  Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·
+  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM.
+  Yeni hafta: klasör aç ("Hafta 06 · 26 Ekim-1 Kasım"), dosyaları taşı (update_file parentId), WEEKS'e ekle.
 - Kullanıcı her hafta Harmanlanmış Eğitim ekran görüntüsü atar (gün gün + self-study): WEEKS'e ekle, `python3 tools/make_catalog.py`, derle.
   Drive'da olmayanlar "!başlık|tür" olarak girer (uygulamada "Drive'da yok").
 - Katalog Drive'a da konabilir (SouNote-katalog.json, herkese açık) ve Catalog.kt REMOTE_URL ile uzaktan güncellenir; klasör herkese açık olmalı.

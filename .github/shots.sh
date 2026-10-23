@@ -17,7 +17,7 @@ t=sys.argv[1]
 for n in ET.parse('/tmp/u.xml').iter('node'):
     if n.get('text')==t or n.get('content-desc')==t:
         a=list(map(int,re.findall(r'\d+',n.get('bounds'))))
-        if a[3]>a[1] and a[1]>150 and a[3]<2150: print((a[0]+a[2])//2,(a[1]+a[3])//2);break
+        if a[3]>a[1] and a[1]>150 and a[3]<2390: print((a[0]+a[2])//2,(a[1]+a[3])//2);break
 PY
 }
 tap() { # metne göre dokun; görünmüyorsa aşağı kaydırıp ara

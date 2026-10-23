@@ -815,13 +815,13 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                     placeholder = { Text("Defter") },
                 )
                 Text("Sayfa", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PageTemplate.entries.forEach { t ->
                         FilterChip(selected = template == t, onClick = { template = t }, label = { Text(t.label) })
                     }
                 }
                 Text("Boyut", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaperSize.entries.forEach { p ->
                         FilterChip(selected = size == p, onClick = { size = p }, label = { Text(p.label) })
                     }
@@ -829,7 +829,7 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                     FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
                 }
                 Text("Kâğıt rengi", style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaperColor.entries.forEach { c ->
                         FilterChip(
                             selected = paper == c,

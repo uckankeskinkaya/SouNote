@@ -43,6 +43,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import com.sounote.app.ErrorLog
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.LibraryViewModel.Tab
@@ -65,6 +70,19 @@ private fun TabIcon(tab: Tab) {
         Tab.EXAMS -> Icon(Icons.Default.DateRange, contentDescription = null)
         Tab.SETTINGS -> Icon(Icons.Default.Settings, contentDescription = null)
     }
+}
+
+/** Sekme adı tek satır kalsın: büyük yazı boyutunda "Kütüpha-ne" diye bölünmesin. */
+@Composable
+private fun TabLabel(label: String) {
+    val scale = LocalDensity.current.fontScale
+    Text(
+        label,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Clip,
+        style = MaterialTheme.typography.labelMedium.copy(fontSize = (12f / maxOf(1f, scale / 1.1f)).sp),
+    )
 }
 
 /** Ana menü: tablette solda dikey çubuk, telefonda altta sekmeler. */
@@ -93,16 +111,21 @@ fun MainShell(vm: LibraryViewModel) {
         val wide = maxWidth >= 600.dp
         if (wide) {
             Row(Modifier.fillMaxSize()) {
+                // Yatay telefonda yükseklik az: logo gizlenir, sekmeler kaydırılabilir.
+                val tall = maxHeight >= 520.dp
                 NavigationRail(
-                    header = { AppLogo(44.dp, Modifier.padding(vertical = 16.dp), elevated = false) },
+                    header = if (tall) ({ AppLogo(44.dp, Modifier.padding(vertical = 16.dp), elevated = false) }) else null,
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(if (tall) 8.dp else 0.dp),
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                    ) {
                         TABS.forEach { (tab, label) ->
                             NavigationRailItem(
                                 selected = vm.tab == tab,
                                 onClick = { vm.tab = tab },
                                 icon = { TabIcon(tab) },
-                                label = { Text(label) },
+                                label = { TabLabel(label) },
                             )
                         }
                     }
@@ -118,7 +141,7 @@ fun MainShell(vm: LibraryViewModel) {
                                 selected = vm.tab == tab,
                                 onClick = { vm.tab = tab },
                                 icon = { TabIcon(tab) },
-                                label = { Text(label) },
+                                label = { TabLabel(label) },
                             )
                         }
                     }

@@ -162,7 +162,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun finishOnboarding() {
         onboarded = true
-        prefs.edit().putBoolean("onboarded", true).apply()
+        // Yeni kurulumda "Yenilikler" penceresi çıkmasın.
+        prefs.edit().putBoolean("onboarded", true).putInt("seenBuild", installedBuild).putInt("seenMajor", 1).apply()
     }
 
     /** Ayarlar → Tanıtımı tekrar göster. */
@@ -327,6 +328,51 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         refreshCatalog(quiet = true)
+    }
+
+    // ---- Güncelleme ve "Yenilikler" ----
+
+    val installedBuild = com.sounote.app.data.Updates.installedBuild(app)
+    val installedVersion = com.sounote.app.data.Updates.installedName(app)
+
+    /** GitHub'da bu kurulumdan yeni bir sürüm varsa (ve kullanıcı "Sonra" demediyse). */
+    var update by mutableStateOf<com.sounote.app.data.AppRelease?>(null)
+        private set
+
+    fun checkUpdate(manual: Boolean) {
+        val now = System.currentTimeMillis()
+        if (!manual && now - prefs.getLong("updateChecked", 0L) < 6 * 3_600_000L) return
+        viewModelScope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { com.sounote.app.data.Updates.latest() } }
+            r.onSuccess { rel ->
+                prefs.edit().putLong("updateChecked", now).apply()
+                val newer = rel.build > installedBuild
+                update = if (newer && (manual || prefs.getInt("skipBuild", 0) != rel.build)) rel else null
+                if (manual && !newer) message = "Uygulama güncel ($installedVersion)"
+            }.onFailure { if (manual) message = "Güncelleme denetlenemedi: internet bağlantısını kontrol et" }
+        }
+    }
+
+    /** "Sonra": bu sürüm için bir daha kendiliğinden sorma. */
+    fun skipUpdate() {
+        update?.let { prefs.edit().putInt("skipBuild", it.build).apply() }
+        update = null
+    }
+
+    /** Uygulama güncellendikten sonra ilk açılışta "Yenilikler" penceresi. İlk kurulumda gösterilmez. */
+    var showWhatsNew by mutableStateOf(
+        prefs.getBoolean("onboarded", false) && prefs.getInt("seenBuild", 0) < installedBuild &&
+            prefs.getInt("seenMajor", 0) < 1,
+    )
+        private set
+
+    fun dismissWhatsNew() {
+        showWhatsNew = false
+        prefs.edit().putInt("seenBuild", installedBuild).putInt("seenMajor", 1).apply()
+    }
+
+    init {
+        checkUpdate(manual = false)
     }
 
     fun refreshCatalog(quiet: Boolean = false) {

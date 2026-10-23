@@ -10,6 +10,11 @@ on:
 permissions:
   contents: write
 
+# Aynı anda iki derleme release oluşturmaya çalışıp çakışmasın.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,15 +40,22 @@ jobs:
           name: SouNote-apk
           path: SouNote.apk
 
+      - name: Sürüm notu
+        run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md
+
       # Tabletten zip açmadan indirmek için: Releases sayfasında doğrudan APK.
       - name: Release oluştur
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: SouNote 0.1.${{ github.run_number }}
+          name: SouNote 1.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
           prerelease: false
           make_latest: true
-          body: "Dal: ${{ github.ref_name }} · commit ${{ github.sha }}"
-          files: SouNote.apk
+          # Uygulamadaki "Yeni sürüm" penceresi bu metni gösterir.
+          body_path: notes.md
+          # catalog.json: uygulama açılışta haftalık kaynakları buradan günceller (releases/latest/download/catalog.json).
+          files: |
+            SouNote.apk
+            app/src/main/assets/catalog.json

@@ -922,6 +922,39 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         saveCards(doc, cards.map { if (it.id == card.id) updated else it })
     }
 
+    // ---- Bugünkü tekrar: bütün belgelerde zamanı gelmiş kartlar ----
+
+    /** Tekrarı gelmiş kart sayısı (ana sayfa kartı için). */
+    var dueCount by mutableStateOf(0)
+        private set
+
+    fun refreshDue() {
+        viewModelScope.launch { dueCount = dueCards().size }
+    }
+
+    /** Zamanı gelmiş kartlar, belgeleriyle (kutusu küçük olan önce). */
+    suspend fun dueCards(): List<Pair<DocRef, Card>> = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        imported.flatMap { d -> Flashcards.load(getApplication(), d.id).filter { it.due <= now }.map { d to it } }
+            .sortedBy { it.second.box }
+    }
+
+    /** Herhangi bir belgenin kartını değerlendirir (belge açık olmasa da). */
+    fun reviewAny(doc: DocRef, card: Card, known: Boolean) {
+        if (openDoc?.id == doc.id) {
+            reviewCard(doc, card, known)
+        } else {
+            val updated = Flashcards.review(card, known)
+            viewModelScope.launch(Dispatchers.IO) {
+                runCatching {
+                    val list = Flashcards.load(getApplication(), doc.id)
+                    Flashcards.save(getApplication(), doc.id, list.map { if (it.id == card.id) updated else it })
+                }.onFailure { ErrorLog.record("Kart kaydedilemedi", it) }
+            }
+        }
+        if (known) dueCount = (dueCount - 1).coerceAtLeast(0)
+    }
+
     fun deleteCard(doc: DocRef, card: Card) {
         saveCards(doc, cards.filter { it.id != card.id })
         card.frontImage?.let { name ->
@@ -1452,6 +1485,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeDoc() {
+        refreshDue()
         studyPause()
         fullScreen = false
         stopRecording(null)
@@ -1586,6 +1620,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val (imp, roots) = withContext(Dispatchers.IO) { repo.importedDocs() to repo.linkedFolders() }
             imported = imp
             rootFolders = roots
+            dueCount = dueCards().size
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             loadTextNotes()
             if (currentFolder != null && userFolders.none { it.id == currentFolder }) currentFolder = null

@@ -735,9 +735,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             cards = list,
             image = { vm.cardImage(doc, it) },
             onReview = { card, known -> vm.reviewCard(doc, card, known) },
-            onGoToPage = { p ->
+            onGoToPage = { c ->
                 study = null
-                view?.goToPage(p)
+                view?.goToPage(c.page)
             },
             onDismiss = { study = null },
         )

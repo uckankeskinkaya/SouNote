@@ -1,0 +1,44 @@
+name: Çökme testi (geçici)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/probe.yml"
+
+jobs:
+  monkey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: APK'yı indir
+        run: gh release download build-24 -R ${{ github.repository }} -p SouNote.apk -D a
+
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emülatörde rastgele dokunuş testi
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_tablet
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: |
+            adb install a/SouNote.apk
+            adb logcat -c
+            adb shell monkey -p com.sounote.app --pct-syskeys 0 --pct-appswitch 2 --throttle 120 -s 1 -v 2500 > monkey1.txt 2>&1 || true
+            adb shell monkey -p com.sounote.app --pct-syskeys 0 --pct-appswitch 2 --throttle 120 -s 7 -v 2500 > monkey2.txt 2>&1 || true
+            adb shell monkey -p com.sounote.app --pct-syskeys 0 --pct-appswitch 2 --throttle 120 -s 42 -v 2500 > monkey3.txt 2>&1 || true
+            tail -5 monkey1.txt monkey2.txt monkey3.txt
+            echo "==== CRASHES ===="
+            adb logcat -d -b crash | head -150 || true
+            echo "==== FATAL ===="
+            adb logcat -d | grep -A40 "FATAL EXCEPTION" | head -150 || true
+            adb shell run-as com.sounote.app ls -R files/logs 2>/dev/null || true

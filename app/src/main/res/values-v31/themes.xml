@@ -1,0 +1,8 @@
+<resources>
+    <!-- Açılış ekranı (Android 12+): mavi zemin üstünde uygulama simgesi. -->
+    <style name="Theme.SouNote" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    </style>
+</resources>

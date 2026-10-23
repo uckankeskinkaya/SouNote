@@ -79,6 +79,9 @@ hatırlatıcılar (AlarmManager; 3 gün/1 gün önce 19:00, 2 saat önce), PDF k
 Drive dosyaları herkese açık değilse indirme/açma sadece sahibinde çalışır. Katalog üretici betik: scratchpad catalog.py (yeniden üretmek için Drive listesi).
 
 
+Eklendi (🧪, build-34+): yazılı notta çizim alanı (gövdede \uFFFCsketch:<id> satırı; filesDir/texts/sketch/<id>.json; PDF'e de çizilir)
+ve kalemle yazma paneli (ML Kit digital-ink-recognition 18.1.0, "tr" modeli ilk kullanımda indirilir).
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·
@@ -87,7 +90,6 @@ Drive dosyaları herkese açık değilse indirme/açma sadece sahibinde çalış
 - Kullanıcı her hafta Harmanlanmış Eğitim ekran görüntüsü atar (gün gün + self-study): WEEKS'e ekle, `python3 tools/make_catalog.py`, derle.
   Drive'da olmayanlar "!başlık|tür" olarak girer (uygulamada "Drive'da yok").
 - Katalog Drive'a da konabilir (SouNote-katalog.json, herkese açık) ve Catalog.kt REMOTE_URL ile uzaktan güncellenir; klasör herkese açık olmalı.
-- Bekleyen özellik: yazılı notta çizim alanı + el yazısı tanıma (ML Kit digital ink, tr; internet izni var).
 - Sadece L4: katalogda başka kur yok.
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

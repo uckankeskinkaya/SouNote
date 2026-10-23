@@ -39,6 +39,15 @@ home_top() {
   tap "Ana sayfa"
   adb shell input swipe 540 700 540 2000 150; adb shell input swipe 540 700 540 2000 150; sleep 1.5
 }
+# Ana sayfadaki süzülen animasyon uiautomator'ı bekletiyor: konumları animasyonlar kapalıyken bir kez oku
+anim() { for k in window_animation_scale transition_animation_scale animator_duration_scale; do adb shell settings put global $k $1; done; }
+declare -A POS
+learn_home() {
+  anim 0; home_top; sleep 1
+  for t in "Ortalama" "Writing" "Ara" "Yeni defter"; do POS[$t]=$(find_xy "$t"); echo "konum $t: ${POS[$t]}"; done
+  anim 1
+}
+tap_home() { if [ -n "${POS[$1]}" ]; then adb shell input tap ${POS[$1]}; sleep 1; else tap "$1"; fi; }
 slow_scroll() { adb shell input swipe 540 1700 540 ${2:-900} ${1:-1200}; sleep 0.8; }
 # Parmakla çizim: noktalar listesi "x,y x,y ..." (motionevent ile eğri)
 draw() {
@@ -104,10 +113,12 @@ stop 05-defter
 adb shell input keyevent KEYCODE_BACK; sleep 2
 
 # 6) Writing
+learn_home
 home_top
 rec 06-writing 16
-tap "Writing"; sleep 2.5; tap "Opinion Essay"; sleep 2.5
+tap_home "Writing"; sleep 2.5; anim 0; tap "Opinion Essay"; sleep 2.5
 tap "Social media does more harm than good to young people. Do you agree?"; sleep 2
+anim 1
 adb shell input text "Nowadays%smany%syoung%speople%sspend%shours%son%ssocial%smedia.%sIn%smy%sopinion,%sit%sdoes%smore%sharm%sthan%sgood."
 sleep 3
 stop 06-writing
@@ -116,14 +127,14 @@ adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE
 # 7) Ortalama
 home_top
 rec 07-ortalama 10
-tap "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 2; slow_scroll 1500 1000; sleep 2
+tap_home "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 2; slow_scroll 1500 1000; sleep 2
 stop 07-ortalama
 adb shell input keyevent KEYCODE_BACK; sleep 1
 
 # 8) Arama
 home_top
 rec 08-arama 8
-tap "Ara"; sleep 2; adb shell input text "not"; sleep 3
+tap_home "Ara"; sleep 2; adb shell input text "not"; sleep 3
 stop 08-arama
 
 ls -la scenes

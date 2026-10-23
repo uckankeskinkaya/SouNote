@@ -101,6 +101,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
     var helpDialog by remember { mutableStateOf(false) }
     var nameDialog by remember { mutableStateOf(false) }
     var preparingApk by remember { mutableStateOf(false) }
+    var assistantSetup by remember { mutableStateOf(false) }
     val tools = vm.tools
 
     fun shareLink() {
@@ -222,6 +223,15 @@ fun SettingsScreen(vm: LibraryViewModel) {
                     }
                 }
                 item {
+                    Group("Yapay zekâ asistanı") {
+                        SettingRow(
+                            "🤖", "Asistan ayarları",
+                            subtitle = if (vm.assistantConfig.ready) "Hazır · ${vm.assistantConfig.model}" else "API anahtarı girilmedi",
+                            onClick = { assistantSetup = true },
+                        )
+                    }
+                }
+                item {
                     Group("Güvenlik") {
                         SwitchRow(
                             "🔒", "Uygulama kilidi",
@@ -328,6 +338,19 @@ fun SettingsScreen(vm: LibraryViewModel) {
     if (trashDialog) TrashDialog(vm) { trashDialog = false }
     if (statsDialog) StatsDialog(vm) { statsDialog = false }
     if (helpDialog) HelpDialog { helpDialog = false }
+    if (assistantSetup) {
+        AlertDialog(
+            onDismissRequest = { assistantSetup = false },
+            confirmButton = { TextButton(onClick = { assistantSetup = false }) { Text("Kapat") } },
+            text = {
+                AssistantSetup(vm.assistantConfig) {
+                    vm.updateAssistantConfig(it)
+                    assistantSetup = false
+                    vm.showMessage("Asistan ayarları kaydedildi")
+                }
+            },
+        )
+    }
     restoreUri?.let { uri ->
         AlertDialog(
             onDismissRequest = { restoreUri = null },

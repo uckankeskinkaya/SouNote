@@ -2,6 +2,10 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Checkbox
@@ -178,6 +182,8 @@ fun HomeScreen(vm: LibraryViewModel) {
     }
     var newNotebook by remember { mutableStateOf(false) }
     var assistant by remember { mutableStateOf(false) }
+    var searchOpen by remember { mutableStateOf(false) }
+    var gradesOpen by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var deletingText by remember { mutableStateOf<TextNote?>(null) }
@@ -217,6 +223,7 @@ fun HomeScreen(vm: LibraryViewModel) {
                 verticalArrangement = Arrangement.spacedBy(if (narrow) 22.dp else 28.dp),
                 modifier = Modifier.widthIn(max = 1100.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
             ) {
+                Appear(0) { SearchBarButton { searchOpen = true } }
                 Appear(0) {
                     Hero(
                         greeting = greeting(vm.userName),
@@ -280,6 +287,9 @@ fun HomeScreen(vm: LibraryViewModel) {
                         QuickAction(rememberVectorPainter(Icons.Default.Face), "Asistan", "İngilizce ve ders soruları sor", Color(0xFF00796B)) {
                             assistant = true
                         },
+                        QuickAction(rememberVectorPainter(Icons.Default.Star), "Ortalama", "Notlarını gir, geçmek için gerekeni gör", Color(0xFFC2570C)) {
+                            gradesOpen = true
+                        },
                         QuickAction(painterResource(R.drawable.ic_pdf), "PDF içe aktar", "Ders notlarını getir", Color(0xFFD64545)) {
                             importPdf()
                         },
@@ -327,6 +337,8 @@ fun HomeScreen(vm: LibraryViewModel) {
     }
 
     if (assistant) AssistantDialog(vm, AssistantSource.General) { assistant = false }
+    if (searchOpen) SearchDialog(vm) { searchOpen = false }
+    if (gradesOpen) GradesDialog(vm) { gradesOpen = false }
     renaming?.let { doc ->
         var text by remember(doc.id) { mutableStateOf(doc.title) }
         AlertDialog(
@@ -528,6 +540,32 @@ private fun WeekTasksCard(
                 )
             }
         }
+    }
+}
+
+/** Ana sayfanın üstünde "her şeyde ara" çubuğu (dokununca arama ekranı açılır). */
+@Composable
+private fun SearchBarButton(onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(0.98f)
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(onClickLabel = "Ara", onClick = onClick)
+            .semantics { contentDescription = "Ara" }
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+    ) {
+        Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            "Belgelerde, notlarda, kartlarda ara…",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 12.dp),
+        )
     }
 }
 

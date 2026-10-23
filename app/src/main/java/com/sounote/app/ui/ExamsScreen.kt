@@ -2,6 +2,7 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -107,6 +108,7 @@ internal fun countdownColor(time: Long): Color {
 fun ExamsScreen(vm: LibraryViewModel) {
     var editing by remember { mutableStateOf<Exam?>(null) }
     var deleting by remember { mutableStateOf<Exam?>(null) }
+    var gradesOpen by remember { mutableStateOf(false) }
     var showPast by remember { mutableStateOf(false) }
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted) vm.showMessage("Bildirim izni verilmedi; hatırlatıcılar görünmez")
@@ -147,6 +149,37 @@ fun ExamsScreen(vm: LibraryViewModel) {
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
                 modifier = Modifier.widthIn(max = 860.dp).fillMaxSize(),
             ) {
+                item {
+                    val g = vm.grades
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pressScale(0.98f)
+                            .card()
+                            .clickable { gradesOpen = true }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    ) {
+                        Text("📊", fontSize = 26.sp)
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text("Not ortalamam", style = MaterialTheme.typography.bodyLarge)
+                            val avg = g.average
+                            val needed = g.needed
+                            Text(
+                                when {
+                                    g.items.isEmpty() -> "Sınav ağırlıklarını ve puanlarını gir, ortalamanı gör"
+                                    avg == null -> "Henüz puan girilmedi"
+                                    needed != null && needed in 0.0..100.0 ->
+                                        "Ortalama ${"%.1f".format(avg)} · geçmek için kalanlardan ${"%.1f".format(needed)}"
+                                    else -> "Ortalama ${"%.1f".format(avg)}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text("›", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 if (vm.catalog.levels.isNotEmpty()) {
                     item {
                         Column(Modifier.fillMaxWidth().card().padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -246,6 +279,7 @@ fun ExamsScreen(vm: LibraryViewModel) {
             onDismiss = { editing = null },
         )
     }
+    if (gradesOpen) GradesDialog(vm) { gradesOpen = false }
     deleting?.let { e ->
         AlertDialog(
             onDismissRequest = { deleting = null },

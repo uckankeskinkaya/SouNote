@@ -304,6 +304,19 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var remindersOn by mutableStateOf(ExamReminders.enabled(app))
         private set
+    // ---- Not ortalaması ----
+
+    private val gradeStore = com.sounote.app.data.GradeStore(app)
+    var grades by mutableStateOf(gradeStore.load())
+        private set
+
+    fun updateGrades(g: com.sounote.app.data.Grades) {
+        grades = g
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { gradeStore.save(g) }.onFailure { ErrorLog.record("Notlar kaydedilemedi", it) }
+        }
+    }
+
     /** Dersler ekranı haftalara göre mi (ana sayfadaki haftalık listeden de açılır). */
     var coursesByWeek by mutableStateOf(false)
 
@@ -490,6 +503,88 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Belgenin metni (asistana bağlam): [from]..[to] sayfaları. */
     suspend fun documentText(doc: DocRef, from: Int, to: Int): String = withContext(Dispatchers.IO) {
         com.sounote.app.data.PdfText.extract(getApplication(), repo.resolveForOpen(doc).uri, from, to)
+    }
+
+    // ---- Genel arama ----
+
+    /** Arama sonucu: belge adı, PDF sayfası, yazılı not ya da bilgi kartı. */
+    sealed interface SearchHit {
+        data class DocTitle(val doc: DocRef) : SearchHit
+        data class PdfPage(val doc: DocRef, val page: Int, val snippet: String) : SearchHit
+        data class Note(val note: com.sounote.app.data.TextNote, val snippet: String) : SearchHit
+        data class FlashCard(val doc: DocRef, val card: Card) : SearchHit
+    }
+
+    private val searchIndex = com.sounote.app.data.SearchIndex(app)
+
+    /** PDF metinleri çıkarılırken ilerleme (bitti = null). */
+    var indexing by mutableStateOf<Pair<Int, Int>?>(null)
+        private set
+
+    private fun stampOf(doc: DocRef): Pair<Uri, Long> {
+        val r = repo.resolveForOpen(doc)
+        val f = r.uri.path?.let(::File)
+        return r.uri to (if (r.uri.scheme == "file" && f != null) f.lastModified() else r.lastModified)
+    }
+
+    /** Henüz metni çıkarılmamış belgeleri tarar (arama ekranı açılınca). */
+    fun ensureSearchIndex() {
+        if (indexing != null) return
+        val docs = imported
+        viewModelScope.launch {
+            val todo = withContext(Dispatchers.IO) {
+                searchIndex.prune(docs.map { it.id }.toSet())
+                docs.filter { d -> runCatching { !searchIndex.has(d.id, stampOf(d).second) }.getOrDefault(false) }
+            }
+            if (todo.isEmpty()) return@launch
+            todo.forEachIndexed { i, d ->
+                indexing = i to todo.size
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        val (uri, stamp) = stampOf(d)
+                        searchIndex.build(d.id, stamp, uri)
+                    }.onFailure { ErrorLog.record("Arama dizini: ${d.title}", it) }
+                }
+            }
+            indexing = null
+            searchVersion++
+        }
+    }
+
+    /** Dizin güncellenince arama ekranı sonuçları yenilesin. */
+    var searchVersion by mutableStateOf(0)
+        private set
+
+    suspend fun search(query: String): List<SearchHit> = withContext(Dispatchers.Default) {
+        val q = com.sounote.app.data.SearchIndex.norm(query.trim())
+        if (q.length < 2) return@withContext emptyList()
+        val norm = com.sounote.app.data.SearchIndex.Companion::norm
+        val out = ArrayList<SearchHit>()
+        val docs = imported
+        docs.filter { q in norm(it.title) }.forEach { out += SearchHit.DocTitle(it) }
+        textNotes.forEach { n ->
+            val text = n.title + " " + n.plainBody
+            if (q in norm(text)) out += SearchHit.Note(n, com.sounote.app.data.SearchIndex.snippet(n.plainBody, q) ?: n.plainBody.take(100))
+        }
+        withContext(Dispatchers.IO) {
+            for (d in docs) {
+                val stamp = runCatching { stampOf(d).second }.getOrNull() ?: continue
+                searchIndex.pages(d.id, stamp).forEachIndexed { i, text ->
+                    com.sounote.app.data.SearchIndex.snippet(text, q)?.let { out += SearchHit.PdfPage(d, i, it) }
+                }
+                Flashcards.load(getApplication(), d.id).forEach { c ->
+                    if (q in norm(c.frontText) || q in norm(c.back)) out += SearchHit.FlashCard(d, c)
+                }
+                if (out.size > 300) break
+            }
+        }
+        out
+    }
+
+    /** Arama sonucundan belgeyi o sayfada açar. */
+    fun openAt(doc: DocRef, page: Int) {
+        saveLastPage(doc, page)
+        open(doc)
     }
 
     /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */
@@ -1056,6 +1151,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             path = emptyList()
             refresh()
             openText = null
+            myExams = withContext(Dispatchers.IO) { examStore.load() }
+            grades = withContext(Dispatchers.IO) { gradeStore.load() }
             message = result.fold(
                 onSuccess = { "Yedek geri yüklendi" },
                 onFailure = { "Geri yüklenemedi: ${it.message ?: it.javaClass.simpleName}" },

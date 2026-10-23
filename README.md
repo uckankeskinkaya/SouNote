@@ -33,9 +33,10 @@
 | 📚 **Dersler** | Haftalık kaynaklar konu ve hafta hafta; bitirdiklerini işaretle, haftanın ilerlemesini gör |
 | 📅 **Sınavlar** | Takvim, geri sayım, hatırlatıcı bildirimler, ana ekran widget'ı |
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; aralıklı tekrar (Leitner) |
-| 🤖 **Asistan** | Açık belgeyi okur; özet, kelime listesi, soru, essay değerlendirmesi (kendi API anahtarınla) |
+| 🤖 **Asistan** | Açık belgeyi okur; özet, kelime listesi, soru, essay değerlendirmesi. Evren (e-Devlet) anahtarı için uygulama içinde adım adım kurulum |
 | 🔎 **Genel arama** | PDF'lerin içinde sayfa sayfa, yazılı notlarda ve kartlarda |
 | ✍️ **Writing pratiği** | Opinion essay/paragraph yaz; asistan L4 ölçütleriyle 100 üzerinden puanlar, hataları ve geliştirilmiş hali gösterir |
+| 🔥 **Çalışma serisi** | Art arda çalıştığın günler; belgede 5 dk, kart tekrarı, Writing, haftalık liste ya da yazılı not o günü sayar |
 | 🔁 **Bugünkü tekrar** | Bütün belgelerde zamanı gelen bilgi kartları tek oturumda |
 | 📊 **Not ortalaması** | Puanlarını gir, geçmek için kalan sınavlardan kaç alman gerektiğini gör |
 | 📝 **Yazılı notlar** | Klavyeyle ya da kalemle yazma, yapılacaklar, çizim alanı |
@@ -46,7 +47,8 @@
 
 1. [SouNote.apk](https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk)'yı indir.
 2. Dosyaya dokun; "bilinmeyen uygulamalar" uyarısında bu kaynağa izin ver.
-3. **Yükle**'ye bas. Sonraki sürümleri uygulama kendisi haber verir; üstüne kurunca notlar silinmez.
+3. Play Protect "güvenli olmayan uygulama" derse **Diğer ayrıntılar → Yine de yükle**. İstersen önce APK'yı [VirusTotal](https://www.virustotal.com/gui/home/upload)'a yükleyip taratabilirsin.
+4. **Yükle**'ye bas. Sonraki sürümleri uygulama kendisi haber verir; üstüne kurunca notlar silinmez.
 
 Android 10 ve üstü, tablet ve telefon.
 

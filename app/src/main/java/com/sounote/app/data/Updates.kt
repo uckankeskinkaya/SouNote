@@ -13,22 +13,16 @@ data class AppRelease(val build: Int, val name: String, val notes: String, val a
 object Updates {
     const val APK_URL = "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk"
     private const val API = "https://api.github.com/repos/uckankeskinkaya/SouNote/releases/latest"
-    private const val API_LIST = "https://api.github.com/repos/uckankeskinkaya/SouNote/releases?per_page=15"
+    private const val TEST_JSON = "https://github.com/uckankeskinkaya/SouNote/releases/download/test/test.json"
+    private const val TEST_APK = "https://github.com/uckankeskinkaya/SouNote/releases/download/test/SouNote.apk"
 
     /** Test kanalı (yönetici): yayınlanmamış test sürümleri de dahil en yeni derleme. */
     fun latestIncludingTests(): AppRelease {
-        val arr = org.json.JSONArray(get(API_LIST))
-        val best = (0 until arr.length()).map { arr.getJSONObject(it) }
-            .filter { !it.optBoolean("draft") && it.optString("tag_name").startsWith("build-") && "⚠️" !in it.optString("body") }
-            .maxByOrNull { it.optString("tag_name").removePrefix("build-").toIntOrNull() ?: 0 } ?: throw IOException("Sürüm bulunamadı")
-        return AppRelease(
-            best.optString("tag_name").removePrefix("build-").toInt(),
-            best.optString("name").ifBlank { "SouNote" },
-            best.optString("body").trim(),
-            apkUrl = best.optJSONArray("assets")?.let { a ->
-                (0 until a.length()).map { a.getJSONObject(it) }.firstOrNull { it.optString("name") == "SouNote.apk" }?.optString("browser_download_url")
-            } ?: APK_URL,
-        )
+        // Sabit "test" kanalı (her derlemede güncellenir); yayınlanan sürüm daha yeniyse o.
+        val o = JSONObject(get(TEST_JSON))
+        val test = AppRelease(o.getInt("build"), o.optString("name", "Test"), o.optString("notes"), TEST_APK)
+        val stable = runCatching { latest() }.getOrNull()
+        return if (stable != null && stable.build >= test.build) stable else test
     }
 
     private fun get(url: String): String {

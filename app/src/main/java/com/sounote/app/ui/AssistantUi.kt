@@ -259,8 +259,8 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
                         if (messages.isEmpty()) {
                             item { Welcome(source, vm.userName, vm.assistantConfig.ready, onSetup = { setup = true }) { send(it) } }
                         }
-                        items(messages) { m -> Bubble(m, vm) }
-                        if (busy) item { TypingBubble() }
+                        items(messages) { m -> Box(Modifier.appear()) { Bubble(m, vm) } }
+                        if (busy) item { Box(Modifier.appear()) { TypingBubble() } }
                         error?.let { e ->
                             item {
                                 Row(

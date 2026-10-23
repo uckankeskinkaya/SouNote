@@ -503,7 +503,7 @@ internal fun TextNoteCard(
     val ago = remember(note.updated) {
         DateUtils.getRelativeTimeSpanString(note.updated, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
-    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = if (menu != null) ({ menuOpen = true }) else null)) {
+    Column(Modifier.pressScale().combinedClickable(onClick = onClick, onLongClick = if (menu != null) ({ menuOpen = true }) else null)) {
         Box(
             Modifier
                 .fillMaxWidth()

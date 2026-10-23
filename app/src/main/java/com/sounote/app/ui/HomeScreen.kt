@@ -2,6 +2,21 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +47,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -190,31 +206,37 @@ fun HomeScreen(vm: LibraryViewModel) {
                 verticalArrangement = Arrangement.spacedBy(if (narrow) 22.dp else 28.dp),
                 modifier = Modifier.widthIn(max = 1100.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
             ) {
-                Hero(
-                    greeting = greeting(vm.userName),
-                    todayMs = days.first().second,
-                    docCount = vm.imported.size,
-                )
+                Appear(0) {
+                    Hero(
+                        greeting = greeting(vm.userName),
+                        todayMs = days.first().second,
+                        docCount = vm.imported.size,
+                    )
+                }
 
                 val now = System.currentTimeMillis()
                 val nextExams = vm.allExams.filter { it.time > now }.take(3)
                 if (nextExams.isNotEmpty()) {
-                    Section("Yaklaşan sınav ve ödevler", action = "Takvim") { vm.tab = LibraryViewModel.Tab.EXAMS }
+                    Appear(1) { Section("Yaklaşan sınav ve ödevler", action = "Takvim") { vm.tab = LibraryViewModel.Tab.EXAMS } }
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        nextExams.forEach { e ->
-                            ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                        nextExams.forEachIndexed { i, e ->
+                            Appear(2 + i, Modifier.pressScale(0.98f)) {
+                                ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                            }
                         }
                     }
                 }
 
                 val last = recent.firstOrNull()
                 if (empty) {
-                    StartCard(onNotebook = { newNotebook = true }, onImport = importPdf)
+                    Appear(5) { StartCard(onNotebook = { newNotebook = true }, onImport = importPdf) }
                 } else if (last != null) {
-                    ContinueCard(last, vm.lastPage(last), vm.lastOpened(last), menu = { d -> docMenu(last, d) }) { vm.open(last) }
+                    Appear(5, Modifier.pressScale(0.98f)) {
+                        ContinueCard(last, vm.lastPage(last), vm.lastOpened(last), menu = { d -> docMenu(last, d) }) { vm.open(last) }
+                    }
                 }
 
-                Section("Hızlı başla")
+                Appear(6) { Section("Hızlı başla") }
                 QuickActions(
                     listOf(
                         QuickAction(rememberVectorPainter(Icons.Default.Add), "Yeni defter", "Şablonlu boş sayfalar", Color(0xFF2F5BD3)) {
@@ -239,26 +261,26 @@ fun HomeScreen(vm: LibraryViewModel) {
                 )
 
                 if (recent.size > 1) {
-                    Section("Son açılanlar", action = "Kütüphane") { vm.tab = LibraryViewModel.Tab.LIBRARY }
+                    Appear(9) { Section("Son açılanlar", action = "Kütüphane") { vm.tab = LibraryViewModel.Tab.LIBRARY } }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(end = 8.dp)) {
-                        items(recent, key = { it.id }) { doc ->
-                            Box(Modifier.width(132.dp)) { DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }) }
+                        itemsIndexed(recent, key = { _, it -> it.id }) { i, doc ->
+                            Box(Modifier.width(132.dp).appear(9 + i).pressScale()) { DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }) }
                         }
                     }
                 }
 
                 if (vm.textNotes.isNotEmpty()) {
-                    Section("Yazılı notlar", action = "Yeni not") { vm.newTextNote() }
+                    Appear(10) { Section("Yazılı notlar", action = "Yeni not") { vm.newTextNote() } }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(end = 8.dp)) {
-                        items(vm.textNotes.take(12), key = { "t" + it.id }) { n ->
-                            Box(Modifier.width(132.dp)) {
+                        itemsIndexed(vm.textNotes.take(12), key = { _, it -> "t" + it.id }) { i, n ->
+                            Box(Modifier.width(132.dp).appear(10 + i).pressScale()) {
                                 TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
                             }
                         }
                     }
                 }
 
-                BoxWithConstraints {
+                BoxWithConstraints(Modifier.appear(11)) {
                     if (maxWidth > 640.dp) {
                         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                             WeekCard(days, Modifier.weight(1f))
@@ -322,9 +344,25 @@ private fun Hero(greeting: String, todayMs: Long, docCount: Int) {
     val hero = LocalColorTheme.current.heroColors
     BoxWithConstraints(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(Brush.linearGradient(hero))) {
         val compact = maxWidth < 420.dp
+        // Arka plandaki daireler yavaşça süzülür.
+        val drift = rememberInfiniteTransition(label = "hero")
+        val t by drift.animateFloat(0f, 1f, infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Reverse), label = "drift")
         Canvas(Modifier.matchParentSize()) {
-            drawCircle(Color.White.copy(alpha = 0.08f), radius = size.height * 0.9f, center = Offset(size.width * 0.95f, 0f))
-            drawCircle(Color.White.copy(alpha = 0.06f), radius = size.height * 0.45f, center = Offset(size.width * 0.72f, size.height * 1.05f))
+            drawCircle(
+                Color.White.copy(alpha = 0.08f),
+                radius = size.height * (0.85f + 0.1f * t),
+                center = Offset(size.width * (0.92f + 0.05f * t), size.height * (-0.05f + 0.1f * t)),
+            )
+            drawCircle(
+                Color.White.copy(alpha = 0.06f),
+                radius = size.height * (0.42f + 0.06f * (1 - t)),
+                center = Offset(size.width * (0.68f + 0.08f * t), size.height * 1.05f),
+            )
+            drawCircle(
+                Color.White.copy(alpha = 0.05f),
+                radius = size.height * 0.18f,
+                center = Offset(size.width * (0.45f - 0.08f * t), size.height * (0.15f + 0.1f * t)),
+            )
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(if (compact) 20.dp else 28.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f)) {
@@ -444,9 +482,9 @@ private fun QuickActions(actions: List<QuickAction>) {
     BoxWithConstraints {
         val columns = if (maxWidth > 900.dp) 5 else if (maxWidth > 640.dp) 3 else 2
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            actions.chunked(columns).forEach { row ->
+            actions.chunked(columns).forEachIndexed { r, row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    row.forEach { a -> ActionTile(a, Modifier.weight(1f)) }
+                    row.forEachIndexed { c, a -> ActionTile(a, Modifier.weight(1f).appear(7 + r * columns + c).pressScale()) }
                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
@@ -481,6 +519,9 @@ private fun ActionTile(a: QuickAction, modifier: Modifier) {
 private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
     val dayName = remember { SimpleDateFormat("EEE", TR) }
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
+    // Çubuklar açılışta aşağıdan büyür.
+    val grow = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { grow.animateTo(1f, tween(700, delayMillis = 250, easing = FastOutSlowInEasing)) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = modifier.card().padding(20.dp)) {
         Text("Bu hafta", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text(
@@ -498,7 +539,7 @@ private fun WeekCard(days: List<Pair<Long, Long>>, modifier: Modifier) {
                     Box(
                         Modifier
                             .width(18.dp)
-                            .height((84f * ms / max).dp.coerceAtLeast(4.dp))
+                            .height((84f * ms / max * grow.value).dp.coerceAtLeast(4.dp))
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
@@ -529,7 +570,13 @@ private fun TipCard(modifier: Modifier) {
                 modifier = Modifier.padding(start = 8.dp),
             )
         }
-        Crossfade(targetState = index, label = "tip") { i ->
+        AnimatedContent(
+            targetState = index,
+            transitionSpec = {
+                (fadeIn(tween(Motion.MEDIUM)) + slideInHorizontally { it / 6 }).togetherWith(fadeOut(tween(Motion.SHORT)) + slideOutHorizontally { -it / 6 })
+            },
+            label = "tip",
+        ) { i ->
             Text(TIPS[i], style = MaterialTheme.typography.bodyLarge, modifier = Modifier.heightIn(min = 72.dp))
         }
         TextButton(onClick = { index = (index + 1) % TIPS.size }, modifier = Modifier.align(Alignment.End)) {

@@ -2,6 +2,12 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -190,11 +196,13 @@ fun ExamsScreen(vm: LibraryViewModel) {
                     }
                 }
                 items(upcoming, key = { it.id }) { exam ->
-                    ExamCard(
-                        exam, vm,
-                        onClick = { if (!exam.global) editing = exam },
-                        onLongClick = { if (!exam.global) deleting = exam },
-                    )
+                    Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                        ExamCard(
+                            exam, vm,
+                            onClick = { if (!exam.global) editing = exam },
+                            onLongClick = { if (!exam.global) deleting = exam },
+                        )
+                    }
                 }
                 if (past.isNotEmpty()) {
                     item {
@@ -204,7 +212,9 @@ fun ExamsScreen(vm: LibraryViewModel) {
                     }
                     if (showPast) {
                         items(past, key = { "p" + it.id }) { exam ->
-                            ExamCard(exam, vm, onClick = { if (!exam.global) editing = exam }, onLongClick = { if (!exam.global) deleting = exam })
+                            Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                ExamCard(exam, vm, onClick = { if (!exam.global) editing = exam }, onLongClick = { if (!exam.global) deleting = exam })
+                            }
                         }
                     }
                 }
@@ -270,14 +280,25 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
     BoxWithConstraints(Modifier.fillMaxWidth()) {
     val compact = maxWidth < 440.dp
     val c = countdownColor(exam.time)
+    // Sınav 2 gün içindeyse geri sayım hafifçe nabız gibi atar.
+    val urgent = exam.time - System.currentTimeMillis() in 0..(2 * 86_400_000L)
     val countdown = @Composable {
+        val pulse = if (urgent) {
+            rememberInfiniteTransition(label = "urgent").animateFloat(
+                1f, 1.08f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "pulse",
+            ).value
+        } else 1f
         Text(
             countdownText(exam.time),
             color = c,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-            modifier = Modifier.clip(RoundedCornerShape(50)).background(c.copy(alpha = 0.12f)).padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier
+                .graphicsLayer { scaleX = pulse; scaleY = pulse }
+                .clip(RoundedCornerShape(50))
+                .background(c.copy(alpha = 0.12f))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         )
     }
     Row(

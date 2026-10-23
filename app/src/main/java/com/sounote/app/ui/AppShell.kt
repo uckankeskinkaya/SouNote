@@ -2,7 +2,7 @@ package com.sounote.app.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -97,7 +97,11 @@ fun MainShell(vm: LibraryViewModel) {
         }
     }
     val content: @Composable () -> Unit = {
-        Crossfade(targetState = vm.tab, label = "tab") { tab ->
+        AnimatedContent(
+            targetState = vm.tab,
+            transitionSpec = { Motion.tabTransition<Tab>(targetState.ordinal > initialState.ordinal).invoke(this) },
+            label = "tab",
+        ) { tab ->
             when (tab) {
                 Tab.HOME -> HomeScreen(vm)
                 Tab.LIBRARY -> LibraryScreen(vm)

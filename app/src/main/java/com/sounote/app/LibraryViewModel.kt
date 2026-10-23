@@ -525,6 +525,29 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Word/PPT kaynağını önbelleğe indirir; [onReady] ile başka uygulamada (WPS, Office) açılır.
+     * Oradan "PDF olarak paylaş → SouNote" ile kütüphaneye gelir.
+     */
+    fun downloadForOtherApp(res: Resource, onReady: (File) -> Unit) {
+        if (downloading != null) return
+        viewModelScope.launch {
+            downloading = res.url
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val dir = File(getApplication<Application>().cacheDir, "exports").apply { mkdirs() }
+                    val name = res.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80).ifBlank { "kaynak" }
+                    File(dir, "$name.${res.kind}").also { CatalogRepo.download(res, it) }
+                }
+            }
+            downloading = null
+            result.onSuccess(onReady).onFailure {
+                ErrorLog.record("Kaynak indirilemedi", it)
+                message = "İndirilemedi: ${it.message ?: "bağlantı hatası"}"
+            }
+        }
+    }
+
     /** Bu kaynak daha önce indirildi mi (aynı adla dersin klasöründe). */
     fun downloadedDoc(course: Course, res: Resource): DocRef? {
         val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return null

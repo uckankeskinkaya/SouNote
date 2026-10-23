@@ -13,6 +13,8 @@ on:
       - ".github/workflows/site.yml"
       - ".github/workflows/keygen.yml"
       - ".github/keygen/**"
+      - ".github/convert/**"
+      - ".github/workflows/convert.yml"
   workflow_dispatch:
 
 permissions:

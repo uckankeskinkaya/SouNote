@@ -127,6 +127,10 @@ Eklendi (🧪, build-84+): asistan kurulum rehberi (ui/AssistantSetup.kt: Evren'
 (prefs activeDays StringSet + bestStreak; belgede 5 dk, kart tekrarı, Writing, haftalık liste işareti, yazılı not günü sayar; ana sayfa Hero + WeekCard),
 sitede Play Protect uyarısı + VirusTotal (APK digest'iyle rapor bağlantısı), arkadaşla paylaş metninde aynı uyarı.
 
+Eklendi (🧪, build-86+): katalogdaki Word/PPT kaynakları PDF olarak indirilir: convert.yml (.github/convert/convert.py, LibreOffice +
+Carlito/Caladea yazı tipleri) Drive'dan indirip çevirir, "kaynaklar" ön sürümüne <driveId>.pdf yükler (olanlar atlanır; catalog.json
+değişince kendiliğinden çalışır). Resource.pdfUrl; 404 → "PDF hali henüz hazır değil". Satırda "Drive" + "İndir".
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·

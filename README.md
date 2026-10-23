@@ -30,7 +30,7 @@
 |---|---|
 | ✍️ **Kalem** | Basınca duyarlı kalem türleri, fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
 | 📄 **PDF** | İçe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
-| 📚 **Dersler** | Haftalık kaynaklar konu ve hafta hafta; bitirdiklerini işaretle, haftanın ilerlemesini gör |
+| 📚 **Dersler** | Haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları PDF'e çevrilmiş gelir; bitirdiklerini işaretle, haftanın ilerlemesini gör |
 | 📅 **Sınavlar** | Takvim, geri sayım, hatırlatıcı bildirimler, ana ekran widget'ı |
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; aralıklı tekrar (Leitner) |
 | 🤖 **Asistan** | Açık belgeyi okur; özet, kelime listesi, soru, essay değerlendirmesi. Evren (e-Devlet) anahtarı için uygulama içinde adım adım kurulum |

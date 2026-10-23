@@ -223,8 +223,8 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         }
         item {
             Text(
-                "PDF'ler \"İndir\" ile kütüphanende \"${course.name}\" klasörüne gelir; üstüne kalemle çalışabilirsin. " +
-                    "Sunum, Word ve videolar Drive'da açılır.",
+                "PDF, Word ve sunumlar \"İndir\" ile kütüphanende \"${course.name}\" klasörüne gelir; üstüne kalemle çalışabilirsin. " +
+                    "Word ve sunumlar PDF'e çevrilmiş olarak gelir; aslını görmek için \"Drive\". Videolar Drive'da açılır.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp),
@@ -295,6 +295,11 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
             local != null -> TextButton(onClick = { vm.open(local) }) { Text("Aç") }
             res.kind == "pdf" -> {
                 TextButton(onClick = { vm.downloadResource(course, topic, res) }) { Text("İndir") }
+            }
+            // Word/PPT: PDF'e çevrilmiş hali indirilir, üstüne kalemle çalışılır
+            res.convertible -> Row {
+                TextButton(onClick = { onOpenLink(res) }) { Text("Drive", maxLines = 1) }
+                TextButton(onClick = { vm.downloadResource(course, topic, res) }) { Text("İndir", maxLines = 1) }
             }
             else -> TextButton(onClick = { onOpenLink(res) }) { Text("Drive'da aç") }
         }

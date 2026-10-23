@@ -22,11 +22,16 @@ data class Resource(
     val order: Int = 0,
 ) {
     val isPdf get() = kind == "pdf"
+    /** Word/PowerPoint: CI'da PDF'e çevrilmiş kopyası indirilir (convert.yml → "kaynaklar" sürümü). */
+    val convertible get() = kind == "pptx" || kind == "docx"
+    val pdfUrl: String? get() = if (convertible) driveId?.let { "$CONVERTED_BASE/$it.pdf" } else null
     /** Drive paylaşım bağlantısından dosya kimliği. */
     val driveId: String?
         get() = Regex("drive\\.google\\.com/(?:file/d/|open\\?id=|uc\\?(?:export=download&)?id=)([A-Za-z0-9_-]{10,})")
             .find(url)?.groupValues?.get(1)
 }
+
+private const val CONVERTED_BASE = "https://github.com/uckankeskinkaya/SouNote/releases/download/kaynaklar"
 
 /** Haftalık programda olup Drive'da bulunmayan materyal (sadece listede görünür). */
 data class WeekItem(val week: Int, val day: Int, val title: String, val kind: String, val order: Int)
@@ -194,7 +199,9 @@ object CatalogRepo {
 
     /** Herkese açık Drive dosyasını ya da PDF bağlantısını indirir; PDF değilse hata. */
     fun download(res: Resource, target: File) {
-        val url = res.driveId?.let { "https://drive.usercontent.google.com/download?id=$it&export=download&confirm=t" } ?: res.url
+        val url = res.pdfUrl
+            ?: res.driveId?.let { "https://drive.usercontent.google.com/download?id=$it&export=download&confirm=t" }
+            ?: res.url
         var current = URL(url)
         repeat(5) {
             val c = current.openConnection() as HttpURLConnection
@@ -216,6 +223,9 @@ object CatalogRepo {
                         }
                         return
                     }
+                    404 -> throw IOException(
+                        if (res.convertible) "PDF hali henüz hazır değil; şimdilik \"Drive'da aç\" ile bakabilirsin" else "HTTP 404",
+                    )
                     else -> throw IOException("HTTP ${c.responseCode}")
                 }
             } finally {

@@ -1,6 +1,1 @@
-{
-  "version": "1.1",
-  "title": "Yeni ana sayfa, Writing pratiği ve Bugünkü tekrar",
-  "notes": "Telefonda daha az kaydırma: hızlı başla en üstte, sınavlar yan yana kartlar | Parmakla yaz artık ana sayfada ve defter araç çubuğunun en başında | Telefonda belge ekranı üst çubuğu düzeldi (düğmeler üst üste binmiyor) | Writing pratiği: essay yaz, asistan 100 üzerinden puanlasın, hatalarını ve düzeltilmiş halini göstersin | Bugünkü tekrar: bütün belgelerde zamanı gelen bilgi kartları tek yerde | Genel arama, not ortalaması (Ankara Ü. hesabı), ana ekran widget'ı ve notlu belge paylaşma",
-  "build": ""
-}
+{"version": "1.2", "title": "Güvenlik güncellemesi", "notes": "Yeni imza anahtarı: sahte SouNote güncellemeleri artık telefonuna kurulamaz | PDF içindeki bağlantılar sadece web, e-posta ve telefon adresi açar | Asistan anahtarın Google yedeğine ve yeni telefona aktarmaya girmez, sadece cihazında kalır | Paylaşılan .sounote paketlerinde boyut sınırı", "build": "82"}

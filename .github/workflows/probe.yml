@@ -12,6 +12,8 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      - uses: actions/checkout@v4
+
       - name: APK'yı indir
         run: gh release download build-25 -R ${{ github.repository }} -p SouNote.apk -D a
 

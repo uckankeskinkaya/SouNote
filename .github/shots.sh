@@ -44,7 +44,7 @@ scroll; shot 05-ana-asagi2
 scroll; shot 06-ana-asagi3
 tap "Kütüphane"; shot 07-kutuphane
 tap "Dersler"; shot 08-dersler
-tap "Haftalara göre"; shot 09-haftalar
+tap "🗓️ Haftalar"; shot 09-haftalar
 tap "Sınavlar"; shot 10-sinavlar
 tap "Ayarlar"; shot 11-ayarlar
 scroll; shot 12-ayarlar-asagi

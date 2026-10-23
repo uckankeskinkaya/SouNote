@@ -87,6 +87,9 @@ adres/model/anahtar, anahtar APK'ya gömülmez). Sistem talimatı uygulama özel
 belgeden açılınca PDF metni (PDFBox PDFTextStripper; bu sayfa / tüm belge), yazılı nottan açılınca not metni bağlam olarak gider.
 Varsayılan servis Evren (SSYZ, e-devlet): https://evren-llmapi.ssyz.org.tr/v1, model "auto", anahtar evren_llm_…;
 ilk kullanımda 403 terms_not_accepted → /v1/terms/text gösterilir, kabul edilirse POST /v1/terms/accept {"version"} (build-37+).
+Eklendi (🧪, build-42+): asistan ekranı yenilendi (balonlar, Markdown gösterimi ui/Markdown.kt, yazıyor animasyonu, öneri kartları).
+Telefon düzeni: CI'da pixel_6 emülatörde 1.3 yazı + 360dp ile ekran görüntüsü alındı (geçici probe.yml + .github/shots.sh, git geçmişinde;
+görüntüler shots-tmp dalına itilir). Dar ekranda: sınav kartında geri sayım alta, karşılama logosu gizli, derslerde 2 sütun, sekme yazısı tek satır.
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

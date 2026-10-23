@@ -55,6 +55,7 @@ app; tap "Ana sayfa"; tap "Asistan"; sleep 2; shot 07-asistan; back
 app; tap "Ana sayfa"; tap "Ara"; sleep 3; adb shell input text "handout"; sleep 2; shot 08-arama; back; back
 app; tap "Ana sayfa"; tap "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 1; shot 09-ortalama; back
 app; tap "Sınavlar"; tap "Not ortalamam"; sleep 2; shot 09b-ortalama; back
+app; tap "Ana sayfa"; tap "Writing"; sleep 2; shot 11-writing; tap "Opinion Essay"; sleep 1; shot 12-writing-konu; back; back
 
 # 5) Hızlı geçişler + döndürme
 app

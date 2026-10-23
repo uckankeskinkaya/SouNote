@@ -304,6 +304,28 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var remindersOn by mutableStateOf(ExamReminders.enabled(app))
         private set
+    // ---- Writing pratiği ----
+
+    private val essayStore = com.sounote.app.data.EssayStore(app)
+    var essays by mutableStateOf<List<com.sounote.app.data.Essay>>(emptyList())
+        private set
+
+    fun loadEssays() {
+        viewModelScope.launch { essays = withContext(Dispatchers.IO) { essayStore.all() } }
+    }
+
+    fun saveEssay(e: com.sounote.app.data.Essay) {
+        essays = (listOf(e) + essays.filter { it.id != e.id }).sortedByDescending { it.updated }
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { essayStore.save(e) }.onFailure { ErrorLog.record("Yazı kaydedilemedi", it) }
+        }
+    }
+
+    fun deleteEssay(e: com.sounote.app.data.Essay) {
+        essays = essays.filter { it.id != e.id }
+        viewModelScope.launch(Dispatchers.IO) { essayStore.delete(e.id) }
+    }
+
     // ---- Not ortalaması ----
 
     private val gradeStore = com.sounote.app.data.GradeStore(app)

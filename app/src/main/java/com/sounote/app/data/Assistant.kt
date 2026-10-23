@@ -164,6 +164,52 @@ ${source.take(12_000)}
         }.ifEmpty { throw IOException("Metinden kart çıkarılamadı") }
     }
 
+    /**
+     * Writing pratiği: yazıyı L4 (B1+) opinion yazısı ölçütlerine göre 100 üzerinden puanlar.
+     * Cevap JSON: total, summary, criteria[{name,score,max,comment}], strengths[], mistakes[{wrong,right,why}], improved.
+     */
+    fun gradeEssay(config: AssistantConfig, type: EssayType, topic: String, text: String): EssayFeedback {
+        val prompt = """
+Sen Ankara Üniversitesi YDYO İngilizce Hazırlık L4 (B1+, SpeakOut) yazma sınavı değerlendiricisisin. Öğrencinin ${type.label} yazısını puanla.
+Beklenen yapı: ${type.brief} Hedef uzunluk: ${type.minWords}-${type.maxWords} kelime.
+
+Ölçütler (toplam 100):
+1. "Görev ve içerik" (20): soruya net bir görüşle cevap, nedenler ve destekleyici örnekler/açıklamalar yeterli ve konuyla ilgili.
+2. "Düzen ve paragraf yapısı" (20): giriş-tez cümlesi, konu cümleleri, gelişme, sonuç; mantıklı sıra.
+3. "Bağlaçlar ve bütünlük" (20): linkers (Firstly, In addition, However, In conclusion...) doğru ve çeşitli; cümleler arası akış.
+4. "Dil bilgisi" (20): zaman uyumu, cümle yapısı, article/preposition, özne-yüklem uyumu; B1+ yapılar (relative clauses, conditionals, passive...).
+5. "Kelime bilgisi ve yazım" (20): uygun ve çeşitli kelime, collocations, yazım ve noktalama.
+Uzunluk hedefin çok altındaysa "Görev ve içerik" puanını düşür. B1+ öğrencisine adil ol; ne çok cömert ne çok sert.
+
+Açıklamaları Türkçe yaz; İngilizce örnekleri İngilizce bırak. En fazla 10 hata göster (en önemlileri).
+"improved": öğrencinin yazısının düzeltilmiş ve biraz geliştirilmiş hali (aynı fikirler, aynı uzunluk civarı, B1+ düzeyinde; yeni fikir ekleme).
+SADECE şu JSON'u döndür, başka hiçbir şey yazma:
+{"total": 0, "summary": "2-3 cümle genel değerlendirme", "criteria": [{"name": "...", "score": 0, "max": 20, "comment": "..."}],
+ "strengths": ["..."], "mistakes": [{"wrong": "öğrencinin yazdığı", "right": "doğrusu", "why": "kısa açıklama"}], "improved": "..."}
+
+Konu: $topic
+
+Öğrencinin yazısı:
+<<<
+${text.take(8_000)}
+>>>
+""".trim()
+        return EssayFeedback.parse(chat(config, listOf(ChatMessage("user", prompt))))
+    }
+
+    /** Writing pratiği için yeni bir konu önerir (tek cümle, İngilizce soru). */
+    fun suggestTopic(config: AssistantConfig, type: EssayType): String =
+        chat(
+            config,
+            listOf(
+                ChatMessage(
+                    "user",
+                    "İngilizce hazırlık L4 (B1+) öğrencisi için tek bir ${type.label} konusu yaz. Sadece konu sorusunu İngilizce yaz " +
+                        "(ör. \"... Do you agree or disagree?\"), başka hiçbir şey yazma.",
+                ),
+            ),
+        ).lineSequence().map { it.trim().trim('"', '*', '-', ' ') }.firstOrNull { it.length > 10 } ?: throw IOException("Konu alınamadı")
+
     /** Asistanın uygulamayı, kullanıcıyı ve sınav takvimini tanıması için sistem talimatı. */
     fun systemPrompt(catalog: Catalog, userName: String, now: Long = System.currentTimeMillis()): String {
         val fmt = SimpleDateFormat("d MMMM yyyy EEEE HH:mm", Locale.forLanguageTag("tr"))
@@ -202,6 +248,7 @@ Hazırlık programı kuralları (Ankara Üniversitesi YDYO Öğrenci El Kitabı 
 - Kur Atlama Sınavı: Dinleme-Okuma-Dil Kullanımı %60, Yazma %20, Sözlü %20.
 - L4 kurunu geçenler Güz Yeterlik Sınavına girer; en az 70 alan hazırlığı bitirir. Derslere en az %85 devam zorunlu (%15 devamsızlık hakkı).
 - L4 Güz sunumu: bireysel, 8-10 dakika + 5 dakika soru-cevap; konular sunumdan iki hafta önce verilir.
+- Uygulamadaki "Writing" (ana sayfa) ekranında essay yazılır, asistan 5 ölçütle (görev, düzen, bağlaçlar, dil bilgisi, kelime) 100 üzerinden puanlar.
 - Uygulamadaki "Not ortalamam" (Sınavlar sekmesi / ana sayfa → Ortalama) bu hesabı yapar.
 
 L4 ders konuları:

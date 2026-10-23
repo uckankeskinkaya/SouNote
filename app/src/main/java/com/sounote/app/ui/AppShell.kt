@@ -109,10 +109,10 @@ fun MainShell(vm: LibraryViewModel) {
 
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         val wide = maxWidth >= 600.dp
+        // Yatay telefonda yükseklik az: logo gizlenir, sekmeler kaydırılabilir.
+        val tall = maxHeight >= 520.dp
         if (wide) {
             Row(Modifier.fillMaxSize()) {
-                // Yatay telefonda yükseklik az: logo gizlenir, sekmeler kaydırılabilir.
-                val tall = maxHeight >= 520.dp
                 NavigationRail(
                     header = if (tall) ({ AppLogo(44.dp, Modifier.padding(vertical = 16.dp), elevated = false) }) else null,
                 ) {

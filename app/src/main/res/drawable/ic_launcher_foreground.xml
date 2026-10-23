@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kıvrık köşeli sayfa + üstüne yazan kalem. 108dp tuval, güvenli alan ortadaki 66dp çember. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Sayfanın gölgesi -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M42,32h22l8,8v38a4,4 0,0 1,-4 4h-26a4,4 0,0 1,-4 -4v-42a4,4 0,0 1,4 -4z" />
+    <!-- Sayfa -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,30h22l8,8v38a4,4 0,0 1,-4 4h-26a4,4 0,0 1,-4 -4v-42a4,4 0,0 1,4 -4z" />
+    <path
+        android:fillColor="#BFD0F5"
+        android:pathData="M62,30v6a2,2 0,0 0,2 2h6z" />
+    <!-- Satırlar -->
+    <path
+        android:strokeColor="#A9BDEB"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M41,46h20M41,54h20M41,62h12" />
+    <!-- El yazısı -->
+    <path
+        android:strokeColor="#2F5BD3"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M41,71c3,-5 6,5 9,0s6,5 8,-3" />
+    <!-- Kalem: silgi, bilezik, gövde, ahşap uç, grafit -->
+    <path
+        android:fillColor="#F28B82"
+        android:pathData="M76.58,43.76L82.24,49.42L85.78,45.88L80.12,40.22z" />
+    <path
+        android:fillColor="#C9D1E0"
+        android:pathData="M75.17,45.17L80.83,50.83L82.24,49.42L76.58,43.76z" />
+    <path
+        android:fillColor="#F7B928"
+        android:pathData="M75.17,45.17L80.83,50.83L66.83,64.83L61.17,59.17z" />
+    <path
+        android:fillColor="#F5D9AE"
+        android:pathData="M61.17,59.17L66.83,64.83L58,68z" />
+    <path
+        android:fillColor="#1E2A44"
+        android:pathData="M59.27,64.47L61.53,66.73L58,68z" />
+</vector>

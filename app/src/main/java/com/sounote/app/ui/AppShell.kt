@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -47,13 +48,21 @@ import com.sounote.app.LibraryViewModel
 import com.sounote.app.LibraryViewModel.Tab
 import com.sounote.app.R
 
-private val TABS = listOf(Tab.HOME to "Ana sayfa", Tab.LIBRARY to "Kütüphane", Tab.SETTINGS to "Ayarlar")
+private val TABS = listOf(
+    Tab.HOME to "Ana sayfa",
+    Tab.LIBRARY to "Kütüphane",
+    Tab.COURSES to "Dersler",
+    Tab.EXAMS to "Sınavlar",
+    Tab.SETTINGS to "Ayarlar",
+)
 
 @Composable
 private fun TabIcon(tab: Tab) {
     when (tab) {
         Tab.HOME -> Icon(Icons.Default.Home, contentDescription = null)
         Tab.LIBRARY -> Icon(painterResource(R.drawable.ic_folder), contentDescription = null)
+        Tab.COURSES -> Icon(painterResource(R.drawable.ic_pages), contentDescription = null)
+        Tab.EXAMS -> Icon(Icons.Default.DateRange, contentDescription = null)
         Tab.SETTINGS -> Icon(Icons.Default.Settings, contentDescription = null)
     }
 }
@@ -73,6 +82,8 @@ fun MainShell(vm: LibraryViewModel) {
             when (tab) {
                 Tab.HOME -> HomeScreen(vm)
                 Tab.LIBRARY -> LibraryScreen(vm)
+                Tab.COURSES -> CoursesScreen(vm)
+                Tab.EXAMS -> ExamsScreen(vm)
                 Tab.SETTINGS -> SettingsScreen(vm)
             }
         }

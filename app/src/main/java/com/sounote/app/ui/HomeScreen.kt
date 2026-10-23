@@ -189,6 +189,17 @@ fun HomeScreen(vm: LibraryViewModel) {
                     docCount = vm.imported.size,
                 )
 
+                val now = System.currentTimeMillis()
+                val nextExams = vm.allExams.filter { it.time > now }.take(3)
+                if (nextExams.isNotEmpty()) {
+                    Section("Yaklaşan sınav ve ödevler", action = "Takvim") { vm.tab = LibraryViewModel.Tab.EXAMS }
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        nextExams.forEach { e ->
+                            ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                        }
+                    }
+                }
+
                 val last = recent.firstOrNull()
                 if (empty) {
                     StartCard(onNotebook = { newNotebook = true }, onImport = importPdf)

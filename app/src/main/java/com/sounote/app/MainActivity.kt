@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val ACTION_QUICK_NOTE = "com.sounote.app.QUICK_NOTE"
         const val ACTION_OPEN_DOC = "com.sounote.app.OPEN_DOC"
+        const val ACTION_OPEN_EXAMS = "com.sounote.app.OPEN_EXAMS"
         const val EXTRA_DOC_ID = "docId"
     }
 
@@ -139,6 +140,11 @@ class MainActivity : ComponentActivity() {
         when (intent?.action) {
             ACTION_QUICK_NOTE -> {
                 vm.quickNote()
+                return
+            }
+            ACTION_OPEN_EXAMS -> {
+                vm.closeDoc()
+                vm.tab = LibraryViewModel.Tab.EXAMS
                 return
             }
             ACTION_OPEN_DOC -> {

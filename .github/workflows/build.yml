@@ -100,11 +100,21 @@ jobs:
           name: SouNote-apk
           path: .
 
+      # GitHub, derleme sürerken dal ilerlediyse eski commit'e etiket koydurmuyor (workflows izni ister).
+      # O durumda bu derleme yayınlanmaz; daha yeni commit'in derlemesi yayınlar.
+      - name: Dalın en yeni commit'i mi?
+        id: tip
+        run: |
+          tip=$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)
+          if [ "$tip" = "$GITHUB_SHA" ]; then echo "latest=true" >> "$GITHUB_OUTPUT"; else echo "::notice::Daha yeni commit var ($tip); bu derleme yayınlanmıyor."; fi
+
       - name: Sürüm notu
+        if: steps.tip.outputs.latest == 'true'
         run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md
 
       # Tabletten zip açmadan indirmek için: Releases sayfasında doğrudan APK.
       - name: Release oluştur
+        if: steps.tip.outputs.latest == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}

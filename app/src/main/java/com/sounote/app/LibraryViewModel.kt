@@ -427,7 +427,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     var testChannel by mutableStateOf(prefs.getBoolean("testChannel", false))
         private set
 
-    fun setTestChannel(on: Boolean) {
+    fun switchTestChannel(on: Boolean) {
         testChannel = on
         prefs.edit().putBoolean("testChannel", on).putLong("updateChecked", 0L).apply()
         message = if (on) "Yönetici modu açık: test sürümlerini de alacaksın" else "Yönetici modu kapalı: sadece yayınlanan sürümler"

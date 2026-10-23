@@ -21,7 +21,7 @@
   <img src="docs/img/home.png" width="200" alt="Ana sayfa">
   <img src="docs/img/courses.png" width="200" alt="Dersler">
   <img src="docs/img/exams.png" width="200" alt="Sınavlar">
-  <img src="docs/img/notebook.png" width="200" alt="Defter">
+  <img src="docs/img/grades.png" width="200" alt="Not ortalaması">
 </p>
 
 ## Özellikler

@@ -1,5 +1,7 @@
 package com.sounote.app.ui
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -65,6 +67,7 @@ private fun parse(s: String) = s.trim().replace(',', '.').toDoubleOrNull()
 @Composable
 fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     val g = vm.grades
+    var confirmTemplate by remember { mutableStateOf(false) }
     fun update(items: List<GradeItem> = g.items, pass: Double = g.passMark) = vm.updateGrades(Grades(pass, items))
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -72,7 +75,10 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(4.dp)) {
                     IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kapat") }
-                    Text("Not ortalamam", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Not ortalamam", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    if (g.items.isNotEmpty()) {
+                        androidx.compose.material3.TextButton(onClick = { confirmTemplate = true }) { Text("Okul şablonu") }
+                    }
                 }
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -105,8 +111,26 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                     }
                     if (g.items.isEmpty()) {
                         item {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .padding(16.dp),
+                            ) {
+                                Text("🎓 Ankara Üniversitesi Hazırlık", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Öğrenci El Kitabı 2026-2027'deki hesap: kur içi sınav ve ödevler %40 (2 kısa sınav, 2 ara sınav, " +
+                                        "2 sözlü, 2 yazma) + Kur Atlama Sınavı %60. Kuru geçmek için en az 70.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                androidx.compose.material3.Button(onClick = { vm.updateGrades(Grades.ankaraTemplate()) }) { Text("Bu hesabı kur") }
+                            }
+                        }
+                        item {
                             Text(
-                                "Hazırlık notun hangi sınavlardan oluşuyorsa ekle (ör. Progress Test %20, Writing %10, Yeterlik %50) " +
+                                "Ya da kendin ekle: hazırlık notun hangi sınavlardan oluşuyorsa ekle (ör. Progress Test %20, Writing %10, Yeterlik %50) " +
                                     "ve aldığın puanları gir. Ağırlıkları okulunun yönergesinden ya da hocandan öğrenebilirsin.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -114,6 +138,14 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                         }
                     }
                     items(g.items, key = { it.id }) { item ->
+                        val i = g.items.indexOf(item)
+                        if (item.group.isNotEmpty() && (i == 0 || g.items[i - 1].group != item.group)) {
+                            val avg = g.groupAverage(item.group)
+                            Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text(item.group, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                                if (avg != null) Text("ortalama ${fmt(avg)}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
                         GradeRow(
                             item,
                             onChange = { changed -> update(items = g.items.map { if (it.id == item.id) changed else it }) },
@@ -142,6 +174,20 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                 }
             }
         }
+    }
+    if (confirmTemplate) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmTemplate = false },
+            title = { Text("Okul şablonu yüklensin mi?") },
+            text = { Text("Ankara Üniversitesi Hazırlık hesabı (kur içi %40 + Kur Atlama %60, geçme 70) kurulur. Şu anki liste ve girdiğin puanlar silinir.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    vm.updateGrades(Grades.ankaraTemplate())
+                    confirmTemplate = false
+                }) { Text("Yükle") }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { confirmTemplate = false }) { Text("Vazgeç") } },
+        )
     }
 }
 
@@ -190,6 +236,13 @@ private fun Summary(g: Grades) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (Grades.LEVEL_EXAM in g.groups) {
+                Text(
+                    "Kuru geçersen Güz Yeterlik Sınavı'nda ayrıca en az 70 alman gerekir.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (g.items.isNotEmpty() && !weightOk) {
                 Text(
                     "Ağırlıkların toplamı %${fmt(g.totalWeight)}; %100 olmalı",
@@ -228,7 +281,7 @@ private fun GradeRow(item: GradeItem, onChange: (GradeItem) -> Unit, onDelete: (
                     onChange(item.copy(weight = parse(t)?.coerceIn(0.0, 100.0) ?: 0.0))
                 },
                 singleLine = true,
-                label = { Text("Ağırlık %") },
+                label = { Text("Toplamda %") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.weight(1f),
             )

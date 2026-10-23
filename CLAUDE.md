@@ -90,6 +90,9 @@ ilk kullanımda 403 terms_not_accepted → /v1/terms/text gösterilir, kabul edi
 Eklendi (🧪, build-42+): asistan ekranı yenilendi (balonlar, Markdown gösterimi ui/Markdown.kt, yazıyor animasyonu, öneri kartları).
 Telefon düzeni: CI'da pixel_6 emülatörde 1.3 yazı + 360dp ile ekran görüntüsü alındı (geçici probe.yml + .github/shots.sh, git geçmişinde;
 görüntüler shots-tmp dalına itilir). Dar ekranda: sınav kartında geri sayım alta, karşılama logosu gizli, derslerde 2 sütun, sekme yazısı tek satır.
+Eklendi (🧪, build-48+): animasyonlar (ui/Motion.kt: pressScale, appear/Appear sırayla belirme, sekme ve ekran geçişleri MainActivity Screen + AnimatedContent),
+süzülen karşılama daireleri, büyüyen haftalık çubuklar, kapak Crossfade, listelerde animateItem, yaklaşan (≤2 gün) sınav nabzı.
+Belge ekranındaki paneller bilerek animasyonsuz (PDF görünümü yeniden boyutlanıp takılmasın).
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

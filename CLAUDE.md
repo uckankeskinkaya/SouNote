@@ -127,9 +127,10 @@ Eklendi (🧪, build-84+): asistan kurulum rehberi (ui/AssistantSetup.kt: Evren'
 (prefs activeDays StringSet + bestStreak; belgede 5 dk, kart tekrarı, Writing, haftalık liste işareti, yazılı not günü sayar; ana sayfa Hero + WeekCard),
 sitede Play Protect uyarısı + VirusTotal (APK digest'iyle rapor bağlantısı), arkadaşla paylaş metninde aynı uyarı.
 
-Eklendi (🧪, build-86+): katalogdaki Word/PPT kaynakları PDF olarak indirilir: convert.yml (.github/convert/convert.py, LibreOffice +
-Carlito/Caladea yazı tipleri) Drive'dan indirip çevirir, "kaynaklar" ön sürümüne <driveId>.pdf yükler (olanlar atlanır; catalog.json
-değişince kendiliğinden çalışır). Resource.pdfUrl; 404 → "PDF hali henüz hazır değil". Satırda "Drive" + "İndir".
+Word/PPT kaynakları (build-87+): PDF kopyaları kullanıcının Drive'ında tools/drive_pdf.gs (Apps Script, Drive API v3; aynı klasöre
+"<ad> (PDF).pdf", açıklama "SouNote PDF kopyası: <orijinal id>", günlük tetikleyici) ile üretilir. GitHub'da kopya TUTULMAZ (kullanıcı:
+okul materyali, sorun olabilir; "kaynaklar" sürümü silindi). make_catalog.py PDFS eşlemesi → catalog "pdf" alanı → Resource.convertible
+→ satırda "Drive" + "İndir" (PDF kopyası Drive'dan iner). Eşleme yoksa sadece "Drive'da aç".
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

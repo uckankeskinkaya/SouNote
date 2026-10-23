@@ -20,18 +20,22 @@ data class Resource(
     /** Haftanın günü: 1 = Pazartesi … 5 = Cuma, 0 = kendi çalışman (self-study). */
     val day: Int = 0,
     val order: Int = 0,
+    /** Word/PowerPoint'in Drive'daki PDF kopyası (tools/drive_pdf.gs üretir); yoksa sadece Drive'da açılır. */
+    val pdf: String = "",
 ) {
     val isPdf get() = kind == "pdf"
-    /** Word/PowerPoint: CI'da PDF'e çevrilmiş kopyası indirilir (convert.yml → "kaynaklar" sürümü). */
-    val convertible get() = kind == "pptx" || kind == "docx"
-    val pdfUrl: String? get() = if (convertible) driveId?.let { "$CONVERTED_BASE/$it.pdf" } else null
+    /** Word/PowerPoint ve PDF kopyası var: kopyası indirilir. */
+    val convertible get() = (kind == "pptx" || kind == "docx") && pdf.isNotBlank()
+    private val pdfDriveId: String? get() = if (convertible) driveIdOf(pdf) else null
     /** Drive paylaşım bağlantısından dosya kimliği. */
-    val driveId: String?
-        get() = Regex("drive\\.google\\.com/(?:file/d/|open\\?id=|uc\\?(?:export=download&)?id=)([A-Za-z0-9_-]{10,})")
-            .find(url)?.groupValues?.get(1)
+    val driveId: String? get() = driveIdOf(url)
+    /** İndirilecek dosyanın Drive kimliği: Word/PPT için PDF kopyası, PDF için kendisi. */
+    val downloadId: String? get() = pdfDriveId ?: driveId
 }
 
-private const val CONVERTED_BASE = "https://github.com/uckankeskinkaya/SouNote/releases/download/kaynaklar"
+private fun driveIdOf(link: String): String? =
+    Regex("drive\\.google\\.com/(?:file/d/|open\\?id=|uc\\?(?:export=download&)?id=)([A-Za-z0-9_-]{10,})")
+        .find(link)?.groupValues?.get(1)
 
 /** Haftalık programda olup Drive'da bulunmayan materyal (sadece listede görünür). */
 data class WeekItem(val week: Int, val day: Int, val title: String, val kind: String, val order: Int)
@@ -152,7 +156,7 @@ object CatalogRepo {
                         resources = t.optJSONArray("resources").objects().map { r ->
                             Resource(
                                 r.optString("title"), r.optString("url"), r.optString("kind", "link"),
-                                r.optInt("week"), r.optInt("day"), r.optInt("order"),
+                                r.optInt("week"), r.optInt("day"), r.optInt("order"), r.optString("pdf"),
                             )
                         },
                     )
@@ -199,9 +203,7 @@ object CatalogRepo {
 
     /** Herkese açık Drive dosyasını ya da PDF bağlantısını indirir; PDF değilse hata. */
     fun download(res: Resource, target: File) {
-        val url = res.pdfUrl
-            ?: res.driveId?.let { "https://drive.usercontent.google.com/download?id=$it&export=download&confirm=t" }
-            ?: res.url
+        val url = res.downloadId?.let { "https://drive.usercontent.google.com/download?id=$it&export=download&confirm=t" } ?: res.url
         var current = URL(url)
         repeat(5) {
             val c = current.openConnection() as HttpURLConnection
@@ -223,9 +225,6 @@ object CatalogRepo {
                         }
                         return
                     }
-                    404 -> throw IOException(
-                        if (res.convertible) "PDF hali henüz hazır değil; şimdilik \"Drive'da aç\" ile bakabilirsin" else "HTTP 404",
-                    )
                     else -> throw IOException("HTTP ${c.responseCode}")
                 }
             } finally {

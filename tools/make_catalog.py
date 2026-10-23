@@ -88,12 +88,17 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1pX5oJG6QAipxCETROpZ_-PM95qoVIBjg|L4 Quiz 1 deneme testi|html"""
 for line in raw.splitlines():
     i,t,k = line.split("|"); F[t]=(i,k)
+# Word/PPT dosyalarının Drive'daki PDF kopyaları (tools/drive_pdf.gs üretir): orijinal kimlik -> PDF kimliği.
+# Drive'da "(PDF).pdf" ile biten dosyaları listele, açıklamasındaki "SouNote PDF kopyası: <id>" ile eşle.
+PDFS = {}
 used=set()
 def R(*titles):
     out=[]
     for t in titles:
         i,k=F[t]; used.add(t)
-        out.append({"title":t,"url":f"https://drive.google.com/file/d/{i}/view","kind":k})
+        r={"title":t,"url":f"https://drive.google.com/file/d/{i}/view","kind":k}
+        if i in PDFS: r["pdf"]=f"https://drive.google.com/file/d/{PDFS[i]}/view"
+        out.append(r)
     return out
 
 courses = [

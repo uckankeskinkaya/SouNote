@@ -180,8 +180,12 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         openText = null
     }
 
+    /** Silinen notlar: ekran kapanırken çalışan son kayıt onları geri getirmesin. */
+    private val deletedTextIds = HashSet<String>()
+
     /** Değiştiyse kaydeder; başlık ve metin boşsa not silinir. */
     fun saveTextNote(id: String, title: String, body: String) {
+        if (id in deletedTextIds) return
         val old = textNotes.find { it.id == id } ?: openText?.takeIf { it.id == id }
         val stored = textNotes.any { it.id == id }
         if (title.isBlank() && body.isBlank()) {
@@ -200,6 +204,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun togglePinText(note: TextNote) {
+        if (note.id in deletedTextIds) return
         val n = note.copy(pinned = !note.pinned)
         textNotes = (textNotes.filter { it.id != n.id } + n).sortedWith(TextNoteStore.ORDER)
         if (openText?.id == n.id) openText = n
@@ -207,6 +212,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun deleteTextNote(note: TextNote) {
+        deletedTextIds += note.id
         textNotes = textNotes.filter { it.id != note.id }
         if (openText?.id == note.id) openText = null
         textWrites.trySend { textStore.delete(note.id) }

@@ -340,12 +340,17 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
 /** Kütüphane ve ana sayfadaki yazılı not kartı: kâğıt üstünde metnin başı. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun TextNoteCard(note: TextNote, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
+internal fun TextNoteCard(
+    note: TextNote,
+    onClick: () -> Unit,
+    menu: (@Composable (dismiss: () -> Unit) -> Unit)? = null,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(10.dp)
     val ago = remember(note.updated) {
         DateUtils.getRelativeTimeSpanString(note.updated, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
-    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
+    Column(Modifier.combinedClickable(onClick = onClick, onLongClick = if (menu != null) ({ menuOpen = true }) else null)) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -383,6 +388,9 @@ internal fun TextNoteCard(note: TextNote, onClick: () -> Unit, onLongClick: (() 
                     .background(Brand.Blue)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             )
+            if (menu != null) {
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }
+            }
         }
         Text(
             note.displayTitle,
@@ -398,4 +406,46 @@ internal fun TextNoteCard(note: TextNote, onClick: () -> Unit, onLongClick: (() 
             modifier = Modifier.padding(horizontal = 2.dp),
         )
     }
+}
+
+/** Yazılı notu metin olarak paylaş. */
+internal fun shareTextNote(context: android.content.Context, note: TextNote) {
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, note.title)
+        putExtra(Intent.EXTRA_TEXT, if (note.title.isBlank()) note.body else "${note.title}\n\n${note.body}")
+    }
+    context.startActivity(Intent.createChooser(send, "Notu paylaş"))
+}
+
+/** PDF dosyasını paylaşma penceresi. */
+internal fun sharePdfFile(context: android.content.Context, file: java.io.File) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "application/pdf"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(send, "PDF'i paylaş"))
+}
+
+/** Yazılı not kartına basılı tutunca: aç, sabitle, paylaş, deftere çevir, sil. */
+@Composable
+internal fun TextNoteMenuItems(note: TextNote, vm: LibraryViewModel, dismiss: () -> Unit, onDelete: () -> Unit) {
+    val context = LocalContext.current
+    DropdownMenuItem(text = { Text("Aç") }, onClick = { dismiss(); vm.openTextNote(note) })
+    DropdownMenuItem(
+        text = { Text(if (note.pinned) "Sabitlemeyi kaldır" else "Başa sabitle") },
+        onClick = { dismiss(); vm.togglePinText(note) },
+    )
+    DropdownMenuItem(text = { Text("Metin olarak paylaş") }, onClick = { dismiss(); shareTextNote(context, note) })
+    DropdownMenuItem(
+        text = { Text("PDF olarak paylaş") },
+        onClick = { dismiss(); vm.textNotePdf(note) { sharePdfFile(context, it) } },
+    )
+    DropdownMenuItem(text = { Text("Deftere çevir (kalemle yaz)") }, onClick = { dismiss(); vm.textNoteToDocument(note) })
+    DropdownMenuItem(
+        text = { Text("Sil", color = MaterialTheme.colorScheme.error) },
+        onClick = { dismiss(); onDelete() },
+    )
 }

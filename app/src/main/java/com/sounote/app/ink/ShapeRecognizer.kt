@@ -121,14 +121,15 @@ object ShapeRecognizer {
         } else {
             v
         }
-        val out = FloatArray((corners.size + 1) * 3)
+        val xy = FloatArray((corners.size + 1) * 2)
         for (k in 0..corners.size) {
             val c = corners[k % corners.size]
-            out[k * 3] = c[0]
-            out[k * 3 + 1] = c[1]
-            out[k * 3 + 2] = p
+            xy[k * 2] = c[0]
+            xy[k * 2 + 1] = c[1]
         }
-        return Shape(out, corners.size + 1)
+        // Köşeler yumuşatılıp yuvarlanmasın.
+        val out = Shapes.sharp(xy, p)
+        return Shape(out, out.size / 3)
     }
 
     private fun isAxisAlignedRect(v: List<FloatArray>): Boolean {

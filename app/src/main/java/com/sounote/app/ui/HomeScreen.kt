@@ -63,6 +63,14 @@ import androidx.compose.ui.unit.sp
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.R
 import com.sounote.app.data.DocRef
+import com.sounote.app.data.TextNote
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -140,6 +148,19 @@ fun HomeScreen(vm: LibraryViewModel) {
         }
     }
     var newNotebook by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf<DocRef?>(null) }
+    var deleting by remember { mutableStateOf<DocRef?>(null) }
+    var deletingText by remember { mutableStateOf<TextNote?>(null) }
+    val context = LocalContext.current
+    val docMenu: @Composable (DocRef, () -> Unit) -> Unit = { doc, dismiss ->
+        DropdownMenuItem(text = { Text("Aç") }, onClick = { dismiss(); vm.open(doc) })
+        DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
+        DropdownMenuItem(
+            text = { Text("Notlu PDF'i paylaş") },
+            onClick = { dismiss(); vm.export(doc) { sharePdfFile(context, it) } },
+        )
+        DropdownMenuItem(text = { Text("Sil", color = MaterialTheme.colorScheme.error) }, onClick = { dismiss(); deleting = doc })
+    }
     val importPdf = { pickPdfs.launch(arrayOf("application/pdf")) }
 
     val recent = remember(vm.imported) {
@@ -171,7 +192,7 @@ fun HomeScreen(vm: LibraryViewModel) {
                 if (empty) {
                     StartCard(onNotebook = { newNotebook = true }, onImport = importPdf)
                 } else if (last != null) {
-                    ContinueCard(last, vm.lastPage(last), vm.lastOpened(last)) { vm.open(last) }
+                    ContinueCard(last, vm.lastPage(last), vm.lastOpened(last), menu = { d -> docMenu(last, d) }) { vm.open(last) }
                 }
 
                 Section("Hızlı başla")
@@ -199,7 +220,7 @@ fun HomeScreen(vm: LibraryViewModel) {
                     Section("Son açılanlar", action = "Kütüphane") { vm.tab = LibraryViewModel.Tab.LIBRARY }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(end = 8.dp)) {
                         items(recent, key = { it.id }) { doc ->
-                            Box(Modifier.width(132.dp)) { DocCard(doc, onClick = { vm.open(doc) }) }
+                            Box(Modifier.width(132.dp)) { DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }) }
                         }
                     }
                 }
@@ -208,7 +229,9 @@ fun HomeScreen(vm: LibraryViewModel) {
                     Section("Yazılı notlar", action = "Yeni not") { vm.newTextNote() }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(end = 8.dp)) {
                         items(vm.textNotes.take(12), key = { "t" + it.id }) { n ->
-                            Box(Modifier.width(132.dp)) { TextNoteCard(n, onClick = { vm.openTextNote(n) }) }
+                            Box(Modifier.width(132.dp)) {
+                                TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                            }
                         }
                     }
                 }
@@ -230,6 +253,34 @@ fun HomeScreen(vm: LibraryViewModel) {
         }
     }
 
+    renaming?.let { doc ->
+        var text by remember(doc.id) { mutableStateOf(doc.title) }
+        AlertDialog(
+            onDismissRequest = { renaming = null },
+            title = { Text("Yeniden adlandır") },
+            text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true) },
+            confirmButton = { TextButton(onClick = { vm.rename(doc, text); renaming = null }) { Text("Kaydet") } },
+            dismissButton = { TextButton(onClick = { renaming = null }) { Text("Vazgeç") } },
+        )
+    }
+    deleting?.let { doc ->
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text("Silinsin mi?") },
+            text = { Text("\"${doc.title}\" çöp kutusuna taşınacak. ${LibraryViewModel.TRASH_DAYS} gün içinde geri alabilirsin.") },
+            confirmButton = { TextButton(onClick = { vm.delete(doc); deleting = null }) { Text("Sil") } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Vazgeç") } },
+        )
+    }
+    deletingText?.let { n ->
+        AlertDialog(
+            onDismissRequest = { deletingText = null },
+            title = { Text("Not silinsin mi?") },
+            text = { Text("\"${n.displayTitle}\" kalıcı olarak silinecek.") },
+            confirmButton = { TextButton(onClick = { vm.deleteTextNote(n); deletingText = null }) { Text("Sil") } },
+            dismissButton = { TextButton(onClick = { deletingText = null }) { Text("Vazgeç") } },
+        )
+    }
     if (newNotebook) {
         NotebookDialog(
             onCreate = { name, template, size, landscape, paper ->
@@ -287,7 +338,15 @@ private fun Section(title: String, action: String? = null, onAction: () -> Unit 
 }
 
 @Composable
-private fun ContinueCard(doc: DocRef, page: Int, openedAt: Long, onOpen: () -> Unit) {
+@OptIn(ExperimentalFoundationApi::class)
+private fun ContinueCard(
+    doc: DocRef,
+    page: Int,
+    openedAt: Long,
+    menu: @Composable (dismiss: () -> Unit) -> Unit,
+    onOpen: () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
     val ago = remember(openedAt) {
         DateUtils.getRelativeTimeSpanString(openedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
@@ -295,8 +354,9 @@ private fun ContinueCard(doc: DocRef, page: Int, openedAt: Long, onOpen: () -> U
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(20.dp),
-        modifier = Modifier.fillMaxWidth().card().clickable(onClick = onOpen).padding(16.dp),
+        modifier = Modifier.fillMaxWidth().card().combinedClickable(onClick = onOpen, onLongClick = { menuOpen = true }).padding(16.dp),
     ) {
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }
         Box(
             Modifier
                 .width(84.dp)

@@ -258,7 +258,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     if (ts.isNotEmpty()) {
                         fullWidth { SectionTitle("Yazılı notlar") }
                         items(ts, key = { "sn" + it.id }) { n ->
-                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, onLongClick = { deletingText = n })
+                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
                         }
                     }
                     if (fs.isEmpty() && ds.isEmpty() && ts.isEmpty()) fullWidth { Hint("Sonuç yok") }
@@ -338,7 +338,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     if (folder == null && tag == null && vm.textNotes.isNotEmpty()) {
                         fullWidth { SectionTitle("Yazılı notlar") }
                         items(vm.textNotes, key = { "n" + it.id }) { n ->
-                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, onLongClick = { deletingText = n })
+                            TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
                         }
                     }
                     val docs = if (tag != null) emptyList() else vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })

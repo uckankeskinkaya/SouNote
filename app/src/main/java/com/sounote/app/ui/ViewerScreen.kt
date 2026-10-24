@@ -2,6 +2,8 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.platform.LocalConfiguration
 import android.content.Intent
 import android.view.KeyEvent
 import android.Manifest
@@ -139,8 +141,6 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var askSelection by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val reading = vm.readingMode
-    // Telefonda üst çubuk dar: bazı düğmeler ⋮ menüsüne taşınır.
-    val narrowBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
     val wideViewer = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 840
     var sideNote by remember { mutableStateOf(false) }
     fun askRegion() {
@@ -323,6 +323,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         }
     }
 
+    // Telefonda üst çubuğa her düğme sığmıyor (geri düğmesinin üstüne biniyordu): az kullanılanlar ⋮ menüsüne gider.
+    val narrow = LocalConfiguration.current.screenWidthDp < 600
     Scaffold(
         topBar = {
             if (!vm.fullScreen) TopAppBar(
@@ -363,27 +365,28 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     if (vm.recordingSince != 0L) {
                         TextButton(onClick = { toggleRecording() }) {
                             Text(
-                                "● " + formatDuration(now - vm.recordingSince) + "  Durdur",
+                                "● " + formatDuration(now - vm.recordingSince) + if (narrow) "" else "  Durdur",
                                 color = Color(0xFFE53935),
+                                maxLines = 1,
                             )
                         }
-                    } else if (!reading && !narrowBar) {
+                    } else if (!reading && !narrow) {
                         IconButton(onClick = { toggleRecording() }) {
                             Icon(painterResource(R.drawable.ic_mic), contentDescription = "Ses kaydı başlat")
                         }
                     }
+                    if (!narrow) {
                     IconButton(onClick = { vm.togglePagePanel() }) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
-                    if (!narrowBar) {
-                        IconButton(onClick = { askSelection = null; assistantOpen = true }) {
-                            Text("🤖", fontSize = 20.sp)
-                        }
-                        IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Ara")
-                        }
+                    IconButton(onClick = { askSelection = null; assistantOpen = true }) {
+                        Text("🤖", fontSize = 20.sp)
                     }
-                    if (!narrowBar) page?.let { (p, _) ->
+                    IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
+                        Icon(Icons.Default.Search, contentDescription = "Ara")
+                    }
+                    }
+                    if (!narrow) page?.let { (p, _) ->
                         val marked = p in vm.bookmarks
                         IconButton(onClick = { vm.toggleBookmark(doc, p) }) {
                             Icon(
@@ -445,28 +448,44 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
-                            // Dar ekranda (telefon) üst çubuğa sığmayanlar burada.
-                            if (narrowBar) {
+                            if (narrow) {
                                 DropdownMenuItem(
-                                    text = { Text("🤖 Asistan") },
+                                    text = { Text("Sayfalar") },
+                                    leadingIcon = { Icon(painterResource(R.drawable.ic_pages), contentDescription = null) },
+                                    onClick = { moreMenu = false; vm.togglePagePanel() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Asistan") },
+                                    leadingIcon = { Text("🤖", fontSize = 18.sp) },
                                     onClick = { moreMenu = false; askSelection = null; assistantOpen = true },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("🔍 Belgede ara") },
-                                    onClick = { moreMenu = false; searchOpen = true },
+                                    text = { Text("PDF'te ara") },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                    onClick = { moreMenu = false; if (searchOpen) closeSearch() else searchOpen = true },
                                 )
                                 page?.let { (p, _) ->
+                                    val marked = p in vm.bookmarks
                                     DropdownMenuItem(
-                                        text = { Text(if (p in vm.bookmarks) "★ Yer imini kaldır" else "☆ Yer imi ekle") },
+                                        text = { Text(if (marked) "Yer imini kaldır" else "Yer imi ekle") },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                                contentDescription = null,
+                                                tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
+                                            )
+                                        },
                                         onClick = { moreMenu = false; vm.toggleBookmark(doc, p) },
                                     )
                                 }
                                 if (!reading && vm.recordingSince == 0L) {
                                     DropdownMenuItem(
-                                        text = { Text("🎙️ Ses kaydı başlat") },
+                                        text = { Text("Ses kaydı başlat") },
+                                        leadingIcon = { Icon(painterResource(R.drawable.ic_mic), contentDescription = null) },
                                         onClick = { moreMenu = false; toggleRecording() },
                                     )
                                 }
+                                HorizontalDivider()
                             }
                             if (wideViewer) {
                                 DropdownMenuItem(
@@ -676,8 +695,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onUndoGesture = { this.ink.undo() }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
-                                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                                        .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                    // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)
+                                    if (uri.scheme?.lowercase() !in setOf("http", "https", "mailto", "tel")) {
+                                        currentVm.showMessage("Bu bağlantı türü açılmıyor")
+                                    } else {
+                                        runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                            .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                    }
                                 }
                                 onFormSaved = { currentVm.showMessage("Form kaydedildi") }
                                 formSaveTarget = currentVm.formSaveTarget(doc)
@@ -830,9 +854,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             cards = list,
             image = { vm.cardImage(doc, it) },
             onReview = { card, known -> vm.reviewCard(doc, card, known) },
-            onGoToPage = { p ->
+            onGoToPage = { c ->
                 study = null
-                view?.goToPage(p)
+                view?.goToPage(c.page)
             },
             onDismiss = { study = null },
         )

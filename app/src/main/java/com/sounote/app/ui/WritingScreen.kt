@@ -49,7 +49,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sounote.app.LibraryViewModel
-import com.sounote.app.data.Essay
+import com.sounote.app.data.EssayText
 import com.sounote.app.data.QuickItem
 import com.sounote.app.data.TextNote
 import java.util.Locale
@@ -66,17 +66,18 @@ fun WritingScreen(vm: LibraryViewModel) {
     var filter by rememberSaveable { mutableStateOf(0) } // 0 tümü, 1 essay, 2 sabitlenen, 3 favori
     var newMenu by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<TextNote?>(null) }
+    var graderOpen by remember { mutableStateOf(false) }
     val q = query.trim().lowercase(TR)
     val notes = vm.textNotes.filter { n ->
         (q.isEmpty() || n.title.lowercase(TR).contains(q) || n.plainBody.lowercase(TR).contains(q)) &&
             when (filter) {
-                1 -> Essay.isEssay(n.body)
+                1 -> EssayText.isEssay(n.body)
                 2 -> n.pinned
                 3 -> vm.isFavorite(QuickItem.NOTE, n.id)
                 else -> true
             }
     }
-    val totalWords = remember(vm.textNotes) { vm.textNotes.sumOf { Essay.countWords(it.plainBody) } }
+    val totalWords = remember(vm.textNotes) { vm.textNotes.sumOf { EssayText.countWords(it.plainBody) } }
 
     Scaffold(
         topBar = { SouTopBar("Yazı stüdyosu", subtitle = "Essay'ler, taslaklar ve yazılı notlar") },
@@ -90,11 +91,15 @@ fun WritingScreen(vm: LibraryViewModel) {
                 DropdownMenu(expanded = newMenu, onDismissRequest = { newMenu = false }) {
                     androidx.compose.material3.DropdownMenuItem(
                         text = { Text("🏗️ Essay (giriş, gelişme, sonuç)") },
-                        onClick = { newMenu = false; vm.newTextNote(Essay.TEMPLATE) },
+                        onClick = { newMenu = false; vm.newTextNote(EssayText.TEMPLATE) },
                     )
                     androidx.compose.material3.DropdownMenuItem(
                         text = { Text("📝 Serbest metin") },
                         onClick = { newMenu = false; vm.newTextNote() },
+                    )
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text("⭐ Süreli essay, asistan puanlasın") },
+                        onClick = { newMenu = false; graderOpen = true },
                     )
                 }
             }
@@ -112,6 +117,12 @@ fun WritingScreen(vm: LibraryViewModel) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SouSearchField(query, { query = it }, "Yazılarında ara")
+                        Banner(
+                            "Süreli essay yaz, asistan L4 ölçütleriyle puanlasın ve düzeltsin.",
+                            BannerKind.INFO,
+                            action = "Essay puanla",
+                            onAction = { graderOpen = true },
+                        )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                             listOf("Tümü", "🏗️ Essay'ler", "📌 Sabitlenen", "⭐ Favoriler").forEachIndexed { i, label ->
                                 FilterChip(selected = filter == i, onClick = { filter = i }, label = { Text(label, maxLines = 1) })
@@ -133,7 +144,7 @@ fun WritingScreen(vm: LibraryViewModel) {
                             "Essay şablonu giriş, gelişme ve sonuç başlıklarıyla gelir; istersen serbest yazarsın. " +
                                 "Yazma koçu dil bilgisi, kelime ve yapı önerileri verir; metnini sen onaylamadan değiştirmez.",
                         ) {
-                            Button(onClick = { vm.newTextNote(Essay.TEMPLATE) }) { Text("Yeni essay") }
+                            Button(onClick = { vm.newTextNote(EssayText.TEMPLATE) }) { Text("Yeni essay") }
                             OutlinedButton(onClick = { vm.newTextNote() }) { Text("Serbest metin") }
                         }
                     }
@@ -156,6 +167,7 @@ fun WritingScreen(vm: LibraryViewModel) {
         }
     }
 
+    if (graderOpen) EssayGraderScreen(vm) { graderOpen = false }
     deleting?.let { n ->
         AlertDialog(
             onDismissRequest = { deleting = null },
@@ -172,8 +184,8 @@ fun WritingScreen(vm: LibraryViewModel) {
 @Composable
 private fun WritingCard(note: TextNote, favorite: Boolean, onClick: () -> Unit, menu: @Composable (dismiss: () -> Unit) -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
-    val words = remember(note.body) { Essay.countWords(note.plainBody) }
-    val structure = remember(note.body) { Essay.structure(note.body) }
+    val words = remember(note.body) { EssayText.countWords(note.plainBody) }
+    val structure = remember(note.body) { EssayText.structure(note.body) }
     val essay = structure.count { it } >= 2
     val ago = remember(note.updated) {
         DateUtils.getRelativeTimeSpanString(note.updated, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
@@ -199,7 +211,7 @@ private fun WritingCard(note: TextNote, favorite: Boolean, onClick: () -> Unit, 
             if (favorite) Text(" ★", color = LocalSouColors.current.star, fontSize = 16.sp)
         }
         Text(
-            Essay.plain(note.plainBody).lineSequence().filter { it.isNotBlank() }.take(4).joinToString(" "),
+            EssayText.plain(note.plainBody).lineSequence().filter { it.isNotBlank() }.take(4).joinToString(" "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 3,

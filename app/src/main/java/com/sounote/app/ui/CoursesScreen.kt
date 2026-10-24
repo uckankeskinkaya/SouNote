@@ -2,6 +2,10 @@
 
 package com.sounote.app.ui
 
+import java.io.File
+import androidx.core.content.FileProvider
+import android.content.Context
+import android.content.ActivityNotFoundException
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Checkbox
@@ -275,7 +279,8 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         item {
             Text(
                 "PDF'ler \"İndir\" ile kütüphanende \"${course.name}\" klasörüne gelir; üstüne kalemle çalışabilirsin. " +
-                    "Sunum, Word ve videolar Drive'da açılır.",
+                    "Word ve sunumlar \"Aç ↗\" ile WPS/Office'te açılır; oradan PDF olarak SouNote'a paylaşırsan kütüphanene gelir. " +
+                    "Videolar Drive'da açılır.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp),
@@ -382,6 +387,7 @@ private fun TopicCard(
 
 @Composable
 private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res: Resource, onOpenLink: (Resource) -> Unit) {
+    val context = LocalContext.current
     val icon = kindIcon(res.kind)
     val local = vm.downloadedDoc(course, res)
     Row(
@@ -402,8 +408,32 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
             res.kind == "pdf" -> {
                 TextButton(onClick = { vm.downloadResource(course, topic, res) }) { Text("İndir") }
             }
+            // Word/PPT: WPS/Office'te açılır; oradan PDF olarak SouNote'a paylaşılır
+            res.isOffice -> Row {
+                TextButton(onClick = { onOpenLink(res) }) { Text("Drive", maxLines = 1) }
+                TextButton(onClick = { vm.downloadForOtherApp(res) { openInOtherApp(context, vm, it, res) } }) {
+                    Text("Aç ↗", maxLines = 1)
+                }
+            }
             else -> TextButton(onClick = { onOpenLink(res) }) { Text("Drive'da aç") }
         }
+    }
+}
+
+/** Word/PPT'yi WPS, Office gibi bir uygulamada açar; PDF'e çevirip SouNote'a geri paylaşmayı hatırlatır. */
+private fun openInOtherApp(context: Context, vm: LibraryViewModel, file: File, res: Resource) {
+    val mime = if (res.kind == "pptx") {
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    } else {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
+    val intent = Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    try {
+        context.startActivity(intent)
+        vm.showMessage("Üstüne yazmak için WPS'te PDF olarak dışa aktar → Paylaş → SouNote; PDF kütüphanene gelir")
+    } catch (e: ActivityNotFoundException) {
+        vm.showMessage("Word/PowerPoint açabilen uygulama yok. Play Store'dan WPS Office ya da Microsoft 365'i kurabilirsin")
     }
 }
 

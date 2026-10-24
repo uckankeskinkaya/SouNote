@@ -40,6 +40,7 @@ object QuickAccess {
 enum class HomeModule(val label: String, val emoji: String) {
     HERO("Karşılama ve bugün", "👋"),
     CONTINUE("Kaldığın yer", "📖"),
+    REVIEW("Bugünkü tekrar (bilgi kartları)", "🃏"),
     QUICK_ACCESS("Hızlı erişim (favoriler)", "⭐"),
     UPCOMING("Yaklaşan sınav ve ödevler", "📅"),
     WEEK_TASKS("Haftalık görevler", "✅"),

@@ -854,7 +854,7 @@ private fun TagsDialog(doc: DocRef, allTags: List<String>, onSave: (List<String>
 @Composable
 internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     val days = remember { vm.studyDays(7) }
-    val streak = remember { vm.studyStreak() }
+    val streak = vm.streak
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
     val dayName = remember { SimpleDateFormat("EEE d", TR) }
     val top = remember { vm.imported.map { it to vm.studyTime(it.id) }.filter { it.second >= 60_000 }.sortedByDescending { it.second }.take(5) }
@@ -886,7 +886,7 @@ internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                     }
                 }
                 Text(
-                    "Belge açıkken geçen süre sayılır. Seri: en az 1 dakika çalıştığın art arda günler.",
+                    "Belge açıkken geçen süre sayılır. Seri: belgede 5 dk çalışma, kart tekrarı, Writing, haftalık liste ya da yazılı not olan art arda günler (en uzun: ${vm.bestStreak} gün).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

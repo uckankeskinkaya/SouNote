@@ -8,7 +8,7 @@ import java.io.IOException
  * Biçim düz metnin içinde Markdown işaretleriyle tutulur ("# Başlık", "**kalın**", "_italik_"):
  * kayıt biçimi değişmez, eski notlar aynen açılır.
  */
-object Essay {
+object EssayText {
     /** "Yeni essay" şablonu (yapı zorunlu değil, kullanıcı silebilir). */
     const val TEMPLATE = "## Introduction\n\n\n## Body\n\n\n## Conclusion\n\n"
 

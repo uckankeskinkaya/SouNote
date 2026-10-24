@@ -79,6 +79,7 @@ private val TR = Locale.forLanguageTag("tr")
 /** Arkadaşlara gönderilen indirme bağlantısı: her zaman en yeni sürüm. */
 private const val DOWNLOAD_URL = "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk"
 private const val REPO_URL = "https://github.com/uckankeskinkaya/SouNote"
+private const val SITE_URL = "https://uckankeskinkaya.github.io/SouNote/"
 
 /** Hata raporunu paylaşma penceresi (ayarlar ve çökme sonrası). */
 internal fun shareErrorReport(context: Context) {
@@ -142,9 +143,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
             type = "text/plain"
             putExtra(
                 Intent.EXTRA_TEXT,
-                "SouNote: PDF'lerin üstüne kalemle not alma uygulaması.\n" +
-                    "İndir (Android): $DOWNLOAD_URL\n" +
-                    "Kurarken \"bilinmeyen kaynaklardan yüklemeye izin ver\" demen gerekebilir.",
+                "SouNote: L4 hazırlık için ders notu, haftalık kaynak ve sınav uygulaması.\n" +
+                    "Kurulum ve tanıtım: $SITE_URL\n" +
+                    "Doğrudan indir (Android): $DOWNLOAD_URL\n\n" +
+                    "Play Store'da olmadığı için telefon \"bilinmeyen uygulama\" ya da Play Protect uyarısı verebilir; " +
+                    "\"Yine de yükle\" demen yeterli. İçin rahat etsin istersen APK'yı virustotal.com'a yükleyip taratabilirsin.",
             )
         }
         context.startActivity(Intent.createChooser(send, "SouNote'u paylaş"))
@@ -399,12 +402,37 @@ fun SettingsScreen(vm: LibraryViewModel) {
         Entry(Category.DATA, "Çalışma istatistiği", "istatistik çalışma süre seri") {
             SettingRow("📊", "Çalışma istatistiği", subtitle = "Bugün, bu hafta, seri, en çok çalışılanlar", onClick = { statsDialog = true })
         },
-        Entry(Category.HELP, "Güncellemeleri denetle", "güncelleme sürüm yeni") {
-            SettingRow(
-                "🔄", "Güncellemeleri denetle",
-                subtitle = "Sürüm ${vm.installedVersion}" + (vm.update?.let { " · yeni sürüm var: ${it.name}" } ?: ""),
-                onClick = { vm.checkUpdate(manual = true) },
-            )
+        Entry(Category.HELP, "Güncellemeleri denetle", "güncelleme sürüm yeni yönetici test") {
+            // Sürüm satırına art arda 7 dokunuş: yönetici modu (test sürümleri) aç/kapa
+            var taps by remember { mutableStateOf(0) }
+            var lastTap by remember { mutableStateOf(0L) }
+            Column {
+                SettingRow(
+                    "🔄", "Güncellemeleri denetle",
+                    subtitle = "Sürüm ${vm.installedVersion}" + (if (vm.testChannel) " · yönetici" else "") +
+                        (vm.update?.let { " · yeni sürüm var: ${it.name}" } ?: ""),
+                    onClick = {
+                        val t = System.currentTimeMillis()
+                        taps = if (t - lastTap < 600) taps + 1 else 1
+                        lastTap = t
+                        when {
+                            taps >= 7 -> {
+                                taps = 0
+                                vm.switchTestChannel(!vm.testChannel)
+                            }
+                            taps == 1 -> vm.checkUpdate(manual = true)
+                        }
+                    },
+                )
+                if (vm.testChannel) {
+                    RowDivider()
+                    SwitchRow(
+                        "🧪", "Yönetici modu",
+                        "Yayınlanmamış test sürümlerini de alırsın; arkadaşların sadece yayınlananları alır",
+                        true,
+                    ) { vm.switchTestChannel(it) }
+                }
+            }
         },
         Entry(Category.HELP, "Nasıl kullanılır?", "yardım hareket kısayol kullanım") {
             SettingRow("❓", "Nasıl kullanılır?", subtitle = "Hareketler ve kısayollar", onClick = { helpDialog = true })

@@ -22,11 +22,15 @@ data class Resource(
     val order: Int = 0,
 ) {
     val isPdf get() = kind == "pdf"
+    /** Word/PowerPoint: başka uygulamada (WPS, Office) açılır, oradan PDF olarak SouNote'a paylaşılabilir. */
+    val isOffice get() = kind == "pptx" || kind == "docx"
     /** Drive paylaşım bağlantısından dosya kimliği. */
-    val driveId: String?
-        get() = Regex("drive\\.google\\.com/(?:file/d/|open\\?id=|uc\\?(?:export=download&)?id=)([A-Za-z0-9_-]{10,})")
-            .find(url)?.groupValues?.get(1)
+    val driveId: String? get() = driveIdOf(url)
 }
+
+private fun driveIdOf(link: String): String? =
+    Regex("drive\\.google\\.com/(?:file/d/|open\\?id=|uc\\?(?:export=download&)?id=)([A-Za-z0-9_-]{10,})")
+        .find(link)?.groupValues?.get(1)
 
 /** Haftalık programda olup Drive'da bulunmayan materyal (sadece listede görünür). */
 data class WeekItem(val week: Int, val day: Int, val title: String, val kind: String, val order: Int)
@@ -109,7 +113,7 @@ data class Catalog(
  */
 object CatalogRepo {
     /** Herkese açık güncel katalog adresi (boş = sadece uygulamadaki liste). */
-    private const val REMOTE_URL = "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/catalog.json"
+    private const val REMOTE_URL = "https://github.com/uckankeskinkaya/SouNote/releases/download/catalog/catalog.json"
     private const val FILE = "catalog.json"
 
     private fun bundled(context: Context): Catalog =
@@ -202,7 +206,7 @@ object CatalogRepo {
     private fun JSONArray?.strings(): List<String> =
         if (this == null) emptyList() else (0 until length()).map { getString(it) }
 
-    /** Herkese açık Drive dosyasını ya da PDF bağlantısını indirir; PDF değilse hata. */
+    /** Herkese açık Drive dosyasını ya da PDF bağlantısını indirir; beklenen türde değilse (PDF ya da Word/PPT) hata. */
     fun download(res: Resource, target: File) {
         val url = res.driveId?.let { "https://drive.usercontent.google.com/download?id=$it&export=download&confirm=t" } ?: res.url
         var current = URL(url)
@@ -219,10 +223,12 @@ object CatalogRepo {
                     }
                     200 -> {
                         c.inputStream.use { input -> target.outputStream().use { input.copyTo(it) } }
-                        val head = target.inputStream().use { s -> ByteArray(5).also { s.read(it) } }
-                        if (String(head) != "%PDF-") {
+                        val head = String(target.inputStream().use { s -> ByteArray(5).also { s.read(it) } })
+                        // Word/PPT (docx/pptx) birer zip: "PK" ile başlar
+                        val ok = if (res.isOffice) head.startsWith("PK") else head == "%PDF-"
+                        if (!ok) {
                             target.delete()
-                            throw IOException("Dosya PDF değil ya da herkese açık paylaşılmamış")
+                            throw IOException(if (res.isOffice) "Dosya indirilemedi ya da herkese açık paylaşılmamış" else "Dosya PDF değil ya da herkese açık paylaşılmamış")
                         }
                         return
                     }

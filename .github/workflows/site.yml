@@ -1,0 +1,36 @@
+name: Siteyi güncelle
+
+# Çalışma dalında docs/ ya da README değişince ana dala taşır; GitHub Pages (main /docs) kendiliğinden yenilenir.
+on:
+  push:
+    branches-ignore: [main, screenshots]
+    paths:
+      - "docs/**"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: docs/ ve README'yi ana dala al
+        run: |
+          git fetch --depth=1 origin "$GITHUB_SHA"
+          git checkout "$GITHUB_SHA" -- docs README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs README.md
+          if git diff --cached --quiet; then echo "Değişiklik yok"; exit 0; fi
+          git commit -m "Site: ${GITHUB_REF_NAME} dalından güncellendi"
+          git push origin HEAD:main

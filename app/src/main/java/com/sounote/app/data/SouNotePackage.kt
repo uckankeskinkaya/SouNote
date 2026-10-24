@@ -20,6 +20,7 @@ object SouNotePackage {
     const val EXTENSION = "sounote"
     private const val FORMAT = 1
     private const val MAX_ENTRY = 200L * 1024 * 1024
+    private const val MAX_TOTAL = 500L * 1024 * 1024
 
     fun write(pdf: InputStream, inkDir: File, title: String, target: File) {
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
@@ -65,6 +66,7 @@ object SouNotePackage {
         try {
             var title = "Paylaşılan belge"
             var hasManifest = false
+            var total = 0L
             val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Dosya açılamadı")
             ZipInputStream(input.buffered()).use { zip ->
                 while (true) {
@@ -86,7 +88,9 @@ object SouNotePackage {
                             val n = zip.read(buf)
                             if (n < 0) break
                             size += n
-                            if (size > MAX_ENTRY) throw IOException("Paket çok büyük")
+                            total += n
+                            // Sıkıştırma bombasına karşı: tek dosya ve toplam boyut sınırı
+                            if (size > MAX_ENTRY || total > MAX_TOTAL) throw IOException("Paket çok büyük")
                             o.write(buf, 0, n)
                         }
                     }

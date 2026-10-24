@@ -95,6 +95,8 @@ fun InkToolbar(
     onChange: (ToolState) -> Unit,
     selection: SelectionUi,
     onInsertImage: () -> Unit,
+    /** Çıkartma ekle (drawable kimliği). */
+    onSticker: (Int) -> Unit = {},
     /** Tam ekranda üst çubuk gizlenince gereken düğmeler (çık, geri al, ileri al) buraya gelir. */
     leading: (@Composable () -> Unit)? = null,
     /** Bütün ezber bantlarını aç (true) / kapat (false). */
@@ -141,6 +143,30 @@ fun InkToolbar(
                     onChange(state.copy(tool = Tool.STAMP))
                 }
                 ToolChip("Resim ekle", false, vector = SouIcons.Image, onClick = onInsertImage)
+                Box {
+                    var stickers by remember { mutableStateOf(false) }
+                    ToolChip("Çıkartma", stickers, vector = SouIcons.Mood) { stickers = true }
+                    DropdownMenu(expanded = stickers, onDismissRequest = { stickers = false }) {
+                        androidx.compose.foundation.layout.FlowRow(
+                            maxItemsInEachRow = 4,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.width(280.dp).padding(10.dp),
+                        ) {
+                            STICKERS.forEach { res ->
+                                androidx.compose.foundation.Image(
+                                    painterResource(res),
+                                    contentDescription = "Çıkartma",
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { stickers = false; onSticker(res) }
+                                        .padding(4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
                 Separator()
                 ToolChip("Cetvel", state.guide == GuideKind.RULER, vector = SouIcons.Straighten) {
                     onChange(state.copy(guide = if (state.guide == GuideKind.RULER) GuideKind.NONE else GuideKind.RULER))
@@ -346,7 +372,7 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
             }
         }
     }
-    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.copy(penColor = it)) }, onCustomColor)
+    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.withCustomColor(it).copy(penColor = it)) }, onCustomColor)
     WidthControl(state.penWidthMm, min = 0.1f, max = 5f, step = 0.1f) { onChange(state.copy(penWidthMm = it)) }
     PenSettings(state, onChange)
 }
@@ -443,7 +469,7 @@ private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
 private fun HighlighterOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
     Palette(
         ToolState.HIGHLIGHTER_COLORS, state.customColors, state.highlighterColor,
-        { onChange(state.copy(highlighterColor = it)) }, onCustomColor,
+        { onChange(state.withCustomColor(it).copy(highlighterColor = it)) }, onCustomColor,
     )
     WidthControl(state.highlighterWidthMm, min = 1f, max = 15f, step = 0.5f) {
         onChange(state.copy(highlighterWidthMm = it))
@@ -515,7 +541,7 @@ private fun ShapeOptions(state: ToolState, onChange: (ToolState) -> Unit, onCust
             },
         )
     }
-    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.copy(penColor = it)) }, onCustomColor)
+    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.withCustomColor(it).copy(penColor = it)) }, onCustomColor)
     WidthControl(state.penWidthMm, min = 0.1f, max = 5f, step = 0.1f) { onChange(state.copy(penWidthMm = it)) }
 }
 
@@ -539,7 +565,7 @@ private fun StampOptions(state: ToolState, onChange: (ToolState) -> Unit, onCust
             }
         }
     }
-    Palette(ToolState.PEN_COLORS, state.customColors, state.stampColor, { onChange(state.copy(stampColor = it)) }, onCustomColor)
+    Palette(ToolState.PEN_COLORS, state.customColors, state.stampColor, { onChange(state.withCustomColor(it).copy(stampColor = it)) }, onCustomColor)
     Text("Boyut", style = MaterialTheme.typography.labelLarge)
     Slider(
         value = state.stampSizePt,
@@ -574,7 +600,7 @@ private fun TapeOptions(
 
 @Composable
 private fun TextOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
-    Palette(ToolState.PEN_COLORS, state.customColors, state.textColor, { onChange(state.copy(textColor = it)) }, onCustomColor)
+    Palette(ToolState.PEN_COLORS, state.customColors, state.textColor, { onChange(state.withCustomColor(it).copy(textColor = it)) }, onCustomColor)
     Text("Boyut", style = MaterialTheme.typography.labelLarge)
     Slider(
         value = state.textSizePt,
@@ -684,10 +710,14 @@ private fun Palette(
     onSelect: (Int) -> Unit,
     onCustom: () -> Unit,
 ) {
-    val extra = customs.filter { it !in presets }
-    val all = if (selected !in presets && selected !in extra) presets + extra + selected else presets + extra
+    // Önce son kullanılan renkler (en yenisi başta), sonra hazır renkler.
+    val recent = customs.take(6)
+    val rest = presets.filter { it !in recent }
+    val extra = if (selected !in recent && selected !in rest) listOf(selected) else emptyList()
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-        all.forEach { c -> Swatch(c, c == selected) { onSelect(c) } }
+        (extra + recent).forEach { c -> Swatch(c, c == selected) { onSelect(c) } }
+        if (recent.isNotEmpty() || extra.isNotEmpty()) VerticalDivider(Modifier.height(22.dp).padding(horizontal = 2.dp))
+        rest.forEach { c -> Swatch(c, c == selected) { onSelect(c) } }
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier

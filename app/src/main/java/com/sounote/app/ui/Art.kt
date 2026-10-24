@@ -174,3 +174,10 @@ internal fun CoverPicker(selected: Int, onSelect: (Int) -> Unit) {
         }
     }
 }
+
+/** Çıkartmalar (Canva): sayfaya resim olarak eklenir; taşınır, büyütülür, döndürülür, PDF'e de çıkar. */
+internal val STICKERS = listOf(
+    R.drawable.sticker_arrow, R.drawable.sticker_star, R.drawable.sticker_warning, R.drawable.sticker_check,
+    R.drawable.sticker_heart, R.drawable.sticker_idea, R.drawable.sticker_question, R.drawable.sticker_pin,
+    R.drawable.sticker_clock, R.drawable.sticker_thumbs, R.drawable.sticker_fire, R.drawable.sticker_books,
+)

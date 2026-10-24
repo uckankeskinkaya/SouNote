@@ -99,7 +99,7 @@ data class ToolState(
     val guide: GuideKind = GuideKind.NONE,
     /** Her kalem türünün son rengi ve kalınlığı: kalem değişince kaldığı yerden devam eder. */
     val penMemory: Map<PenType, Pair<Int, Float>> = emptyMap(),
-    /** Renk seçiciden seçilmiş son renkler (en yenisi başta). */
+    /** Son kullanılan renkler (en yenisi başta): paletten ya da renk seçiciden seçilenler. */
     val customColors: List<Int> = emptyList(),
 ) {
     /** Ham kalem basıncını hassasiyet ayarına göre eğer. */

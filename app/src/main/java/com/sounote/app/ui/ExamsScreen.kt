@@ -146,15 +146,33 @@ fun ExamsScreen(vm: LibraryViewModel) {
     val onItem = { e: Exam -> if (!e.global) editing = e }
     val onLong = { e: Exam -> if (!e.global) deleting = e }
     val motion = LocalMotionLevel.current
+    var planOpen by remember { mutableStateOf(false) }
+    if (planOpen) ExamPlanDialog(vm) { planOpen = false }
 
     Scaffold(
         topBar = {
             SouTopBar(
                 "Planlayıcı",
                 actions = {
-                    IconButton(onClick = {
-                        vm.openAssistant("Yaklaşan sınav ve ödevlerime göre bana önümüzdeki 7 gün için günlük, gerçekçi bir çalışma planı öner.")
-                    }) { Icon(SouIcons.StarShine, contentDescription = "Asistandan plan iste") }
+                    Box {
+                        var aiMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { aiMenu = true }) { Icon(SouIcons.StarShine, contentDescription = "Asistan") }
+                        androidx.compose.material3.DropdownMenu(expanded = aiMenu, onDismissRequest = { aiMenu = false }) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("Sınav öncesi plan") },
+                                leadingIcon = { Icon(SouIcons.Checklist, contentDescription = null) },
+                                onClick = { aiMenu = false; planOpen = true },
+                            )
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("Asistana sor") },
+                                leadingIcon = { Icon(SouIcons.Chat, contentDescription = null) },
+                                onClick = {
+                                    aiMenu = false
+                                    vm.openAssistant("Yaklaşan sınav ve ödevlerime göre bana önümüzdeki 7 gün için günlük, gerçekçi bir çalışma planı öner.")
+                                },
+                            )
+                        }
+                    }
                     IconButton(onClick = { vm.refreshCatalog() }) { Icon(SouIcons.Refresh, contentDescription = "Yenile") }
                 },
             )

@@ -709,6 +709,12 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         persistExams()
     }
 
+    /** Birden çok kayıt ekler (ör. sınav öncesi çalışma planı). */
+    fun addExams(list: List<Exam>) {
+        myExams = (myExams.filter { e -> list.none { it.id == e.id } } + list).sortedBy { it.time }
+        persistExams()
+    }
+
     fun deleteExam(exam: Exam) {
         myExams = myExams.filter { it.id != exam.id }
         persistExams()
@@ -1639,6 +1645,27 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             result.onSuccess { onReady(it.file, it.width, it.height) }.onFailure {
                 ErrorLog.record("Resim eklenemedi", it)
                 message = "Resim eklenemedi"
+            }
+        }
+    }
+
+    /** Çıkartmayı belgenin resim klasörüne kopyalar (PNG, saydam). */
+    fun importSticker(doc: DocRef, resId: Int, onReady: (file: String, width: Int, height: Int) -> Unit) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<android.app.Application>()
+                    val dir = store.imagesDir(doc.id).apply { mkdirs() }
+                    val name = "sticker_${System.currentTimeMillis()}.png"
+                    app.resources.openRawResource(resId).use { input -> java.io.File(dir, name).outputStream().use { input.copyTo(it) } }
+                    val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    android.graphics.BitmapFactory.decodeFile(java.io.File(dir, name).path, o)
+                    Triple(name, o.outWidth, o.outHeight)
+                }
+            }
+            result.onSuccess { (f, w, h) -> onReady(f, w, h) }.onFailure {
+                ErrorLog.record("Çıkartma eklenemedi", it)
+                message = "Çıkartma eklenemedi"
             }
         }
     }

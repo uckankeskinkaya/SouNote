@@ -68,6 +68,11 @@ data class Exam(
     /** Tamamlandı mı (ödevler için; ortak katalogdakiler cihazda ayrıca tutulur). */
     val done: Boolean = false,
 ) {
+    companion object {
+        /** Sınav öncesi çalışma planı görevleri (hatırlatma kurulmaz). */
+        const val PLAN_SLOT = "Çalışma planı"
+    }
+
     val kindLabel get() = when (kind) {
         "task" -> "Ödev"
         "presentation" -> "Sunum"

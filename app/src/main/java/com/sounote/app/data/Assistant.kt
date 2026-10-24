@@ -175,6 +175,73 @@ ${source.take(12_000)}
     }
 
     /**
+     * Sınav öncesi çalışma planı: [days] gün için (1 = yarın) günde bir-iki kısa görev.
+     * Cevap JSON: [{"day": 1, "task": "..."}]
+     */
+    fun studyPlan(config: AssistantConfig, exam: String, details: String, days: Int): List<Pair<Int, String>> {
+        val prompt = """
+İngilizce hazırlık L4 (B1+) öğrencisi için sınava kadar gerçekçi bir çalışma planı hazırla.
+Sınav: $exam
+Sınava $days gün var (1. gün = yarın, $days. gün = sınav günü; sınav günü sadece kısa bir tekrar).
+$details
+Kurallar:
+- Her gün için 1 ya da 2 görev; her görev tek satır, en fazla 90 karakter, Türkçe ve somut (ne çalışılacak, nasıl).
+- Konuları günlere dağıt; son iki günde tekrar ve deneme olsun.
+- SADECE JSON dizisi döndür, başka hiçbir şey yazma: [{"day": 1, "task": "..."}]
+""".trim()
+        val reply = chat(config, listOf(ChatMessage("user", prompt)))
+        val start = reply.indexOf('[')
+        val end = reply.lastIndexOf(']')
+        if (start < 0 || end <= start) throw IOException("Asistan planı beklenen biçimde vermedi, tekrar dene")
+        val arr = JSONArray(reply.substring(start, end + 1))
+        return (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val d = o.optInt("day", 0)
+            val t = o.optString("task").trim()
+            if (d !in 1..days || t.isEmpty()) null else d to t.take(140)
+        }.sortedBy { it.first }.ifEmpty { throw IOException("Plan çıkarılamadı") }
+    }
+
+    /** Deneme sınavı sorusu: 4 şık, doğru şıkkın sırası ve kısa açıklama. */
+    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String)
+
+    /**
+     * Deneme sınavı: metinden (yoksa konu başlıklarından) çoktan seçmeli sorular.
+     * Cevap JSON: [{"q": "...", "options": ["A","B","C","D"], "answer": 0, "why": "..."}]
+     */
+    fun practiceTest(config: AssistantConfig, topic: String, source: String, count: Int): List<Question> {
+        val material = if (source.isBlank()) {
+            "Ders metni yok: soruları konu başlığına göre, L4 (B1+) SpeakOut düzeyinde hazırla."
+        } else {
+            "Soruları sadece aşağıdaki ders metnine dayanarak hazırla:\n<<<\n${source.take(14_000)}\n>>>"
+        }
+        val prompt = """
+İngilizce hazırlık L4 (B1+) öğrencisi için "$topic" konusundan $count soruluk çoktan seçmeli deneme sınavı hazırla.
+$material
+Kurallar:
+- Her soruda 4 şık, tek doğru cevap; şıklar birbirine yakın ama net.
+- Soru ve şıklar İngilizce olabilir; "why" alanı Türkçe ve tek cümle açıklama.
+- Grammar, vocabulary ve reading becerilerini karışık ölç; aynı soruyu tekrar etme.
+- SADECE JSON dizisi döndür, başka hiçbir şey yazma:
+[{"q": "...", "options": ["...", "...", "...", "..."], "answer": 0, "why": "..."}]
+""".trim()
+        val reply = chat(config, listOf(ChatMessage("user", prompt)))
+        val start = reply.indexOf('[')
+        val end = reply.lastIndexOf(']')
+        if (start < 0 || end <= start) throw IOException("Asistan soruları beklenen biçimde vermedi, tekrar dene")
+        val arr = JSONArray(reply.substring(start, end + 1))
+        return (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            val opts = o.optJSONArray("options") ?: return@mapNotNull null
+            val options = (0 until opts.length()).map { opts.optString(it).trim() }.filter { it.isNotEmpty() }
+            val answer = o.optInt("answer", -1)
+            val q = o.optString("q").trim()
+            if (q.isEmpty() || options.size < 2 || answer !in options.indices) null
+            else Question(q, options, answer, o.optString("why").trim())
+        }.ifEmpty { throw IOException("Soru çıkarılamadı") }
+    }
+
+    /**
      * Writing pratiği: yazıyı L4 (B1+) opinion yazısı ölçütlerine göre 100 üzerinden puanlar.
      * Cevap JSON: total, summary, criteria[{name,score,max,comment}], strengths[], mistakes[{wrong,right,why}], improved.
      */

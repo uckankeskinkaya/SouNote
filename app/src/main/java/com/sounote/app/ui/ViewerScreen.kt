@@ -149,6 +149,30 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Kayda bağlı çizgiye dokununca: (dosya adı, an, dokunma sayacı)
     var audioPlay by remember { mutableStateOf<Triple<String, Long, Int>?>(null) }
     var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
+    var layers by remember(doc.id) { mutableStateOf(vm.loadLayers(doc)) }
+    var layersOpen by remember { mutableStateOf(false) }
+    if (layersOpen) {
+        LayersDialog(
+            layers,
+            onChange = {
+                layers = it
+                vm.saveLayers(doc, it)
+            },
+            onDeleteLayer = { l ->
+                // Katmanın çizgileri bütün sayfalardan tek geri alma adımıyla silinir.
+                val before = layers
+                val changes = ink.snapshot().mapNotNull { (p, c) ->
+                    val keep = c.strokes.filter { before.layerOf(it) != l.id }
+                    if (keep.size == c.strokes.size) null else com.sounote.app.ink.InkDocument.Change(p, c, c.copy(strokes = keep))
+                }
+                changes.forEach { ink.set(it.page, it.after) }
+                ink.record(changes)
+                val rest = before.layers.filter { it.id != l.id }
+                layers = before.copy(layers = rest, active = if (before.active == l.id) rest.last().id else before.active)
+                vm.saveLayers(doc, layers)
+            },
+        ) { layersOpen = false }
+    }
     var textCardDialog by remember { mutableStateOf(false) }
     var study by remember { mutableStateOf<List<com.sounote.app.data.Card>?>(null) }
     LaunchedEffect(doc.id) { vm.loadCards(doc) }
@@ -636,6 +660,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 },
                 leading = if (vm.fullScreen) fullScreenButtons else null,
                 onRevealTapes = { view?.setAllTapes(it) },
+                onLayers = { layersOpen = true },
+                layered = !layers.single,
             )
             audioPlay?.let { (name, ms, tapCount) ->
                 val f = vm.recordingFileFor(doc, name)
@@ -721,6 +747,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 }
                                 this.ink = ink
                                 this.tools = tools
+                                this.layers = layers
                                 open(doc.uri, initialPage)
                                 view = this
                             }
@@ -734,6 +761,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             v.setDarkTheme(darkTheme)
                             v.setInverted(vm.nightReading)
                             v.readOnly = vm.readingMode
+                            v.layers = layers
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {

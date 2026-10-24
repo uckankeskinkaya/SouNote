@@ -31,6 +31,7 @@ import com.sounote.app.ink.Eraser
 import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.GuideKind
 import com.sounote.app.ink.InkDocument
+import com.sounote.app.ink.LayerSet
 import com.sounote.app.ink.Clip
 import com.sounote.app.ink.ImageItem
 import com.sounote.app.ink.Images
@@ -82,6 +83,16 @@ class PdfDocumentView(context: Context) : View(context) {
             field.removeListener(inkListener)
             field = value
             value.addListener(inkListener)
+            discardInkNodes()
+            invalidate()
+        }
+
+    /** Belgenin katmanları: gizliler çizilmez, yeni çizgi etkin katmana, silgi/lasso sadece etkin katmanda. */
+    var layers: LayerSet = LayerSet.DEFAULT
+        set(value) {
+            if (field == value) return
+            field = value
+            selection = null
             discardInkNodes()
             invalidate()
         }
@@ -706,7 +717,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
         val content = ink.content(page)
-        val strokes = content.strokes
+        val strokes = layers.arrange(content.strokes)
         val active = current?.takeIf { inputPage == page && !useFront }
         val hits = searchHits[page]
         val showOverlay = hits != null || (tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)) ||
@@ -778,7 +789,7 @@ class PdfDocumentView(context: Context) : View(context) {
         RenderNode("ink$page").apply {
             setPosition(0, 0, size.width, size.height)
             val c = beginRecording()
-            val strokes = ink.strokes(page)
+            val strokes = layers.arrange(ink.strokes(page))
             drawImages(c, page)
             // Fosforlu altta, kalem üstte.
             strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
@@ -1225,6 +1236,7 @@ class PdfDocumentView(context: Context) : View(context) {
                     it.audioFile = file
                     it.audioMs = ms
                 }
+                it.layer = layers.active
             }
             // Bant her zaman düz şerit.
             straightLine = (highlighter && t.highlighterStraight) || tape
@@ -1426,7 +1438,10 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun eraseAlong(ax: Float, ay: Float, bx: Float, by: Float) {
         val page = pageAtScreen(bx, by)
         if (ink.content(page).isEmpty) return
-        val strokes = ink.strokes(page)
+        // Sadece etkin katmandaki çizgiler silinir; ötekiler olduğu gibi kalır.
+        val all = ink.strokes(page)
+        val strokes = if (layers.single) all else all.filter { layers.editable(it) }
+        val locked = if (layers.single) emptyList() else all.filter { !layers.editable(it) }
         val r = tools.eraserSizeDp * density / pageScale(page)
         val x0 = toPageX(page, ax)
         val y0 = toPageY(page, ay)
@@ -1435,7 +1450,7 @@ class PdfDocumentView(context: Context) : View(context) {
         val result = when (tools.eraserMode) {
             EraserMode.STROKE -> Eraser.eraseStrokes(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
             EraserMode.PRECISE -> Eraser.erasePrecise(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
-        }
+        }?.let { if (locked.isEmpty()) it else locked + it }
         val before = ink.content(page)
         // İstenirse yazı kutuları ve resimler de (silginin değdiği) silinir.
         var texts = before.texts
@@ -1784,7 +1799,7 @@ class PdfDocumentView(context: Context) : View(context) {
                     poly[i * 2] = toPageX(page, lasso[i * 2])
                     poly[i * 2 + 1] = toPageY(page, lasso[i * 2 + 1])
                 }
-                val sel = Selections.select(page, ink.content(page), poly, lassoCount)
+                val sel = Selections.select(page, ink.content(page), poly, lassoCount) { layers.editable(it) && layers.visible(it) }
                 selection = if (sel.isEmpty) null else sel
                 // Çizilen alan (notsuz olsa da): "Asistana sor" bu bölgenin PDF metnini kullanır.
                 val bounds = RectF(poly[0], poly[1], poly[0], poly[1])
@@ -1930,7 +1945,7 @@ class PdfDocumentView(context: Context) : View(context) {
         val clip = clipboard ?: return
         val page = currentPage.coerceIn(0, pageTops.size - 1)
         val offset = if (selection?.page == page) 16f else 0f
-        val (content, sel) = Selections.paste(page, ink.content(page), clip, offset, offset)
+        val (content, sel) = Selections.paste(page, ink.content(page), clip, offset, offset, layers.active)
         changing { ink.commit(page, content) }
         selection = sel
         notifySelection()

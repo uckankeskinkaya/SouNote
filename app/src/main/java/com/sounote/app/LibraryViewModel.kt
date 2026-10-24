@@ -1671,6 +1671,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Belgeye eklenen resimlerin klasörü. */
     fun imagesDir(doc: DocRef): File = store.imagesDir(doc.id)
 
+    /** Belgenin çizim katmanları (ink/<belge>/layers.json). */
+    fun loadLayers(doc: DocRef) = com.sounote.app.ink.LayerSet.load(store.imagesDir(doc.id).parentFile)
+
+    fun saveLayers(doc: DocRef, set: com.sounote.app.ink.LayerSet) {
+        runCatching { set.save(store.imagesDir(doc.id).parentFile!!) }.onFailure { ErrorLog.record("Katmanlar kaydedilemedi", it) }
+    }
+
     /** Galeriden seçilen resmi belgeye kaydeder; [onReady] dosya adı ve piksel boyutuyla çağrılır. */
     fun importImage(doc: DocRef, uri: Uri, onReady: (file: String, width: Int, height: Int) -> Unit) {
         viewModelScope.launch {
@@ -1998,7 +2005,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             exporting = true
             saveJob?.cancel()
             flushInk()
-            val snapshot = openInk?.ink?.snapshot() ?: emptyMap()
+            // Gizli katmanlar dışa aktarılmaz.
+            val layerSet = loadLayers(doc)
+            val snapshot = (openInk?.ink?.snapshot() ?: emptyMap()).mapValues { (_, c) -> c.copy(strokes = layerSet.arrange(c.strokes)) }
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     // Form doldurulduysa ya da not alındıysa uygulama içindeki kopya güncel olandır.

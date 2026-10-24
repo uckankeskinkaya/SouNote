@@ -196,7 +196,7 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                                 )
                             }
                         } else if (!searching && results.isEmpty()) {
-                            item { Hint("\"${query.trim()}\" bulunamadı") }
+                            item { EmptyState(SouIcons.Search, "\"${query.trim()}\" bulunamadı", art = com.sounote.app.R.drawable.empty_search) }
                         }
                         shown.groupBy(::kindOf).toSortedMap().forEach { (kind, hits) ->
                             item(key = "h:" + kind.name) {

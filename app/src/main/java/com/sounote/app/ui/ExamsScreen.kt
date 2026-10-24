@@ -371,7 +371,7 @@ private fun PlannerList(
         item { header() }
         if (upcoming.isEmpty()) {
             item {
-                EmptyState(SouIcons.Event, "Yaklaşan bir şey yok")
+                EmptyState(SouIcons.Event, "Yaklaşan bir şey yok", art = com.sounote.app.R.drawable.empty_calendar)
             }
         }
         groups.forEach { (label, list) ->

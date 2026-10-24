@@ -983,7 +983,8 @@ private fun EmptyLibrary(onImport: () -> Unit, onLinkFolder: () -> Unit, onNewNo
     EmptyState(
         SouIcons.LibraryBooks, "Kütüphanen boş",
         "Defter aç, PDF ekle ya da klasör bağla.",
-        modifier = Modifier.padding(top = 56.dp),
+        modifier = Modifier.padding(top = 40.dp),
+        art = R.drawable.empty_library,
     ) {
         Button(onClick = onNewNotebook) { Text("Yeni defter") }
         OutlinedButton(onClick = onImport) { Text("PDF ekle") }

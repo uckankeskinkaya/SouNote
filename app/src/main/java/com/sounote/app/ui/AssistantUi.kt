@@ -90,15 +90,21 @@ sealed interface AssistantSource {
     /** [selection]: lasso ile seçilen bölgenin metni (varsa "Seçim" bağlamı açılır). */
     data class Document(val doc: DocRef, val page: Int, val pageCount: Int, val selection: String? = null) : AssistantSource
     data class Note(val title: String, val text: String) : AssistantSource
+    /** Bir dersin kütüphanedeki (indirilmiş) PDF'leri: ders özeti, kelimeler, sorular. */
+    data class Course(val name: String, val docs: List<DocRef>) : AssistantSource
 }
 
 /** Konuşmalar uygulama açık kaldıkça (kaynağa göre) saklanır. */
 private val histories = HashMap<String, List<ChatMessage>>()
 
+/** Ders özeti bağlamının önbellek anahtarı (docTexts içinde). */
+private const val COURSE_TEXT = 100
+
 private fun AssistantSource.key() = when (this) {
     AssistantSource.General -> "general"
     is AssistantSource.Document -> "doc:" + doc.id
     is AssistantSource.Note -> "note:" + title
+    is AssistantSource.Course -> "course:" + name
 }
 
 /** Yardımcı asistan: soru sor, belgeyi/notu özetlet, alıştırma iste, yazını kontrol ettir. */
@@ -171,6 +177,18 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             t.ifBlank { "(Bu sayfada okunabilir metin yok; taranmış görüntü olabilir.)" } + "\n\"\"\""
                     }
                     is AssistantSource.Note -> "Kullanıcının açık yazılı notu: \"${source.title}\". Notun metni:\n\"\"\"\n${source.text.take(12_000)}\n\"\"\""
+                    is AssistantSource.Course -> docTexts[COURSE_TEXT] ?: run {
+                        // Her belgeden eşit pay: toplam ~16 bin karakter
+                        val per = (16_000 / source.docs.size.coerceAtLeast(1)).coerceAtLeast(1_500)
+                        val parts = ArrayList<String>()
+                        for (d in source.docs.take(12)) {
+                            val t = try { vm.documentText(d, 0, 9_999) } catch (e: Exception) { "" }
+                            parts += "### ${d.title}\n" + t.take(per)
+                        }
+                        parts.joinToString("\n\n").let { all ->
+                            "Kullanıcının \"${source.name}\" dersinin kütüphanedeki belgeleri (${source.docs.size} belge). Metinleri:\n\"\"\"\n$all\n\"\"\""
+                        }.also { docTexts[COURSE_TEXT] = it }
+                    }
                     AssistantSource.General -> null
                 }
                 val system = AssistantClient.systemPrompt(vm.catalog, vm.userName) + (contextText?.let { "\n\n$it" } ?: "")
@@ -300,6 +318,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                                 !vm.assistantConfig.ready -> "Kurulum gerekli"
                                 source is AssistantSource.Document -> source.doc.title
                                 source is AssistantSource.Note -> source.title.ifBlank { "Yazılı not" }
+                                source is AssistantSource.Course -> "${source.name} · ${source.docs.size} belge"
                                 else -> "İngilizce, L4 dersleri ve uygulama"
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -445,6 +464,12 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
             SouIcons.LibraryBooks to "Seçili metindeki zor kelimeleri anlamlarıyla listele",
             SouIcons.Quiz to "Seçili metinden bana 3 soru sor",
         )
+        is AssistantSource.Course -> listOf(
+            SouIcons.Article to "Bu dersin konularını tek sayfada başlıklar ve maddelerle özetle",
+            SouIcons.LibraryBooks to "Bu derste geçen önemli kelimeleri anlamlarıyla listele",
+            SouIcons.Quiz to "Bu dersten sınav için 10 soru sor (cevaplarıyla)",
+            SouIcons.Flag to "Sınava 3 gün kala bu dersi nasıl çalışmalıyım?",
+        )
         is AssistantSource.Note -> listOf(
             SouIcons.Quiz to "Bu nottan 5 çalışma sorusu üret (cevaplarıyla)",
             SouIcons.StarShine to "Bu notu toparla ve özetle",
@@ -480,6 +505,7 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
                     "Seçtiğin bölgeyi okuyorum. Açıklama, çeviri ya da soru isteyebilirsin."
                 }
                 is AssistantSource.Note -> "Notunu okuyorum. Düzeltme, özet ya da değerlendirme isteyebilirsin."
+                is AssistantSource.Course -> "${source.name} dersinin belgelerini okuyorum. Özet, kelime listesi ya da sınav soruları isteyebilirsin."
                 AssistantSource.General -> "İngilizce, L4 dersleri, sınavların ve uygulama hakkında her şeyi sorabilirsin."
             },
             style = MaterialTheme.typography.bodyMedium,

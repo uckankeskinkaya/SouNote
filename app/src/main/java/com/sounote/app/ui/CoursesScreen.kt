@@ -223,6 +223,14 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
 @Composable
 private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<String>, onToggle: (String) -> Unit) {
     val context = LocalContext.current
+    var summaryOpen by remember { mutableStateOf(false) }
+    if (summaryOpen) {
+        AssistantDialog(
+            vm,
+            AssistantSource.Course(course.name, vm.courseDocs(course)),
+            prefill = "Bu dersin konularını tek sayfada başlıklar ve maddelerle özetle",
+        ) { summaryOpen = false }
+    }
     val now = System.currentTimeMillis()
     val exams = vm.allExams.filter { it.time > now - 3 * 3_600_000L }
     LazyColumn(
@@ -232,6 +240,22 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     ) {
         item { CourseHeader(vm, course) }
         val docs = vm.courseDocs(course)
+        if (docs.isNotEmpty()) {
+            item {
+                // Asistan bu dersin indirilmiş bütün PDF'lerini okuyup özet çıkarır.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().card().clickable { summaryOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    IconBadge(SouIcons.StarShine)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text("Asistanla ders özeti", style = MaterialTheme.typography.titleSmall)
+                        Text("${docs.size} belgeden özet, kelimeler ve sorular", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         if (docs.isNotEmpty()) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

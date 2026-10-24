@@ -14,7 +14,7 @@ android {
         targetSdk = 36
         // CI'da her derleme numarası artar, böylece yeni APK eskisinin üstüne kurulur.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "2.0.$versionCode"
+        versionName = "3.0.$versionCode"
         // Sadece telefon/tablet işlemcileri (emülatör x86 kodları APK'yı şişiriyordu).
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")

@@ -706,7 +706,7 @@ private fun StartCard(onNotebook: () -> Unit, onImport: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth().card().padding(24.dp),
     ) {
-        Image(painterResource(com.sounote.app.R.drawable.pen_fountain), contentDescription = null, modifier = Modifier.height(96.dp))
+        Image(painterResource(com.sounote.app.R.drawable.pen_ballpoint), contentDescription = null, modifier = Modifier.height(96.dp))
         Text("İlk defterini oluştur", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         Text(
             "Boş defter aç ya da PDF ekle.",

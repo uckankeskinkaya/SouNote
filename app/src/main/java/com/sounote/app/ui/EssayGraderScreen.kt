@@ -600,7 +600,7 @@ private fun ScoreHeader(essay: Essay, fb: EssayFeedback) {
 }
 
 @Composable
-private fun CriterionRow(name: String, score: Int, max: Int, comment: String, index: Int) {
+internal fun CriterionRow(name: String, score: Int, max: Int, comment: String, index: Int) {
     val target = if (max > 0) score / max.toFloat() else 0f
     var started by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { delay(150L * index); started = true }

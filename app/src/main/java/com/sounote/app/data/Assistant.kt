@@ -274,6 +274,51 @@ ${text.take(8_000)}
         return EssayFeedback.parse(chat(config, listOf(ChatMessage("user", prompt))))
     }
 
+    /**
+     * Speaking pratiği: konuşmanın yazıya dökülmüş hali (cihazın konuşma tanıması) L4 ölçütleriyle 100 üzerinden.
+     * Telaffuz metinden ölçülemez; ölçütler akıcılık, dil bilgisi, kelime, görev.
+     */
+    fun gradeSpeaking(config: AssistantConfig, topic: String, transcript: String, seconds: Int, words: Int): EssayFeedback {
+        val prompt = """
+Sen Ankara Üniversitesi YDYO İngilizce Hazırlık L4 (B1+, SpeakOut) konuşma sınavı değerlendiricisisin.
+Öğrenci aşağıdaki konuda $seconds saniye konuştu ($words kelime, dakikada ${if (seconds > 0) words * 60 / seconds else 0} kelime).
+Metin cihazın konuşma tanımasıyla yazıya döküldü: noktalama ve büyük harf yok, bazı kelimeler yanlış tanınmış olabilir; bunları hata sayma.
+Telaffuzu değerlendirme (metinden anlaşılmaz).
+
+Ölçütler (toplam 100):
+1. "Görev ve içerik" (25): konuya cevap, fikirler, nedenler ve örnekler; yeterli uzunluk.
+2. "Akıcılık ve bütünlük" (25): konuşma hızı, fikirlerin sırası, bağlaçlar (first of all, because, however, for example...), tekrarlar.
+3. "Dil bilgisi" (25): zamanlar, cümle yapısı, B1+ yapılar (conditionals, relative clauses, present perfect...).
+4. "Kelime bilgisi" (25): uygun ve çeşitli kelime, collocations.
+B1+ öğrencisine adil ol. Açıklamaları Türkçe yaz; İngilizce örnekleri İngilizce bırak. En fazla 8 hata göster.
+"improved": aynı fikirlerle, B1+ düzeyinde, konuşma diliyle örnek bir cevap (yaklaşık aynı uzunlukta).
+SADECE şu JSON'u döndür, başka hiçbir şey yazma:
+{"total": 0, "summary": "2-3 cümle genel değerlendirme", "criteria": [{"name": "...", "score": 0, "max": 25, "comment": "..."}],
+ "strengths": ["..."], "mistakes": [{"wrong": "öğrencinin söylediği", "right": "doğrusu", "why": "kısa açıklama"}], "improved": "..."}
+
+Konu: $topic
+
+Öğrencinin konuşması:
+<<<
+${transcript.take(8_000)}
+>>>
+""".trim()
+        return EssayFeedback.parse(chat(config, listOf(ChatMessage("user", prompt))))
+    }
+
+    /** Speaking pratiği için yeni konu (tek cümle, İngilizce). */
+    fun suggestSpeakingTopic(config: AssistantConfig): String =
+        chat(
+            config,
+            listOf(
+                ChatMessage(
+                    "user",
+                    "İngilizce hazırlık L4 (B1+) öğrencisi için 1-2 dakikalık konuşma pratiği konusu yaz. Sadece konuyu tek bir " +
+                        "İngilizce soru ya da yönerge olarak yaz (ör. \"Talk about ...\"), başka hiçbir şey yazma.",
+                ),
+            ),
+        ).lineSequence().map { it.trim().trim('"', '*', '-', ' ') }.firstOrNull { it.length > 10 } ?: throw IOException("Konu alınamadı")
+
     /** Writing pratiği için yeni bir konu önerir (tek cümle, İngilizce soru). */
     fun suggestTopic(config: AssistantConfig, type: EssayType): String =
         chat(

@@ -380,26 +380,27 @@ fun HomeScreen(vm: LibraryViewModel) {
                     }
                 }
                 val modules = vm.homeLayout.visible
-                // Geniş ekranda küçük kartlar yan yana: art arda gelen iki "yarım" modül aynı satıra.
-                val half = setOf(HomeModule.STATS, HomeModule.TIP, HomeModule.WEEK_TASKS, HomeModule.UPCOMING, HomeModule.CONTINUE, HomeModule.REVIEW)
-                var i = 0
-                while (i < modules.size) {
-                    val m = modules[i]
-                    if (i == 0) {
-                        key(m) { module(m, i, Modifier.fillMaxWidth()) }
-                        if (vm.showBackupNudge) Appear(i + 1) { BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge) }
-                        i++
-                        continue
-                    }
-                    val next = modules.getOrNull(i + 1)
-                    if (wide && m in half && next != null && next in half) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.Top) {
-                            Box(Modifier.weight(1f)) { key(m) { module(m, i, Modifier.fillMaxWidth()) } }
-                            Box(Modifier.weight(1f)) { key(next) { module(next, i + 1, Modifier.fillMaxWidth()) } }
+                if (wide) {
+                    // Tablet yatay: iki sütun. Solda içerik (devam et, hızlı başla, son kullanılanlar),
+                    // sağda takvim ve ilerleme (yaklaşanlar, tekrar, haftalık görevler, istatistik).
+                    val right = setOf(HomeModule.UPCOMING, HomeModule.REVIEW, HomeModule.WEEK_TASKS, HomeModule.STATS, HomeModule.TIP)
+                    val hero = modules.firstOrNull()?.takeIf { it == HomeModule.HERO }
+                    if (hero != null) key(hero) { module(hero, 0, Modifier.fillMaxWidth()) }
+                    if (vm.showBackupNudge) BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.Top) {
+                        Column(Modifier.weight(1.35f), verticalArrangement = Arrangement.spacedBy(28.dp)) {
+                            modules.filter { it != hero && it !in right }.forEachIndexed { i, m -> key(m) { module(m, i + 1, Modifier.fillMaxWidth()) } }
                         }
-                        i += 2
-                    } else {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(28.dp)) {
+                            modules.filter { it != hero && it in right }.forEachIndexed { i, m -> key(m) { module(m, i + 1, Modifier.fillMaxWidth()) } }
+                        }
+                    }
+                } else {
+                    var i = 0
+                    while (i < modules.size) {
+                        val m = modules[i]
                         key(m) { module(m, i, Modifier.fillMaxWidth()) }
+                        if (i == 0 && vm.showBackupNudge) Appear(i + 1) { BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge) }
                         i++
                     }
                 }
@@ -463,9 +464,9 @@ fun HomeScreen(vm: LibraryViewModel) {
     }
     if (newNotebook) {
         NotebookDialog(
-            onCreate = { name, template, size, landscape, paper ->
+            onCreate = { name, template, size, landscape, paper, cover ->
                 newNotebook = false
-                vm.createNotebook(name, template, size, landscape, paper)
+                vm.createNotebook(name, template, size, landscape, paper, cover)
             },
             onDismiss = { newNotebook = false },
         )

@@ -1825,6 +1825,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun createNotebook(
         title: String, template: PageTemplate, size: PaperSize = PaperSize.A4, landscape: Boolean = false,
         paper: PaperColor = PaperColor.WHITE,
+        cover: Int = 0,
     ) {
         viewModelScope.launch {
             busy = true
@@ -1835,7 +1836,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
             }
-            result.onSuccess { if (paper != PaperColor.WHITE) prefs.edit().putString("paper_${it.id}", paper.name).apply() }
+            result.onSuccess {
+                if (paper != PaperColor.WHITE) prefs.edit().putString("paper_${it.id}", paper.name).apply()
+                if (cover > 0) com.sounote.app.ui.Covers.set(getApplication(), it.id, cover)
+            }
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             result.onSuccess { open(it) }.onFailure {

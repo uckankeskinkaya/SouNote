@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.DocRef
-import com.sounote.app.data.Essay
+import com.sounote.app.data.EssayText
 import kotlinx.coroutines.delay
 
 /**
@@ -58,7 +58,7 @@ internal fun SideNotePanel(vm: LibraryViewModel, doc: DocRef, onClose: () -> Uni
             Column(Modifier.weight(1f)) {
                 Text("📝 Yan not", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "${Essay.countWords(text)} kelime · yazılı notlarında da görünür",
+                    "${EssayText.countWords(text)} kelime · yazılı notlarında da görünür",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

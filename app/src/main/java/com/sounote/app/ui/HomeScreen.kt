@@ -76,6 +76,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.ButtonDefaults
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -233,6 +236,10 @@ fun HomeScreen(vm: LibraryViewModel) {
     var statsOpen by remember { mutableStateOf(false) }
     var layoutOpen by remember { mutableStateOf(false) }
     var quickEdit by remember { mutableStateOf(false) }
+    var graderOpen by remember { mutableStateOf(false) }
+    // Bugünkü tekrar: açılınca bütün belgelerin zamanı gelmiş kartları yüklenir.
+    var review by remember { mutableStateOf<List<Pair<DocRef, com.sounote.app.data.Card>>?>(null) }
+    val scope = rememberCoroutineScope()
     var renaming by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var deletingText by remember { mutableStateOf<TextNote?>(null) }
@@ -268,7 +275,7 @@ fun HomeScreen(vm: LibraryViewModel) {
         (docs + notes + courses).sortedByDescending { it.time }.take(14)
     }
     val days = remember(vm.imported) { vm.studyDays(7) }
-    val streak = remember(vm.imported) { vm.studyStreak() }
+    val streak = vm.streak
     val empty = vm.loaded && vm.imported.isEmpty() && vm.rootFolders.isEmpty()
     val quick = resolveQuick(vm)
 
@@ -276,7 +283,7 @@ fun HomeScreen(vm: LibraryViewModel) {
     fun module(m: HomeModule, index: Int, modifier: Modifier) {
         when (m) {
             HomeModule.HERO -> Appear(index, modifier) {
-                Hero(greeting(vm.userName), days.first().second, streak, vm.imported.size)
+                Hero(greeting(vm.userName), days.first().second, streak, vm.activeToday, vm.imported.size)
             }
             HomeModule.QUICK_ACCESS -> Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
                 SectionHeader("Hızlı erişim", action = if (quick.isNotEmpty()) "Düzenle" else null, onAction = { quickEdit = true })
@@ -307,16 +314,31 @@ fun HomeScreen(vm: LibraryViewModel) {
             }
             HomeModule.UPCOMING -> {
                 val now = System.currentTimeMillis()
-                val next = vm.allExams.filter { it.time > now && !vm.isDone(it) }.take(3)
+                val narrowHome = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
+                val next = vm.allExams.filter { it.time > now && !vm.isDone(it) }.take(if (narrowHome) 5 else 3)
                 if (next.isNotEmpty()) {
                     Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
                         SectionHeader("Yaklaşan sınav ve ödevler", action = "Planlayıcı") { vm.tab = LibraryViewModel.Tab.EXAMS }
-                        next.forEach { e ->
-                            Box(Modifier.pressScale(0.98f)) {
-                                ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                        if (narrowHome) {
+                            // Telefonda yan yana kaydırılan küçük kartlar (alt alta büyük kartlar çok yer kaplıyordu)
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(end = 8.dp)) {
+                                items(next, key = { it.id }) { e ->
+                                    ExamMini(e, vm, Modifier.animateItem().pressScale()) { vm.tab = LibraryViewModel.Tab.EXAMS }
+                                }
+                            }
+                        } else {
+                            next.forEach { e ->
+                                Box(Modifier.pressScale(0.98f)) {
+                                    ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                                }
                             }
                         }
                     }
+                }
+            }
+            HomeModule.REVIEW -> if (vm.dueCount > 0) {
+                Appear(index, modifier.pressScale(0.98f)) {
+                    ReviewCard(vm.dueCount) { scope.launch { review = vm.dueCards().ifEmpty { null } } }
                 }
             }
             HomeModule.WEEK_TASKS -> {
@@ -338,6 +360,15 @@ fun HomeScreen(vm: LibraryViewModel) {
                 SectionHeader("Hızlı başla")
                 QuickActions(
                     listOf(
+                        // Kalemi olmayanlar için: tek dokunuşla parmakla yazma
+                        QuickAction(
+                            painterResource(R.drawable.ic_touch), "Parmakla yaz",
+                            "Kalemin yoksa aç: tek parmak çizer, iki parmak kaydırır", Color(0xFF00796B),
+                            toggled = vm.tools.fingerDraw,
+                        ) {
+                            vm.updateTools(vm.tools.copy(fingerDraw = !vm.tools.fingerDraw))
+                            vm.showMessage(if (vm.tools.fingerDraw) "Parmakla yazma açık: tek parmak çizer, iki parmak kaydırır" else "Parmakla yazma kapalı: sadece kalem çizer")
+                        },
                         QuickAction(rememberVectorPainter(Icons.Default.Add), "Yeni defter", "Şablonlu boş sayfalar", Color(0xFF4F46E5)) {
                             newNotebook = true
                         },
@@ -349,6 +380,9 @@ fun HomeScreen(vm: LibraryViewModel) {
                         },
                         QuickAction(rememberVectorPainter(Icons.Default.Face), "Asistan", "İngilizce ve ders soruları sor", Color(0xFF00897B)) {
                             vm.openAssistant()
+                        },
+                        QuickAction(rememberVectorPainter(Icons.Default.Star), "Essay puanla", "Süreyle yaz, asistan L4 ölçütleriyle puanlasın", Color(0xFFC2357A)) {
+                            graderOpen = true
                         },
                         QuickAction(rememberVectorPainter(Icons.Default.Star), "Ortalama", "Notlarını gir, geçmek için gerekeni gör", Color(0xFFC2570C)) {
                             gradesOpen = true
@@ -408,7 +442,7 @@ fun HomeScreen(vm: LibraryViewModel) {
                     }
                 }
             }
-            HomeModule.STATS -> Appear(index, modifier) { WeekCard(days, streak, Modifier.fillMaxWidth()) { statsOpen = true } }
+            HomeModule.STATS -> Appear(index, modifier) { WeekCard(days, vm, Modifier.fillMaxWidth()) { statsOpen = true } }
             HomeModule.TIP -> Appear(index, modifier) { TipCard(Modifier.fillMaxWidth()) }
         }
     }
@@ -469,6 +503,23 @@ fun HomeScreen(vm: LibraryViewModel) {
     }
 
     if (gradesOpen) GradesDialog(vm) { gradesOpen = false }
+    if (graderOpen) EssayGraderScreen(vm) { graderOpen = false }
+    review?.let { list ->
+        val byId = remember(list) { list.associate { it.second.id to it.first } }
+        StudyDialog(
+            cards = list.map { it.second },
+            image = { c -> byId[c.id]?.let { vm.cardImage(it, c) } },
+            onReview = { c, known -> byId[c.id]?.let { vm.reviewAny(it, c, known) } },
+            onGoToPage = { c ->
+                review = null
+                byId[c.id]?.let { vm.openAt(it, c.page) }
+            },
+            onDismiss = {
+                review = null
+                vm.refreshDue()
+            },
+        )
+    }
     if (statsOpen) StatsDialog(vm) { statsOpen = false }
     if (layoutOpen) HomeLayoutDialog(vm) { layoutOpen = false }
     if (quickEdit) QuickAccessDialog(vm) { quickEdit = false }
@@ -512,7 +563,7 @@ fun HomeScreen(vm: LibraryViewModel) {
 }
 
 @Composable
-private fun Hero(greeting: String, todayMs: Long, streak: Int, docCount: Int) {
+private fun Hero(greeting: String, todayMs: Long, streak: Int, activeToday: Boolean, docCount: Int) {
     val date = remember { SimpleDateFormat("d MMMM EEEE", TR).format(Date()) }
     val motto = remember { MOTTOS[dayOfYear() % MOTTOS.size] }
     val sou = LocalSouColors.current
@@ -564,8 +615,14 @@ private fun Hero(greeting: String, todayMs: Long, streak: Int, docCount: Int) {
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 10.dp),
                 ) {
+                    HeroChip(
+                        when {
+                            streak > 0 && activeToday -> "🔥 $streak gün seri"
+                            streak > 0 -> "🔥 $streak gün · bugün çalış, seri bozulmasın"
+                            else -> "🔥 Seriye bugün başla"
+                        },
+                    )
                     HeroChip("⏱ Bugün ${formatStudy(todayMs)}")
-                    HeroChip(if (streak > 0) "🔥 $streak gün seri" else "🔥 Seriye bugün başla")
                     HeroChip("📚 $docCount belge")
                 }
             }
@@ -829,6 +886,8 @@ private class QuickAction(
     val title: String,
     val text: String,
     val color: Color,
+    /** Aç/kapa kutusu için: null değilse "Açık/Kapalı" yazar ve açıkken renkli olur. */
+    val toggled: Boolean? = null,
     val onClick: () -> Unit,
 )
 
@@ -851,18 +910,29 @@ private fun QuickActions(actions: List<QuickAction>) {
 @Composable
 private fun ActionTile(a: QuickAction, modifier: Modifier) {
     val space = LocalSpacing.current
+    val on = a.toggled == true
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.card(18.dp).clickable(onClick = a.onClick).padding(horizontal = space.lg, vertical = space.md).heightIn(min = 48.dp),
+        modifier = modifier
+            .card(18.dp)
+            .then(if (on) Modifier.background(a.color.copy(alpha = 0.14f)).border(2.dp, a.color, RoundedCornerShape(18.dp)) else Modifier)
+            .clickable(onClick = a.onClick)
+            .padding(horizontal = space.lg, vertical = space.md)
+            .heightIn(min = 48.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(a.color.copy(alpha = 0.15f)),
+            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(13.dp)).background(if (on) a.color else a.color.copy(alpha = 0.15f)),
         ) {
-            Icon(a.icon, contentDescription = null, tint = a.color, modifier = Modifier.size(22.dp))
+            Icon(a.icon, contentDescription = null, tint = if (on) Color.White else a.color, modifier = Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Text(a.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                a.title + if (a.toggled != null) (if (on) " · Açık" else " · Kapalı") else "",
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 a.text,
                 style = MaterialTheme.typography.bodySmall,
@@ -875,7 +945,7 @@ private fun ActionTile(a: QuickAction, modifier: Modifier) {
 }
 
 @Composable
-private fun WeekCard(days: List<Pair<Long, Long>>, streak: Int, modifier: Modifier, onOpen: () -> Unit) {
+private fun WeekCard(days: List<Pair<Long, Long>>, vm: LibraryViewModel, modifier: Modifier, onOpen: () -> Unit) {
     val dayName = remember { SimpleDateFormat("EEE", TR) }
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
     // Çubuklar açılışta aşağıdan büyür (animasyon kapalıysa hemen tam boy).
@@ -887,7 +957,7 @@ private fun WeekCard(days: List<Pair<Long, Long>>, streak: Int, modifier: Modifi
             Column(Modifier.weight(1f)) {
                 Text("Bu hafta", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Toplam ${formatStudy(days.sumOf { it.second })} çalıştın" + if (streak > 0) " · 🔥 $streak gün" else "",
+                    "Toplam ${formatStudy(days.sumOf { it.second })} çalıştın · 🔥 Seri ${vm.streak} gün · en uzun ${vm.bestStreak}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -916,6 +986,8 @@ private fun WeekCard(days: List<Pair<Long, Long>>, streak: Int, modifier: Modifi
                         color = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 6.dp),
                     )
+                    // Seriye sayılan gün
+                    Text(if (vm.isActiveDay(t)) "🔥" else "·", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -1018,4 +1090,67 @@ internal fun QuickAccessDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Tamam") } },
     )
+}
+
+/** Bütün belgelerde tekrar zamanı gelmiş bilgi kartları. */
+@Composable
+private fun ReviewCard(count: Int, onStart: () -> Unit) {
+    val hero = LocalSouColors.current.hero
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Brush.linearGradient(hero))
+            .clickable(onClick = onStart)
+            .padding(18.dp),
+    ) {
+        Text("🃏", fontSize = 34.sp)
+        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+            Text("Bugünkü tekrar", color = Color.White, style = MaterialTheme.typography.titleMedium)
+            Text(
+                "$count bilgi kartının tekrar zamanı geldi. Birkaç dakikada bitir, unutmadan pekiştir.",
+                color = Color.White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Button(
+            onClick = onStart,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = hero.first()),
+        ) { Text("Başla") }
+    }
+}
+
+/** Telefonda yaklaşan sınav: yan yana kaydırılan küçük kart. */
+@Composable
+private fun ExamMini(e: com.sounote.app.data.Exam, vm: LibraryViewModel, modifier: Modifier, onClick: () -> Unit) {
+    val day = remember(e.time) { SimpleDateFormat("d MMM", TR).format(Date(e.time)) }
+    val c = countdownColor(e.time)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .width(210.dp)
+            .card()
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(Color(vm.courseColor(e.course))))
+            Text(" " + e.kindEmoji, fontSize = 16.sp)
+            Text(day, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f).padding(start = 6.dp))
+            Text(
+                countdownText(e.time),
+                color = c,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(c.copy(alpha = 0.12f)).padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        }
+        Text(
+            e.title.ifBlank { e.course },
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.height(40.dp),
+        )
+    }
 }

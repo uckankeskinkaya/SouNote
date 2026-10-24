@@ -1,0 +1,74 @@
+name: Sürümü yayınla
+
+# Test edilmiş bir test sürümünü herkese açar: arkadaşların uygulaması güncelleme bildirimi alır,
+# indirme bağlantısı (releases/latest) ve sitedeki "Yenilikler" bu sürüme geçer.
+on:
+  # Elle (GitHub → Actions) ya da çalışma dalına .github/publish/request.json gönderilerek
+  push:
+    branches-ignore: [main, screenshots]
+    paths: [".github/publish/request.json"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Sürüm adı (ör. 1.1)"
+        required: true
+      title:
+        description: "Kısa başlık (ör. Writing pratiği ve yeni ana sayfa)"
+        required: true
+      notes:
+        description: "Yenilikler; maddeleri | ile ayır (ör. Writing pratiği | Bugünkü tekrar | Telefon düzeni)"
+        required: true
+      build:
+        description: "Test sürümü numarası (boş = en yeni test sürümü)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push'
+
+      - name: Yayınla
+        env:
+          VERSION: ${{ inputs.version }}
+          TITLE: ${{ inputs.title }}
+          NOTES: ${{ inputs.notes }}
+          BUILD: ${{ inputs.build }}
+        run: |
+          # İstek dosyasıyla tetiklendiyse bilgiler oradan
+          if [ -f .github/publish/request.json ] && [ "${{ github.event_name }}" = "push" ]; then
+            eval "$(python3 -c "
+          import json, shlex
+          d = json.load(open('.github/publish/request.json'))
+          for k in ('version', 'title', 'notes', 'build'):
+              print(k.upper() + '=' + shlex.quote(str(d.get(k, ''))))
+          ")"
+          fi
+          if [ -z "$BUILD" ]; then
+            gh release download test -R "$R" -p test.json -D t
+            BUILD=$(python3 -c "import json; print(json.load(open('t/test.json'))['build'])")
+          fi
+          tag="build-$BUILD"
+          [ -n "$tag" ] || { echo "::error::Test sürümü bulunamadı"; exit 1; }
+          body=$(gh release view "$tag" -R "$R" --json body -q .body)
+          if echo "$body" | grep -q "⚠️"; then echo "::error::$tag çökme testinden geçmemiş; yayınlanmaz"; exit 1; fi
+          # Notlar: | ile ayrılmış maddeler → satır satır
+          printf '%s\n' "$TITLE" > notes.md
+          echo "$NOTES" | tr '|' '\n' | sed 's/^ *//;s/ *$//' | grep -v '^$' | sed 's/^/- /' >> notes.md
+          cat notes.md
+          gh release edit "$tag" -R "$R" --prerelease=false --latest --title "SouNote $VERSION" --notes-file notes.md
+          # Eski uygulamalar kataloğu releases/latest'ten çekiyor: güncel kataloğu bu sürüme de ekle.
+          gh release download catalog -R "$R" -p catalog.json -D cat && gh release upload "$tag" cat/catalog.json -R "$R" --clobber || true
+          echo "::notice::$tag → SouNote $VERSION herkese yayınlandı"

@@ -72,7 +72,7 @@ import com.sounote.app.LibraryViewModel
 import com.sounote.app.ErrorLog
 import com.sounote.app.data.BodyPart
 import com.sounote.app.data.CoachSuggestion
-import com.sounote.app.data.Essay
+import com.sounote.app.data.EssayText
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.width
@@ -170,7 +170,7 @@ private fun insertAtCursor(v: TextFieldValue, t: String): TextFieldValue {
     return TextFieldValue(v.text.substring(0, s) + t + v.text.substring(e), TextRange(s + t.length))
 }
 
-private fun wordCount(text: String) = Essay.countWords(text)
+private fun wordCount(text: String) = EssayText.countWords(text)
 
 /** Satır başına "# " / "## " başlık işareti koyar ya da kaldırır. */
 private fun toggleHeading(v: TextFieldValue, level: Int): TextFieldValue {
@@ -446,7 +446,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                     onClick = {
                         updateFocused { v ->
                             val prefix = if (v.text.isBlank() || v.text.endsWith("\n\n")) "" else if (v.text.endsWith("\n")) "\n" else "\n\n"
-                            TextFieldValue(v.text + prefix + Essay.TEMPLATE, TextRange(v.text.length + prefix.length + "## Introduction\n".length))
+                            TextFieldValue(v.text + prefix + EssayText.TEMPLATE, TextRange(v.text.length + prefix.length + "## Introduction\n".length))
                         }
                     },
                     label = { Text("🏗️ Essay şablonu") },

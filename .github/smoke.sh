@@ -4,12 +4,20 @@
 set -x
 P=com.sounote.app
 mkdir -p shots
-# Anahtar döndürme testi: önce eski anahtarla imzalı yayınlanmış sürüm (build-88) kurulur, yeni APK üstüne
-# güncelleme olarak kurulmalı. Kurulamazsa (INSTALL_FAILED_UPDATE_INCOMPATIBLE) kullanıcılar güncelleyemez: hata.
-curl -sSL -o old.apk https://github.com/uckankeskinkaya/SouNote/releases/download/build-88/SouNote.apk
-adb install old.apk || { echo "::error::Eski sürüm kurulamadı"; exit 1; }
-adb install -r a/SouNote.apk || { echo "::error::Yeni APK eski sürümün üstüne kurulamadı (imza uyumsuz)"; exit 1; }
-echo "Eski imzalı sürümün üstüne güncelleme başarılı"
+# Yayındaki son sürümün (kullanıcıların tabletindeki, build-88 / 1.4) üstüne güncelleme olarak kurulmalı.
+curl -sSL -o published.apk https://github.com/uckankeskinkaya/SouNote/releases/download/build-88/SouNote.apk
+adb install published.apk || { echo "HATA: yayındaki sürüm kurulamadı"; exit 1; }
+adb install -r a/SouNote.apk || { echo "HATA: yeni sürüm yayındaki sürümün (build-88) üstüne kurulamadı"; exit 1; }
+echo "Yayındaki sürümden güncelleme testi geçti"
+adb uninstall com.sounote.app || true
+# İmza testi: eski sürümün üstüne kurulmalı; sadece eski (herkese açık) anahtarla imzalı APK ise üstüne kurulamamalı.
+if [ -f old/rotated ]; then
+  adb install old/SouNote-oldkey.apk || { echo "HATA: eski anahtarlı APK kurulamadı"; exit 1; }
+  adb install -r a/SouNote.apk || { echo "HATA: yeni imzalı sürüm eski sürümün üstüne kurulamadı"; exit 1; }
+  if adb install -r old/SouNote-oldkey.apk; then echo "HATA: eski anahtarlı APK yeni sürümün üstüne kuruldu"; exit 1; fi
+  echo "İmza değişimi testi geçti"
+fi
+adb install -r a/SouNote.apk || exit 1
 adb shell pm grant $P android.permission.POST_NOTIFICATIONS || true
 adb logcat -b crash -c || true
 shot() { sleep 1; adb exec-out screencap -p > "shots/$1.png"; }
@@ -31,7 +39,7 @@ PY
 tap() {
   for k in 1 2 3; do
     xy=$(find_xy "$1"); if [ -n "$xy" ]; then adb shell input tap $xy; sleep 0.7; return 0; fi
-    adb shell input swipe 540 1600 540 800 200; sleep 0.5
+    adb shell input swipe 540 1600 540 800 200; sleep 1.2
   done
   echo "bulunamadı: $1"
 }

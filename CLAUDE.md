@@ -48,10 +48,12 @@ yazı kalın + arka plan (InkStore v3), silgi yazı/resim de silebilir, Cornell 
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
-İmza: anahtar döndürüldü (APK Signature Scheme v3). Anahtarlar depoda değil, GitHub Secrets'ta: SOUNOTE_KEYSTORE_B64 (yeni, alias sounote2),
-SOUNOTE_OLD_KEYSTORE_B64 (eski, alias sounote; eski hali git geçmişinde açık), SOUNOTE_KEY_PASSWORD (ikisi için aynı). CI'da Gradle imzasız derler,
-apksigner eski+yeni anahtar ve lineage (--rotation-min-sdk-version 28) ile imzalar. Eski imzalı sürümün üstüne kurulum smoke.sh'de sınanır (build-88).
-Anahtarları değiştirme/kaybetme: yeni anahtar kaybolursa güncelleme imkânsız; yedeği kullanıcıda.
+İmza anahtarı keystore/sounote.jks — değiştirme/silme, yoksa güncelleme kurulmaz ve notlar gider.
+İmza anahtar değişimi (kullanıcı onayladı, 23 Ekim): eski anahtar herkese açık repoda olduğundan yeni anahtar keystore/sounote2.p12.enc
+(şifreli; şifre sadece GitHub gizli değeri SIGNING_PASSWORD) + geçiş kaydı keystore/lineage.bin (keygen.yml, tek seferlik).
+build.yml APK'yı apksigner ile eski+yeni anahtar ve lineage (--rotation-min-sdk-version 28) ile yeniden imzalar; smoke eski anahtarlı
+APK'nın yeni sürümün üstüne kurulamadığını dener. Bu iki dosya ve gizli değer de asla değiştirilmez/yeniden üretilmez.
+(24 Ekim) Başka oturumda üretilen ikinci bir anahtar (SOUNOTE_KEYSTORE_B64 vb. secret'lar) iptal edildi; kullanılmaz. Geçerli tek düzen yukarıdaki.
 
 Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu gönderirse önce onu düzelt.
 Eklendi (🧪, build-17+): seçimi döndürme (lasso üst tutamaç; TextBox/ImageItem.rotation, InkStore v4), akıllı fosforlu (Android 15+ metin alanları,
@@ -110,9 +112,31 @@ CI (build.yml): build → release (test beklemeden, ~4 dk) ve paralel smoke (em�
 rollback işi sürümü ön sürüme çeker. Gradle cache-read-only: false. Derleme sırasında dal ilerlediyse release atlanır (GITHUB_TOKEN eski commit'e
 etiket koyamıyor: "workflows" izni ister). Smoke ekran görüntüleri "screenshots" dalına itilir.
 İndirme sayfası docs/index.html (+ docs/img), GitHub Pages: Settings → Pages → main /docs (kullanıcı açmalı). README yenilendi.
+KURAL (kullanıcı istedi): her yeni özellikte docs/index.html "Neler yapabilirsin?" kartlarına ve README özellik tablosuna ekle.
+YAYIN KANALLARI (build-68+): her push = TEST sürümü (ön sürüm "Test 1.0.N", sadece yönetici alır). Herkese gitmesi için "Sürümü yayınla"
+(publish.yml, workflow_dispatch: version, title, notes "a | b | c", build boş = en yeni test) çalıştırılır; kullanıcı "yayınla" deyince
+mcp actions_run_trigger ile ben çalıştırırım. Çökme testi geçmeyen (notunda ⚠️) sürüm yayınlanmaz. Sitenin "Yenilikler"i sadece yayınlanan
+ana sürümleri gösterir (en yenisi "Son güncelleme"). Yönetici modu: Ayarlar → sürüm satırına 7 dokunuş (prefs testChannel; Updates.latestIncludingTests).
+Test kanalı: "test" etiketli release'e her derlemede SouNote.apk + test.json {build,name,notes,sha} yüklenir (GitHub release LİSTESİ
+ön sürümleri göstermiyor; doğrudan etiket/indirme bağlantıları çalışıyor). Updates.latestIncludingTests, publish.yml ve video.yml buradan okur.
+Katalog ayrı kanal: "catalog" etiketli release'in catalog.json'u her derlemede güncellenir (Catalog.REMOTE_URL); yayınlanan sürüme de kopyalanır.
+Eklendi (🧪, build-62+): Bugünkü tekrar (vm.dueCards/reviewAny, ana sayfa kartı), Writing pratiği (Essays.kt, EssayStore filesDir/essays yedeğe girer,
+AssistantClient.gradeEssay JSON 5 ölçüt × 20, WritingScreen: liste → konu → süreli editör → değerlendirme).
 
-## SouNote 2.0 (🧪, dal ccr-c4eded18-21kvrf; yayınlanmadı)
-Kullanıcı onayıyla yayınlandı (release adı SouNote 2.0.<run>); ekran görüntüleri `screenshots-v2` dalına, debug APK `SouNote-2.0-debug-apk` artifact'ine.
+Eklendi (🧪, build-84+): asistan kurulum rehberi (ui/AssistantSetup.kt: Evren'i aç → evren.ssyz.org.tr/api-keys, e-Devlet, anahtar yapıştır,
+"Kaydet ve dene"; Evren 1 Kasım 2026'ya kadar ücretsiz, günlük kota; 429'da 5 sn bekleyip bir kez yeniden dener), çalışma serisi
+(prefs activeDays StringSet + bestStreak; belgede 5 dk, kart tekrarı, Writing, haftalık liste işareti, yazılı not günü sayar; ana sayfa Hero + WeekCard),
+sitede Play Protect uyarısı + VirusTotal (APK digest'iyle rapor bağlantısı), arkadaşla paylaş metninde aynı uyarı.
+
+Word/PPT kaynakları (🧪, build-88+): satırda "Drive" + "Aç ↗" (vm.downloadForOtherApp → cache/exports/<ad>.pptx|docx, FileProvider,
+ACTION_VIEW → WPS/Office). Kullanıcı oradan PDF olarak SouNote'a paylaşır (SEND pdf). PDF'e çevirme yok: GitHub'da kopya (kullanıcı: okul
+materyali, olmaz) ve Drive Apps Script yöntemi kullanıcı isteğiyle bırakıldı.
+
+## SouNote 2.0 (🧪, dal ccr-c4eded18-21kvrf)
+ccr-aefb7f13-i7jc0n dalı (1.2–1.4: anahtar değişimi, test kanalı + publish.yml, Word/PPT kaynakları, Writing puanlama, çalışma serisi,
+bugünkü tekrar) bu dala birleştirildi. Yayın akışı onlarınki: her push "Test 2.0.<run>" ön sürümü; herkese açmak için
+.github/publish/request.json (version/title/notes/build) itilir. Writing puanlama ekranı ui/EssayGraderScreen.kt (data/Essays.kt Essay),
+yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma serisi VM.streak/activeDays (onlarınki).
 - Tasarım: ui/Theme.kt (SouNote Light; koyu paletler DarkPalette OBSIDIAN/MIDNIGHT/GRAPHITE prefs darkPalette; vurgu Accent: prefs colorTheme
   null/AUTO = tema rengi, enum adı = hazır, CUSTOM + accentCustom), Manrope (res/font, değişken, OFL assets/licenses), LocalSpacing (UiDensity prefs uiDensity),
   LocalMotionLevel (prefs motionLevel; sistem animasyon ölçeği 0 ise OFF), LocalSouColors. Ortak bileşenler ui/Components.kt.

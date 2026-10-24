@@ -21,29 +21,25 @@ android {
         }
     }
 
-    // İmza anahtarı depoda DEĞİL: CI'da GitHub Secrets'tan gelir (SOUNOTE_KEYSTORE_B64 → dosya, SOUNOTE_KEY_PASSWORD).
-    // Anahtar aynı kalmalı: değişirse güncelleme kurulmaz ve uygulamayı silmek (notları kaybetmek) gerekir.
-    val keystorePath = System.getenv("SOUNOTE_KEYSTORE")
-    val signPassword = System.getenv("SOUNOTE_KEY_PASSWORD")
-    val canSign = keystorePath != null && signPassword != null && file(keystorePath).exists()
+    // Gradle eski (emekli, zaten herkese açık) anahtarla imzalar; CI bu APK'yı yeni gizli anahtar + geçiş kaydıyla
+    // (APK imza şeması v3, keystore/sounote2.p12.enc + lineage.bin, şifre SIGNING_PASSWORD secret'ında) yeniden imzalar.
+    // Anahtarlar değişirse güncelleme kurulmaz ve uygulamayı silmek (notları kaybetmek) gerekir.
     signingConfigs {
-        if (canSign) {
-            create("sounote") {
-                storeFile = file(keystorePath!!)
-                storePassword = signPassword
-                keyAlias = "sounote"
-                keyPassword = signPassword
-            }
+        create("sounote") {
+            storeFile = rootProject.file("keystore/sounote.jks")
+            storePassword = "sounote"
+            keyAlias = "sounote"
+            keyPassword = "sounote"
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            if (canSign) signingConfig = signingConfigs.getByName("sounote")
+            signingConfig = signingConfigs.getByName("sounote")
         }
         debug {
-            if (canSign) signingConfig = signingConfigs.getByName("sounote")
+            signingConfig = signingConfigs.getByName("sounote")
         }
     }
 

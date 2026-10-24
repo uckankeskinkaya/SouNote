@@ -37,7 +37,7 @@ import com.sounote.app.ErrorLog
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.CoachMode
 import com.sounote.app.data.CoachSuggestion
-import com.sounote.app.data.Essay
+import com.sounote.app.data.EssayText
 import com.sounote.app.data.Sketches
 import com.sounote.app.data.WritingCoach
 import kotlinx.coroutines.Dispatchers
@@ -77,9 +77,9 @@ internal fun WritingSidePanel(
 
 @Composable
 private fun StructurePanel(text: String) {
-    val sections = remember(text) { Essay.sections(text) }
-    val structure = remember(text) { Essay.structure(text) }
-    val total = Essay.countWords(text)
+    val sections = remember(text) { EssayText.sections(text) }
+    val structure = remember(text) { EssayText.structure(text) }
+    val total = EssayText.countWords(text)
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -112,7 +112,7 @@ private fun StructurePanel(text: String) {
                     Text("${sec.words} kelime", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 }
                 Text(
-                    Essay.plain(sec.text).ifBlank { "Boş" },
+                    EssayText.plain(sec.text).ifBlank { "Boş" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -146,7 +146,7 @@ private fun CoachPanel(
 
     fun inspect() {
         if (busy) return
-        if (Essay.countWords(text) < 5) {
+        if (EssayText.countWords(text) < 5) {
             error = "İncelemek için biraz daha yaz (en az birkaç cümle)."
             return
         }
@@ -156,7 +156,7 @@ private fun CoachPanel(
         review = null
         suggestions.clear()
         val m = mode
-        val plain = Essay.plain(text)
+        val plain = EssayText.plain(text)
         scope.launch {
             val r = runCatching {
                 withContext(Dispatchers.IO) {

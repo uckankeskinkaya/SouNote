@@ -3,6 +3,16 @@ package com.sounote.app.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import kotlin.math.abs
+import kotlinx.coroutines.launch
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -169,8 +179,8 @@ private fun CardImage(file: File?, modifier: Modifier) {
 }
 
 /**
- * Çalışma: kartlar sırayla; önce ön yüz, "Cevabı göster" ile arka yüz.
- * Bildim → kart daha geç gelir; Bilemedim → bu oturumun sonunda tekrar sorulur.
+ * Çalışma: tam ekran, kartlar sırayla. Karta dokununca döner (ön yüz → cevap).
+ * Sağa kaydır ya da "Bildim" → kart daha geç gelir; sola ya da "Bilemedim" → bu oturumun sonunda tekrar sorulur.
  */
 @Composable
 fun StudyDialog(
@@ -186,85 +196,162 @@ fun StudyDialog(
     var known by remember { mutableStateOf(0) }
     var failed by remember { mutableStateOf(setOf<Long>()) }
     val total = remember { cards.size }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val offset = remember { androidx.compose.animation.core.Animatable(0f) }
+    val flip by androidx.compose.animation.core.animateFloatAsState(if (revealed) 180f else 0f, androidx.compose.animation.core.tween(350), label = "flip")
+    val sou = LocalSouColors.current
+
+    fun answer(card: Card, ok: Boolean) {
+        onReview(card, ok)
+        if (ok) {
+            if (card.id !in failed) known++
+            queue = queue.drop(1)
+        } else {
+            failed = failed + card.id
+            // Bilemediğin kart sona eklenir, oturumda tekrar gelir.
+            queue = queue.drop(1) + card
+        }
+        revealed = false
+        done++
+    }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            tonalElevation = 6.dp,
-            modifier = Modifier.fillMaxWidth(0.9f).heightIn(min = 420.dp, max = 760.dp),
-        ) {
-            Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.fillMaxSize().souBackground()) {
+            Column(
+                Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 val card = queue.firstOrNull()
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        if (card == null) "Bitti!" else "Kart ${done + 1} · kalan ${queue.size}",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f),
+                    IconButton(onClick = onDismiss) { Icon(SouIcons.Close, contentDescription = "Kapat") }
+                    ProgressBar(
+                        if (total == 0) 1f else (total - queue.size).toFloat() / total,
+                        Modifier.weight(1f).padding(horizontal = 8.dp),
                     )
-                    TextButton(onClick = onDismiss) { Text("Kapat") }
+                    Text("${total - queue.size}/$total", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 8.dp))
                 }
-                Spacer(Modifier.height(16.dp))
                 if (card == null) {
-                    Text(
-                        "$total kartın $known tanesini ilk seferde bildin.",
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
-                    )
-                    Spacer(Modifier.height(24.dp))
-                    Button(onClick = onDismiss) { Text("Tamam") }
-                    return@Column
-                }
-                Column(
-                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    image(card)?.let { CardImage(it, Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 360.dp)) }
-                    if (card.frontText.isNotBlank()) {
-                        Text(card.frontText, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                    }
-                    if (revealed) {
-                        HorizontalDivider()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                    ) {
+                        ProgressRing(if (total == 0) 0f else known.toFloat() / total, size = 120.dp, stroke = 10.dp, color = sou.success)
+                        Text("Bitti", style = MaterialTheme.typography.headlineSmall)
                         Text(
-                            card.back.ifBlank { "(Cevap yazılmamış)" },
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.primary,
+                            "$total kartın $known tanesini ilk seferde bildin.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                         )
-                        if (card.page >= 0) {
-                            TextButton(onClick = { onGoToPage(card) }) { Text("Sayfa ${card.page + 1}'e git") }
+                        Button(onClick = onDismiss) { Text("Tamam") }
+                    }
+                    return@Column
+                }
+                // Kart: dokun → döner; yatay kaydır → bildim / bilemedim
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.weight(1f).fillMaxWidth().padding(vertical = 16.dp),
+                ) {
+                    val drag = offset.value
+                    Box(
+                        Modifier
+                            .widthIn(max = 640.dp)
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.92f)
+                            .graphicsLayer {
+                                translationX = drag
+                                rotationZ = drag / 40f
+                                rotationY = flip
+                                cameraDistance = 14f * density
+                            }
+                            .shadow(10.dp, RoundedCornerShape(28.dp))
+                            .clip(RoundedCornerShape(28.dp))
+                            .background(Color(0xFFFFFDF8))
+                            .pointerInput(card.id) {
+                                detectHorizontalDragGestures(
+                                    onDragEnd = {
+                                        val v = offset.value
+                                        scope.launch {
+                                            if (abs(v) > size.width * 0.28f) {
+                                                offset.animateTo(if (v > 0) size.width * 1.5f else -size.width * 1.5f, androidx.compose.animation.core.tween(180))
+                                                answer(card, v > 0)
+                                                offset.snapTo(0f)
+                                            } else {
+                                                offset.animateTo(0f)
+                                            }
+                                        }
+                                    },
+                                ) { _, dx -> scope.launch { offset.snapTo(offset.value + dx) } }
+                            }
+                            .clickable { revealed = !revealed },
+                    ) {
+                        // Kaydırma yönüne göre yeşil / kırmızı ipucu
+                        if (drag != 0f) {
+                            Box(
+                                Modifier.fillMaxSize().background(
+                                    (if (drag > 0) sou.success else sou.danger).copy(alpha = (abs(drag) / 900f).coerceAtMost(0.25f)),
+                                ),
+                            )
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { if (flip > 90f) rotationY = 180f }
+                                .verticalScroll(rememberScrollState())
+                                .padding(28.dp),
+                        ) {
+                            if (flip <= 90f) {
+                                Text("SORU", style = MaterialTheme.typography.labelMedium, color = Color(0xFF8A8DA3))
+                                image(card)?.let { CardImage(it, Modifier.fillMaxWidth().heightIn(min = 120.dp, max = 360.dp)) }
+                                if (card.frontText.isNotBlank()) {
+                                    Text(card.frontText, style = MaterialTheme.typography.headlineSmall, color = Color(0xFF14162B), textAlign = TextAlign.Center)
+                                }
+                                Text("Cevap için dokun", style = MaterialTheme.typography.labelMedium, color = Color(0xFF8A8DA3))
+                            } else {
+                                Text("CEVAP", style = MaterialTheme.typography.labelMedium, color = Color(0xFF8A8DA3))
+                                Text(
+                                    card.back.ifBlank { "(Cevap yazılmamış)" },
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = Color(0xFF3A4BE0),
+                                    textAlign = TextAlign.Center,
+                                )
+                                if (card.page >= 0) {
+                                    TextButton(onClick = { onGoToPage(card) }) { Text("Sayfa ${card.page + 1}'e git") }
+                                }
+                            }
                         }
                     }
                 }
-                Spacer(Modifier.height(20.dp))
-                if (!revealed) {
-                    Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) { Text("Cevabı göster") }
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        OutlinedButton(
-                            onClick = {
-                                onReview(card, false)
-                                failed = failed + card.id
-                                // Bilemediğin kart sona eklenir, oturumda tekrar gelir.
-                                queue = queue.drop(1) + card
-                                revealed = false
-                                done++
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) { Text("Bilemedim") }
-                        Button(
-                            onClick = {
-                                onReview(card, true)
-                                if (card.id !in failed) known++
-                                queue = queue.drop(1)
-                                revealed = false
-                                done++
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) { Text("Bildim") }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                ) {
+                    RoundAction(SouIcons.Close, "Bilemedim", sou.danger) { answer(card, false) }
+                    androidx.compose.material3.FilledTonalButton(onClick = { revealed = !revealed }) {
+                        Text(if (revealed) "Soruya dön" else "Cevabı göster")
                     }
+                    RoundAction(SouIcons.Check, "Bildim", sou.success) { answer(card, true) }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RoundAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, color: Color, onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(60.dp)
+                .clip(androidx.compose.foundation.shape.CircleShape)
+                .background(color.copy(alpha = 0.15f))
+                .clickable(onClick = onClick),
+        ) { Icon(icon, contentDescription = label, tint = color, modifier = Modifier.size(28.dp)) }
+        Text(label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
     }
 }

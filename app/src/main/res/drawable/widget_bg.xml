@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <corners android:radius="24dp" />
-    <gradient android:angle="315" android:startColor="#FF4A7BEA" android:endColor="#FF1E3A8A" />
-</shape>
+<!-- Logodaki gibi: koyu lacivert zemin, sağ üstte mavi ışık -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <solid android:color="#FF060B22" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <gradient android:type="radial" android:centerX="0.95" android:centerY="0.0"
+                android:gradientRadius="320dp" android:startColor="#B32638B8" android:endColor="#00060B22" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="24dp" />
+            <gradient android:type="radial" android:centerX="0.0" android:centerY="1.0"
+                android:gradientRadius="220dp" android:startColor="#5541308E" android:endColor="#00060B22" />
+        </shape>
+    </item>
+</layer-list>

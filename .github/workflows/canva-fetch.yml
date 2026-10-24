@@ -1,0 +1,33 @@
+name: Canva görseli indir
+
+# Canva'da üretilen görseli (imzalı geçici bağlantı) indirip canva-assets dalına koyar.
+# Bağlantı repoya yazılmaz; sadece çalıştırma girdisi olarak verilir.
+on:
+  workflow_dispatch:
+    inputs:
+      url: { description: "Canva küçük resim bağlantısı", required: true }
+      name: { description: "Dosya adı (uzantısız)", required: true }
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: İndir
+        env: { URL: "${{ inputs.url }}", NAME: "${{ inputs.name }}" }
+        run: |
+          mkdir out
+          big=$(printf '%s' "$URL" | sed -E 's#/height:[0-9]+/#/height:896/#; s#/width:[0-9]+\?#/width:1776?#; s#&x-canva-quality=thumbnail##')
+          if curl -fsS -o "out/$NAME.png" "$big"; then echo "büyük boy alındı"; else curl -fsS -o "out/$NAME.png" "$URL"; echo "küçük resim alındı"; fi
+          file "out/$NAME.png"
+      - name: canva-assets dalına koy
+        env: { NAME: "${{ inputs.name }}" }
+        run: |
+          git init -q r && cd r
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git fetch -q --depth=1 origin canva-assets; then git checkout -q FETCH_HEAD; else git checkout -q --orphan canva-assets; fi
+          cp "../out/$NAME.png" .
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Canva: $NAME" && git push -q origin HEAD:canva-assets

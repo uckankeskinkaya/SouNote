@@ -3,513 +3,451 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SouNote · Kalemle ders notu</title>
-<meta name="description" content="PDF ders notlarının üstüne kalemle yaz, haftalık kaynaklarını ve sınavlarını takip et, essay'ini puanlat. Ücretsiz Android uygulaması.">
-<meta name="theme-color" content="#2f5bd3">
-<meta property="og:title" content="SouNote · Kalemle ders notu">
-<meta property="og:description" content="PDF'lerin üstüne kalemle yaz, sınavlarını ve haftalık kaynaklarını takip et. Ücretsiz Android uygulaması.">
-<meta property="og:image" content="https://uckankeskinkaya.github.io/SouNote/img/og.png">
+<title>SouNote · Ders çalışmanın en sade hâli</title>
+<meta name="description" content="SouNote; PDF'lerin üstüne kalemle yazmayı, sınav takvimini, bilgi kartlarını ve not ortalamasını tek bir Android uygulamasında toplar. Ücretsiz, kaynak kodu açık, hesap istemez.">
+<meta name="author" content="Uçkan Keskinkaya">
+<meta name="theme-color" content="#050814">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://uckankeskinkaya.github.io/SouNote/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:site_name" content="SouNote">
+<meta property="og:title" content="SouNote · Ders çalışmanın en sade hâli">
+<meta property="og:description" content="Kalemle not, ders kaynakları, sınav takvimi, bilgi kartları ve not ortalaması tek uygulamada. Ücretsiz Android uygulaması.">
+<meta property="og:url" content="https://uckankeskinkaya.github.io/SouNote/">
+<meta property="og:image" content="https://uckankeskinkaya.github.io/SouNote/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SouNote logosu: kıvrık bir not kâğıdı ve dolma kalem">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="img/icon.png">
-<link rel="apple-touch-icon" href="img/icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #f4f6fb; --surface: #ffffff; --surface-2: #eef2fb; --text: #10162a; --muted: #5d667c; --line: #e2e7f1;
-    --brand: #2f5bd3; --brand-2: #1e3a8a; --brand-3: #4a7bea; --accent: #f7b928;
-    --green: #2e7d4f; --orange: #c2570c; --pink: #c2357a; --purple: #7048c8; --teal: #00796b; --red: #d64545;
-    --radius: 24px; --shadow: 0 1px 2px rgba(16,22,42,.04), 0 12px 32px rgba(16,22,42,.07);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #0c1018; --surface: #151b27; --surface-2: #1b2232; --text: #edf0f7; --muted: #98a1b6; --line: #252d3f;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.35); }
-  }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
-  body { margin: 0; font-family: "Plus Jakarta Sans", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; overflow-x: hidden; }
-  a { color: inherit; text-decoration: none; }
-  img { max-width: 100%; display: block; }
-  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 20px; }
-
-  /* ---------- Üst çubuk (cam) ---------- */
-  .nav { position: sticky; top: 0; z-index: 50; backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
-    background: color-mix(in srgb, var(--bg) 72%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
-  .nav .wrap { display: flex; align-items: center; gap: 14px; height: 64px; }
-  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; letter-spacing: -.02em; }
-  .logo img { width: 34px; height: 34px; border-radius: 10px; }
-  .nav .links { display: flex; gap: 22px; margin-left: 18px; font-size: 15px; color: var(--muted); font-weight: 500; }
-  .nav .links a:hover { color: var(--text); }
-  .nav .spacer { flex: 1; }
-  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: 15px; transition: transform .15s ease, box-shadow .2s ease, background .2s; }
-  .pill:active { transform: scale(.96); }
-  .pill.primary { background: var(--brand); color: #fff; box-shadow: 0 6px 18px rgba(47,91,211,.35); }
-  .pill.primary:hover { box-shadow: 0 10px 26px rgba(47,91,211,.45); transform: translateY(-1px); }
-  .pill.soft { background: var(--surface-2); color: var(--text); }
-  .pill.big { padding: 16px 26px; font-size: 17px; }
-  .pill.gold { background: var(--accent); color: #1b1300; box-shadow: 0 10px 30px rgba(247,185,40,.35); }
-
-  /* ---------- Hero ---------- */
-  .hero { position: relative; padding: 56px 0 40px; overflow: hidden; }
-  .hero::before { content: ""; position: absolute; inset: -20% -10% auto -10%; height: 760px; z-index: -1;
-    background: radial-gradient(600px 380px at 78% 30%, rgba(74,123,234,.28), transparent 70%), radial-gradient(500px 340px at 10% 10%, rgba(112,72,200,.16), transparent 70%); }
-  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; }
-  .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line);
-    font-size: 13px; font-weight: 600; color: var(--muted); box-shadow: var(--shadow); }
-  .eyebrow b { background: var(--brand); color: #fff; padding: 3px 9px; border-radius: 999px; font-size: 12px; }
-  h1 { font-size: clamp(38px, 6vw, 68px); line-height: 1.02; letter-spacing: -.035em; margin: 18px 0 18px; font-weight: 800; }
-  h1 .grad { background: linear-gradient(100deg, var(--brand-3), var(--brand) 40%, var(--purple)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .lead { font-size: 19px; color: var(--muted); max-width: 520px; margin: 0 0 28px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .meta { margin-top: 16px; font-size: 13px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
-  .meta span { display: inline-flex; align-items: center; gap: 6px; }
-
-  /* Telefon + çevresindeki canlı kartlar */
-  .stage { position: relative; height: 640px; }
-  .device { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); width: 290px; aspect-ratio: 9 / 19.5; border-radius: 44px; padding: 10px;
-    background: linear-gradient(160deg, #1c2438, #0b0f1a); box-shadow: 0 40px 80px rgba(16,22,42,.35), inset 0 0 0 1.5px rgba(255,255,255,.08); }
-  .device .screen { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #fff; }
-  .device .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity .8s ease, transform 1.2s ease; transform: scale(1.04); }
-  .device .screen img.on { opacity: 1; transform: none; }
-  .float { position: absolute; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 12px 14px; box-shadow: var(--shadow);
-    display: flex; align-items: center; gap: 12px; font-size: 14px; animation: bob 6s ease-in-out infinite; }
-  .float small { display: block; color: var(--muted); font-size: 12px; }
-  .float b { font-size: 15px; }
-  .float .ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; }
-  .f1 { left: 0; top: 70px; } .f2 { right: 0; top: 210px; animation-delay: -2s; } .f3 { left: 10px; bottom: 120px; animation-delay: -4s; } .f4 { right: 10px; bottom: 30px; animation-delay: -1s; }
-  @keyframes bob { 50% { transform: translateY(-10px); } }
-  .ring { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px;
-    background: conic-gradient(var(--green) calc(var(--p) * 1%), var(--surface-2) 0); position: relative; }
-  .ring::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--surface); }
-  .ring span { position: relative; z-index: 1; color: var(--green); }
-
-  /* ---------- Bölümler ---------- */
-  section { padding: 88px 0 0; }
-  .head { max-width: 640px; margin-bottom: 32px; }
-  .kicker { color: var(--brand); font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
-  h2 { font-size: clamp(30px, 4.2vw, 46px); letter-spacing: -.03em; line-height: 1.08; margin: 8px 0 10px; }
-  .sub { color: var(--muted); font-size: 17px; margin: 0; }
-
-  /* Bento: uygulama bileşenlerinin mini kopyaları */
-  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
-  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); position: relative; overflow: hidden; transition: transform .25s ease, box-shadow .25s ease; }
-  .tile:hover { transform: translateY(-4px); box-shadow: 0 20px 44px rgba(16,22,42,.12); }
-  .tile h3 { margin: 0 0 6px; font-size: 20px; letter-spacing: -.01em; }
-  .tile p { margin: 0; color: var(--muted); font-size: 15px; }
-  .s2 { grid-column: span 2; } .s3 { grid-column: span 3; } .s4 { grid-column: span 4; }
-  .tile.hero-tile { background: linear-gradient(135deg, #4a7bea, #1e3a8a); color: #fff; border: 0; }
-  .tile.hero-tile p { color: rgba(255,255,255,.85); }
-  .mini { margin-top: 18px; display: grid; gap: 8px; }
-  .row { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 14px; padding: 10px 12px; font-size: 14px; }
-  .hero-tile .row { background: rgba(255,255,255,.14); }
-  .chk { width: 18px; height: 18px; border-radius: 5px; border: 2px solid currentColor; opacity: .6; flex: none; display: grid; place-items: center; font-size: 12px; }
-  .chk.on { background: var(--green); border-color: var(--green); color: #fff; opacity: 1; }
-  .bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
-  .bar i { display: block; height: 100%; border-radius: 99px; background: var(--brand); width: 0; transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
-  .in .bar i { width: var(--w); }
-  .date { width: 52px; text-align: center; border-radius: 14px; padding: 6px 0; background: color-mix(in srgb, var(--brand) 14%, transparent); color: var(--brand); line-height: 1.1; }
-  .date b { display: block; font-size: 22px; }
-  .date small { font-size: 12px; }
-  .badge { padding: 4px 10px; border-radius: 99px; font-weight: 700; font-size: 13px; }
-  .stroke path { stroke-dasharray: 600; stroke-dashoffset: 600; transition: stroke-dashoffset 2.4s ease; }
-  .in .stroke path { stroke-dashoffset: 0; }
-  .crit { display: grid; gap: 7px; margin-top: 16px; }
-  .crit div { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; }
-  .crit .bar { grid-column: span 2; height: 6px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-  .tag { padding: 7px 12px; border-radius: 99px; background: var(--surface-2); font-size: 13px; font-weight: 600; }
-
-  /* Ekran gezgini (sekmeler) */
-  .tour { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
-  .tabs { display: grid; gap: 10px; }
-  .tab { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 16px 18px; cursor: pointer; font: inherit; color: inherit;
-    display: grid; grid-template-columns: 44px 1fr; gap: 4px 14px; transition: border-color .2s, box-shadow .2s, transform .2s; }
-  .tab .ic { grid-row: span 2; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; background: var(--surface-2); }
-  .tab b { font-size: 17px; } .tab span { color: var(--muted); font-size: 14px; }
-  .tab[aria-selected="true"] { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
-  .tab[aria-selected="true"] .ic { background: var(--brand); }
-  .tour .device { position: relative; left: auto; top: auto; transform: none; margin: 0 auto; }
-
-  /* Video */
-  .video-wrap { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; align-items: center; }
-  .video-wrap .device { position: relative; left: auto; top: auto; transform: none; margin: 0 auto; width: 300px; aspect-ratio: 9 / 16; border-radius: 38px; }
-  .video-wrap video { width: 100%; height: 100%; object-fit: cover; border-radius: 30px; background: #0b0f1a; display: block; }
-
-  /* Yenilikler: zaman çizelgesi */
-  .timeline { display: grid; gap: 16px; position: relative; }
-  .tl { display: grid; grid-template-columns: 110px 1fr; gap: 18px; }
-  .tl .v { font-weight: 800; font-size: 15px; color: var(--muted); padding-top: 18px; text-align: right; }
-  .tl .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; box-shadow: var(--shadow); }
-  .tl.latest .card { border: 2px solid var(--brand); }
-  .tl.latest .v { color: var(--brand); }
-  .tl .card b { font-size: 17px; display: block; }
-  .tl .card time { font-size: 13px; color: var(--muted); }
-  .tl .card ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
-  .latest-tag { display: inline-block; margin-bottom: 6px; background: var(--brand); color: #fff; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
-
-  /* Kurulum */
-  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
-  .step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); counter-increment: s; }
-  .step::before { content: counter(s); display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 800; margin-bottom: 14px; }
-  .step b { display: block; margin-bottom: 4px; font-size: 17px; }
-  .step span { color: var(--muted); font-size: 15px; }
-
-  .notice { margin-top: 16px; display: grid; grid-template-columns: 48px 1fr; gap: 16px; background: var(--surface); border: 1px solid var(--line);
-    border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
-  .notice-ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: color-mix(in srgb, var(--accent) 22%, transparent); }
-  .notice b { font-size: 17px; }
-  .notice p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
-  .notice p b { font-size: inherit; color: var(--text); }
-  .notice a:not(.pill) { color: var(--brand); text-decoration: underline; }
-  .notice .hash { font-family: ui-monospace, monospace; font-size: 12px; word-break: break-all; }
-  @media (max-width: 560px) { .notice { grid-template-columns: 1fr; } }
-  .why { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .why-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
-  .why-card b { font-size: 17px; }
-  .why-card p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
-  .why-card p b { font-size: inherit; color: var(--text); }
-  .why-card a { color: var(--brand); text-decoration: underline; }
-  .why-ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; background: var(--surface-2); margin-bottom: 12px; }
-  .why-card.ok { border-top: 4px solid var(--green); }
-  .why-card.bad { border-top: 4px solid var(--red); }
-  @media (max-width: 960px) { .why { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 560px) { .why { grid-template-columns: 1fr; } }
-  details { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; margin-bottom: 10px; }
-  summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
-  summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--muted); transition: transform .2s; }
-  details[open] summary::after { transform: rotate(45deg); }
-  details p { color: var(--muted); margin: 10px 0 0; }
-
-  .final { margin-top: 96px; border-radius: 36px; padding: 56px 28px; text-align: center; color: #fff; position: relative; overflow: hidden;
-    background: radial-gradient(500px 260px at 85% 0%, rgba(255,255,255,.18), transparent 70%), linear-gradient(135deg, #4a7bea, #1e3a8a); }
-  .final h2 { color: #fff; }
-  .final img { width: 84px; height: 84px; border-radius: 22px; margin: 0 auto 16px; box-shadow: 0 16px 40px rgba(0,0,0,.25); }
-  footer { color: var(--muted); font-size: 14px; text-align: center; padding: 36px 0 48px; }
-
-  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
-  .reveal.in { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } .float, .device .screen img { animation: none !important; transition: none !important; } }
-
-  @media (max-width: 960px) {
-    .hero-grid, .tour, .video-wrap { grid-template-columns: 1fr; }
-    .stage { height: 600px; }
-    .bento { grid-template-columns: repeat(2, 1fr); }
-    .s2, .s3, .s4 { grid-column: span 2; }
-    .steps { grid-template-columns: 1fr 1fr; }
-    .nav .links { display: none; }
-    .tour .tabs { order: 2; }
-  }
-  @media (max-width: 560px) {
-    .hero { padding-top: 32px; }
-    .stage { height: 560px; }
-    .device { width: 250px; }
-    .float { font-size: 13px; padding: 10px 12px; }
-    .f1 { left: -6px; top: 40px; } .f2 { right: -6px; top: 190px; } .f3 { left: -6px; bottom: 90px; } .f4 { right: -6px; bottom: 10px; }
-    .bento { grid-template-columns: 1fr; } .s2, .s3, .s4 { grid-column: span 1; }
-    .steps { grid-template-columns: 1fr; }
-    .tl { grid-template-columns: 1fr; gap: 6px; } .tl .v { text-align: left; padding: 0; }
-    .pill.big { width: 100%; justify-content: center; }
-  }
-</style>
+<link rel="icon" type="image/png" sizes="32x32" href="brand/logo-a-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="brand/logo-a-64.png">
+<link rel="apple-touch-icon" href="brand/logo-a-180.png">
+<link rel="preload" href="brand/logo-a-paper.png" as="image">
+<script>
+  // Erken sınıflar: JS var mı, hareket azaltılmış mı, açılış gösterilecek mi (oturumda bir kez).
+  (function () {
+    var d = document.documentElement, reduce = matchMedia("(prefers-reduced-motion: reduce)").matches, seen = false;
+    try { seen = sessionStorage.getItem("sn-intro") === "1"; } catch (e) {}
+    d.className = "js" + (reduce ? " reduce" : "") + (!reduce && !seen && !/[?&]intro=0/.test(location.search) ? " has-intro" : "");
+  })();
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SouNote",
+  "operatingSystem": "Android 10+",
+  "applicationCategory": "EducationalApplication",
+  "inLanguage": "tr",
+  "url": "https://uckankeskinkaya.github.io/SouNote/",
+  "downloadUrl": "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
+  "author": { "@type": "Person", "name": "Uçkan Keskinkaya", "url": "https://github.com/uckankeskinkaya" }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-Br4NuP5a.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CfNDUJPa.css">
 </head>
 <body>
+<a class="skip-link" href="#icerik">İçeriğe geç</a>
 
-<nav class="nav">
-  <div class="wrap">
-    <a class="logo" href="#"><img src="img/icon.png" alt="">SouNote</a>
-    <div class="links">
-      <a href="#ozellikler">Özellikler</a>
-      <a href="#ekranlar">Ekranlar</a>
-      <a href="#video">Video</a>
-      <a href="#yenilikler">Yenilikler</a>
-      <a href="#neden">Neden mağazada değil?</a>
-      <a href="#sss">SSS</a>
-    </div>
-    <span class="spacer"></span>
-    <a class="pill primary" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk">İndir</a>
+<!-- Açılış: logo birleşir, ışık geçer, logo tabletin ekranına iner. Gezinme ve indirme bu sırada da kullanılabilir. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__aura"></div>
+  <div class="intro__logo" id="intro-logo">
+    <img class="intro__paper" src="brand/logo-a-paper.png" alt="" width="512" height="512">
+    <img class="intro__pen" src="brand/logo-a-pen.png" alt="" width="512" height="512">
+    <span class="intro__sheen"></span>
   </div>
-</nav>
+  <p class="intro__word">Sou<span>Note</span></p>
+</div>
 
-<header class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <a class="eyebrow" href="#yenilikler"><b id="ver-badge">Yeni</b><span id="ver-line">Son güncelleme</span> →</a>
-      <h1>Ders notların, <span class="grad">kalemin</span> ve sınavların tek yerde.</h1>
-      <p class="lead">PDF'lerin üstüne kalemle yaz, haftalık kaynaklarını takip et, essay'ini puanlat. Hazırlık öğrencileri için yapıldı. Ücretsiz ve reklamsız.</p>
-      <div class="cta">
-        <a class="pill gold big" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk">⬇ Android için indir</a>
-        <a class="pill soft big" href="#video">▶ 1 dakikada izle</a>
-      </div>
-      <div class="meta"><span>📱 Android 10+</span><span>🖊️ Kalem ve parmak</span><span>🔒 Notların cihazında</span><span id="size"></span></div>
-    </div>
-    <div class="stage" aria-hidden="true">
-      <div class="device"><div class="screen" id="hero-screen">
-        <img src="img/home.png" alt="" class="on"><img src="img/week.png" alt=""><img src="img/courses.png" alt=""><img src="img/grades.png" alt="">
-      </div></div>
-      <div class="float f1"><div class="ic" style="background:#fde8e8">📅</div><div><small>Writing Exam 1</small><b style="color:var(--red)">14 gün kaldı</b></div></div>
-      <div class="float f2"><div class="ring" style="--p:86"><span>86</span></div><div><small>Writing pratiği</small><b>Harika! 🎉</b></div></div>
-      <div class="float f3"><div class="ic" style="background:#e8f5ee">✅</div><div><small>Hafta 5 listesi</small><b>18 / 25 tamam</b></div></div>
-      <div class="float f4"><div class="ic" style="background:#efe8fb">🃏</div><div><small>Bugünkü tekrar</small><b>12 kart</b></div></div>
-    </div>
+<header class="nav" id="nav">
+  <nav class="nav__bar" aria-label="Ana menü">
+    <a class="nav__brand" href="#top" aria-label="SouNote, sayfanın başı">
+      <img src="brand/logo-a-64.png" alt="" width="32" height="32">
+      <span>SouNote</span>
+    </a>
+    <ul class="nav__links">
+      <li><a href="#hikaye">Hikâye</a></li>
+      <li><a href="#ozellikler">Özellikler</a></li>
+      <li><a href="#dene">Dene</a></li>
+      <li><a href="#gelistirici">Geliştirici</a></li>
+      <li><a href="#sss">SSS</a></li>
+    </ul>
+    <a class="btn btn--primary btn--sm nav__cta" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+      <span>İndir</span>
+    </a>
+    <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menüyü aç">
+      <span></span><span></span>
+    </button>
+  </nav>
+  <div class="nav__menu" id="nav-menu" hidden>
+    <ul>
+      <li><a href="#hikaye"><small>01</small>Hikâye</a></li>
+      <li><a href="#ozellikler"><small>02</small>Özellikler</a></li>
+      <li><a href="#dene"><small>03</small>Dene</a></li>
+      <li><a href="#gelistirici"><small>04</small>Geliştirici</a></li>
+      <li><a href="#karsilastirma"><small>05</small>Neden SouNote?</a></li>
+      <li><a href="#sss"><small>06</small>Sık sorulanlar</a></li>
+    </ul>
+    <a class="btn btn--primary btn--block" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>SouNote'u ücretsiz indir</a>
+    <a class="btn btn--ghost btn--block" href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">Kaynak kodu (GitHub)</a>
   </div>
 </header>
 
-<main class="wrap">
-
-  <section id="ozellikler" class="reveal">
-    <div class="head">
-      <div class="kicker">Özellikler</div>
-      <h2>Kâğıt gibi doğal, kâğıttan çok daha akıllı.</h2>
-      <p class="sub">Uygulamada gördüğün kartlar, burada da aynı.</p>
-    </div>
-    <div class="bento">
-      <div class="tile hero-tile s4">
-        <h3>🖊️ Kalemle ya da parmakla yaz</h3>
-        <p>Basınca duyarlı kalemler, fosforlu, silgi, şekil düzeltme. Kalemin yoksa "Parmakla yaz"ı aç: tek parmak çizer, iki parmak kaydırır.</p>
-        <svg class="stroke" viewBox="0 0 560 120" width="100%" height="110" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" style="margin-top:14px;opacity:.95">
-          <path d="M20 80 C 60 10, 90 10, 100 70 S 140 110, 170 60 S 220 20, 240 70 M270 40 L270 90 M270 62 C 290 40, 320 40, 320 90 M350 64 C 350 40, 390 40, 392 64 C 394 92, 350 92, 350 64 M420 40 L420 90 M420 40 C 470 40, 470 70, 420 70 M500 90 L 540 30"/>
-        </svg>
-      </div>
-      <div class="tile s2">
-        <h3>📅 Sınav takvimi</h3>
-        <p>Geri sayım, hatırlatıcı ve widget.</p>
-        <div class="mini">
-          <div class="row"><div class="date"><b>6</b><small>Kas</small></div><div style="flex:1"><b style="font-size:14px">Writing Exam 1</b><br><small style="color:var(--muted)">Cuma 4. ders</small></div><span class="badge" style="background:#fde8e8;color:var(--red)">14 gün</span></div>
-          <div class="row"><div class="date"><b>13</b><small>Kas</small></div><div style="flex:1"><b style="font-size:14px">Progress Test 1</b><br><small style="color:var(--muted)">Cuma 09:00</small></div><span class="badge" style="background:var(--surface);color:var(--brand)">21 gün</span></div>
-        </div>
-      </div>
-      <div class="tile s2">
-        <h3>✅ Haftalık liste</h3>
-        <p>Haftanın kaynakları; bitirdiğini işaretle.</p>
-        <div class="mini">
-          <div class="bar" style="--w:72%"><i></i></div>
-          <div class="row"><span class="chk on">✓</span>HANDOUT 1 (Conditionals)</div>
-          <div class="row"><span class="chk on">✓</span>PPT (Conditional Structures)</div>
-          <div class="row"><span class="chk"></span>Self-study Handout</div>
-        </div>
-      </div>
-      <div class="tile s2">
-        <h3>✍️ Writing pratiği</h3>
-        <p>Essay yaz; asistan 100 üzerinden puanlasın.</p>
-        <div class="crit">
-          <div><span>Görev ve içerik</span><b>18/20</b><span class="bar" style="--w:90%"><i style="background:var(--green)"></i></span></div>
-          <div><span>Düzen</span><b>17/20</b><span class="bar" style="--w:85%"><i style="background:var(--green)"></i></span></div>
-          <div><span>Dil bilgisi</span><b>14/20</b><span class="bar" style="--w:70%"><i style="background:var(--orange)"></i></span></div>
-        </div>
-      </div>
-      <div class="tile s2">
-        <h3>📊 Not ortalaması</h3>
-        <p>Kur içi %40 + Kur Atlama %60. Geçmek için kaç alman gerektiğini gör.</p>
-        <div class="mini"><div class="row" style="justify-content:space-between"><div class="ring" style="--p:78;width:64px;height:64px"><span style="font-size:17px">78</span></div><div style="text-align:right"><small style="color:var(--muted)">Kalanlardan gereken</small><br><b style="font-size:22px;color:var(--brand)">64</b></div></div></div>
-      </div>
-      <div class="tile s3">
-        <h3>📚 Dersler, konu konu</h3>
-        <p>Grammar, Vocabulary, Reading, Listening, Writing, Speaking. Kaynaklar hafta hafta güncellenir; Word ve PowerPoint dosyalarını tek dokunuşla WPS'te açıp PDF olarak SouNote'a alırsın.</p>
-        <div class="tags"><span class="tag" style="background:#e3e9fb;color:#2f5bd3">🧩 Grammar</span><span class="tag" style="background:#efe8fb;color:#7048c8">🔤 Vocabulary</span><span class="tag" style="background:#e3f3ea;color:#2e7d4f">📖 Reading</span><span class="tag" style="background:#dff2ef;color:#00796b">🎧 Listening</span><span class="tag" style="background:#fbeadd;color:#c2570c">✍️ Writing</span><span class="tag" style="background:#fbe3ee;color:#c2357a">🗣️ Speaking</span></div>
-      </div>
-      <div class="tile s3">
-        <h3>🤖 Yardımcı asistan</h3>
-        <p>Açık PDF'ini okur; özetler, kelimeleri çıkarır, sayfadan bilgi kartı üretir, sınav kurallarını bilir. e-Devlet ile Evren'den ücretsiz anahtar al; uygulama adım adım anlatır.</p>
-        <div class="mini">
-          <div class="row" style="justify-content:flex-end;background:var(--brand);color:#fff;margin-left:30%">Bu sayfayı özetle</div>
-          <div class="row" style="margin-right:20%">📝 Sayfa <b>Conditionals</b>'ı anlatıyor: zero, first, second…</div>
-        </div>
-      </div>
-      <div class="tile s2"><h3>🔥 Çalışma serisi</h3><p>Her gün biraz çalış, serini büyüt. Kart tekrarı, Writing ya da haftalık liste de sayılır.</p></div>
-      <div class="tile s2"><h3>🔁 Bugünkü tekrar</h3><p>Bütün belgelerinde zamanı gelen kartlar tek yerde.</p></div>
-      <div class="tile s2"><h3>🔎 Her şeyde ara</h3><p>PDF'lerin içinde sayfa sayfa, notlarında ve kartlarında.</p></div>
-      <div class="tile s2"><h3>📦 Arkadaşınla paylaş</h3><p>Notlu belgeyi gönder; onun SouNote'unda notlarıyla açılsın.</p></div>
-      <div class="tile s2"><h3>☁️ Otomatik yedek</h3><p>Notların her gün seçtiğin klasöre ya da Drive'a.</p></div>
-      <div class="tile s2"><h3>📝 Yazılı notlar</h3><p>Klavyeyle ya da el yazısıyla, yapılacaklar ve çizim alanı.</p></div>
-      <div class="tile s2"><h3>🔒 Gizli ve senin</h3><p>Hesap yok, reklam yok. Notların sadece cihazında.</p></div>
-    </div>
-  </section>
-
-  <section id="ekranlar" class="reveal">
-    <div class="tour">
-      <div>
-        <div class="head">
-          <div class="kicker">Ekranlar</div>
-          <h2>Uygulamayı gez.</h2>
-          <p class="sub">Bir başlığa dokun, ekranı gör.</p>
-        </div>
-        <div class="tabs" role="tablist">
-          <button class="tab" role="tab" aria-selected="true" data-img="img/home.png"><span class="ic">🏠</span><b>Ana sayfa</b><span>Hızlı başla, haftalık liste, yaklaşan sınavlar</span></button>
-          <button class="tab" role="tab" aria-selected="false" data-img="img/courses.png"><span class="ic">📚</span><b>Dersler</b><span>Konu konu ve hafta hafta kaynaklar</span></button>
-          <button class="tab" role="tab" aria-selected="false" data-img="img/exams.png"><span class="ic">📅</span><b>Sınavlar</b><span>Takvim, geri sayım, ortalama</span></button>
-          <button class="tab" role="tab" aria-selected="false" data-img="img/notebook.png"><span class="ic">🖊️</span><b>Defter</b><span>Kalem, fosforlu, silgi, parmakla yaz</span></button>
-          <button class="tab" role="tab" aria-selected="false" data-img="img/grades.png"><span class="ic">📊</span><b>Not ortalaması</b><span>Hazırlık hesabı hazır</span></button>
-        </div>
-      </div>
-      <div class="device"><div class="screen"><img id="tour-img" src="img/home.png" alt="Ekran görüntüsü" class="on"></div></div>
-    </div>
-  </section>
-
-  <section id="video" class="reveal">
-    <div class="video-wrap">
-      <div class="device"><video src="video/sounote.mp4" poster="video/poster.jpg" controls playsinline preload="metadata"></video></div>
-      <div class="head">
-        <div class="kicker">Tanıtım</div>
-        <h2>1 dakikada SouNote.</h2>
-        <p class="sub">Ana sayfadan derslere, sınavlardan deftere ve Writing pratiğine kısa bir tur.</p>
-        <div class="cta" style="margin-top:22px"><a class="pill primary big" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk">⬇ Hemen indir</a></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="yenilikler" class="reveal">
-    <div class="head">
-      <div class="kicker">Yenilikler</div>
-      <h2>Sürekli gelişiyor.</h2>
-      <p class="sub">Ana güncellemeler. Yeni sürüm çıkınca uygulama kendisi haber verir.</p>
-    </div>
-    <div class="timeline" id="changes"><p class="sub">Yükleniyor…</p></div>
-  </section>
-
-  <section id="kurulum" class="reveal">
-    <div class="head">
-      <div class="kicker">Kurulum</div>
-      <h2>Bir dakikada kur.</h2>
-      <p class="sub">Uygulama Play Store'da değil; doğrudan indirip kuruyorsun.</p>
-    </div>
-    <div class="steps">
-      <div class="step"><b>İndir</b><span>"Android için indir"e bas. Chrome uyarırsa "Yine de indir" de.</span></div>
-      <div class="step"><b>Aç</b><span>Bildirimden ya da Dosyalar → İndirilenler'den SouNote.apk'ya dokun.</span></div>
-      <div class="step"><b>İzin ver</b><span>"Bilinmeyen uygulamalar" uyarısında bu kaynağa izin ver, geri dön.</span></div>
-      <div class="step"><b>Başla</b><span>"Yükle"ye bas. Kısa tanıtım seni karşılar.</span></div>
-    </div>
-    <div class="notice">
-      <div class="notice-ic">🛡️</div>
-      <div>
-        <b>Telefonun uyarı verirse</b>
-        <p>SouNote Play Store'da olmadığı için Chrome "Bu dosya zararlı olabilir", Google Play Protect ise "Güvenli olmayan uygulama engellendi" ya da "Bilinmeyen geliştirici" diyebilir. Bu, mağaza dışından gelen her uygulamada çıkan genel bir uyarıdır (<a href="#neden">neden?</a>). Chrome'da <b>"Yine de indir"</b>, Play Protect'te <b>"Diğer ayrıntılar" → "Yine de yükle"</b> de.</p>
-        <p><b>İçin rahat etsin mi?</b> Kurmadan önce dosyayı <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">virustotal.com</a>'a yükleyip 70'ten fazla antivirüsle taratabilirsin. Sadece bu siteden ya da uygulamanın kendi güncelleme bildiriminden kur; başkasının gönderdiği APK'yı kurma.</p>
-        <div class="cta" style="margin-top:12px">
-          <a class="pill soft" id="vt-link" href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">🔍 VirusTotal'da kontrol et</a>
-        </div>
-        <p class="hash" id="apk-hash"></p>
-      </div>
-    </div>
-  </section>
-
-  <section id="neden" class="reveal">
-    <div class="head">
-      <div class="kicker">Neden Play Store'da değil?</div>
-      <h2>Kısaca: bir öğrenci projesi için çok masraf ve bekleme.</h2>
-      <p class="sub">SouNote bir öğrencinin kendi dersleri için yaptığı, reklamsız ve ücretsiz bir uygulama. Mağazaya çıkmanın bedeli şunlar:</p>
-    </div>
-    <div class="why">
-      <div class="why-card"><div class="why-ic">💳</div><b>Ücret</b><p>Google Play geliştirici hesabı bir kerelik <b>25 $</b>. iPhone için App Store ise <b>her yıl 99 $</b> istiyor. SouNote reklam göstermiyor, para da almıyor; bu masrafı karşılayacak bir geliri yok.</p></div>
-      <div class="why-card"><div class="why-ic">👥</div><b>12 kişi × 14 gün test</b><p>Yeni bireysel hesaplar, uygulamayı herkese açmadan önce en az <b>12 test kullanıcısıyla 14 gün</b> kesintisiz kapalı test yapmak zorunda. Kullanıcı sayısı 12'nin altına düşerse süre baştan başlıyor.</p></div>
-      <div class="why-card"><div class="why-ic">📋</div><b>Formlar ve kurallar</b><p>Kimlik doğrulama, gizlilik politikası, veri güvenliği formu, içerik derecelendirmesi ve yapay zekâ özellikleri için ek kurallar (ör. uygunsuz cevabı bildirme düğmesi). Hepsi tek kişinin işi.</p></div>
-      <div class="why-card"><div class="why-ic">⏱️</div><b>Her güncelleme inceleniyor</b><p>Play Store'da her sürüm Google'ın incelemesinden geçiyor; bu saatler, bazen günler sürüyor. Burada ise haftalık ders kaynakları ve hata düzeltmeleri hemen sana ulaşıyor.</p></div>
-    </div>
-
-    <div class="head" style="margin-top:56px">
-      <div class="kicker">Play Protect uyarısı</div>
-      <h2>Uyarı "virüs var" demek değil.</h2>
-      <p class="sub">Google Play Protect, Play Store dışından kurulan ve daha önce görmediği her uygulamada temkinli davranır. SouNote mağazada olmadığı için Google onu "tanımıyor", uyarı bundan çıkıyor.</p>
-    </div>
-    <div class="why">
-      <div class="why-card ok"><div class="why-ic">✅</div><b>Normal uyarılar</b><p>"Bilinmeyen geliştirici", "Güvenli olmayan uygulama engellendi", "Bu dosya zararlı olabilir". Mağaza dışındaki her uygulamada çıkar. <b>Diğer ayrıntılar → Yine de yükle</b> diyebilirsin.</p></div>
-      <div class="why-card bad"><div class="why-ic">⛔</div><b>Ciddi uyarı</b><p>"<b>Zararlı uygulama tespit edildi</b>" ya da belirli bir virüs adı görürsen kurma. Dosyayı bu siteden yeniden indir ve bize haber ver. Resmi dosyada bu uyarı çıkmamalı.</p></div>
-      <div class="why-card"><div class="why-ic">🔐</div><b>Neden güvenebilirsin?</b><p>Kodu GitHub'da <b>herkese açık</b>, isteyen okuyabilir. Her sürüm GitHub'da otomatik derleniyor ve emülatörde test ediliyor. Hesap istemiyor, notların hiçbir sunucuya gitmiyor. APK gizli bir anahtarla imzalı; sahte bir "güncelleme" uygulamanın üstüne kurulamıyor.</p></div>
-      <div class="why-card"><div class="why-ic">🔍</div><b>Kendin kontrol et</b><p>Kurmadan önce APK'yı <a href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener">VirusTotal</a>'a yükleyip 70'ten fazla antivirüsle taratabilirsin. "Kurulum" bölümündeki düğme bu sürümün raporunu doğrudan açar.</p></div>
-    </div>
-  </section>
-
-  <section id="sss" class="reveal">
-    <div class="head"><div class="kicker">SSS</div><h2>Sık sorulanlar</h2></div>
-    <details><summary>Güncellemeler nasıl geliyor?</summary><p>Yeni sürüm çıkınca uygulama haber verir; "İndir"e basıp üstüne kurman yeterli, notların silinmez. Haftalık ders kaynakları güncelleme gerektirmeden kendiliğinden gelir.</p></details>
-    <details><summary>Neden Play Store'da yok?</summary><p>Geliştirici hesabı, 12 kişiyle 14 günlük zorunlu test, formlar ve her güncellemenin incelemeye girmesi, ücretsiz bir öğrenci projesi için fazla masraf ve bekleme demek. Ayrıntılar <a href="#neden" style="color:var(--brand);text-decoration:underline">yukarıda</a>. Kullanıcı sayısı artarsa mağazaya çıkmayı düşünüyoruz.</p></details>
-    <details><summary>Telefon "zararlı olabilir" diyor, güvenli mi?</summary><p>Uyarı, Play Store dışından gelen her uygulamada çıkar. SouNote'un kodu GitHub'da herkese açık; her sürüm otomatik derlenir ve emülatörde test edilir. Yine de içinin rahat etmesi için yukarıdaki "VirusTotal'da kontrol et" ile taratabilirsin.</p></details>
-    <details><summary>Notlarım nerede saklanıyor?</summary><p>Sadece senin cihazında. Hiçbir sunucuya gönderilmez. Kaybolmasın diye Ayarlar → Yedekleme'den otomatik yedeği aç.</p></details>
-    <details><summary>Kalemim yok, kullanabilir miyim?</summary><p>Evet. Ana sayfadaki ya da defterdeki "Parmakla yaz"ı aç; tek parmak çizer, iki parmak kaydırır.</p></details>
-    <details><summary>iPhone / iPad'de çalışır mı?</summary><p>Şimdilik sadece Android. iOS için tarayıcıda çalışan bir sürüm planlıyoruz.</p></details>
-    <details><summary>Asistan ücretli mi?</summary><p>Uygulama ücretsiz. Asistan için kendi yapay zekâ anahtarını (ör. e-Devlet ile Evren'den) Ayarlar'a girmen gerekir.</p></details>
-    <details><summary>Word dosyalarımı açabilir miyim?</summary><p>Önce Word ya da WPS'te "PDF olarak kaydet" de, sonra PDF'i SouNote'a aktar.</p></details>
-  </section>
-
-  <div class="final reveal">
-    <img src="img/icon.png" alt="">
-    <h2>Hazırsan başlayalım.</h2>
-    <p style="opacity:.9;margin:0 0 24px;font-size:17px">Ücretsiz · reklamsız · notların sende kalır</p>
-    <a class="pill gold big" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk">⬇ SouNote'u indir</a>
+<!-- Tek, kalıcı WebGL tuvali: tablet bütün sahneler boyunca burada yaşar. -->
+<canvas class="stage" id="stage" aria-hidden="true"></canvas>
+<div class="explore-backdrop" id="explore-backdrop" hidden></div>
+<div class="hotspots" id="hotspots" aria-live="polite"></div>
+<div class="explore-ui" id="explore-ui" role="dialog" aria-modal="false" aria-labelledby="explore-title" hidden>
+  <p class="explore-ui__title" id="explore-title">3D inceleme</p>
+  <p class="explore-ui__hint" id="explore-hint">Sürükleyerek çevir · ok tuşları da çalışır · Esc ile çık</p>
+  <div class="explore-ui__row" role="toolbar" aria-label="Tableti çevir">
+    <button type="button" class="chip" data-x="left" aria-label="Sola çevir">⟲</button>
+    <button type="button" class="chip" data-x="up" aria-label="Yukarı eğ">↑</button>
+    <button type="button" class="chip" data-x="down" aria-label="Aşağı eğ">↓</button>
+    <button type="button" class="chip" data-x="right" aria-label="Sağa çevir">⟳</button>
+    <button type="button" class="chip" data-x="flip">Ön / Arka</button>
+    <button type="button" class="chip" data-x="orient" aria-pressed="false">Yatay</button>
   </div>
+  <div class="explore-ui__row">
+    <button type="button" class="chip" data-x="prev" aria-label="Önceki ekran">‹</button>
+    <span class="explore-ui__screen" id="explore-screen" aria-live="polite">Ana sayfa</span>
+    <button type="button" class="chip" data-x="next" aria-label="Sonraki ekran">›</button>
+    <button type="button" class="chip" data-x="spots" aria-pressed="true">Bilgi noktaları</button>
+    <button type="button" class="chip chip--close" data-x="close">Kapat ✕</button>
+  </div>
+</div>
+
+<main id="icerik">
+
+  <!-- ============ 1 · Hero ============ -->
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="hero__copy">
+      <p class="eyebrow"><span class="eyebrow__dot"></span>Ücretsiz · Açık kaynak · Android</p>
+      <h1 class="display" id="hero-title">Ders çalışmanın <span class="grad">en sade hâli.</span></h1>
+      <p class="lead">SouNote; PDF'lerin üstüne kalemle yazmayı, sınav takvimini, bilgi kartlarını ve not ortalamanı tek bir uygulamada toplar. Hesap açmadan, ücretsiz.</p>
+      <div class="cta-row">
+        <a class="btn btn--primary btn--lg" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+          Android için indir
+        </a>
+        <a class="btn btn--ghost btn--lg" href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.5 8-4 4 4 4m7-8 4 4-4 4m-2-10-3 12"/></svg>
+          Kaynak kodu
+        </a>
+      </div>
+      <p class="hero__meta"><span>Android 10 ve üstü</span><span data-release="version"></span><span data-release="size"></span></p>
+    </div>
+    <div class="hero__stage">
+      <div class="slot" data-slot="hero" aria-hidden="true"></div>
+      <figure class="tablet-fallback" data-fallback>
+        <div class="tablet-fallback__device"><img src="screens/home.webp" alt="SouNote ana sayfası: günün karşılaması, hızlı başla düğmeleri ve yaklaşan sınavlar" width="720" height="1600"></div>
+      </figure>
+      <button class="btn btn--glass explore-open" type="button" data-explore>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></svg>
+        3D İncele
+      </button>
+    </div>
+    <a class="scroll-cue" href="#hikaye"><span class="scroll-cue__line"></span>Hikâyeyi kaydırarak keşfet</a>
+  </section>
+
+  <!-- ============ 2 · Sorun ============ -->
+  <section class="story" id="hikaye" data-progress="sticky" aria-labelledby="problem-title">
+    <div class="story__pin">
+      <div class="slot slot--aside" data-slot="problem" aria-hidden="true"></div>
+      <div class="story__copy">
+        <p class="kicker"><span>01</span>Sorun</p>
+        <h2 class="headline" id="problem-title">Sadece not almak istiyordum.</h2>
+        <p class="story__text">Ders PDF'lerimin üstüne kalemle yazmak, sınavlarımı takip etmek, öğrendiklerimi tekrar etmek. Hepsi bu. Ama kullandığım uygulama, ihtiyacım olanı sunmak yerine karşıma yeni engeller çıkarıyordu.</p>
+        <ol class="frictions">
+          <li style="--i:0"><span>Önce hesap aç.</span></li>
+          <li style="--i:1"><span>İhtiyacım olan özellik ya yok ya da ücretli.</span></li>
+          <li style="--i:2"><span>Notlar bir yerde, sınav takvimi başka yerde.</span></li>
+          <li style="--i:3"><span>Tekrar kartları bambaşka bir uygulamada.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3 · Karar ============ -->
+  <section class="decision" id="karar" data-progress="pass" aria-labelledby="decision-title">
+    <div class="code-rain" aria-hidden="true" data-code></div>
+    <div class="decision__inner">
+      <p class="kicker"><span>02</span>Karar</p>
+      <blockquote class="decision__quote">
+        <p id="decision-title">Aradığım uygulamayı bulamayınca, <em>kendim geliştirmeye</em> karar verdim.</p>
+      </blockquote>
+      <p class="decision__text">Bilgisayarım yoktu. Kodu tabletimde yazdım; her değişikliği GitHub'da otomatik derletip çıkan APK'yı yine tablete kurdum. Önce PDF'in üstüne yazabilen bir kalem, sonra ders çalışırken "keşke şu da olsa" dediğim her şey.</p>
+      <ol class="pipeline" aria-label="SouNote nasıl geliştiriliyor">
+        <li style="--i:0"><b>Tablette kod</b><span>Kotlin, Android</span></li>
+        <li style="--i:1"><b>GitHub Actions</b><span>Her değişiklikte derleme</span></li>
+        <li style="--i:2"><b>Emülatör testi</b><span>Ekranları gezip çökme arar</span></li>
+        <li style="--i:3"><b>APK</b><span>Doğrudan tablete</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ 4 · Sonuç ============ -->
+  <section class="solution" id="sonuc" data-progress="sticky" aria-labelledby="solution-title">
+    <div class="solution__pin">
+      <div class="solution__head">
+        <p class="kicker"><span>03</span>Sonuç</p>
+        <h2 class="headline" id="solution-title">Böylece <span class="grad">SouNote</span> doğdu.</h2>
+        <p class="solution__lead">Bugün SouNote, kalemle not almayı, ders kaynaklarını, sınav takvimini, bilgi kartlarını ve not ortalamasını bir araya getiren bir çalışma uygulaması.</p>
+      </div>
+      <div class="slot slot--center" data-slot="solution" aria-hidden="true"></div>
+      <ul class="pillars">
+        <li><b>Ücretsiz</b><span>Ücretli sürüm yok, reklam yok.</span></li>
+        <li><b>Açık kaynak</b><span>Kodun tamamı GitHub'da, herkes inceleyebilir.</span></li>
+        <li><b>Hesap yok</b><span>Kayıt istemez. Sadece seni adınla selamlamak için adını sorar, istersen geçebilirsin.</span></li>
+        <li><b>Hepsi bir arada</b><span>Defter, takvim, kartlar ve ortalama aynı yerde.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 5 · Geliştirici ============ -->
+  <section class="developer" id="gelistirici" data-progress="pass" aria-labelledby="dev-title">
+    <div class="code-rain code-rain--dev" aria-hidden="true" data-code></div>
+    <div class="developer__inner">
+      <p class="kicker"><span>04</span>Geliştirici</p>
+      <article class="dev-card" data-tilt>
+        <div class="dev-card__glare" aria-hidden="true"></div>
+        <div class="dev-card__top">
+          <div class="dev-card__mono" aria-hidden="true">UK</div>
+          <div>
+            <h2 class="dev-card__name" id="dev-title">Uçkan Keskinkaya</h2>
+            <p class="dev-card__role">SouNote Geliştiricisi</p>
+          </div>
+        </div>
+        <p class="dev-card__text">SouNote'u kendi derslerim için yazmaya başladım. İçindeki her özellik, ders çalışırken bir şeyin eksikliğini hissettiğim bir andan çıktı. Kodun tamamı herkese açık; incelemek, hata bildirmek ya da fikir vermek istersen GitHub'dayım.</p>
+        <div class="dev-card__links">
+          <a class="btn btn--primary" href="https://github.com/uckankeskinkaya" rel="noopener">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.5c.5.1.6-.2.6-.5v-1.7c-2.6.6-3.2-1.2-3.2-1.2-.4-1.1-1-1.4-1-1.4-.9-.6 0-.6 0-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.8.8.1-.6.3-1.1.6-1.3-2.1-.2-4.3-1-4.3-4.7 0-1 .4-1.9 1-2.6-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1a9 9 0 0 1 4.8 0c1.8-1.3 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.6 1 2.6 0 3.7-2.2 4.5-4.3 4.7.3.3.6.9.6 1.8v2.6c0 .3.2.6.7.5A9.5 9.5 0 0 0 12 2.5Z"/></svg>
+            GitHub Profilim
+          </a>
+          <a class="btn btn--ghost" href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.5 8-4 4 4 4m7-8 4 4-4 4m-2-10-3 12"/></svg>
+            Kaynak Kodunu İncele
+          </a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 6 · Özellikler ============ -->
+  <section class="features" id="ozellikler" aria-labelledby="features-title">
+    <header class="features__head">
+      <p class="kicker"><span>05</span>Özellikler</p>
+      <h2 class="headline" id="features-title">Ders çalışırken ihtiyacın olan araçlar, tek uygulamada.</h2>
+      <p class="section-lead">Aşağıdaki ekranlar uygulamanın gerçek ekran görüntüleri.</p>
+    </header>
+
+    <article class="feature" id="f-kalem" data-side="right">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-kalem" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/notebook.webp" alt="Defter ekranı: kalem türleri, fosforlu, silgi ve renkler" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">01</p>
+        <h3>Kâğıt gibi yaz, PDF gibi sakla.</h3>
+        <p>Ders PDF'lerini içe aktar ya da bir klasör bağla, üstüne basınca duyarlı kalemle yaz. Kalemin yoksa "Parmakla yaz"ı aç: tek parmak çizer, iki parmak kaydırır.</p>
+        <ul class="ticks"><li>Dolma, tükenmez, kurşun, fırça ve kaligrafi kalemleri</li><li>Fosforlu, silgi, lasso, şekil düzeltme, metin kutusu</li><li>Notlu PDF olarak dışa aktar ya da yazdır</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-dersler" data-side="left">
+      <div class="feature__visual"><div class="slot slot--sticky slot--wide" data-slot="f-dersler" aria-hidden="true"></div>
+        <figure class="feature__shot feature__shot--wide" data-fallback><img src="screens/courses-land.webp" alt="Dersler ekranı yatay: Grammar, Vocabulary, Reading ve Listening kartları" loading="lazy" width="1600" height="720"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">02</p>
+        <h3>Haftanın kaynakları, konu konu.</h3>
+        <p>Grammar'dan Speaking'e bütün ders kaynakları konulara ve haftalara ayrılmış hâlde gelir. Yeni kaynak eklenince uygulama güncellemesi beklemeden listede görünür.</p>
+        <ul class="ticks"><li>PDF kaynağı tek dokunuşla kütüphaneye</li><li>Word ve PowerPoint dosyaları başka uygulamada açılır, PDF olarak geri gelir</li><li>Tabletin yatay düzeninde yan menü</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-sinavlar" data-side="right">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-sinavlar" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/exams.webp" alt="Sınavlar ekranı: hatırlatıcılar ve geri sayımlı sınav listesi" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">03</p>
+        <h3>Sınavı unutma, geri sayım hep önünde.</h3>
+        <p>Sınav takvimi gün gün; her sınavın kaç gün kaldığı ve hangi derste olduğu tek bakışta. Kendi sınavlarını ve ödevlerini de ekleyebilirsin.</p>
+        <ul class="ticks"><li>3 gün, 1 gün ve 2 saat önce hatırlatıcı</li><li>Ana ekran widget'ı</li><li>Kendi sınav ve ödevlerin</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-writing" data-side="left">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-writing" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/writing.webp" alt="Writing pratiği ekranı: Opinion Essay ve Opinion Paragraph seçenekleri" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">04</p>
+        <h3>Essay'ini yaz, puanını gör.</h3>
+        <p>Konu seç, süreyle yaz. Yardımcı asistan yazını ölçütlere göre 100 üzerinden puanlar, hatalarını ve düzeltilmiş hâlini gösterir.</p>
+        <ul class="ticks"><li>Opinion Essay ve Opinion Paragraph</li><li>Asistan açık PDF'ini okuyup özetleyebilir, kart üretebilir</li><li>Asistan için kendi yapay zekâ servis anahtarın gerekir</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-ortalama" data-side="right">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-ortalama" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/grades.webp" alt="Not ortalamam ekranı: geçme notu ve sınav ağırlıkları" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">05</p>
+        <h3>Geçmek için kaç alman gerektiğini bil.</h3>
+        <p>Puanlarını ve sınav ağırlıklarını gir; SouNote ortalamanı hesaplar ve kalan sınavlardan kaç alman gerektiğini söyler. Okul şablonu hazır, istersen kendininkini kurarsın.</p>
+        <ul class="ticks"><li>Ağırlıklı ortalama ve geçme notu</li><li>Kalan sınavlar için gereken ortalama</li><li>Hazır okul şablonu</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-gunluk" data-side="left">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-gunluk" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/week.webp" alt="Ana sayfada haftalık liste: işaretlenebilir ders kaynakları" loading="lazy" width="540" height="1200"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">06</p>
+        <h3>Her gün biraz. Serin büyüsün.</h3>
+        <p>Haftalık listede o haftanın kaynaklarını bitirdikçe işaretle. Bilgi kartlarında zamanı gelenler "Bugünkü tekrar"da toplanır; çalıştığın her gün serine eklenir.</p>
+        <ul class="ticks"><li>Haftalık liste ve ilerleme</li><li>Bilgi kartları, aralıklı tekrar (Leitner, 5 kutu)</li><li>Çalışma serisi ve haftalık çalışma süresi</li></ul>
+      </div>
+    </article>
+
+    <div class="more" id="dahasi">
+      <h3 class="more__title">Ve dahası</h3>
+      <ul class="more__list">
+        <li><b>Genel arama</b>PDF'lerin içinde sayfa sayfa, yazılı notlarda ve kartlarda</li>
+        <li><b>Yazılı notlar</b>Klavyeyle ya da kalemle, yapılacaklar ve çizim alanı</li>
+        <li><b>Ders ses kaydı</b>Kayıt sırasında aldığın notlar, kaydın o anına bağlanır</li>
+        <li><b>Paylaşma</b>Notlu belgeyi arkadaşına gönder, onda notlarıyla açılsın</li>
+        <li><b>Yedekleme</b>Otomatik yedek, Drive'a yedek ve geri yükleme</li>
+        <li><b>Pomodoro</b>25/5 ve 50/10 çalışma döngüleri</li>
+        <li><b>Uygulama kilidi</b>Parmak izi ya da ekran kilidiyle</li>
+        <li><b>Gece okuma</b>Belgelerde renkleri ters çevir</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 7 · Dene ============ -->
+  <section class="play" id="dene" aria-labelledby="play-title">
+    <header class="play__head">
+      <p class="kicker"><span>06</span>Dene</p>
+      <h2 class="headline" id="play-title">Denemek ister misin?</h2>
+      <p class="section-lead">İki küçük tarayıcı denemesi. Uygulamanın kendisi değil; ama hissini verir. Hiçbir şey kaydedilmez.</p>
+    </header>
+    <div class="play__grid">
+      <div class="demo demo--draw" id="demo-draw">
+        <div class="demo__poster">
+          <svg class="demo__art" viewBox="0 0 320 140" aria-hidden="true"><path d="M20 96c18-40 34-52 44-30 9 20-6 40 10 40s22-50 46-50 10 52 34 50 18-36 40-36 12 30 34 30 22-40 52-46"/></svg>
+          <h3>Kalemle yaz</h3>
+          <p>Fare, parmak ya da kalemle çiz. Kalem, silgi, renkler, kalınlık, geri al.</p>
+          <button class="btn btn--primary" type="button" data-demo="draw">Denemek ister misin?</button>
+        </div>
+      </div>
+      <div class="demo demo--cards" id="demo-cards">
+        <div class="demo__poster">
+          <div class="demo__stack" aria-hidden="true"><i></i><i></i><i></i></div>
+          <h3>Bilgi kartları</h3>
+          <p>Kartı çevir, kaydır: "Öğrendim" ya da "Tekrar et". Sonunda kısa bir mini test.</p>
+          <button class="btn btn--primary" type="button" data-demo="cards">Denemek ister misin?</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8 · Karşılaştırma ============ -->
+  <section class="compare" id="karsilastirma" aria-labelledby="compare-title">
+    <header class="compare__head">
+      <p class="kicker"><span>07</span>Neden SouNote?</p>
+      <h2 class="headline" id="compare-title">Bir çalışma uygulaması seçerken şunları sor.</h2>
+      <p class="section-lead">Her uygulamanın cevabı farklı. SouNote'unkiler bunlar, eksikleriyle birlikte.</p>
+    </header>
+    <dl class="qa">
+      <div><dt>Ücret istiyor mu?</dt><dd><b class="ok">Hayır.</b> Tamamen ücretsiz; ücretli sürüm, abonelik ya da reklam yok.</dd></div>
+      <div><dt>Hesap açmak zorunda mıyım?</dt><dd><b class="ok">Hayır.</b> Kayıt yok, giriş yok. Uygulamayı açıp kullanmaya başlarsın.</dd></div>
+      <div><dt>Kodunu görebilir miyim?</dt><dd><b class="ok">Evet.</b> Kaynak kodu GitHub'da herkese açık; her sürüm orada otomatik derlenir.</dd></div>
+      <div><dt>Notlarım nerede duruyor?</dt><dd><b class="ok">Cihazında.</b> Yedeği sen alırsın: seçtiğin klasöre otomatik ya da Drive'a. Asistanı kullanırsan sorduğun metin, ayarladığın yapay zekâ servisine gider.</dd></div>
+      <div><dt>PDF'lerimle çalışabilir miyim?</dt><dd><b class="ok">Evet.</b> İçe aktar, kalemle yaz, form doldur, sayfa ekle, notlu PDF olarak dışa aktar.</dd></div>
+      <div><dt>Planlamaya yardım ediyor mu?</dt><dd><b class="ok">Evet.</b> Sınav takvimi, hatırlatıcılar, widget, haftalık liste ve not ortalaması.</dd></div>
+      <div><dt>Hangi cihazlarda çalışıyor?</dt><dd><b class="warn">Şimdilik sadece Android.</b> Android 10 ve üstü telefon ve tabletler. iPhone ve iPad sürümü yok.</dd></div>
+      <div><dt>Play Store'da mı?</dt><dd><b class="warn">Hayır.</b> APK olarak buradan indirilir. Nedenini <a href="#sss">aşağıda</a> anlattık.</dd></div>
+    </dl>
+  </section>
+
+  <!-- ============ 9 · İndir ============ -->
+  <section class="finale" id="indir" aria-labelledby="download-title">
+    <div class="finale__pin">
+      <div class="finale__visual"><div class="slot slot--finale" data-slot="finale" aria-hidden="true"></div>
+        <figure class="tablet-fallback tablet-fallback--finale" data-fallback><div class="tablet-fallback__device tablet-fallback__device--brand"><img src="brand/logo-a-256.png" alt="SouNote logosu" width="256" height="256"></div></figure></div>
+      <div class="download">
+        <p class="kicker"><span>08</span>İndir</p>
+        <h2 class="headline" id="download-title">SouNote'u Ücretsiz İndir</h2>
+        <p class="download__lead">Android telefonun ya da tabletin için. Kurduktan sonra yeni sürümleri uygulama kendisi haber verir; üstüne kurduğunda notların silinmez.</p>
+        <a class="btn btn--primary btn--xl" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+          SouNote.apk'yı indir
+        </a>
+        <dl class="download__meta">
+          <div><dt>Sürüm</dt><dd data-release="version-full">En son sürüm</dd></div>
+          <div><dt>Boyut</dt><dd data-release="size-full">—</dd></div>
+          <div><dt>Yayın</dt><dd data-release="date">—</dd></div>
+          <div><dt>Gereksinim</dt><dd>Android 10+</dd></div>
+        </dl>
+        <p class="download__notes" data-release="notes" hidden></p>
+        <div class="download__links">
+          <a href="https://github.com/uckankeskinkaya/SouNote/releases" rel="noopener">Tüm sürümler</a>
+          <a href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">Kaynak kodu</a>
+          <button type="button" class="linklike" data-video>Tanıtım videosu (1 dk)</button>
+          <a id="vt-link" href="https://www.virustotal.com/gui/home/upload" rel="noopener">VirusTotal'da kontrol et</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="install">
+      <h3 class="install__title">Bir dakikada kur</h3>
+      <ol class="steps">
+        <li><b>İndir</b><span>Düğmeye bas. Chrome uyarırsa "Yine de indir" de.</span></li>
+        <li><b>Aç</b><span>Bildirimden ya da Dosyalar → İndirilenler'den SouNote.apk'ya dokun.</span></li>
+        <li><b>İzin ver</b><span>"Bilinmeyen uygulamalar" uyarısında bu kaynağa izin ver ve geri dön.</span></li>
+        <li><b>Yükle</b><span>"Yükle"ye bas. Kısa bir tanıtım seni karşılar.</span></li>
+      </ol>
+      <p class="hash" data-release="hash"></p>
+    </div>
+
+    <div class="faq" id="sss">
+      <h3 class="install__title">Sık sorulanlar</h3>
+      <details><summary>Telefon "zararlı olabilir" diyor, güvenli mi?</summary><p>SouNote Play Store'da olmadığı için Chrome "Bu dosya zararlı olabilir", Play Protect ise "Bilinmeyen geliştirici" ya da "Güvenli olmayan uygulama engellendi" diyebilir. Bu, mağaza dışından gelen her uygulamada çıkan genel bir uyarıdır. Play Protect'te "Diğer ayrıntılar → Yine de yükle" diyebilirsin. İçin rahat etsin istersen dosyayı kurmadan önce VirusTotal'da taratabilirsin; yukarıdaki bağlantı bu sürümün raporunu açar. "Zararlı uygulama tespit edildi" ya da belirli bir virüs adı görürsen kurma, dosyayı bu sayfadan yeniden indir.</p></details>
+      <details><summary>Neden Play Store'da değil?</summary><p>Google Play geliştirici hesabı ücretli; yeni bireysel hesaplar ayrıca uygulamayı yayınlamadan önce en az 12 test kullanıcısıyla 14 gün kapalı test yapmak zorunda. Kimlik doğrulama, gizlilik ve veri güvenliği formları ve her güncellemenin incelemeye girmesi de cabası. Ücretsiz bir öğrenci projesi için bu fazla masraf ve bekleme demek; burada ise hata düzeltmeleri ve haftalık ders kaynakları hemen sana ulaşıyor.</p></details>
+      <details><summary>Güncellemeler nasıl geliyor?</summary><p>Yeni sürüm çıkınca uygulama haber verir; "İndir"e basıp üstüne kurman yeterli, notların silinmez. Haftalık ders kaynakları uygulama güncellemesi gerektirmeden gelir.</p></details>
+      <details><summary>Notlarım nerede saklanıyor?</summary><p>Cihazında. SouNote'un bir hesabı ya da notları topladığı bir sunucusu yok. Kaybolmasın diye Ayarlar'dan otomatik yedeği açabilir ya da Drive'a yedek alabilirsin. Yardımcı asistanı kullanırsan, sorduğun metin ayarlarda girdiğin yapay zekâ servisine gönderilir.</p></details>
+      <details><summary>Kalemim yok, kullanabilir miyim?</summary><p>Evet. "Parmakla yaz"ı aç; tek parmak çizer, iki parmak kaydırır ve yakınlaştırır.</p></details>
+      <details><summary>Asistan ücretli mi?</summary><p>Uygulama ücretsiz. Asistan için kendi yapay zekâ servis anahtarını Ayarlar'a girmen gerekir; uygulama, e-Devlet ile alınabilen bir anahtar için adım adım kurulum gösterir. Anahtar uygulamanın içine gömülü değildir, sadece senin cihazında durur.</p></details>
+      <details><summary>iPhone ya da iPad'de çalışır mı?</summary><p>Hayır, şimdilik sadece Android 10 ve üstü.</p></details>
+      <details><summary>Word dosyalarımı açabilir miyim?</summary><p>Word ve PowerPoint dosyaları SouNote içinde açılmaz. WPS ya da Office'te açıp PDF olarak SouNote'a paylaşırsan kütüphanene gelir ve üstüne kalemle yazabilirsin.</p></details>
+    </div>
+  </section>
 </main>
 
-<footer>SouNote · bir öğrencinin kendi notları için yaptığı uygulama 💙 · <a href="https://github.com/uckankeskinkaya/SouNote" style="text-decoration:underline">GitHub</a></footer>
+<footer class="footer">
+  <div class="footer__brand">
+    <img src="brand/logo-a-64.png" alt="" width="40" height="40">
+    <div><b>SouNote</b><span>Ders çalışmanın en sade hâli.</span></div>
+  </div>
+  <nav class="footer__nav" aria-label="Alt menü">
+    <a href="#hikaye">Hikâye</a><a href="#ozellikler">Özellikler</a><a href="#dene">Dene</a><a href="#gelistirici">Geliştirici</a><a href="#indir">İndir</a>
+  </nav>
+  <nav class="footer__nav" aria-label="GitHub bağlantıları">
+    <a href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">Kaynak kodu</a>
+    <a href="https://github.com/uckankeskinkaya/SouNote/releases" rel="noopener">Sürümler</a>
+    <a href="https://github.com/uckankeskinkaya/SouNote/issues" rel="noopener">Hata bildir</a>
+    <a href="https://github.com/uckankeskinkaya" rel="noopener">Uçkan Keskinkaya</a>
+  </nav>
+  <p class="footer__note">Uçkan Keskinkaya tarafından, kendi dersleri için geliştirildi. Ekranlar uygulamanın gerçek görüntüleridir; "Dene" bölümündeki denemeler tarayıcı için hazırlanmış örneklerdir.</p>
+</footer>
 
-<script>
-  // Hero telefonu: ekranlar sırayla geçer
-  (() => {
-    const imgs = document.querySelectorAll("#hero-screen img");
-    let i = 0;
-    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(() => {
-      imgs[i].classList.remove("on"); i = (i + 1) % imgs.length; imgs[i].classList.add("on");
-    }, 3200);
-  })();
-
-  // Ekran gezgini sekmeleri
-  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
-    const img = document.getElementById("tour-img");
-    img.classList.remove("on");
-    setTimeout(() => { img.src = t.dataset.img; img.onload = () => img.classList.add("on"); }, 180);
-  }));
-
-  // Sürüm bilgisi (yayınlanan en son sürüm)
-  fetch("https://api.github.com/repos/uckankeskinkaya/SouNote/releases/latest")
-    .then(r => r.ok ? r.json() : null)
-    .then(d => {
-      if (!d) return;
-      const apk = (d.assets || []).find(a => a.name === "SouNote.apk");
-      if (apk) document.getElementById("size").textContent = "📦 " + (apk.size / 1048576).toFixed(0) + " MB";
-      // VirusTotal: dosyanın parmak iziyle doğrudan rapor sayfası (taranmamışsa oradan yüklenebilir)
-      const sha = apk && /^sha256:[0-9a-f]{64}$/.test(apk.digest || "") ? apk.digest.slice(7) : null;
-      if (sha) {
-        document.getElementById("vt-link").href = "https://www.virustotal.com/gui/file/" + sha;
-        document.getElementById("apk-hash").textContent = "SHA-256: " + sha;
-      }
-      document.getElementById("ver-badge").textContent = (d.name || "").replace("SouNote ", "v");
-      const first = (d.body || "").split("\n")[0].trim();
-      if (first) document.getElementById("ver-line").textContent = first;
-    }).catch(() => {});
-
-  // Yenilikler: sadece yayınlanan ana sürümler (otomatik test/eski derlemeler gizli)
-  const AUTO = /^(Test |SouNote 1\.0\.\d+$|SouNote 0\.|Ders kataloğu|Test kanalı)/;
-  fetch("https://api.github.com/repos/uckankeskinkaya/SouNote/releases?per_page=60")
-    .then(r => r.ok ? r.json() : [])
-    .then(list => {
-      const box = document.getElementById("changes");
-      const items = list.filter(r => !r.prerelease && !r.draft && r.body && r.name && !AUTO.test(r.name)).slice(0, 8);
-      if (!items.length) { box.innerHTML = '<p class="sub">İlk ana güncelleme yakında burada.</p>'; return; }
-      box.innerHTML = "";
-      items.forEach((r, i) => {
-        const lines = r.body.split("\n").map(l => l.trim()).filter(l => l && !/^(Co-Authored-By|Claude-Session)/.test(l));
-        const el = document.createElement("div");
-        el.className = "tl" + (i === 0 ? " latest" : "");
-        const v = document.createElement("div"); v.className = "v"; v.textContent = r.name.replace("SouNote ", "v");
-        const card = document.createElement("div"); card.className = "card";
-        if (i === 0) { const tag = document.createElement("span"); tag.className = "latest-tag"; tag.textContent = "Son güncelleme"; card.append(tag); }
-        const b = document.createElement("b"); b.textContent = lines[0] || r.name;
-        const tm = document.createElement("time"); tm.textContent = new Date(r.published_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
-        card.append(b, tm);
-        const rest = lines.slice(1);
-        if (rest.length) {
-          const ul = document.createElement("ul");
-          rest.slice(0, 10).forEach(l => { const li = document.createElement("li"); li.textContent = l.replace(/^[-•*]\s*/, ""); ul.append(li); });
-          card.append(ul);
-        }
-        el.append(v, card);
-        box.append(el);
-      });
-    })
-    .catch(() => { document.getElementById("changes").innerHTML = '<p class="sub">Yenilikler şu an yüklenemedi.</p>'; });
-
-  // Bölümler kaydırdıkça belirsin (çubuklar ve çizgi de o an animasyonlu dolar)
-  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12 });
-  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
-</script>
+<dialog class="video-dialog" id="video-dialog" aria-label="SouNote tanıtım videosu">
+  <form method="dialog"><button class="chip chip--close" aria-label="Videoyu kapat">Kapat ✕</button></form>
+  <video data-src="video/sounote.mp4" poster="video/poster.jpg" controls playsinline preload="none"></video>
+</dialog>
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </body>
 </html>

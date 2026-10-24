@@ -209,8 +209,8 @@ fun ExamPlanDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
 
 /** Deneme sınavı ayarı: konu ve soru sayısı. Metin, dersin indirilmiş PDF'lerinden okunur. */
 @Composable
-fun PracticeSetupDialog(vm: LibraryViewModel, course: Course, onDismiss: () -> Unit) {
-    var topic by remember { mutableStateOf<Topic?>(null) }
+fun PracticeSetupDialog(vm: LibraryViewModel, course: Course, initialTopic: Topic? = null, onDismiss: () -> Unit) {
+    var topic by remember { mutableStateOf(initialTopic) }
     var count by remember { mutableStateOf(10) }
     var start by remember { mutableStateOf(false) }
     if (start) {
@@ -387,6 +387,10 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                                 answers.add(chosen)
                                 chosen = -1
                                 index++
+                                if (index == qs.size) {
+                                    val right = qs.indices.count { answers.getOrNull(it) == qs[it].answer }
+                                    vm.recordTestScore(topic?.id ?: "course:${course.id}", right * 100 / qs.size)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         ) { Text(if (index == qs.size - 1) "Bitir" else "Sonraki") }

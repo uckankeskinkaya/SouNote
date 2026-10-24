@@ -101,6 +101,9 @@ fun InkToolbar(
     leading: (@Composable () -> Unit)? = null,
     /** Bütün ezber bantlarını aç (true) / kapat (false). */
     onRevealTapes: (Boolean) -> Unit = {},
+    /** Katmanlar penceresi; birden çok katman varsa simge seçili görünür. */
+    onLayers: (() -> Unit)? = null,
+    layered: Boolean = false,
 ) {
     // Renk seçici açıkken seçilen rengin hangi araca gideceği
     var picker by remember { mutableStateOf<Tool?>(null) }
@@ -174,6 +177,7 @@ fun InkToolbar(
                 ToolChip("Açıölçer", state.guide == GuideKind.PROTRACTOR, vector = SouIcons.Architecture) {
                     onChange(state.copy(guide = if (state.guide == GuideKind.PROTRACTOR) GuideKind.NONE else GuideKind.PROTRACTOR))
                 }
+                if (onLayers != null) ToolChip("Katmanlar", layered, vector = SouIcons.Layers) { onLayers() }
                 Separator()
                 Favorites(state, onChange)
             }

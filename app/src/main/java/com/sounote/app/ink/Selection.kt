@@ -19,9 +19,10 @@ class Clip(val strokes: List<Stroke>, val texts: List<TextBox>, val images: List
 object Selections {
 
     /** Lasso çokgeninin (x,y çiftleri, sayfa noktası) içinde kalan öğeler. */
-    fun select(page: Int, c: PageContent, poly: FloatArray, n: Int): Selection {
+    fun select(page: Int, c: PageContent, poly: FloatArray, n: Int, canSelect: (Stroke) -> Boolean = { true }): Selection {
         if (n < 3) return Selection(page, emptySet(), emptySet(), emptySet())
         val strokes = c.strokes.filterTo(HashSet()) { s ->
+            if (!canSelect(s)) return@filterTo false
             // Noktalarının yarısı içerideyse seçilir: kenardan taşan çizgiler de yakalanır.
             var inside = 0
             for (i in 0 until s.pointCount) if (contains(poly, n, s.points[i * 3], s.points[i * 3 + 1])) inside++
@@ -151,7 +152,7 @@ object Selections {
     )
 
     /** Kopyalanan öğeleri (dx, dy) kaydırarak sayfaya ekler; eklenenler seçili döner. */
-    fun paste(page: Int, c: PageContent, clip: Clip, dx: Float, dy: Float): Pair<PageContent, Selection> {
+    fun paste(page: Int, c: PageContent, clip: Clip, dx: Float, dy: Float, layer: Int = 0): Pair<PageContent, Selection> {
         var nextId = System.currentTimeMillis()
         val strokes = clip.strokes.map { s ->
             val p = s.points.copyOf()
@@ -159,7 +160,7 @@ object Selections {
                 p[i * 3] += dx
                 p[i * 3 + 1] += dy
             }
-            s.copy(points = p)
+            s.copy(points = p, layer = layer)
         }
         val texts = clip.texts.map { it.copy(id = nextId++, x = it.x + dx, y = it.y + dy) }
         val images = clip.images.map { it.copy(id = nextId++, x = it.x + dx, y = it.y + dy) }

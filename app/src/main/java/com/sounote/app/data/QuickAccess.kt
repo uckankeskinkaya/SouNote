@@ -64,14 +64,17 @@ data class HomeLayout(val order: List<HomeModule>, val hidden: Set<HomeModule>) 
     fun setVisible(m: HomeModule, on: Boolean) = copy(hidden = if (on) hidden - m else hidden + m)
 
     companion object {
-        val DEFAULT = HomeLayout(HomeModule.entries.toList(), emptySet())
+        /** Sade başlangıç: ipucu ve yazılı notlar (Yazı sekmesinde de var) gizli; Ana sayfayı düzenle'den açılır. */
+        private val DEFAULT_HIDDEN = setOf(HomeModule.TIP, HomeModule.NOTES)
+
+        val DEFAULT = HomeLayout(HomeModule.entries.toList(), DEFAULT_HIDDEN)
 
         /** Kayıtlı sıra; sonradan eklenen modüller sona eklenir, bilinmeyen adlar atlanır. */
         fun parse(order: String?, hidden: String?): HomeLayout {
             fun names(s: String?) = s.orEmpty().split(',').mapNotNull { n -> HomeModule.entries.find { it.name == n.trim() } }
             val saved = names(order).distinct()
             val all = saved + HomeModule.entries.filter { it !in saved }
-            return HomeLayout(all, names(hidden).toSet())
+            return HomeLayout(all, if (hidden == null) DEFAULT_HIDDEN else names(hidden).toSet())
         }
     }
 }

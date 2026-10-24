@@ -138,7 +138,7 @@ bugünkü tekrar) bu dala birleştirildi. Yayın akışı onlarınki: her push "
 .github/publish/request.json (version/title/notes/build) itilir. Writing puanlama ekranı ui/EssayGraderScreen.kt (data/Essays.kt Essay),
 yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma serisi VM.streak/activeDays (onlarınki).
 - Tasarım: ui/Theme.kt (SouNote Light; koyu paletler DarkPalette OBSIDIAN/MIDNIGHT/GRAPHITE prefs darkPalette; vurgu Accent: prefs colorTheme
-  null/AUTO = tema rengi, enum adı = hazır, CUSTOM + accentCustom), Manrope (res/font, değişken, OFL assets/licenses), LocalSpacing (UiDensity prefs uiDensity),
+  null/AUTO = tema rengi, enum adı = hazır, CUSTOM + accentCustom), sistem yazı tipi (Manrope 2.0.1'de kaldırıldı); SouNoteTheme LocalContentColor = onBackground (Surface dışı yazılar koyu temada siyah kalıyordu), LocalSpacing (UiDensity prefs uiDensity),
   LocalMotionLevel (prefs motionLevel; sistem animasyon ölçeği 0 ise OFF), LocalSouColors. Ortak bileşenler ui/Components.kt.
 - Gezinme (AppShell): <600dp alt çubuk (Ayarlar ana sayfadaki ⚙), 600–1000dp ray, ≥1000dp geniş menü; prefs navStyle. Sekmeler: HOME, LIBRARY, COURSES, EXAMS (Planlayıcı), WRITING, SETTINGS.
 - Ana sayfa modülleri: data/QuickAccess.kt HomeModule/HomeLayout (prefs homeOrder, homeHidden). Hızlı erişim QuickItem (prefs quickAccess JSON; doc/folder/course/note, pinned).
@@ -147,6 +147,7 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
   data/Writing.kt EssayText + WritingCoach (mevcut AssistantClient; öneri JSON; metin sadece "Uygula" ile değişir), WritingCoachPanel.
 - PDF: okuma modu (prefs readingMode, PdfDocumentView.readOnly → panOnly), lasso bölgesi onLassoRegion → PdfText.region (PDFTextStripperByArea) → AssistantSource.Document.selection.
 - Arama: SearchHit CourseHit/TopicHit/FolderHit/ExamHit + filtre çipleri, son aramalar (prefs recentSearches). Ayarlar: kategoriler + arama (SettingsScreen Entry).
+- 2.0.1 (✅ yayınlandı build-99): yeni logo (drawable-nodpi/logo_tile.png, ic_logo_fg.png; AppLogo, simge, açılış), sade ana sayfa (HomeLayout DEFAULT_HIDDEN TIP+NOTES, 6 hızlı işlem).
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).

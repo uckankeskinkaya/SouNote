@@ -689,7 +689,6 @@ private fun LicensesDialog(onDismiss: () -> Unit) {
         "AndroidX, Jetpack Compose, Material 3" to "Apache License 2.0 · Google",
         "PDFBox-Android (com.tom-roush)" to "Apache License 2.0 · Apache PDFBox uyarlaması",
         "ML Kit Digital Ink Recognition" to "Google ML Kit hizmet şartları",
-        "Manrope yazı tipi" to "SIL Open Font License 1.1 · The Manrope Project Authors",
         "Kotlin, kotlinx.coroutines" to "Apache License 2.0 · JetBrains",
     )
     AlertDialog(

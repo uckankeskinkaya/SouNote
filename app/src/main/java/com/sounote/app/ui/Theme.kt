@@ -1,5 +1,3 @@
-@file:OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
-
 package com.sounote.app.ui
 
 import android.app.ActivityManager
@@ -9,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -23,15 +22,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
-import com.sounote.app.R
 
 /*
  * SouNote 2.0 tasarım sistemi: renk paletleri, vurgu rengi, tipografi, köşe ve boşluk token'ları.
@@ -322,28 +317,24 @@ private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette):
 
 // ---- Tipografi ----
 
-private fun manrope(weight: Int) =
-    Font(R.font.manrope, FontWeight(weight), variationSettings = FontVariation.Settings(FontVariation.weight(weight)))
-
-/** Başlıklar için Manrope (Türkçe karakterlerin hepsi var); gövde metni sistem yazı tipi (okunaklı, hızlı). */
-val Manrope = FontFamily(manrope(400), manrope(500), manrope(600), manrope(700), manrope(800))
-
+/*
+ * Sistem yazı tipi (Türkçe karakterlerin hepsi var, her cihazda okunaklı ve hızlı). Başlıklar kalın, gövde normal.
+ */
 private val SouTypography: Typography = Typography().let { t ->
-    fun TextStyle.display(weight: FontWeight, spacing: Float = 0f) =
-        copy(fontFamily = Manrope, fontWeight = weight, letterSpacing = spacing.sp)
+    fun TextStyle.w(weight: FontWeight, spacing: Float = 0f) = copy(fontWeight = weight, letterSpacing = spacing.sp)
     t.copy(
-        displayLarge = t.displayLarge.display(FontWeight.Bold, -0.5f),
-        displayMedium = t.displayMedium.display(FontWeight.Bold, -0.25f),
-        displaySmall = t.displaySmall.display(FontWeight.Bold),
-        headlineLarge = t.headlineLarge.display(FontWeight.Bold, -0.25f),
-        headlineMedium = t.headlineMedium.display(FontWeight.Bold),
-        headlineSmall = t.headlineSmall.display(FontWeight.Bold),
-        titleLarge = t.titleLarge.display(FontWeight.Bold),
-        titleMedium = t.titleMedium.display(FontWeight.SemiBold, 0.1f),
-        titleSmall = t.titleSmall.display(FontWeight.SemiBold, 0.1f),
-        labelLarge = t.labelLarge.display(FontWeight.SemiBold, 0.1f),
-        labelMedium = t.labelMedium.display(FontWeight.SemiBold, 0.3f),
-        labelSmall = t.labelSmall.display(FontWeight.SemiBold, 0.3f),
+        displayLarge = t.displayLarge.w(FontWeight.Bold, -0.5f),
+        displayMedium = t.displayMedium.w(FontWeight.Bold, -0.25f),
+        displaySmall = t.displaySmall.w(FontWeight.Bold),
+        headlineLarge = t.headlineLarge.w(FontWeight.Bold, -0.25f),
+        headlineMedium = t.headlineMedium.w(FontWeight.Bold),
+        headlineSmall = t.headlineSmall.w(FontWeight.Bold),
+        titleLarge = t.titleLarge.w(FontWeight.Bold),
+        titleMedium = t.titleMedium.w(FontWeight.SemiBold, 0.1f),
+        titleSmall = t.titleSmall.w(FontWeight.SemiBold, 0.1f),
+        labelLarge = t.labelLarge.w(FontWeight.SemiBold, 0.1f),
+        labelMedium = t.labelMedium.w(FontWeight.Medium, 0.3f),
+        labelSmall = t.labelSmall.w(FontWeight.Medium, 0.3f),
     )
 }
 
@@ -456,6 +447,10 @@ fun SouNoteTheme(
         LocalSpacing provides Spacing(density.factor),
         LocalMotionLevel provides level,
     ) {
-        MaterialTheme(colorScheme = scheme, typography = SouTypography, shapes = SouShapes, content = content)
+        MaterialTheme(colorScheme = scheme, typography = SouTypography, shapes = SouShapes) {
+            // Renk verilmemiş yazılar temanın yazı rengini alsın (Surface/Scaffold dışında varsayılan siyahtı:
+            // tablet düzeninde koyu temada başlıklar okunmuyordu).
+            CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+        }
     }
 }

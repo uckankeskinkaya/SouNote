@@ -622,7 +622,7 @@ private fun ChipRow(content: @Composable () -> Unit) {
 private fun SearchResults(results: List<Entry>, modifier: Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (results.isEmpty()) {
-            EmptyState(SouIcons.Search, "Ayar bulunamadı")
+            EmptyState(SouIcons.Search, "Ayar bulunamadı", art = com.sounote.app.R.drawable.empty_search)
         }
         results.groupBy { it.category }.forEach { (c, list) ->
             SettingsGroup(c.label) {

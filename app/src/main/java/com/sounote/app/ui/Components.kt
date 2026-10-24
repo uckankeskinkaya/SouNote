@@ -166,6 +166,8 @@ internal fun EmptyState(
     title: String,
     text: String? = null,
     modifier: Modifier = Modifier,
+    /** Simge yerine çizim (res/drawable-nodpi empty_*). */
+    @androidx.annotation.DrawableRes art: Int? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {
     Column(
@@ -173,10 +175,18 @@ internal fun EmptyState(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 40.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
-        ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp)) }
+        if (art != null) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(art),
+                contentDescription = null,
+                modifier = Modifier.size(150.dp),
+            )
+        } else {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
+            ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp)) }
+        }
         Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         if (text != null) {
             Text(

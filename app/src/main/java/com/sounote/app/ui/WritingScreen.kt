@@ -136,14 +136,14 @@ fun WritingScreen(vm: LibraryViewModel) {
                 }
                 if (vm.textNotes.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        EmptyState(SouIcons.EditNote, "İlk yazına başla") {
+                        EmptyState(SouIcons.EditNote, "İlk yazına başla", art = com.sounote.app.R.drawable.empty_writing) {
                             Button(onClick = { vm.newTextNote(EssayText.TEMPLATE) }) { Text("Yeni essay") }
                             OutlinedButton(onClick = { vm.newTextNote() }) { Text("Serbest metin") }
                         }
                     }
                 } else if (notes.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        EmptyState(SouIcons.Search, "Sonuç yok")
+                        EmptyState(SouIcons.Search, "Sonuç yok", art = com.sounote.app.R.drawable.empty_search)
                     }
                 }
                 items(notes, key = { it.id }) { n ->

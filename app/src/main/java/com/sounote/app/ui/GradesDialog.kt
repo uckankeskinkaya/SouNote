@@ -23,10 +23,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,10 +67,10 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     fun update(items: List<GradeItem> = g.items, pass: Double = g.passMark) = vm.updateGrades(Grades(pass, items))
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().souBackground(), color = Color.Transparent) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(4.dp)) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kapat") }
+                    IconButton(onClick = onDismiss) { Icon(SouIcons.ArrowBack, contentDescription = "Kapat") }
                     Text("Not ortalamam", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                     if (g.items.isNotEmpty()) {
                         androidx.compose.material3.TextButton(onClick = { confirmTemplate = true }) { Text("Okul şablonu") }
@@ -119,7 +115,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                                     .background(MaterialTheme.colorScheme.primaryContainer)
                                     .padding(16.dp),
                             ) {
-                                Text("🎓 Ankara Üniversitesi Hazırlık", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text("Ankara Üniversitesi Hazırlık", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                 Text(
                                     "Öğrenci El Kitabı 2026-2027'deki hesap: kur içi sınav ve ödevler %40 (2 kısa sınav, 2 ara sınav, " +
                                         "2 sözlü, 2 yazma) + Kur Atlama Sınavı %60. Kuru geçmek için en az 70.",
@@ -157,7 +153,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                             OutlinedButton(onClick = {
                                 update(items = g.items + GradeItem(System.currentTimeMillis(), "", 0.0, null))
                             }) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(SouIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(" Sınav ekle")
                             }
                             // Takvimdeki sınav adlarını (henüz listede olmayanları) öner
@@ -215,13 +211,13 @@ private fun Summary(g: Grades) {
             when {
                 g.items.isEmpty() -> Text("Henüz sınav eklemedin", style = MaterialTheme.typography.titleSmall)
                 needed == null -> Text(
-                    if ((avg ?: 0.0) >= g.passMark) "Tebrikler, geçtin 🎉" else "Bütün puanlar girildi; geçme notunun altında",
+                    if ((avg ?: 0.0) >= g.passMark) "Tebrikler, geçtin" else "Bütün puanlar girildi; geçme notunun altında",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                needed <= 0 -> Text("Kalanlardan 0 alsan bile geçiyorsun 🎉", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                needed <= 0 -> Text("Kalanlardan 0 alsan bile geçiyorsun", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 needed > 100 -> Text(
-                    "Kalan sınavlardan ${fmt(needed)} ortalama gerekiyor; 100'ü aşıyor 😕",
+                    "Kalan sınavlardan ${fmt(needed)} ortalama gerekiyor; 100'ü aşıyor",
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -271,7 +267,7 @@ private fun GradeRow(item: GradeItem, onChange: (GradeItem) -> Unit, onDelete: (
                 label = { Text("Sınav / ödev") },
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Sil") }
+            IconButton(onClick = onDelete) { Icon(SouIcons.Delete, contentDescription = "Sil") }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(

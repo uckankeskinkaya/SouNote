@@ -20,9 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.RadioButton
 import com.sounote.app.data.NaturalOrder
@@ -58,10 +55,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -123,6 +116,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     val linkFolder = { pickFolder.launch(null) }
 
     var renaming by remember { mutableStateOf<DocRef?>(null) }
+    var coverFor by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var unlinking by remember { mutableStateOf<FolderRef?>(null) }
     var newNotebook by remember { mutableStateOf(false) }
@@ -154,11 +148,11 @@ fun LibraryScreen(vm: LibraryViewModel) {
                 navigationIcon = {
                     if (vm.canNavigateUp) {
                         IconButton(onClick = vm::navigateUp) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                            Icon(SouIcons.ArrowBack, contentDescription = "Geri")
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 actions = {
                     val list = vm.libraryView == LibraryViewModel.LibraryView.LIST
                     IconButton(onClick = {
@@ -173,7 +167,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         searching = !searching
                         if (!searching) vm.searchQuery = ""
                     }) {
-                        Icon(Icons.Default.Search, contentDescription = "Ara")
+                        Icon(SouIcons.Search, contentDescription = "Ara")
                     }
                     var sortMenu by remember { mutableStateOf(false) }
                     Box {
@@ -191,18 +185,19 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         }
                     }
                     IconButton(onClick = vm::refresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Yenile")
+                        Icon(SouIcons.Refresh, contentDescription = "Yenile")
                     }
                     if (!inLinked) {
                         var menu by remember { mutableStateOf(false) }
                         Box {
                             IconButton(onClick = { menu = true }) {
-                                Icon(Icons.Default.Add, contentDescription = "Ekle")
+                                Icon(SouIcons.Add, contentDescription = "Ekle")
                             }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(text = { Text("Hızlı not") }, onClick = { menu = false; vm.quickNote() })
                                 DropdownMenuItem(text = { Text("Yazılı not (klavye)") }, onClick = { menu = false; vm.newTextNote() })
                                 DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { menu = false; newNotebook = true })
+                                DropdownMenuItem(text = { Text("Sonsuz tuval") }, onClick = { menu = false; vm.newCanvas() })
                                 DropdownMenuItem(text = { Text("Yeni klasör") }, onClick = { menu = false; newFolder = true })
                                 DropdownMenuItem(text = { Text("PDF içe aktar") }, onClick = { menu = false; importPdf() })
                                 if (folder == null) {
@@ -233,6 +228,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     onClick = { dismiss(); vm.toggleFavorite(QuickItem.DOC, doc.id) },
                 )
                 DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
+                DropdownMenuItem(text = { Text("Kapak") }, onClick = { dismiss(); coverFor = doc })
                 DropdownMenuItem(text = { Text("Klasöre taşı") }, onClick = { dismiss(); movingDoc = doc })
                 DropdownMenuItem(text = { Text("Etiketler") }, onClick = { dismiss(); taggingDoc = doc })
                 DropdownMenuItem(
@@ -336,7 +332,8 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 FilterChip(
                                     selected = favOnly,
                                     onClick = { vm.favoritesOnly = !vm.favoritesOnly; vm.tagFilter = null },
-                                    label = { Text("⭐ Favoriler") },
+                                    label = { Text("Favoriler") },
+                                    leadingIcon = { Icon(SouIcons.Star, contentDescription = null, modifier = Modifier.size(18.dp)) },
                                 )
                                 vm.allTags.forEach { t ->
                                     FilterChip(
@@ -353,10 +350,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         val favDocs = vm.sorted(vm.imported.filter(isFav))
                         if (favFolders.isEmpty() && favDocs.isEmpty()) {
                             fullWidth {
-                                EmptyState(
-                                    "⭐", "Henüz favori yok",
-                                    "Bir belgeye ya da klasöre basılı tut ve \"Favorilere ekle\" de. Favoriler ana sayfadaki hızlı erişimde de görünür.",
-                                )
+                                EmptyState(SouIcons.Star, "Henüz favori yok", "Basılı tut → Favorilere ekle")
                             }
                         }
                         if (favFolders.isNotEmpty()) {
@@ -486,6 +480,15 @@ fun LibraryScreen(vm: LibraryViewModel) {
         }
     }
 
+    coverFor?.let { doc ->
+        val ctx = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { coverFor = null },
+            title = { Text("Kapak") },
+            text = { CoverPicker(Covers.get(ctx, doc.id)) { Covers.set(ctx, doc.id, it) } },
+            confirmButton = { TextButton(onClick = { coverFor = null }) { Text("Tamam") } },
+        )
+    }
     renaming?.let { doc ->
         var text by remember(doc.id) { mutableStateOf(doc.title) }
         AlertDialog(
@@ -507,9 +510,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
     }
     if (newNotebook) {
         NotebookDialog(
-            onCreate = { name, template, size, landscape, paper ->
+            onCreate = { name, template, size, landscape, paper, cover ->
                 newNotebook = false
-                vm.createNotebook(name, template, size, landscape, paper)
+                vm.createNotebook(name, template, size, landscape, paper, cover)
             },
             onDismiss = { newNotebook = false },
         )
@@ -864,9 +867,9 @@ internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatTile("⏱", formatStudy(days.first().second), "Bugün", Modifier.weight(1f))
-                    StatTile("📅", formatStudy(days.sumOf { it.second }), "Son 7 gün", Modifier.weight(1f))
-                    StatTile("🔥", "$streak gün", "Seri", Modifier.weight(1f))
+                    StatTile(SouIcons.Timer, formatStudy(days.first().second), "Bugün", Modifier.weight(1f))
+                    StatTile(SouIcons.CalendarMonth, formatStudy(days.sumOf { it.second }), "Son 7 gün", Modifier.weight(1f))
+                    StatTile(SouIcons.LocalFireDepartment, "$streak gün", "Seri", Modifier.weight(1f))
                 }
                 days.reversed().forEach { (t, ms) ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -879,14 +882,14 @@ internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                     Text("En çok çalışılan", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
                     top.forEach { (doc, ms) ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("📄", modifier = Modifier.padding(end = 8.dp))
+                            Icon(SouIcons.Description, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 8.dp).size(18.dp))
                             Text(doc.title, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                             Text(formatStudy(ms), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
                 Text(
-                    "Belge açıkken geçen süre sayılır. Seri: belgede 5 dk çalışma, kart tekrarı, Writing, haftalık liste ya da yazılı not olan art arda günler (en uzun: ${vm.bestStreak} gün).",
+                    "En uzun seri: ${vm.bestStreak} gün",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -898,8 +901,9 @@ internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
 
 /** Yeni boş defter: ad + sayfa şablonu. */
 @Composable
-internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor) -> Unit, onDismiss: () -> Unit) {
+internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor, Int) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
+    var cover by remember { mutableStateOf(1) }
     var paper by remember { mutableStateOf(PaperColor.WHITE) }
     var template by remember { mutableStateOf(PageTemplate.LINED) }
     var size by remember { mutableStateOf(PaperSize.A4) }
@@ -916,19 +920,35 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                     label = { Text("Ad") },
                     placeholder = { Text("Defter") },
                 )
+                Text("Kapak", style = MaterialTheme.typography.labelLarge)
+                CoverPicker(cover) { cover = it }
+                val canvas = size == PaperSize.CANVAS
                 Text("Sayfa", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PageTemplate.entries.forEach { t ->
+                    // Tuvalde sadece tekrar eden desenler anlamlı
+                    PageTemplate.entries.filter { !canvas || it in CANVAS_TEMPLATES }.forEach { t ->
                         FilterChip(selected = template == t, onClick = { template = t }, label = { Text(t.label) })
                     }
                 }
                 Text("Boyut", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaperSize.entries.forEach { p ->
-                        FilterChip(selected = size == p, onClick = { size = p }, label = { Text(p.label) })
+                        FilterChip(selected = size == p, onClick = {
+                            size = p
+                            if (p == PaperSize.CANVAS && template !in CANVAS_TEMPLATES) template = PageTemplate.DOTTED
+                        }, label = { Text(p.label) })
                     }
-                    FilterChip(selected = !landscape, onClick = { landscape = false }, label = { Text("Dikey") })
-                    FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
+                    if (!canvas) {
+                        FilterChip(selected = !landscape, onClick = { landscape = false }, label = { Text("Dikey") })
+                        FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
+                    }
+                }
+                if (canvas) {
+                    Text(
+                        "Tek, çok büyük sayfa: her yöne kaydır, uzaklaştırınca tamamını gör.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Text("Kâğıt rengi", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -946,17 +966,16 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                         )
                     }
                 }
-                Text(
-                    "Defterde sayfa paneli ya da ⋮ menüsünden yeni sayfa eklersin.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         },
-        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape, paper) }) { Text("Oluştur") } },
+        confirmButton = {
+            TextButton(onClick = { onCreate(name, template, size, landscape && size != PaperSize.CANVAS, paper, cover) }) { Text("Oluştur") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
 }
+
+private val CANVAS_TEMPLATES = setOf(PageTemplate.BLANK, PageTemplate.GRID, PageTemplate.DOTTED)
 
 private fun LazyGridScope.fullWidth(content: @Composable () -> Unit) {
     item(span = { GridItemSpan(maxLineSpan) }) { content() }
@@ -981,12 +1000,13 @@ private fun Hint(text: String) {
 @Composable
 private fun EmptyLibrary(onImport: () -> Unit, onLinkFolder: () -> Unit, onNewNotebook: () -> Unit) {
     EmptyState(
-        "📚", "Kütüphanen boş",
-        "Boş bir defter aç, bir PDF içe aktar ya da ders notlarının olduğu klasörü bağla.",
-        modifier = Modifier.padding(top = 56.dp),
+        SouIcons.LibraryBooks, "Kütüphanen boş",
+        "Defter aç, PDF ekle ya da klasör bağla.",
+        modifier = Modifier.padding(top = 40.dp),
+        art = R.drawable.empty_library,
     ) {
         Button(onClick = onNewNotebook) { Text("Yeni defter") }
-        OutlinedButton(onClick = onImport) { Text("PDF içe aktar") }
+        OutlinedButton(onClick = onImport) { Text("PDF ekle") }
         OutlinedButton(onClick = onLinkFolder) { Text("Klasör bağla") }
     }
 }
@@ -1092,6 +1112,11 @@ private fun CardTitle(text: String) {
 @Composable
 internal fun Thumbnail(doc: DocRef) {
     val context = LocalContext.current
+    val cover = Covers.get(context, doc.id)
+    if (cover > 0) {
+        CoverArt(cover, doc.title, Modifier.fillMaxSize())
+        return
+    }
     // İlk sayfanın notları değişince kapak da yenilensin.
     val inkStamp = InkStore(context).pageStamp(doc.id, 0)
     val bitmap by produceState<Bitmap?>(Thumbnails.cached(context, doc), doc.id, doc.lastModified, inkStamp) {
@@ -1126,7 +1151,7 @@ internal fun FavoriteBadge(modifier: Modifier = Modifier) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(24.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
-    ) { Text("★", color = LocalSouColors.current.star, fontSize = 14.sp) }
+    ) { Icon(SouIcons.StarFilled, contentDescription = "Favori", tint = LocalSouColors.current.star, modifier = Modifier.size(15.dp)) }
 }
 
 /** Kütüphane listesindeki satır: küçük resim/simge, başlık, alt yazı, favori ve menü. */
@@ -1166,10 +1191,10 @@ private fun LibRow(
                 )
             }
         }
-        if (favorite) Text("★", color = LocalSouColors.current.star, fontSize = 18.sp, modifier = Modifier.padding(end = 4.dp))
+        if (favorite) Icon(SouIcons.StarFilled, contentDescription = "Favori", tint = LocalSouColors.current.star, modifier = Modifier.padding(end = 4.dp).size(18.dp))
         if (menu != null) {
             Box {
-                IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Seçenekler") }
+                IconButton(onClick = { menuOpen = true }) { Icon(SouIcons.MoreVert, contentDescription = "Seçenekler") }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }
             }
         }
@@ -1250,10 +1275,10 @@ private fun LibLinkedFolder(list: Boolean, folder: FolderRef, onClick: () -> Uni
 internal fun TextNoteRow(note: TextNote, onClick: () -> Unit, menu: @Composable (dismiss: () -> Unit) -> Unit) {
     val edited = remember(note.updated) { SimpleDateFormat("d MMM HH:mm", TR).format(Date(note.updated)) }
     val words = remember(note.body) { note.plainBody.split(Regex("\\s+")).count { it.isNotBlank() } }
-    LibRow(note.displayTitle, (if (note.pinned) "📌 " else "") + "$edited · $words kelime", onClick, menu) {
+    LibRow(note.displayTitle, "$edited · $words kelime", onClick, menu) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxSize().background(Color(0xFFFFFDF5)).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
-        ) { Text(if (note.hasSketch) "🎨" else "📝", fontSize = 20.sp) }
+        ) { Icon(SouIcons.EditNote, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp)) }
     }
 }

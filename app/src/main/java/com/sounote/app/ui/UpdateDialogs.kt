@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,16 +26,21 @@ import androidx.compose.ui.unit.sp
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.Updates
 
-/** 2.0 ile gelenler ("Yenilikler" penceresi; 1.0'dan güncelleyen bir kez görür). */
+/** Son ana sürümle gelenler ("Yenilikler" penceresi; eski sürümden güncelleyen bir kez görür). */
 private val WHATS_NEW = listOf(
-    "🎨" to "Yeni görünüm: Obsidian Purple ve Midnight Blue koyu temalar, SouNote Light, istediğin vurgu rengi.",
-    "🏠" to "Kişiselleştirilebilir ana sayfa: modülleri sırala ya da gizle; çalışma serin ve hızlı erişim.",
-    "⭐" to "Favoriler ve sabitleme: belge, klasör, ders ve notlara tek dokunuşla ulaş.",
-    "🗓️" to "Planlayıcı: liste, hafta, ay ve zaman çizelgesi; ödevleri tamamlandı olarak işaretle, öncelik ver.",
-    "✍️" to "Yazı stüdyosu: essay şablonu, başlık/kalın/italik, kelime ve karakter sayacı, odak modu, yazma koçu.",
-    "📖" to "PDF'te okuma modu; lasso ile seçtiğin bölgeyi asistana açıklat ya da çevirt.",
-    "🔍" to "Evrensel arama: dersler, klasörler, belgeler, notlar, sınavlar; filtreler ve son aramalar.",
-    "⚙️" to "Kategorili ayarlar ve ayarlarda arama. Notların ve yedeklerin aynen korunur.",
+    SouIcons.Palette to "Baştan sade tasarım: logodaki lacivert ve mavi-mor tonlar, emoji yerine simgeler.",
+    SouIcons.InkPen to "14 kalem: ince uç, keçeli, pastel, jel, neon, noktalı, geniş uç, mürekkep fırçası…; her kalem kendi ayarını hatırlar.",
+    SouIcons.Draw to "Yazma desteği: el titremesini süzer, çizgileri yumuşak ve bağlantılı yapar.",
+    SouIcons.Straighten to "Cetvel ve açıölçer: kenarına yakın çizgi kenara oturur.",
+    SouIcons.Style to "Yeni bilgi kartı ekranı: dokun çevir, sağa bildim, sola bilemedim.",
+    SouIcons.StarShine to "Asistanla ders özeti: dersin bütün PDF'lerinden özet, kelimeler, sorular.",
+    SouIcons.LibraryBooks to "Defter kapakları; haftalık plan, kelime defteri ve renkli Cornell şablonları.",
+    SouIcons.Widgets to "Yeni sınav widget'ı ve tablette iki sütunlu ana sayfa.",
+    SouIcons.Event to "Sınav öncesi plan ve deneme sınavı: asistan gün gün plan ve konulardan test hazırlar.",
+    SouIcons.Mood to "Çıkartmalar; renk paleti son kullandığın renkleri hatırlar.",
+    SouIcons.Layers to "Katmanlar ve sonsuz tuval.",
+    SouIcons.Mic to "Speaking pratiği: konuş, asistan puanlasın.",
+    SouIcons.AccountTree to "Konu haritası: hangi konuda ne kadar hazırsın.",
 )
 
 /** Yeni sürüm ve "Yenilikler" pencereleri (ana ekranda). */
@@ -71,7 +78,7 @@ fun UpdateDialogs(vm: LibraryViewModel) {
     } else if (vm.showWhatsNew) {
         AlertDialog(
             onDismissRequest = { vm.dismissWhatsNew() },
-            title = { Text("SouNote 2.0 🎉") },
+            title = { Text("Yenilikler") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -79,7 +86,7 @@ fun UpdateDialogs(vm: LibraryViewModel) {
                 ) {
                     WHATS_NEW.forEach { (emoji, text) ->
                         Row {
-                            Text(emoji, fontSize = 18.sp, modifier = Modifier.width(32.dp))
+                            Icon(emoji, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 12.dp).size(20.dp))
                             Text(text, style = MaterialTheme.typography.bodyMedium)
                         }
                     }

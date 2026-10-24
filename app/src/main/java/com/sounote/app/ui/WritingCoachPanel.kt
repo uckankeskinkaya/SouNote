@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -63,11 +61,11 @@ internal fun WritingSidePanel(
         if (showHeader) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp)) {
                 Text(
-                    if (panel == 1) "🎓 Yazma koçu" else "📑 Yapı",
+                    if (panel == 1) "Yazma koçu" else "Yapı",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Paneli kapat") }
+                IconButton(onClick = onClose) { Icon(SouIcons.Close, contentDescription = "Paneli kapat") }
             }
         }
         val text = remember(body) { body.lineSequence().filterNot { it.startsWith(Sketches.MARKER) }.joinToString("\n") }
@@ -88,7 +86,7 @@ private fun StructurePanel(text: String) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf("Giriş", "Gelişme", "Sonuç").forEachIndexed { i, label ->
                 Text(
-                    (if (structure[i]) "✓ " else "○ ") + label,
+                    label,
                     style = MaterialTheme.typography.labelMedium,
                     color = if (structure[i]) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -172,7 +170,7 @@ private fun CoachPanel(
                 review = rev
                 info = when {
                     rev != null -> null
-                    found.isEmpty() -> "Bu açıdan bir öneri yok 👏"
+                    found.isEmpty() -> "Bu açıdan öneri yok"
                     found.size < list.size -> "${found.size} öneri (metinde bulunamayan ${list.size - found.size} öneri gösterilmedi)"
                     else -> "${found.size} öneri"
                 }
@@ -201,7 +199,7 @@ private fun CoachPanel(
             CoachBody(vm, mode, { mode = it }, busy, error, info, review, suggestions, canUndo, onUndo, onRun = ::inspect) { sug ->
                 if (onApply(sug)) {
                     suggestions.remove(sug)
-                    info = "Uygulandı ✓"
+                    info = "Uygulandı"
                 } else {
                     info = "Bu ifade metinde artık yok (değişmiş olabilir)"
                     suggestions.remove(sug)
@@ -234,12 +232,12 @@ private fun CoachBody(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
             CoachMode.entries.forEach { m ->
-                FilterChip(selected = mode == m, onClick = { onMode(m) }, label = { Text("${m.emoji} ${m.label}") })
+                FilterChip(selected = mode == m, onClick = { onMode(m) }, label = { Text(m.label) })
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Button(onClick = onRun, enabled = !busy) { Text(if (busy) "İnceleniyor…" else "İncele") }
-            if (canUndo) OutlinedButton(onClick = onUndo) { Text("↩ Son uygulamayı geri al") }
+            if (canUndo) OutlinedButton(onClick = onUndo) { Text("Geri al") }
         }
         if (busy) LoadingState("Koç metnini okuyor…")
         error?.let { Banner(it, BannerKind.ERROR) }

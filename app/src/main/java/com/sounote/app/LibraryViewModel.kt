@@ -133,7 +133,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     // ---- 2.0 görünüm ve arayüz tercihleri (hepsi cihazda, güvenli varsayılanlarla) ----
 
     /** Koyu temanın yüzeyleri. */
-    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.OBSIDIAN)
+    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.MIDNIGHT)
         private set
 
     fun updateDarkPalette(p: DarkPalette) {
@@ -222,7 +222,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             message = "Favorilerden çıkarıldı"
         } else {
             saveQuick(quickItems + QuickItem(type, id))
-            message = "Favorilere eklendi ⭐"
+            message = "Favorilere eklendi"
         }
     }
 
@@ -561,6 +561,32 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun progressOf(resources: List<com.sounote.app.data.Resource>): Pair<Int, Int> =
         resources.count { doneKey(it) in doneItems } to resources.size
 
+    /** Deneme sınavı sonuçları: konu kimliği (bütün ders için "course:<id>") → son yüzde (0–100). */
+    var testScores by mutableStateOf(
+        runCatching {
+            val o = org.json.JSONObject(prefs.getString("testScores", "{}")!!)
+            o.keys().asSequence().associateWith { o.getInt(it) }
+        }.getOrDefault(emptyMap()),
+    )
+        private set
+
+    fun recordTestScore(key: String, percent: Int) {
+        markActive()
+        testScores = testScores + (key to percent.coerceIn(0, 100))
+        prefs.edit().putString("testScores", org.json.JSONObject(testScores).toString()).apply()
+    }
+
+    /** Konunun hakimiyeti (0–1): kaynak ilerlemesi, deneme yapıldıysa puanla ortalaması. */
+    fun mastery(topic: com.sounote.app.data.Topic): Float {
+        val (done, total) = progressOf(topic.resources)
+        val res = if (total > 0) done / total.toFloat() else null
+        val test = testScores[topic.id]?.div(100f)
+        return when {
+            res != null && test != null -> (res + test) / 2
+            else -> res ?: test ?: 0f
+        }
+    }
+
     /** Dersin klasörüne indirilmiş belgeler (son açılan başta). */
     fun courseDocs(course: Course): List<DocRef> {
         val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return emptyList()
@@ -686,6 +712,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         checkUpdate(manual = false)
     }
 
+    private var catalogFetchedAt = 0L
+
     fun refreshCatalog(quiet: Boolean = false) {
         if (catalogLoading) return
         viewModelScope.launch {
@@ -693,6 +721,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val result = withContext(Dispatchers.IO) { runCatching { CatalogRepo.fetch(getApplication()) } }
             catalogLoading = false
             result.onSuccess {
+                catalogFetchedAt = System.currentTimeMillis()
+                // Yeni eklenen kaynakları bildir (ilk yüklemede değil).
+                val before = catalog.courses.flatMap { c -> c.topics.flatMap { t -> t.resources.map(::doneKey) } }.toSet()
+                val added = it.courses.sumOf { c -> c.topics.sumOf { t -> t.resources.count { r -> doneKey(r) !in before } } }
+                if (before.isNotEmpty() && added > 0) message = "Derslere $added yeni kaynak eklendi"
                 catalog = it
                 catalogError = null
                 withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) }) }
@@ -706,6 +739,12 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun saveExam(exam: Exam) {
         myExams = (myExams.filter { it.id != exam.id } + exam).sortedBy { it.time }
+        persistExams()
+    }
+
+    /** Birden çok kayıt ekler (ör. sınav öncesi çalışma planı). */
+    fun addExams(list: List<Exam>) {
+        myExams = (myExams.filter { e -> list.none { it.id == e.id } } + list).sortedBy { it.time }
         persistExams()
     }
 
@@ -927,6 +966,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun onAppForeground() {
         if (appLock && backgroundSince != 0L && System.currentTimeMillis() - backgroundSince > LOCK_AFTER_MS) locked = true
         backgroundSince = 0L
+        // Ortak katalog uzun süre açık kalan uygulamada da güncel kalsın.
+        if (System.currentTimeMillis() - catalogFetchedAt > 3 * 3_600_000L) refreshCatalog(quiet = true)
     }
 
     fun unlocked() {
@@ -1019,7 +1060,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putStringSet("activeDays", activeDays)
             .putInt("bestStreak", maxOf(prefs.getInt("bestStreak", 0), s))
             .apply()
-        if (s in STREAK_MILESTONES) showMessage("🔥 $s günlük seri! Böyle devam")
+        if (s in STREAK_MILESTONES) showMessage("$s günlük seri")
     }
 
     val activeToday: Boolean get() = dayKey(System.currentTimeMillis()) in activeDays
@@ -1630,6 +1671,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Belgeye eklenen resimlerin klasörü. */
     fun imagesDir(doc: DocRef): File = store.imagesDir(doc.id)
 
+    /** Belgenin çizim katmanları (ink/<belge>/layers.json). */
+    fun loadLayers(doc: DocRef) = com.sounote.app.ink.LayerSet.load(store.imagesDir(doc.id).parentFile)
+
+    fun saveLayers(doc: DocRef, set: com.sounote.app.ink.LayerSet) {
+        runCatching { set.save(store.imagesDir(doc.id).parentFile!!) }.onFailure { ErrorLog.record("Katmanlar kaydedilemedi", it) }
+    }
+
     /** Galeriden seçilen resmi belgeye kaydeder; [onReady] dosya adı ve piksel boyutuyla çağrılır. */
     fun importImage(doc: DocRef, uri: Uri, onReady: (file: String, width: Int, height: Int) -> Unit) {
         viewModelScope.launch {
@@ -1639,6 +1687,27 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             result.onSuccess { onReady(it.file, it.width, it.height) }.onFailure {
                 ErrorLog.record("Resim eklenemedi", it)
                 message = "Resim eklenemedi"
+            }
+        }
+    }
+
+    /** Çıkartmayı belgenin resim klasörüne kopyalar (PNG, saydam). */
+    fun importSticker(doc: DocRef, resId: Int, onReady: (file: String, width: Int, height: Int) -> Unit) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<android.app.Application>()
+                    val dir = store.imagesDir(doc.id).apply { mkdirs() }
+                    val name = "sticker_${System.currentTimeMillis()}.png"
+                    app.resources.openRawResource(resId).use { input -> java.io.File(dir, name).outputStream().use { input.copyTo(it) } }
+                    val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    android.graphics.BitmapFactory.decodeFile(java.io.File(dir, name).path, o)
+                    Triple(name, o.outWidth, o.outHeight)
+                }
+            }
+            result.onSuccess { (f, w, h) -> onReady(f, w, h) }.onFailure {
+                ErrorLog.record("Çıkartma eklenemedi", it)
+                message = "Çıkartma eklenemedi"
             }
         }
     }
@@ -1825,6 +1894,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun createNotebook(
         title: String, template: PageTemplate, size: PaperSize = PaperSize.A4, landscape: Boolean = false,
         paper: PaperColor = PaperColor.WHITE,
+        cover: Int = 0,
     ) {
         viewModelScope.launch {
             busy = true
@@ -1835,7 +1905,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     }
                 }
             }
-            result.onSuccess { if (paper != PaperColor.WHITE) prefs.edit().putString("paper_${it.id}", paper.name).apply() }
+            result.onSuccess {
+                if (paper != PaperColor.WHITE) prefs.edit().putString("paper_${it.id}", paper.name).apply()
+                if (cover > 0) com.sounote.app.ui.Covers.set(getApplication(), it.id, cover)
+            }
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             result.onSuccess { open(it) }.onFailure {
@@ -1843,6 +1916,17 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 message = "Defter oluşturulamadı"
             }
         }
+    }
+
+    /** Sonsuz tuval: noktalı, çok büyük tek sayfa. */
+    fun newCanvas() = createNotebook("Tuval", PageTemplate.DOTTED, PaperSize.CANVAS)
+
+    /** Tuvalde kaldığın yer: "x,y,zoom" (prefs canvasView_<belge>). */
+    fun canvasViewport(doc: DocRef): FloatArray? =
+        prefs.getString("canvasView_${doc.id}", null)?.split(",")?.mapNotNull { it.toFloatOrNull() }?.takeIf { it.size == 3 }?.toFloatArray()
+
+    fun saveCanvasViewport(doc: DocRef, v: FloatArray?) {
+        if (v != null) prefs.edit().putString("canvasView_${doc.id}", v.joinToString(",")).apply()
     }
 
     fun closeDoc() {
@@ -1932,7 +2016,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             exporting = true
             saveJob?.cancel()
             flushInk()
-            val snapshot = openInk?.ink?.snapshot() ?: emptyMap()
+            // Gizli katmanlar dışa aktarılmaz.
+            val layerSet = loadLayers(doc)
+            val snapshot = (openInk?.ink?.snapshot() ?: emptyMap()).mapValues { (_, c) -> c.copy(strokes = layerSet.arrange(c.strokes)) }
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     // Form doldurulduysa ya da not alındıysa uygulama içindeki kopya güncel olandır.
@@ -2175,7 +2261,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
         const val TRASH_DAYS = 30
         /** "Yenilikler" penceresinin ana sürümü: 2.0'a güncelleyen kullanıcı bir kez görür. */
-        const val MAJOR = 2
+        const val MAJOR = 3
         const val LOCK_AFTER_MS = 60_000L
         /** Belgede bu kadar çalışılan gün seriye sayılır. */
         private const val STREAK_MIN_STUDY = 5L * 60 * 1000

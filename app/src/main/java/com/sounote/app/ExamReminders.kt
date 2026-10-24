@@ -39,7 +39,7 @@ object ExamReminders {
         val doneGlobal = prefs.getStringSet("examDone", emptySet()).orEmpty()
         val global = CatalogRepo.cached(context).exams.filter { level.isEmpty() || it.levels.isEmpty() || level in it.levels }
         // Tamamlanan ödevler için hatırlatma kurulmaz.
-        schedule(context, (ExamStore(context).load() + global).filter { !it.done && it.id !in doneGlobal })
+        schedule(context, (ExamStore(context).load() + global).filter { !it.done && it.id !in doneGlobal && it.slot != Exam.PLAN_SLOT })
     }
 
     fun schedule(context: Context, exams: List<Exam>) {
@@ -106,7 +106,7 @@ object ExamReminders {
         )
         val n = android.app.Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_shortcut_note)
-            .setContentTitle("📅 $title")
+            .setContentTitle(title)
             .setContentText(listOf(whenText, place).filter { it.isNotBlank() }.joinToString(" · "))
             .setContentIntent(open)
             .setAutoCancel(true)

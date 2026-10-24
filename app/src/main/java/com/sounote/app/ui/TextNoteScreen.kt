@@ -2,6 +2,8 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.FilterChip
 import android.content.Intent
 import android.text.format.DateUtils
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -25,10 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -371,16 +369,16 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 title = { Text(if (focus) "Odak modu" else "Yazı stüdyosu", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = ::close) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                        Icon(SouIcons.ArrowBack, contentDescription = "Geri")
                     }
                 },
                 actions = {
-                    TextButton(onClick = { focus = !focus; if (focus) panel = 0 }) { Text(if (focus) "Odaktan çık" else "🎯 Odak") }
+                    TextButton(onClick = { focus = !focus; if (focus) panel = 0 }) { Text(if (focus) "Odaktan çık" else "Odak") }
                     if (!focus && !narrowBar) TextButton(onClick = { vm.updateTextFontSize(fontSize - 2f) }) { Text("A−", fontSize = 14.sp) }
                     if (!focus && !narrowBar) TextButton(onClick = { vm.updateTextFontSize(fontSize + 2f) }) { Text("A+", fontSize = 18.sp) }
                     if (!focus) Box {
                         IconButton(onClick = { shareMenu = true }) {
-                            Icon(Icons.Default.Share, contentDescription = "Paylaş")
+                            Icon(SouIcons.Share, contentDescription = "Paylaş")
                         }
                         DropdownMenu(expanded = shareMenu, onDismissRequest = { shareMenu = false }) {
                             DropdownMenuItem(text = { Text("Metin olarak paylaş") }, onClick = { shareMenu = false; shareText() })
@@ -389,7 +387,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                     }
                     if (!focus) Box {
                         IconButton(onClick = { menu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
+                            Icon(SouIcons.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             if (narrowBar) {
@@ -436,33 +434,68 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             ) {
-                AssistChip(onClick = { panel = if (panel == 1) 0 else 1 }, label = { Text("🎓 Yazma koçu") })
-                AssistChip(onClick = { panel = if (panel == 2) 0 else 2 }, label = { Text("📑 Yapı") })
+                AssistChip(
+                    onClick = { panel = if (panel == 1) 0 else 1 },
+                    label = { Text("Yazma koçu") },
+                    leadingIcon = { Icon(SouIcons.School, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
+                AssistChip(
+                    onClick = { panel = if (panel == 2) 0 else 2 },
+                    label = { Text("Yapı") },
+                    leadingIcon = { Icon(SouIcons.FormatListBulleted, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
                 AssistChip(onClick = { updateFocused { toggleHeading(it, 1) } }, label = { Text("H1", fontWeight = FontWeight.Bold) })
                 AssistChip(onClick = { updateFocused { toggleHeading(it, 2) } }, label = { Text("H2", fontWeight = FontWeight.SemiBold) })
                 AssistChip(onClick = { updateFocused { wrapSelection(it, "**") } }, label = { Text("B", fontWeight = FontWeight.Bold) })
                 AssistChip(onClick = { updateFocused { wrapSelection(it, "_") } }, label = { Text("I", fontStyle = FontStyle.Italic) })
-                AssistChip(
-                    onClick = {
-                        updateFocused { v ->
-                            val prefix = if (v.text.isBlank() || v.text.endsWith("\n\n")) "" else if (v.text.endsWith("\n")) "\n" else "\n\n"
-                            TextFieldValue(v.text + prefix + EssayText.TEMPLATE, TextRange(v.text.length + prefix.length + "## Introduction\n".length))
-                        }
-                    },
-                    label = { Text("🏗️ Essay şablonu") },
+                IconButton(onClick = { updateFocused { setLinePrefix(it, CHECK_OPEN) } }) {
+                    Icon(SouIcons.Checklist, contentDescription = "Yapılacak")
+                }
+                IconButton(onClick = { updateFocused { setLinePrefix(it, BULLET) } }) {
+                    Icon(SouIcons.FormatListBulleted, contentDescription = "Madde")
+                }
+                FilterChip(
+                    selected = pad,
+                    onClick = { pad = !pad },
+                    label = { Text("Kalemle yaz") },
+                    leadingIcon = { Icon(SouIcons.Stylus, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 )
-                AssistChip(onClick = { assistant = true }, label = { Text("🤖 Asistan") })
-                AssistChip(onClick = { pad = !pad }, label = { Text(if (pad) "✍️ Kalemle yaz (açık)" else "✍️ Kalemle yaz") })
-                AssistChip(onClick = { editingSketch = Sketch(Sketches.newId(), emptyList()) }, label = { Text("🎨 Çizim ekle") })
-                AssistChip(onClick = { updateFocused { setLinePrefix(it, CHECK_OPEN) } }, label = { Text("☐ Yapılacak") })
-                AssistChip(onClick = { updateFocused { setLinePrefix(it, BULLET) } }, label = { Text("• Madde") })
-                AssistChip(
-                    onClick = {
-                        val stamp = SimpleDateFormat("d MMMM yyyy, HH:mm", Locale.forLanguageTag("tr")).format(Date())
-                        updateFocused { insertAtCursor(it, stamp) }
-                    },
-                    label = { Text("📅 Tarih") },
-                )
+                var more by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { more = true }) { Icon(SouIcons.Add, contentDescription = "Ekle") }
+                    DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Essay şablonu") },
+                            leadingIcon = { Icon(SouIcons.Article, contentDescription = null) },
+                            onClick = {
+                                more = false
+                                updateFocused { v ->
+                                    val prefix = if (v.text.isBlank() || v.text.endsWith("\n\n")) "" else if (v.text.endsWith("\n")) "\n" else "\n\n"
+                                    TextFieldValue(v.text + prefix + EssayText.TEMPLATE, TextRange(v.text.length + prefix.length + "## Introduction\n".length))
+                                }
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Çizim") },
+                            leadingIcon = { Icon(SouIcons.Draw, contentDescription = null) },
+                            onClick = { more = false; editingSketch = Sketch(Sketches.newId(), emptyList()) },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Tarih") },
+                            leadingIcon = { Icon(SouIcons.CalendarToday, contentDescription = null) },
+                            onClick = {
+                                more = false
+                                val stamp = SimpleDateFormat("d MMMM yyyy, HH:mm", Locale.forLanguageTag("tr")).format(Date())
+                                updateFocused { insertAtCursor(it, stamp) }
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Asistan") },
+                            leadingIcon = { Icon(SouIcons.StarShine, contentDescription = null) },
+                            onClick = { more = false; assistant = true },
+                        )
+                    }
+                }
             }
             if (!focus) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
@@ -521,7 +554,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                                 decorationBox = { inner ->
                                     if (part.value.text.isEmpty() && parts.size == 1) {
                                         Text(
-                                            "Yazmaya başla… ✍️ ile kalemle de yazabilirsin",
+                                            "Yazmaya başla…",
                                             fontSize = fontSize.sp,
                                             color = textColor.copy(alpha = 0.35f),
                                         )
@@ -553,7 +586,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
             }
             }
             if (panel != 0 && !side) {
-                ActionSheet(if (panel == 1) "🎓 Yazma koçu" else "📑 Yapı", onDismiss = { panel = 0 }) {
+                ActionSheet(if (panel == 1) "Yazma koçu" else "Yapı", onDismiss = { panel = 0 }) {
                     Box(Modifier.fillMaxWidth().heightIn(max = 560.dp)) {
                         WritingSidePanel(
                             vm, panel, bodyText,
@@ -665,13 +698,13 @@ internal fun TextNoteCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    (if (note.hasSketch) "🎨 " else "") + note.plainBody,
+                    note.plainBody,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF4A4E57),
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (note.pinned) Text("📌", modifier = Modifier.align(Alignment.TopEnd))
+            if (note.pinned) Icon(SouIcons.KeepFilled, contentDescription = "Sabit", tint = Color(0xFF4F46E5), modifier = Modifier.align(Alignment.TopEnd).size(16.dp))
             Text(
                 "Aa",
                 style = MaterialTheme.typography.labelSmall,
@@ -730,7 +763,7 @@ internal fun sharePackageFile(context: android.content.Context, file: java.io.Fi
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "application/octet-stream"
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TEXT, "SouNote ile aç: notlarımla birlikte gelir 📒")
+        putExtra(Intent.EXTRA_TEXT, "SouNote ile aç: notlarımla birlikte gelir")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(send, "Notlu belgeyi gönder"))

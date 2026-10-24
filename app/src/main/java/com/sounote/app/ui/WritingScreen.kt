@@ -17,14 +17,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -44,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -67,6 +67,7 @@ fun WritingScreen(vm: LibraryViewModel) {
     var newMenu by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<TextNote?>(null) }
     var graderOpen by remember { mutableStateOf(false) }
+    var speakingOpen by remember { mutableStateOf(false) }
     val q = query.trim().lowercase(TR)
     val notes = vm.textNotes.filter { n ->
         (q.isEmpty() || n.title.lowercase(TR).contains(q) || n.plainBody.lowercase(TR).contains(q)) &&
@@ -80,31 +81,39 @@ fun WritingScreen(vm: LibraryViewModel) {
     val totalWords = remember(vm.textNotes) { vm.textNotes.sumOf { EssayText.countWords(it.plainBody) } }
 
     Scaffold(
-        topBar = { SouTopBar("Yazı stüdyosu", subtitle = "Essay'ler, taslaklar ve yazılı notlar") },
+        topBar = { SouTopBar("Yazı stüdyosu") },
         floatingActionButton = {
             Box {
                 ExtendedFloatingActionButton(
                     onClick = { newMenu = true },
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    icon = { Icon(SouIcons.Add, contentDescription = null) },
                     text = { Text("Yeni yazı") },
                 )
                 DropdownMenu(expanded = newMenu, onDismissRequest = { newMenu = false }) {
                     androidx.compose.material3.DropdownMenuItem(
-                        text = { Text("🏗️ Essay (giriş, gelişme, sonuç)") },
+                        text = { Text("Essay") },
+                        leadingIcon = { Icon(SouIcons.Article, contentDescription = null) },
                         onClick = { newMenu = false; vm.newTextNote(EssayText.TEMPLATE) },
                     )
                     androidx.compose.material3.DropdownMenuItem(
-                        text = { Text("📝 Serbest metin") },
+                        text = { Text("Serbest metin") },
+                        leadingIcon = { Icon(SouIcons.EditNote, contentDescription = null) },
                         onClick = { newMenu = false; vm.newTextNote() },
                     )
                     androidx.compose.material3.DropdownMenuItem(
-                        text = { Text("⭐ Süreli essay, asistan puanlasın") },
+                        text = { Text("Süreli essay (puanlı)") },
+                        leadingIcon = { Icon(SouIcons.Timer, contentDescription = null) },
                         onClick = { newMenu = false; graderOpen = true },
+                    )
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text("Speaking pratiği") },
+                        leadingIcon = { Icon(SouIcons.Mic, contentDescription = null) },
+                        onClick = { newMenu = false; speakingOpen = true },
                     )
                 }
             }
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             LazyVerticalGrid(
@@ -117,20 +126,14 @@ fun WritingScreen(vm: LibraryViewModel) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SouSearchField(query, { query = it }, "Yazılarında ara")
-                        Banner(
-                            "Süreli essay yaz, asistan L4 ölçütleriyle puanlasın ve düzeltsin.",
-                            BannerKind.INFO,
-                            action = "Essay puanla",
-                            onAction = { graderOpen = true },
-                        )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                            listOf("Tümü", "🏗️ Essay'ler", "📌 Sabitlenen", "⭐ Favoriler").forEachIndexed { i, label ->
+                            listOf("Tümü", "Essay'ler", "Sabitlenen", "Favoriler").forEachIndexed { i, label ->
                                 FilterChip(selected = filter == i, onClick = { filter = i }, label = { Text(label, maxLines = 1) })
                             }
                         }
                         if (vm.textNotes.isNotEmpty()) {
                             Text(
-                                "${vm.textNotes.size} yazı · toplam $totalWords kelime · yazdıkça kendiliğinden kaydedilir",
+                                "${vm.textNotes.size} yazı · $totalWords kelime",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -139,18 +142,14 @@ fun WritingScreen(vm: LibraryViewModel) {
                 }
                 if (vm.textNotes.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        EmptyState(
-                            "✍️", "İlk yazına başla",
-                            "Essay şablonu giriş, gelişme ve sonuç başlıklarıyla gelir; istersen serbest yazarsın. " +
-                                "Yazma koçu dil bilgisi, kelime ve yapı önerileri verir; metnini sen onaylamadan değiştirmez.",
-                        ) {
+                        EmptyState(SouIcons.EditNote, "İlk yazına başla", art = com.sounote.app.R.drawable.empty_writing) {
                             Button(onClick = { vm.newTextNote(EssayText.TEMPLATE) }) { Text("Yeni essay") }
                             OutlinedButton(onClick = { vm.newTextNote() }) { Text("Serbest metin") }
                         }
                     }
                 } else if (notes.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        EmptyState("🔍", "Sonuç yok", "Aramayı ya da filtreyi değiştir.")
+                        EmptyState(SouIcons.Search, "Sonuç yok", art = com.sounote.app.R.drawable.empty_search)
                     }
                 }
                 items(notes, key = { it.id }) { n ->
@@ -168,6 +167,7 @@ fun WritingScreen(vm: LibraryViewModel) {
     }
 
     if (graderOpen) EssayGraderScreen(vm) { graderOpen = false }
+    if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
     deleting?.let { n ->
         AlertDialog(
             onDismissRequest = { deleting = null },
@@ -207,8 +207,8 @@ private fun WritingCard(note: TextNote, favorite: Boolean, onClick: () -> Unit, 
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
-            if (note.pinned) Text("📌", fontSize = 14.sp)
-            if (favorite) Text(" ★", color = LocalSouColors.current.star, fontSize = 16.sp)
+            if (note.pinned) Icon(SouIcons.KeepFilled, contentDescription = "Sabit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+            if (favorite) Icon(SouIcons.StarFilled, contentDescription = "Favori", tint = LocalSouColors.current.star, modifier = Modifier.padding(start = 4.dp).size(16.dp))
         }
         Text(
             EssayText.plain(note.plainBody).lineSequence().filter { it.isNotBlank() }.take(4).joinToString(" "),
@@ -222,10 +222,10 @@ private fun WritingCard(note: TextNote, favorite: Boolean, onClick: () -> Unit, 
             Tag("$words kelime")
             if (essay) {
                 listOf("Giriş", "Gelişme", "Sonuç").forEachIndexed { i, label ->
-                    Tag((if (structure[i]) "✓ " else "○ ") + label, highlighted = structure[i])
+                    Tag(label, highlighted = structure[i])
                 }
             }
-            if (note.hasSketch) Tag("🎨 çizim")
+            if (note.hasSketch) Tag("çizim")
         }
         Text(ago, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }

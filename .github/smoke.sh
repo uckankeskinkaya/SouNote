@@ -76,7 +76,7 @@ back
 
 # 5) Yazı stüdyosu, asistan, arama, ortalama (her birinden önce uygulama öne getirilir)
 app; tap "Yazı"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot 07-essay
-tap "📑 Yapı"; shot 07b-yapi; back; back; back
+tap "Yapı"; shot 07b-yapi; back; back; back
 app; tap "Ana sayfa"; top; tap "Asistan"; sleep 2; shot 08-asistan; back
 app; tap "Ana sayfa"; top; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back
 app; tap "Planlayıcı"; tap "Not ortalamam"; sleep 2; shot 10b-ortalama; back

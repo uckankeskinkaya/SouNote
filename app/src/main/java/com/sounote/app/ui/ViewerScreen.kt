@@ -31,13 +31,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star as OutlinedStar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -58,9 +51,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -159,6 +149,30 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Kayda bağlı çizgiye dokununca: (dosya adı, an, dokunma sayacı)
     var audioPlay by remember { mutableStateOf<Triple<String, Long, Int>?>(null) }
     var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
+    var layers by remember(doc.id) { mutableStateOf(vm.loadLayers(doc)) }
+    var layersOpen by remember { mutableStateOf(false) }
+    if (layersOpen) {
+        LayersDialog(
+            layers,
+            onChange = {
+                layers = it
+                vm.saveLayers(doc, it)
+            },
+            onDeleteLayer = { l ->
+                // Katmanın çizgileri bütün sayfalardan tek geri alma adımıyla silinir.
+                val before = layers
+                val changes = ink.snapshot().mapNotNull { (p, c) ->
+                    val keep = c.strokes.filter { before.layerOf(it) != l.id }
+                    if (keep.size == c.strokes.size) null else com.sounote.app.ink.InkDocument.Change(p, c, c.copy(strokes = keep))
+                }
+                changes.forEach { ink.set(it.page, it.after) }
+                ink.record(changes)
+                val rest = before.layers.filter { it.id != l.id }
+                layers = before.copy(layers = rest, active = if (before.active == l.id) rest.last().id else before.active)
+                vm.saveLayers(doc, layers)
+            },
+        ) { layersOpen = false }
+    }
     var textCardDialog by remember { mutableStateOf(false) }
     var study by remember { mutableStateOf<List<com.sounote.app.data.Card>?>(null) }
     LaunchedEffect(doc.id) { vm.loadCards(doc) }
@@ -342,23 +356,23 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 },
                 navigationIcon = {
                     IconButton(onClick = vm::closeDoc) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                        Icon(SouIcons.ArrowBack, contentDescription = "Geri")
                     }
                 },
                 actions = {
                     vm.pomodoro?.let { p ->
                         TextButton(onClick = { pomodoroDialog = true }) {
                             Text(
-                                (if (p.onBreak) "☕ " else "🍅 ") + formatDuration((p.endsAt - now).coerceAtLeast(0L)),
+                                (if (p.onBreak) "Mola " else "") + formatDuration((p.endsAt - now).coerceAtLeast(0L)),
                                 color = if (p.onBreak) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
                     // Okuma ↔ not alma modu
                     IconButton(onClick = { vm.updateReadingMode(!reading) }) {
-                        Text(
-                            if (reading) "✏️" else "📖",
-                            fontSize = 20.sp,
+                        Icon(
+                            if (reading) SouIcons.InkPen else SouIcons.MenuBook,
+                            contentDescription = null,
                             modifier = Modifier.semantics { contentDescription = if (reading) "Not al" else "Oku" },
                         )
                     }
@@ -380,17 +394,17 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
                     IconButton(onClick = { askSelection = null; assistantOpen = true }) {
-                        Text("🤖", fontSize = 20.sp)
+                        Icon(SouIcons.StarShine, contentDescription = "Asistan")
                     }
                     IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
-                        Icon(Icons.Default.Search, contentDescription = "Ara")
+                        Icon(SouIcons.Search, contentDescription = "Ara")
                     }
                     }
                     if (!narrow) page?.let { (p, _) ->
                         val marked = p in vm.bookmarks
                         IconButton(onClick = { vm.toggleBookmark(doc, p) }) {
                             Icon(
-                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                if (marked) SouIcons.StarFilled else SouIcons.Star,
                                 contentDescription = "Yer imi",
                                 tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
                             )
@@ -409,7 +423,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             CircularProgressIndicator(Modifier.padding(12.dp).size(24.dp), strokeWidth = 2.5.dp)
                         } else {
                             IconButton(onClick = { exportMenu = true }) {
-                                Icon(Icons.Default.Share, contentDescription = "Dışa aktar")
+                                Icon(SouIcons.Share, contentDescription = "Dışa aktar")
                             }
                         }
                         DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
@@ -445,7 +459,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                     Box {
                         IconButton(onClick = { moreMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
+                            Icon(SouIcons.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
                             if (narrow) {
@@ -456,12 +470,12 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Asistan") },
-                                    leadingIcon = { Text("🤖", fontSize = 18.sp) },
+                                    leadingIcon = { Icon(SouIcons.StarShine, contentDescription = null) },
                                     onClick = { moreMenu = false; askSelection = null; assistantOpen = true },
                                 )
                                 DropdownMenuItem(
                                     text = { Text("PDF'te ara") },
-                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                    leadingIcon = { Icon(SouIcons.Search, contentDescription = null) },
                                     onClick = { moreMenu = false; if (searchOpen) closeSearch() else searchOpen = true },
                                 )
                                 page?.let { (p, _) ->
@@ -470,7 +484,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                         text = { Text(if (marked) "Yer imini kaldır" else "Yer imi ekle") },
                                         leadingIcon = {
                                             Icon(
-                                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                                if (marked) SouIcons.StarFilled else SouIcons.Star,
                                                 contentDescription = null,
                                                 tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
                                             )
@@ -489,7 +503,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             }
                             if (wideViewer) {
                                 DropdownMenuItem(
-                                    text = { Text(if (sideNote) "📝 Yan notu kapat" else "📝 Yan yana not aç") },
+                                    text = { Text(if (sideNote) "Yan notu kapat" else "Yan yana not aç") },
+                                    leadingIcon = { Icon(SouIcons.EditNote, contentDescription = null) },
                                     onClick = { moreMenu = false; sideNote = !sideNote },
                                 )
                             }
@@ -602,7 +617,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 showHit()
                             }
                         }, enabled = hits.isNotEmpty()) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Önceki")
+                            Icon(SouIcons.KeyboardArrowUp, contentDescription = "Önceki")
                         }
                         IconButton(onClick = {
                             if (hits.isNotEmpty()) {
@@ -610,11 +625,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 showHit()
                             }
                         }, enabled = hits.isNotEmpty()) {
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Sonraki")
+                            Icon(SouIcons.KeyboardArrowDown, contentDescription = "Sonraki")
                         }
                         TextButton(onClick = { runSearch() }) { Text("Ara") }
                         IconButton(onClick = { closeSearch() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Kapat")
+                            Icon(SouIcons.Close, contentDescription = "Kapat")
                         }
                     }
                 }
@@ -637,8 +652,16 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 onInsertImage = {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
+                onSticker = { res ->
+                    vm.importSticker(doc, res) { file, w, h ->
+                        vm.updateTools(vm.tools.copy(tool = Tool.LASSO))
+                        view?.insertImage(file, w, h, widthFraction = 0.16f)
+                    }
+                },
                 leading = if (vm.fullScreen) fullScreenButtons else null,
                 onRevealTapes = { view?.setAllTapes(it) },
+                onLayers = { layersOpen = true },
+                layered = !layers.single,
             )
             audioPlay?.let { (name, ms, tapCount) ->
                 val f = vm.recordingFileFor(doc, name)
@@ -724,6 +747,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 }
                                 this.ink = ink
                                 this.tools = tools
+                                this.layers = layers
+                                pendingCanvasViewport = currentVm.canvasViewport(doc)
                                 open(doc.uri, initialPage)
                                 view = this
                             }
@@ -737,9 +762,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             v.setDarkTheme(darkTheme)
                             v.setInverted(vm.nightReading)
                             v.readOnly = vm.readingMode
+                            v.layers = layers
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
+                            vm.saveCanvasViewport(doc, it.pdfView.canvasViewport())
                             it.release()
                             view = null
                         },
@@ -753,7 +780,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             IconButton(onClick = { vm.toggleFullScreen() }) {
                                 Icon(painterResource(R.drawable.ic_fullscreen_exit), contentDescription = "Tam ekrandan çık")
                             }
-                            IconButton(onClick = { vm.updateReadingMode(false) }) { Text("✏️") }
+                            IconButton(onClick = { vm.updateReadingMode(false) }) { Icon(SouIcons.InkPen, contentDescription = "Not al") }
                         }
                     }
                     page?.let { (p, n) ->

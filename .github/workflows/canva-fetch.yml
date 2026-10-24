@@ -1,0 +1,34 @@
+name: Canva görseli indir
+
+# Canva'da üretilen görseli (imzalı geçici bağlantı) indirip canva-assets dalına koyar.
+# İstek .github/canva/request.txt: her satır "ad bağlantı" (bağlantı birkaç saatte geçersizleşir; iş bitince dosya silinir).
+on:
+  push:
+    branches-ignore: [main, screenshots, canva-assets]
+    paths: [".github/canva/request.txt"]
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: src, sparse-checkout: .github/canva }
+      - name: İndir
+        run: |
+          mkdir out
+          while read -r NAME URL; do [ -z "$NAME" ] && continue
+          big=$(printf '%s' "$URL" | sed -E 's#/height:[0-9]+/#/height:896/#; s#/width:[0-9]+\?#/width:1776?#; s#&x-canva-quality=thumbnail##')
+          if curl -fsS -o "out/$NAME.png" "$big"; then echo "büyük boy alındı"; else curl -fsS -o "out/$NAME.png" "$URL"; echo "küçük resim alındı"; fi
+          file "out/$NAME.png"
+          done < src/.github/canva/request.txt
+      - name: canva-assets dalına koy
+        run: |
+          git init -q r && cd r
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git fetch -q --depth=1 origin canva-assets; then git checkout -q FETCH_HEAD; else git checkout -q --orphan canva-assets; fi
+          cp ../out/*.png .
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Canva görselleri" && git push -q origin HEAD:canva-assets

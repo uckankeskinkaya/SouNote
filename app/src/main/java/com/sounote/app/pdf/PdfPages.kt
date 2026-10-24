@@ -23,6 +23,12 @@ enum class PageTemplate(val label: String) {
     MUSIC("Müzik"),
     /** Üçgen ızgara noktaları (izometrik çizim). */
     ISOMETRIC("İzometrik"),
+    /** Haftalık plan: günlere bölünmüş kutular ve notlar alanı. */
+    WEEKLY("Haftalık plan"),
+    /** Kelime defteri: kelime | anlam | örnek cümle sütunları. */
+    VOCAB("Kelime defteri"),
+    /** Renkli Cornell: renkli başlık, anahtar kelime ve özet alanları. */
+    CORNELL_COLOR("Cornell (renkli)"),
 }
 
 /** Yeni defter kâğıt boyutu (dikey, nokta cinsinden). */
@@ -30,6 +36,8 @@ enum class PaperSize(val label: String, val width: Float, val height: Float) {
     A4("A4", 595f, 842f),
     A5("A5", 420f, 595f),
     LETTER("Letter", 612f, 792f),
+    /** Sonsuz tuval: tek, çok büyük sayfa (~1,7 m × 1,7 m); görünüm onu tuval gibi açar. */
+    CANVAS("Sonsuz tuval", 4800f, 4800f),
 }
 
 /** Yeni defter kâğıt rengi (0–1 RGB). */
@@ -165,6 +173,18 @@ object PdfPages {
         }
     }
 
+    /** Şablondaki küçük başlık (Helvetica; sadece WinAnsi harfleri: ı, ş, ğ, İ kullanılmaz). */
+    private fun label(cs: PDPageContentStream, text: String, x: Float, y: Float, size: Float) {
+        runCatching {
+            cs.beginText()
+            cs.setFont(com.tom_roush.pdfbox.pdmodel.font.PDType1Font.HELVETICA_BOLD, size)
+            cs.setNonStrokingColor(0.30f, 0.34f, 0.62f)
+            cs.newLineAtOffset(x, y)
+            cs.showText(text)
+            cs.endText()
+        }
+    }
+
     /** Şablon çizgileri (PDF koordinatı: sol alt köşe, y yukarı). */
     private fun drawTemplate(doc: PDDocument, page: PDPage, template: PageTemplate, paper: PaperColor) {
         if (template == PageTemplate.BLANK && paper == PaperColor.WHITE) return
@@ -213,7 +233,8 @@ object PdfPages {
                     cs.stroke()
                 }
                 PageTemplate.DOTTED -> {
-                    val gap = 5f * MM
+                    // Tuvalde seyrek nokta (çok nokta çizimi yavaşlatır)
+                    val gap = if (w >= 3000f) 10f * MM else 5f * MM
                     val d = 1.3f
                     cs.setNonStrokingColor(0.62f, 0.66f, 0.72f)
                     var y = h - gap
@@ -305,6 +326,103 @@ object PdfPages {
                         row++
                     }
                     cs.fill()
+                }
+                PageTemplate.WEEKLY -> {
+                    val m = 12f * MM
+                    val top = h - 26f * MM
+                    val cols = 2
+                    val rows = 4
+                    val cw = (w - 2 * m - 6f * MM) / cols
+                    val rh = (top - m - 3 * 4f * MM) / rows
+                    val days = listOf("PZT", "SAL", "ÇAR", "PER", "CUM", "CMT", "PAZ", "NOTLAR")
+                    for (i in 0 until cols * rows) {
+                        val c = i / rows
+                        val r = i % rows
+                        val x = m + c * (cw + 6f * MM)
+                        val y = top - (r + 1) * rh - r * 4f * MM
+                        // Kutu: açık lavanta başlık şeridi + ince çerçeve + satırlar
+                        cs.setNonStrokingColor(0.91f, 0.92f, 0.99f)
+                        cs.addRect(x, y + rh - 7f * MM, cw, 7f * MM)
+                        cs.fill()
+                        cs.setStrokingColor(0.70f, 0.73f, 0.92f)
+                        cs.setLineWidth(0.8f)
+                        cs.addRect(x, y, cw, rh)
+                        cs.stroke()
+                        cs.setStrokingColor(0.85f, 0.87f, 0.95f)
+                        cs.setLineWidth(0.4f)
+                        var ly = y + rh - 7f * MM - 7f * MM
+                        while (ly > y + 2f * MM) {
+                            cs.moveTo(x + 2f * MM, ly)
+                            cs.lineTo(x + cw - 2f * MM, ly)
+                            ly -= 7f * MM
+                        }
+                        cs.stroke()
+                        label(cs, days[i], x + 3f * MM, y + rh - 5f * MM, 9f)
+                    }
+                }
+                PageTemplate.VOCAB -> {
+                    val m = 10f * MM
+                    val top = h - 24f * MM
+                    val c1 = m + (w - 2 * m) * 0.28f
+                    val c2 = m + (w - 2 * m) * 0.58f
+                    cs.setNonStrokingColor(0.91f, 0.92f, 0.99f)
+                    cs.addRect(m, top - 9f * MM, w - 2 * m, 9f * MM)
+                    cs.fill()
+                    cs.setStrokingColor(0.80f, 0.83f, 0.94f)
+                    cs.setLineWidth(0.5f)
+                    var y = top - 9f * MM
+                    while (y > m) {
+                        cs.moveTo(m, y)
+                        cs.lineTo(w - m, y)
+                        y -= 9f * MM
+                    }
+                    cs.stroke()
+                    cs.setStrokingColor(0.62f, 0.66f, 0.90f)
+                    cs.setLineWidth(0.9f)
+                    for (x in listOf(c1, c2)) {
+                        cs.moveTo(x, top)
+                        cs.lineTo(x, m)
+                    }
+                    cs.stroke()
+                    label(cs, "Kelime", m + 3f * MM, top - 6f * MM, 10f)
+                    label(cs, "Anlam", c1 + 3f * MM, top - 6f * MM, 10f)
+                    label(cs, "Örnek cümle", c2 + 3f * MM, top - 6f * MM, 10f)
+                }
+                PageTemplate.CORNELL_COLOR -> {
+                    val top = h - 28f * MM
+                    val summary = h * 0.22f
+                    val cue = w * 0.3f
+                    // Renkli alanlar: başlık, anahtar kelime sütunu, özet
+                    cs.setNonStrokingColor(0.89f, 0.90f, 0.99f)
+                    cs.addRect(0f, top, w, h - top)
+                    cs.fill()
+                    cs.setNonStrokingColor(0.94f, 0.96f, 1f)
+                    cs.addRect(0f, summary, cue, top - summary)
+                    cs.fill()
+                    cs.setNonStrokingColor(0.96f, 0.94f, 1f)
+                    cs.addRect(0f, 0f, w, summary)
+                    cs.fill()
+                    cs.setStrokingColor(0.80f, 0.84f, 0.95f)
+                    cs.setLineWidth(0.5f)
+                    var y = top - 8f * MM
+                    while (y > summary + 4f) {
+                        cs.moveTo(cue, y)
+                        cs.lineTo(w, y)
+                        y -= 8f * MM
+                    }
+                    cs.stroke()
+                    cs.setStrokingColor(0.36f, 0.42f, 0.86f)
+                    cs.setLineWidth(1.2f)
+                    cs.moveTo(0f, top)
+                    cs.lineTo(w, top)
+                    cs.moveTo(cue, top)
+                    cs.lineTo(cue, summary)
+                    cs.moveTo(0f, summary)
+                    cs.lineTo(w, summary)
+                    cs.stroke()
+                    label(cs, "Anahtar", 4f * MM, top - 6f * MM, 9f)
+                    label(cs, "Notlar", cue + 4f * MM, top - 6f * MM, 9f)
+                    label(cs, "Özet", 4f * MM, summary - 6f * MM, 9f)
                 }
                 PageTemplate.BLANK -> {}
             }

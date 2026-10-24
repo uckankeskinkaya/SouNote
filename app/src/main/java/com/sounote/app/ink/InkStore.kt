@@ -119,6 +119,7 @@ class InkStore(context: Context) {
             for (f in s.points) out.writeFloat(f)
             out.writeUTF(s.audioFile ?: "")
             out.writeLong(s.audioMs)
+            out.writeByte(s.layer)
         }
         out.writeInt(c.texts.size)
         for (t in c.texts) {
@@ -162,7 +163,9 @@ class InkStore(context: Context) {
                 // Sürüm 5'ten önce kayıt bağlantısı yoktu.
                 val audioFile = if (version >= 5) inp.readUTF().ifEmpty { null } else null
                 val audioMs = if (version >= 5) inp.readLong() else 0L
-                Stroke(tool, color, width, pressure, points, audioFile, audioMs)
+                // Sürüm 6'dan önce katman yoktu.
+                val layer = if (version >= 6) inp.readByte().toInt() else 0
+                Stroke(tool, color, width, pressure, points, audioFile, audioMs, layer)
             }
             val texts = List(inp.readInt()) {
                 val id = inp.readLong()
@@ -191,6 +194,6 @@ class InkStore(context: Context) {
     companion object {
         private const val TAG = "InkStore"
         private const val MAGIC = 0x534E5031 // "SNP1"
-        private const val VERSION = 5
+        private const val VERSION = 6
     }
 }

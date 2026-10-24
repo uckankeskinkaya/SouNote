@@ -35,39 +35,48 @@ class ExamWidget : AppWidgetProvider() {
             val prefs = context.getSharedPreferences("viewer", Context.MODE_PRIVATE)
             val level = prefs.getString("userLevel", null) ?: ""
             val now = System.currentTimeMillis()
-            val next = runCatching {
+            val upcoming = runCatching {
                 val global = CatalogRepo.cached(context).exams.filter { level.isEmpty() || it.levels.isEmpty() || level in it.levels }
-                (ExamStore(context).load() + global).filter { it.time > now }.minByOrNull { it.time }
-            }.getOrNull()
+                (ExamStore(context).load() + global).filter { it.time > now }.sortedBy { it.time }
+            }.getOrDefault(emptyList())
+            val next = upcoming.firstOrNull()
             val today = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date(now))
             val studyMin = prefs.getLong("studyday_$today", 0L) / 60_000
 
             val views = RemoteViews(context.packageName, R.layout.widget_exam)
             if (next != null) {
                 val days = ExamReminders.daysUntil(next.time)
-                views.setTextViewText(R.id.widget_label, "Sıradaki sınav")
-                views.setTextViewText(R.id.widget_title, next.kindEmoji + " " + next.title.ifBlank { next.course })
+                views.setTextViewText(R.id.widget_label, "Sıradaki · ${next.course}")
+                views.setTextViewText(R.id.widget_title, next.title.ifBlank { next.course })
                 views.setTextViewText(
                     R.id.widget_date,
                     SimpleDateFormat("d MMMM EEEE", tr).format(Date(next.time)) + (if (next.slot.isNotBlank()) " · ${next.slot}" else ""),
                 )
+                views.setTextViewText(R.id.widget_days, if (days <= 1) "" else "$days")
                 views.setTextViewText(
                     R.id.widget_countdown,
                     when (days) {
                         0 -> "Bugün"
                         1 -> "Yarın"
-                        else -> "$days gün"
+                        else -> "gün kaldı"
                     },
+                )
+                val after = upcoming.getOrNull(1)
+                views.setTextViewText(
+                    R.id.widget_next,
+                    after?.let { "Sonra: ${it.title.ifBlank { it.course }} · ${ExamReminders.daysUntil(it.time)} gün" } ?: "Sonrasında sınav yok",
                 )
             } else {
                 views.setTextViewText(R.id.widget_label, "SouNote")
-                views.setTextViewText(R.id.widget_title, "Yaklaşan sınav yok 🎉")
+                views.setTextViewText(R.id.widget_title, "Yaklaşan sınav yok")
                 views.setTextViewText(R.id.widget_date, "")
-                views.setTextViewText(R.id.widget_countdown, "📚")
+                views.setTextViewText(R.id.widget_days, "")
+                views.setTextViewText(R.id.widget_countdown, "")
+                views.setTextViewText(R.id.widget_next, "Planlayıcıdan sınav ekle")
             }
             views.setTextViewText(
                 R.id.widget_study,
-                if (studyMin >= 60) "Bugün ${studyMin / 60} sa ${studyMin % 60} dk" else "Bugün $studyMin dk",
+                if (studyMin >= 60) "${studyMin / 60} sa ${studyMin % 60} dk" else "$studyMin dk",
             )
             val open = Intent(context, MainActivity::class.java)
                 .setAction(MainActivity.ACTION_OPEN_EXAMS)

@@ -183,7 +183,7 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                                 item {
                                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         vm.recentSearches.forEach { r ->
-                                            AssistChip(onClick = { query = r }, label = { Text("🕘 $r") })
+                                            AssistChip(onClick = { query = r }, label = { Text(r) }, leadingIcon = { Icon(SouIcons.History, contentDescription = null, modifier = Modifier.size(18.dp)) })
                                         }
                                     }
                                 }
@@ -209,35 +209,35 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                             }
                             items(hits) { hit ->
                                 when (hit) {
-                                    is SearchHit.CourseHit -> HitRow(hit.course.emoji.ifEmpty { "📘" }, highlight(hit.course.name, q), "Ders · ${hit.course.topics.size} konu") {
+                                    is SearchHit.CourseHit -> HitRow(SouIcons.School, highlight(hit.course.name, q), "Ders · ${hit.course.topics.size} konu") {
                                         go {
                                             vm.focusCourse = hit.course.id
                                             vm.tab = LibraryViewModel.Tab.COURSES
                                         }
                                     }
-                                    is SearchHit.TopicHit -> HitRow("🧩", highlight(hit.topic.name, q), "${hit.course.name} · konu · ${hit.topic.resources.size} kaynak") {
+                                    is SearchHit.TopicHit -> HitRow(SouIcons.Extension, highlight(hit.topic.name, q), "${hit.course.name} · konu · ${hit.topic.resources.size} kaynak") {
                                         go {
                                             vm.focusTopic = hit.topic.id
                                             vm.tab = LibraryViewModel.Tab.COURSES
                                         }
                                     }
-                                    is SearchHit.FolderHit -> HitRow(hit.folder.icon.ifEmpty { "📁" }, highlight(hit.folder.name, q), "Klasör") {
+                                    is SearchHit.FolderHit -> HitRow(SouIcons.Folder, highlight(hit.folder.name, q), "Klasör") {
                                         go {
                                             vm.openUserFolder(hit.folder.id)
                                             vm.tab = LibraryViewModel.Tab.LIBRARY
                                         }
                                     }
                                     is SearchHit.ExamHit -> HitRow(
-                                        hit.exam.kindEmoji,
+                                        hit.exam.kindIcon,
                                         highlight(hit.exam.title.ifBlank { hit.exam.course }, q),
                                         "${hit.exam.kindLabel} · ${hit.exam.course} · ${countdownText(hit.exam.time)}",
                                     ) { go { vm.tab = LibraryViewModel.Tab.EXAMS } }
-                                    is SearchHit.DocTitle -> HitRow("📄", highlight(hit.doc.title, q), "Belge") { go { vm.open(hit.doc) } }
-                                    is SearchHit.PdfPage -> HitRow("🔎", highlight(hit.snippet, q), "${hit.doc.title} · sayfa ${hit.page + 1}") {
+                                    is SearchHit.DocTitle -> HitRow(SouIcons.Description, highlight(hit.doc.title, q), "Belge") { go { vm.open(hit.doc) } }
+                                    is SearchHit.PdfPage -> HitRow(SouIcons.Search, highlight(hit.snippet, q), "${hit.doc.title} · sayfa ${hit.page + 1}") {
                                         go { vm.openAt(hit.doc, hit.page) }
                                     }
-                                    is SearchHit.Note -> HitRow("📝", highlight(hit.note.displayTitle, q), hit.snippet) { go { vm.openTextNote(hit.note) } }
-                                    is SearchHit.FlashCard -> HitRow("🃏", highlight(hit.card.frontText.ifBlank { "(resimli kart)" }, q), "${hit.doc.title} · kart") {
+                                    is SearchHit.Note -> HitRow(SouIcons.EditNote, highlight(hit.note.displayTitle, q), hit.snippet) { go { vm.openTextNote(hit.note) } }
+                                    is SearchHit.FlashCard -> HitRow(SouIcons.Style, highlight(hit.card.frontText.ifBlank { "(resimli kart)" }, q), "${hit.doc.title} · kart") {
                                         vm.rememberSearch(query)
                                         cardHit = hit
                                     }
@@ -278,7 +278,7 @@ private fun Hint(text: String) {
 }
 
 @Composable
-private fun HitRow(emoji: String, title: AnnotatedString, subtitle: String, onClick: () -> Unit) {
+private fun HitRow(emoji: androidx.compose.ui.graphics.vector.ImageVector, title: AnnotatedString, subtitle: String, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -291,7 +291,7 @@ private fun HitRow(emoji: String, title: AnnotatedString, subtitle: String, onCl
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
-        ) { Text(emoji, fontSize = 18.sp) }
+        ) { Icon(emoji, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) }
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text(title, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
             Text(

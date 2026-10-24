@@ -54,7 +54,7 @@ internal fun SideNotePanel(vm: LibraryViewModel, doc: DocRef, onClose: () -> Uni
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainerLow).imePadding()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp)) {
             Column(Modifier.weight(1f)) {
-                Text("📝 Yan not", style = MaterialTheme.typography.titleMedium)
+                Text("Yan not", style = MaterialTheme.typography.titleMedium)
                 Text(
                     "${EssayText.countWords(text)} kelime · yazılı notlarında da görünür",
                     style = MaterialTheme.typography.labelSmall,

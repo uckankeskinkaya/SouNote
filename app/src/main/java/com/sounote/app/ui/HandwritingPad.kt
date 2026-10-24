@@ -114,7 +114,7 @@ internal fun HandwritingPad(onText: (String) -> Unit, onBackspace: () -> Unit, o
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("✍️ Kalemle yaz", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text("Kalemle yaz", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             TextButton(onClick = { onText(" ") }) { Text("␣ Boşluk") }

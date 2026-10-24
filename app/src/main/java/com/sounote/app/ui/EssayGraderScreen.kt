@@ -165,7 +165,7 @@ private fun EssayList(vm: LibraryViewModel, onBack: () -> Unit, onNew: (EssayTyp
     val fmt = remember { SimpleDateFormat("d MMM HH:mm", Locale.forLanguageTag("tr")) }
     var deleting by remember { mutableStateOf<Essay?>(null) }
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        TopBar("✍️ Writing pratiği", onBack)
+        TopBar("Writing pratiği", onBack)
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(16.dp),
@@ -317,7 +317,7 @@ private fun NewEssay(vm: LibraryViewModel, initial: EssayType, onBack: () -> Uni
                         }
                     },
                     enabled = vm.assistantConfig.ready && !suggesting,
-                ) { Text(if (suggesting) "Düşünüyor…" else "🤖 Asistan konu önersin") }
+                ) { Text(if (suggesting) "Düşünüyor…" else "Asistan konu önersin") }
             }
             Text("Örnek konular", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
             EssayStore.TOPICS.forEachIndexed { i, t ->
@@ -465,7 +465,7 @@ private fun EssayEditor(vm: LibraryViewModel, start: Essay, onBack: () -> Unit, 
                         CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                         Text("  Değerlendiriliyor…")
                     } else {
-                        Text("🤖 Değerlendir")
+                        Text("Değerlendir")
                     }
                 }
             }
@@ -494,13 +494,13 @@ private fun EssayResult(vm: LibraryViewModel, essay: Essay, onBack: () -> Unit, 
             if (fb.strengths.isNotEmpty()) {
                 item {
                     Column(Modifier.fillMaxWidth().appear(2).card().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("👍 İyi yaptıkların", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text("İyi yaptıkların", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         fb.strengths.forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium) }
                     }
                 }
             }
             if (fb.mistakes.isNotEmpty()) {
-                item { Text("✏️ Düzeltmeler (${fb.mistakes.size})", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.appear(3)) }
+                item { Text("Düzeltmeler (${fb.mistakes.size})", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.appear(3)) }
                 items(fb.mistakes) { m ->
                     Column(Modifier.fillMaxWidth().appear(3).card().padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(m.wrong, color = BAD, textDecoration = TextDecoration.LineThrough, style = MaterialTheme.typography.bodyMedium)
@@ -513,7 +513,7 @@ private fun EssayResult(vm: LibraryViewModel, essay: Essay, onBack: () -> Unit, 
                 item {
                     Column(Modifier.fillMaxWidth().card().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("✨ Geliştirilmiş hali", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                            Text("Geliştirilmiş hali", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                             TextButton(onClick = { showImproved = !showImproved }) { Text(if (showImproved) "Gizle" else "Göster") }
                         }
                         if (showImproved) {
@@ -530,7 +530,7 @@ private fun EssayResult(vm: LibraryViewModel, essay: Essay, onBack: () -> Unit, 
             }
             item {
                 Column(Modifier.fillMaxWidth().card().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("📝 Senin yazın (${essay.words} kelime)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Senin yazın (${essay.words} kelime)", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text(essay.text, style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 24.sp))
                 }
             }
@@ -581,10 +581,10 @@ private fun ScoreHeader(essay: Essay, fb: EssayFeedback) {
         Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 when {
-                    fb.total >= 85 -> "Harika! 🎉"
-                    fb.total >= 70 -> "İyi gidiyor 👍"
-                    fb.total >= 50 -> "Geliştirilebilir 💪"
-                    else -> "Biraz daha pratik 📚"
+                    fb.total >= 85 -> "Harika"
+                    fb.total >= 70 -> "İyi gidiyor"
+                    fb.total >= 50 -> "Geliştirilebilir"
+                    else -> "Biraz daha pratik"
                 },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,

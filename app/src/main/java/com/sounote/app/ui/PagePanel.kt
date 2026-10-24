@@ -119,7 +119,7 @@ fun PagePanel(
             }
             if (onlyBookmarks && pages.isEmpty()) {
                 Text(
-                    "Yer imi yok. Üst çubuktaki ☆ ile ya da sayfaya basılı tutarak ekleyebilirsin.",
+                    "Yer imi yok.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp),

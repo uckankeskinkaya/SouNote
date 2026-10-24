@@ -31,6 +31,8 @@ tap() {
   echo "bulunamadı: $1"
 }
 back() { adb shell input keyevent KEYCODE_BACK; sleep 0.5; }
+# Sayfanın en üstüne kaydırır.
+top() { for k in 1 2 3; do adb shell input swipe 540 700 540 1900 150; done; sleep 0.5; }
 # Uygulamayı öne getirir (geri tuşuyla kapanmışsa yeniden açar).
 app() { adb shell am start -n $P/.MainActivity >/dev/null; sleep 1; }
 
@@ -56,14 +58,14 @@ tap "Kütüphane"; tap "Liste görünümü"; shot 05d-kutuphane-liste; tap "Izga
 # 4) Hızlı not (belge ekranı), okuma modu, geri
 adb shell am start -a $P.QUICK_NOTE -n $P/.MainActivity; sleep 4; shot 06-defter
 adb shell input swipe 300 900 700 1200 400; sleep 1
-tap "📖 Oku"; shot 06b-okuma; tap "✏️ Not al"
+tap "Oku"; shot 06b-okuma; tap "Not al"
 back
 
 # 5) Yazı stüdyosu, asistan, arama, ortalama (her birinden önce uygulama öne getirilir)
-app; tap "Yazı"; tap "Yeni yazı"; tap "🏗️ Essay (giriş, gelişme, sonuç)"; sleep 2; adb shell input text "deneme"; shot 07-essay
+app; tap "Yazı"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot 07-essay
 tap "📑 Yapı"; shot 07b-yapi; back; back; back
-app; tap "Ana sayfa"; tap "Asistan"; sleep 2; shot 08-asistan; back
-app; tap "Ana sayfa"; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back
+app; tap "Ana sayfa"; top; tap "Asistan"; sleep 2; shot 08-asistan; back
+app; tap "Ana sayfa"; top; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back
 app; tap "Ana sayfa"; tap "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 1; shot 10-ortalama; back
 app; tap "Planlayıcı"; tap "Not ortalamam"; sleep 2; shot 10b-ortalama; back
 

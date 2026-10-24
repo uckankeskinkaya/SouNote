@@ -7,6 +7,9 @@ import kotlin.math.pow
 
 enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER, STAMP, SHAPE }
 
+/** Ekrandaki ölçüm aracı (kaydedilmez). */
+enum class GuideKind { NONE, RULER, PROTRACTOR }
+
 /** Şekil aracının çizdiği şekil. */
 enum class ShapeKind(val symbol: String, val label: String) {
     LINE("╱", "Çizgi"),
@@ -23,13 +26,23 @@ enum class PenType(
     val short: String,
     val inkTool: InkTool,
     val usesPressure: Boolean,
+    /** Bu kalem seçilince önerilen kalınlık (mm); null = kullanıcının kalınlığı korunur. */
+    val defaultWidthMm: Float? = null,
 ) {
     FOUNTAIN("Dolma kalem", "Bastırdıkça kalınlaşır", "", InkTool.PEN, true),
-    BALLPOINT("Tükenmez", "Her zaman aynı kalınlık", "T", InkTool.PEN, false),
-    PENCIL("Kurşun kalem", "Yarı saydam, sabit kalınlık", "Kş", InkTool.PENCIL, false),
-    BRUSH("Fırça", "Basınca çok duyarlı, uçları incelir", "F", InkTool.BRUSH, true),
-    CALLIGRAPHY("Kaligrafi", "Yöne göre ince/kalın, güzel yazı için", "Kl", InkTool.CALLIGRAPHY, false),
+    BALLPOINT("Tükenmez", "Sabit kalınlık", "T", InkTool.PEN, false),
+    FINELINER("İnce uç", "Çok ince, sabit; şema ve küçük yazı", "İ", InkTool.PEN, false, 0.25f),
+    MARKER("Keçeli kalem", "Kalın ve dolgun; başlıklar için", "K", InkTool.PEN, false, 1.6f),
+    PENCIL("Kurşun kalem", "Yarı saydam", "Kş", InkTool.PENCIL, false),
+    PASTEL("Pastel", "Geniş, yumuşak, yarı saydam", "P", InkTool.PENCIL, false, 2.4f),
+    BRUSH("Fırça", "Basınca çok duyarlı", "F", InkTool.BRUSH, true),
+    CALLIGRAPHY("Kaligrafi", "Yöne göre ince/kalın", "Kl", InkTool.CALLIGRAPHY, false),
     DASHED("Kesik çizgi", "Şekil ve şemalar için", "--", InkTool.DASHED, false),
+    GEL("Jel kalem", "Akıcı, hafif basınca duyarlı", "J", InkTool.PEN, true, 0.4f),
+    NEON("Neon", "Parlayan renkli çizgi", "N", InkTool.NEON, false, 0.8f),
+    DOTTED("Noktalı", "Nokta nokta çizgi", "··", InkTool.DOTTED, false, 0.8f),
+    BROAD("Geniş uç", "Kalın kaligrafi ucu; başlıklar için", "G", InkTool.CALLIGRAPHY, false, 2.2f),
+    SUMI("Mürekkep fırçası", "Kalın, uçları incelen fırça", "M", InkTool.BRUSH, true, 2.6f),
 }
 
 /** Araç çubuğunda tek dokunuşla seçilen kayıtlı kalem. */
@@ -48,6 +61,8 @@ data class ToolState(
     val penWidthMm: Float = 0.5f,
     /** 0 = sert (kalınlaşmak için çok bastır), 1 = yumuşak (hafif dokunuş da kalın). */
     val pressureSensitivity: Float = 0.5f,
+    /** Yazma desteği: el titremesini süzüp çizgiyi yumuşatır (0 = kapalı, 1 = en güçlü). */
+    val smoothing: Float = 0.35f,
     /** Kalemi çizginin sonunda bir an bekletince düz çizgi / şekil yap. */
     val shapeAssist: Boolean = true,
     /** Deneysel: çizilen çizgi ön tampona (daha az gecikme). */
@@ -80,13 +95,25 @@ data class ToolState(
     val stampSizePt: Float = 24f,
     val shapeKind: ShapeKind = ShapeKind.RECT,
     val favorites: List<FavoritePen> = emptyList(),
-    /** Renk seçiciden seçilmiş son renkler (en yenisi başta). */
+    /** Cetvel / açıölçer görünür mü (uygulama kapanınca kapanır). */
+    val guide: GuideKind = GuideKind.NONE,
+    /** Her kalem türünün son rengi ve kalınlığı: kalem değişince kaldığı yerden devam eder. */
+    val penMemory: Map<PenType, Pair<Int, Float>> = emptyMap(),
+    /** Son kullanılan renkler (en yenisi başta): paletten ya da renk seçiciden seçilenler. */
     val customColors: List<Int> = emptyList(),
 ) {
     /** Ham kalem basıncını hassasiyet ayarına göre eğer. */
     fun applyPressureCurve(p: Float): Float {
         val gamma = 2f.pow((0.5f - pressureSensitivity) * 2f)
         return p.coerceIn(0f, 1f).pow(gamma)
+    }
+
+    /** Kalem türünü değiştirir: şimdikinin ayarını saklar, yenisinin hatırlanan ayarını yükler. */
+    fun switchPen(t: PenType): ToolState {
+        if (t == penType) return copy(tool = Tool.PEN)
+        val memory = penMemory + (penType to (penColor to penWidthMm))
+        val (color, width) = memory[t] ?: (penColor to (t.defaultWidthMm ?: penWidthMm))
+        return copy(tool = Tool.PEN, penType = t, penColor = color, penWidthMm = width, penMemory = memory)
     }
 
     fun withCustomColor(color: Int) =
@@ -118,6 +145,7 @@ data class ToolState(
             .putFloat("highlighterWidthMm", highlighterWidthMm)
             .putBoolean("highlighterStraight", highlighterStraight)
             .putBoolean("smartHighlighter", smartHighlighter)
+            .putFloat("smoothing", smoothing)
             .putString("eraserMode", eraserMode.name)
             .putFloat("eraserSizeDp", eraserSizeDp)
             .putBoolean("eraserHighlighterOnly", eraserHighlighterOnly)
@@ -145,6 +173,9 @@ data class ToolState(
                 }
             }.toString())
             .putString("customColors", customColors.joinToString(","))
+            .putString("penMemory", JSONObject().apply {
+                penMemory.forEach { (t, v) -> put(t.name, JSONObject().put("color", v.first).put("widthMm", v.second.toDouble())) }
+            }.toString())
             .apply()
     }
 
@@ -204,6 +235,7 @@ data class ToolState(
                 highlighterWidthMm = prefs.getFloat("highlighterWidthMm", d.highlighterWidthMm),
                 highlighterStraight = prefs.getBoolean("highlighterStraight", d.highlighterStraight),
                 smartHighlighter = prefs.getBoolean("smartHighlighter", d.smartHighlighter),
+                smoothing = prefs.getFloat("smoothing", d.smoothing),
                 eraserMode = enumOr(prefs.getString("eraserMode", null), d.eraserMode),
                 eraserSizeDp = prefs.getFloat("eraserSizeDp", d.eraserSizeDp),
                 eraserHighlighterOnly = prefs.getBoolean("eraserHighlighterOnly", d.eraserHighlighterOnly),
@@ -222,7 +254,20 @@ data class ToolState(
                 favorites = loadFavorites(prefs.getString("favorites", null)),
                 customColors = prefs.getString("customColors", null)
                     ?.split(",")?.mapNotNull { it.toIntOrNull() } ?: emptyList(),
+                penMemory = loadPenMemory(prefs.getString("penMemory", null)),
             )
+        }
+
+        private fun loadPenMemory(json: String?): Map<PenType, Pair<Int, Float>> {
+            if (json.isNullOrEmpty()) return emptyMap()
+            return runCatching {
+                val o = JSONObject(json)
+                o.keys().asSequence().mapNotNull { k ->
+                    val t = PenType.entries.firstOrNull { it.name == k } ?: return@mapNotNull null
+                    val v = o.getJSONObject(k)
+                    t to (v.getInt("color") to v.getDouble("widthMm").toFloat())
+                }.toMap()
+            }.getOrDefault(emptyMap())
         }
 
         private fun loadFavorites(json: String?): List<FavoritePen> {

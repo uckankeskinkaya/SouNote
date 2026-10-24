@@ -17,6 +17,9 @@ class ContentPainter(private val imagesDir: File?) {
     private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val rect = RectF()
 
+    /** Belgenin katmanları (gizli katmanlar çizilmez). */
+    var layers: LayerSet = LayerSet.load(imagesDir?.parentFile)
+
     fun draw(canvas: Canvas, content: PageContent) {
         val dir = imagesDir
         if (dir != null) {
@@ -29,9 +32,10 @@ class ContentPainter(private val imagesDir: File?) {
                 canvas.restore()
             }
         }
-        content.strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }
+        val list = layers.arrange(content.strokes)
+        list.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }
         content.texts.forEach { TextBoxes.draw(canvas, it) }
-        content.strokes.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }
+        list.forEach { if (it.tool != InkTool.HIGHLIGHTER) strokes.draw(canvas, it) }
         // Not: ezber bantları burada kapalı (opak) çizilir.
     }
 }

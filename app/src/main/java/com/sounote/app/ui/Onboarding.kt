@@ -96,7 +96,7 @@ fun OnboardingScreen(vm: LibraryViewModel) {
         scope.launch { pager.animateScrollToPage(page) }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(Modifier.fillMaxSize().souBackground()) {
         // Üstte hafif marka rengi
         Box(
             Modifier
@@ -264,7 +264,7 @@ private fun SetupOptions(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             ChoiceCard(
                 selected = !fingerDraw,
-                emoji = "✍️",
+                icon = SouIcons.Stylus,
                 title = "Kalemle",
                 text = "Kalem yazar, parmak kaydırır. Avuç içi çizmez.",
                 onClick = { onFingerDraw(false) },
@@ -272,7 +272,7 @@ private fun SetupOptions(
             )
             ChoiceCard(
                 selected = fingerDraw,
-                emoji = "👆",
+                icon = SouIcons.TouchApp,
                 title = "Parmakla",
                 text = "Kalemin yoksa: tek parmak çizer, iki parmak kaydırır.",
                 onClick = { onFingerDraw(true) },
@@ -297,7 +297,7 @@ private fun SetupOptions(
             }
         }
         Text(
-            "🔒 Notların yalnızca bu cihazda saklanır. Hesap ya da izin gerekmez.",
+            "Notların sadece bu cihazda saklanır. Hesap gerekmez.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -307,7 +307,7 @@ private fun SetupOptions(
 @Composable
 private fun ChoiceCard(
     selected: Boolean,
-    emoji: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     text: String,
     onClick: () -> Unit,
@@ -327,7 +327,7 @@ private fun ChoiceCard(
             .clickable(onClick = onClick)
             .padding(16.dp),
     ) {
-        Text(emoji, fontSize = 28.sp)
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }

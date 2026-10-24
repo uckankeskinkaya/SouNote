@@ -10,12 +10,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -96,15 +90,21 @@ sealed interface AssistantSource {
     /** [selection]: lasso ile seçilen bölgenin metni (varsa "Seçim" bağlamı açılır). */
     data class Document(val doc: DocRef, val page: Int, val pageCount: Int, val selection: String? = null) : AssistantSource
     data class Note(val title: String, val text: String) : AssistantSource
+    /** Bir dersin kütüphanedeki (indirilmiş) PDF'leri: ders özeti, kelimeler, sorular. */
+    data class Course(val name: String, val docs: List<DocRef>) : AssistantSource
 }
 
 /** Konuşmalar uygulama açık kaldıkça (kaynağa göre) saklanır. */
 private val histories = HashMap<String, List<ChatMessage>>()
 
+/** Ders özeti bağlamının önbellek anahtarı (docTexts içinde). */
+private const val COURSE_TEXT = 100
+
 private fun AssistantSource.key() = when (this) {
     AssistantSource.General -> "general"
     is AssistantSource.Document -> "doc:" + doc.id
     is AssistantSource.Note -> "note:" + title
+    is AssistantSource.Course -> "course:" + name
 }
 
 /** Yardımcı asistan: soru sor, belgeyi/notu özetlet, alıştırma iste, yazını kontrol ettir. */
@@ -177,6 +177,18 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             t.ifBlank { "(Bu sayfada okunabilir metin yok; taranmış görüntü olabilir.)" } + "\n\"\"\""
                     }
                     is AssistantSource.Note -> "Kullanıcının açık yazılı notu: \"${source.title}\". Notun metni:\n\"\"\"\n${source.text.take(12_000)}\n\"\"\""
+                    is AssistantSource.Course -> docTexts[COURSE_TEXT] ?: run {
+                        // Her belgeden eşit pay: toplam ~16 bin karakter
+                        val per = (16_000 / source.docs.size.coerceAtLeast(1)).coerceAtLeast(1_500)
+                        val parts = ArrayList<String>()
+                        for (d in source.docs.take(12)) {
+                            val t = try { vm.documentText(d, 0, 9_999) } catch (e: Exception) { "" }
+                            parts += "### ${d.title}\n" + t.take(per)
+                        }
+                        parts.joinToString("\n\n").let { all ->
+                            "Kullanıcının \"${source.name}\" dersinin kütüphanedeki belgeleri (${source.docs.size} belge). Metinleri:\n\"\"\"\n$all\n\"\"\""
+                        }.also { docTexts[COURSE_TEXT] = it }
+                    }
                     AssistantSource.General -> null
                 }
                 val system = AssistantClient.systemPrompt(vm.catalog, vm.userName) + (contextText?.let { "\n\n$it" } ?: "")
@@ -292,11 +304,11 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().souBackground(), color = Color.Transparent) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
                 // Üst çubuk: geri, asistan kimliği, yeni sohbet, ayarlar
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kapat") }
+                    IconButton(onClick = onDismiss) { Icon(SouIcons.ArrowBack, contentDescription = "Kapat") }
                     BotAvatar(40.dp)
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text("SouNote Asistan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
@@ -304,8 +316,9 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             when {
                                 busy -> "yazıyor…"
                                 !vm.assistantConfig.ready -> "Kurulum gerekli"
-                                source is AssistantSource.Document -> "📄 " + source.doc.title
-                                source is AssistantSource.Note -> "📝 " + source.title.ifBlank { "Yazılı not" }
+                                source is AssistantSource.Document -> source.doc.title
+                                source is AssistantSource.Note -> source.title.ifBlank { "Yazılı not" }
+                                source is AssistantSource.Course -> "${source.name} · ${source.docs.size} belge"
                                 else -> "İngilizce, L4 dersleri ve uygulama"
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -319,9 +332,9 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             messages.clear()
                             histories.remove(source.key())
                             error = null
-                        }) { Icon(Icons.Default.Refresh, contentDescription = "Yeni sohbet") }
+                        }) { Icon(SouIcons.Refresh, contentDescription = "Yeni sohbet") }
                     }
-                    IconButton(onClick = { setup = !setup }) { Icon(Icons.Default.Settings, contentDescription = "Asistan ayarları") }
+                    IconButton(onClick = { setup = !setup }) { Icon(SouIcons.Settings, contentDescription = "Asistan ayarları") }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 if (setup) {
@@ -399,7 +412,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             TextField(
                                 value = input,
                                 onValueChange = { input = it },
-                                placeholder = { Text(if (vm.assistantConfig.ready) "Mesaj yaz…" else "Önce ⚙️ ile asistanı kur") },
+                                placeholder = { Text(if (vm.assistantConfig.ready) "Mesaj yaz…" else "Önce asistanı kur") },
                                 maxLines = 6,
                                 shape = RoundedCornerShape(24.dp),
                                 colors = TextFieldDefaults.colors(
@@ -416,7 +429,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                                 onClick = { send(input) },
                                 enabled = canSend,
                                 modifier = Modifier.size(52.dp),
-                            ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Gönder") }
+                            ) { Icon(SouIcons.Send, contentDescription = "Gönder") }
                         }
                     }
                 }
@@ -425,7 +438,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
     }
 }
 
-/** Asistanın simgesi: tema renginde degrade daire içinde ✦. */
+/** Asistanın simgesi: tema renginde daire içinde yıldız. */
 @Composable
 private fun BotAvatar(size: Dp) {
     val hero = listOf(MaterialTheme.colorScheme.primary, LocalSouColors.current.hero.last())
@@ -433,7 +446,7 @@ private fun BotAvatar(size: Dp) {
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(hero)),
     ) {
-        Text("✦", color = Color.White, fontSize = (size.value * 0.45f).sp, fontWeight = FontWeight.Bold)
+        Icon(SouIcons.StarShine, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.5f))
     }
 }
 
@@ -441,28 +454,34 @@ private fun BotAvatar(size: Dp) {
 private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, onSetup: () -> Unit, onAsk: (String) -> Unit) {
     val prompts = when (source) {
         is AssistantSource.Document -> if (source.selection.isNullOrBlank()) listOf(
-            "📝" to "Bu sayfayı Türkçe özetle",
-            "📚" to "Buradaki önemli kelimeleri anlamlarıyla listele",
-            "❓" to "Bu sayfadan bana 5 soru sor",
-            "🧩" to "Buradaki grammar konusunu örneklerle anlat",
+            SouIcons.EditNote to "Bu sayfayı Türkçe özetle",
+            SouIcons.LibraryBooks to "Buradaki önemli kelimeleri anlamlarıyla listele",
+            SouIcons.Quiz to "Bu sayfadan bana 5 soru sor",
+            SouIcons.Extension to "Buradaki grammar konusunu örneklerle anlat",
         ) else listOf(
-            "💡" to "Seçili metni basitçe açıkla",
-            "🇹🇷" to "Seçili metni Türkçeye çevir",
-            "📚" to "Seçili metindeki zor kelimeleri anlamlarıyla listele",
-            "❓" to "Seçili metinden bana 3 soru sor",
+            SouIcons.Lightbulb to "Seçili metni basitçe açıkla",
+            SouIcons.Translate to "Seçili metni Türkçeye çevir",
+            SouIcons.LibraryBooks to "Seçili metindeki zor kelimeleri anlamlarıyla listele",
+            SouIcons.Quiz to "Seçili metinden bana 3 soru sor",
+        )
+        is AssistantSource.Course -> listOf(
+            SouIcons.Article to "Bu dersin konularını tek sayfada başlıklar ve maddelerle özetle",
+            SouIcons.LibraryBooks to "Bu derste geçen önemli kelimeleri anlamlarıyla listele",
+            SouIcons.Quiz to "Bu dersten sınav için 10 soru sor (cevaplarıyla)",
+            SouIcons.Flag to "Sınava 3 gün kala bu dersi nasıl çalışmalıyım?",
         )
         is AssistantSource.Note -> listOf(
-            "❓" to "Bu nottan 5 çalışma sorusu üret (cevaplarıyla)",
-            "✨" to "Bu notu toparla ve özetle",
-            "✅" to "Yazımdaki hataları düzelt",
-            "🎯" to "Bu essay'i L4 kriterlerine göre değerlendir",
+            SouIcons.Quiz to "Bu nottan 5 çalışma sorusu üret (cevaplarıyla)",
+            SouIcons.StarShine to "Bu notu toparla ve özetle",
+            SouIcons.TaskAlt to "Yazımdaki hataları düzelt",
+            SouIcons.Flag to "Bu essay'i L4 kriterlerine göre değerlendir",
         )
         AssistantSource.General -> listOf(
-            "📅" to "Sıradaki sınavıma ne çalışmalıyım?",
-            "🗓️" to "Yaklaşan sınavlarıma göre bana bu hafta için çalışma planı öner",
-            "🧩" to "Present perfect ile past simple farkı ne?",
-            "✍️" to "Bana opinion essay için bir plan yap",
-            "🎙️" to "Uygulamada ses kaydı nasıl kullanılır?",
+            SouIcons.Event to "Sıradaki sınavıma ne çalışmalıyım?",
+            SouIcons.CalendarMonth to "Yaklaşan sınavlarıma göre bana bu hafta için çalışma planı öner",
+            SouIcons.Extension to "Present perfect ile past simple farkı ne?",
+            SouIcons.Draw to "Bana opinion essay için bir plan yap",
+            SouIcons.Mic to "Uygulamada ses kaydı nasıl kullanılır?",
         )
     }
     val name = userName.trim().split(" ").firstOrNull().orEmpty()
@@ -473,7 +492,7 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
     ) {
         BotAvatar(72.dp)
         Text(
-            if (name.isNotEmpty()) "Merhaba $name 👋" else "Merhaba 👋",
+            if (name.isNotEmpty()) "Merhaba $name" else "Merhaba",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 6.dp),
@@ -486,6 +505,7 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
                     "Seçtiğin bölgeyi okuyorum. Açıklama, çeviri ya da soru isteyebilirsin."
                 }
                 is AssistantSource.Note -> "Notunu okuyorum. Düzeltme, özet ya da değerlendirme isteyebilirsin."
+                is AssistantSource.Course -> "${source.name} dersinin belgelerini okuyorum. Özet, kelime listesi ya da sınav soruları isteyebilirsin."
                 AssistantSource.General -> "İngilizce, L4 dersleri, sınavların ve uygulama hakkında her şeyi sorabilirsin."
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -506,10 +526,10 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
                         .clickable(enabled = ready) { onAsk(p) }
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
-                    Text(emoji, fontSize = 20.sp)
+                    Icon(emoji, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     Text(p, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 12.dp))
                     Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        SouIcons.ChevronRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

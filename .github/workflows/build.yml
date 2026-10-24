@@ -9,6 +9,8 @@ on:
       - ".github/publish/**"
       - ".github/video/**"
       - ".github/workflows/video.yml"
+      - ".github/canva/**"
+      - ".github/workflows/canva-fetch.yml"
       - ".github/workflows/publish.yml"
       - ".github/workflows/site.yml"
       - ".github/workflows/keygen.yml"
@@ -112,7 +114,7 @@ jobs:
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Test 2.0.${{ github.run_number }}
+          name: Test 3.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           prerelease: true
           make_latest: false
@@ -128,7 +130,7 @@ jobs:
         run: |
           R="${{ github.repository }}"
           N="${{ github.run_number }}"
-          python3 -c "import json,sys; print(json.dumps({'build': int(sys.argv[1]), 'name': 'Test 2.0.' + sys.argv[1], 'notes': open('notes.md').read().strip(), 'sha': sys.argv[2]}, ensure_ascii=False))" "$N" "$GITHUB_SHA" > test.json
+          python3 -c "import json,sys; print(json.dumps({'build': int(sys.argv[1]), 'name': 'Test 3.0.' + sys.argv[1], 'notes': open('notes.md').read().strip(), 'sha': sys.argv[2]}, ensure_ascii=False))" "$N" "$GITHUB_SHA" > test.json
           if ! gh release view test -R "$R" >/dev/null 2>&1; then
             gh release create test -R "$R" --target "$GITHUB_SHA" --prerelease --latest=false \
               --title "Test kanalı" --notes "Yönetici için en yeni test derlemesi (otomatik güncellenir)."

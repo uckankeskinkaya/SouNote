@@ -29,11 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,9 +50,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -77,17 +75,18 @@ import androidx.compose.ui.unit.sp
 internal fun cardBackground(): Color =
     if (LocalSouColors.current.isDark) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
 
-/** Standart kart: yumuşak köşe, ince kenarlık, gölge yok (koyu temada da okunaklı). */
+/** Standart kart: yumuşak köşe; açık temada açık gri zemin üstünde beyaz, kenarlık sadece koyu temada. */
 @Composable
-internal fun Modifier.card(radius: Dp = 20.dp): Modifier {
+internal fun Modifier.card(radius: Dp = 18.dp): Modifier {
     val shape = RoundedCornerShape(radius)
+    val sou = LocalSouColors.current
     return this
         .clip(shape)
         .background(cardBackground())
-        .border(1.dp, LocalSouColors.current.cardBorder, shape)
+        .then(if (sou.isDark) Modifier.border(1.dp, sou.cardBorder, shape) else Modifier)
 }
 
-/** Bölüm başlığı: başlık, isteğe bağlı açıklama ve sağda "Tümü →" gibi bir eylem. */
+/** Bölüm başlığı: başlık ve sağda "Tümü" gibi bir eylem. */
 @Composable
 internal fun SectionHeader(
     title: String,
@@ -98,12 +97,12 @@ internal fun SectionHeader(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(title, style = MaterialTheme.typography.titleMedium)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (action != null) TextButton(onClick = onAction) { Text("$action →") }
+        if (action != null) TextButton(onClick = onAction) { Text(action) }
     }
 }
 
@@ -127,7 +126,7 @@ internal fun SouSearchField(
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(start = 16.dp, end = 6.dp),
     ) {
-        Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(SouIcons.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -153,20 +152,22 @@ internal fun SouSearchField(
             },
         )
         if (value.isNotEmpty()) {
-            IconButton(onClick = { onValueChange("") }) { Icon(Icons.Default.Clear, contentDescription = "Temizle") }
+            IconButton(onClick = { onValueChange("") }) { Icon(SouIcons.Close, contentDescription = "Temizle") }
         }
         trailing?.invoke(this)
     }
 }
 
-/** Boş durum: büyük emoji, başlık, açıklama ve eylemler. */
+/** Boş durum: simge, başlık, (varsa) tek satır açıklama ve eylemler. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EmptyState(
-    emoji: String,
+    icon: ImageVector,
     title: String,
-    text: String,
+    text: String? = null,
     modifier: Modifier = Modifier,
+    /** Simge yerine çizim (res/drawable-nodpi empty_*). */
+    @androidx.annotation.DrawableRes art: Int? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {
     Column(
@@ -174,18 +175,28 @@ internal fun EmptyState(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 40.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(84.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
-        ) { Text(emoji, fontSize = 40.sp) }
-        Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(max = 460.dp),
-        )
+        if (art != null) {
+            androidx.compose.foundation.Image(
+                androidx.compose.ui.res.painterResource(art),
+                contentDescription = null,
+                modifier = Modifier.size(150.dp),
+            )
+        } else {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(64.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
+            ) { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(30.dp)) }
+        }
+        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+        if (text != null) {
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 420.dp),
+            )
+        }
         if (actions != null) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
@@ -221,28 +232,28 @@ internal fun Banner(
     onAction: () -> Unit = {},
 ) {
     val sou = LocalSouColors.current
-    val (bg, fg, emoji) = when (kind) {
-        BannerKind.INFO -> Triple(MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, "ℹ️")
-        BannerKind.SUCCESS -> Triple(sou.success.copy(alpha = 0.16f), MaterialTheme.colorScheme.onSurface, "✅")
-        BannerKind.ERROR -> Triple(MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer, "⚠️")
+    val (bg, fg, icon) = when (kind) {
+        BannerKind.INFO -> Triple(MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, SouIcons.Info)
+        BannerKind.SUCCESS -> Triple(sou.success.copy(alpha = 0.16f), MaterialTheme.colorScheme.onSurface, SouIcons.CheckCircle)
+        BannerKind.ERROR -> Triple(MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer, SouIcons.Info)
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
-        Text(emoji, fontSize = 16.sp)
+        Icon(icon, contentDescription = null, tint = fg, modifier = Modifier.size(20.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium, color = fg, modifier = Modifier.weight(1f).padding(horizontal = 10.dp))
         if (action != null) TextButton(onClick = onAction) { Text(action) }
     }
 }
 
-/** Renkli köşeli zemin üstünde emoji (hızlı eylemler, ayar satırları, ders kartları). */
+/** Renkli köşeli zemin üstünde simge (hızlı eylemler, listeler). */
 @Composable
-internal fun EmojiTile(emoji: String, color: Color, size: Dp = 40.dp) {
+internal fun IconTile(icon: ImageVector, color: Color, size: Dp = 40.dp) {
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(size).clip(RoundedCornerShape(size * 0.3f)).background(color.copy(alpha = 0.16f)),
-    ) { Text(emoji, fontSize = (size.value * 0.48f).sp) }
+        modifier = Modifier.size(size).clip(RoundedCornerShape(size * 0.3f)).background(color.copy(alpha = 0.14f)),
+    ) { Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(size * 0.55f)) }
 }
 
 /** Favori yıldızı (dokununca ekler/çıkarır). */
@@ -250,7 +261,7 @@ internal fun EmojiTile(emoji: String, color: Color, size: Dp = 40.dp) {
 internal fun FavoriteButton(favorite: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(onClick = onToggle, modifier = modifier) {
         Icon(
-            if (favorite) Icons.Filled.Star else Icons.Outlined.Star,
+            if (favorite) SouIcons.StarFilled else SouIcons.Star,
             contentDescription = if (favorite) "Favorilerden çıkar" else "Favorilere ekle",
             tint = if (favorite) LocalSouColors.current.star else LocalContentColor.current,
         )
@@ -287,12 +298,12 @@ internal fun ProgressRing(
 
 /** Küçük istatistik kutusu: değer büyük, açıklama küçük. */
 @Composable
-internal fun StatTile(emoji: String, value: String, label: String, modifier: Modifier = Modifier) {
+internal fun StatTile(icon: ImageVector, value: String, label: String, modifier: Modifier = Modifier) {
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier.card(16.dp).padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Text(emoji, fontSize = 18.sp)
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         Text(value, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
     }
@@ -324,7 +335,7 @@ internal fun SouTopBar(
         navigationIcon = navigationIcon,
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = Color.Transparent,
             scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     )
@@ -338,7 +349,7 @@ internal fun SettingsGroup(title: String, modifier: Modifier = Modifier, content
         Text(
             title,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
         )
         Column(Modifier.fillMaxWidth().card(), content = content)
@@ -347,12 +358,12 @@ internal fun SettingsGroup(title: String, modifier: Modifier = Modifier, content
 
 @Composable
 internal fun RowDivider() {
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), modifier = Modifier.padding(start = 68.dp))
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), modifier = Modifier.padding(start = 56.dp))
 }
 
 @Composable
 internal fun SettingRow(
-    emoji: String,
+    icon: ImageVector,
     title: String,
     subtitle: String? = null,
     onClick: (() -> Unit)? = null,
@@ -362,14 +373,11 @@ internal fun SettingRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            .heightIn(min = 56.dp)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(11.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)),
-        ) { Text(emoji, fontSize = 18.sp) }
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
         Column(Modifier.weight(1f).padding(start = 16.dp, end = 8.dp)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             if (subtitle != null) {
@@ -377,7 +385,7 @@ internal fun SettingRow(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -387,8 +395,8 @@ internal fun SettingRow(
 }
 
 @Composable
-internal fun SwitchRow(emoji: String, title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    SettingRow(emoji, title, subtitle, onClick = { onChange(!checked) }) {
+internal fun SwitchRow(icon: ImageVector, title: String, subtitle: String? = null, checked: Boolean, onChange: (Boolean) -> Unit) {
+    SettingRow(icon, title, subtitle, onClick = { onChange(!checked) }) {
         Switch(checked = checked, onCheckedChange = onChange)
     }
 }
@@ -414,7 +422,7 @@ internal fun ActionSheet(title: String, onDismiss: () -> Unit, content: @Composa
 }
 
 @Composable
-internal fun SheetItem(emoji: String, text: String, destructive: Boolean = false, onClick: () -> Unit) {
+internal fun SheetItem(icon: ImageVector, text: String, destructive: Boolean = false, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -423,7 +431,12 @@ internal fun SheetItem(emoji: String, text: String, destructive: Boolean = false
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 8.dp),
     ) {
-        Text(emoji, fontSize = 18.sp, modifier = Modifier.padding(end = 16.dp))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 16.dp).size(22.dp),
+        )
         Text(
             text,
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -444,5 +457,27 @@ internal fun ProgressBar(
     val p by animateFloatAsState(progress.coerceIn(0f, 1f), tween(if (animate) 600 else 0), label = "bar")
     Box(modifier.height(height).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surfaceContainerHighest)) {
         Box(Modifier.fillMaxWidth(p).fillMaxHeight().clip(RoundedCornerShape(50)).background(color))
+    }
+}
+
+/**
+ * Uygulama zemini: logodaki gibi koyu lacivert üstünde mavi ve mor ışık parıltısı (açık temada çok hafif).
+ * Renkler temadan gelir; ekran içerikleri bunun üstünde saydam zeminle çizilir.
+ */
+@Composable
+internal fun Modifier.souBackground(): Modifier {
+    val scheme = MaterialTheme.colorScheme
+    val dark = LocalSouColors.current.isDark
+    val base = scheme.background
+    val glow1 = if (dark) scheme.primaryContainer.copy(alpha = 0.55f) else scheme.primary.copy(alpha = 0.10f)
+    val glow2 = if (dark) scheme.tertiaryContainer.copy(alpha = 0.38f) else scheme.tertiary.copy(alpha = 0.07f)
+    return drawBehind {
+        drawRect(base)
+        val r1 = size.maxDimension * 0.75f
+        val c1 = Offset(size.width * 0.9f, size.height * 0.02f)
+        drawCircle(Brush.radialGradient(listOf(glow1, Color.Transparent), center = c1, radius = r1), r1, c1)
+        val r2 = size.maxDimension * 0.6f
+        val c2 = Offset(size.width * 0.05f, size.height * 0.95f)
+        drawCircle(Brush.radialGradient(listOf(glow2, Color.Transparent), center = c2, radius = r2), r2, c2)
     }
 }

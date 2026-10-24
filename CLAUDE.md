@@ -150,6 +150,32 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - 2.0.1 (✅ yayınlandı build-99): yeni logo (drawable-nodpi/logo_tile.png, ic_logo_fg.png; AppLogo, simge, açılış), sade ana sayfa (HomeLayout DEFAULT_HIDDEN TIP+NOTES, 6 hızlı işlem).
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
 
+## SouNote 3.0 (🧪, dal ccr-c4eded18-21kvrf; build-110+)
+- Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).
+  Renkler logoya göre: açık tema mavi-mor (#3A4BE0), koyu varsayılan MIDNIGHT "Lacivert" (logodaki lacivert). Zemin Modifier.souBackground()
+  (lacivert + mavi/mor ışık parıltısı); ekran Scaffold'ları saydam. Kart: Modifier.card() kenarlıksız (koyuda ince kenar).
+- Görseller Canva'da üretilir (res/drawable-nodpi pen_*, course_*, cover_*). Bu ortamdan canva.com kapalı: görseli Canva tasarımına
+  (DAHY7owgeFk) koy → export-design → URL'yi .github/canva/request.txt'e yaz, push → canva-fetch.yml canva-assets dalına koyar; sonra dosyayı sil.
+  course_grammar AI çizimi bozuktu: tools/art/course_grammar.svg'den yeniden çizildi.
+- Kalemler: PenType 14 tür (defaultWidthMm), InkTool'a NEON ve DOTTED eklendi (ordinal saklanır, yenileri sadece sona). Kalem hafızası
+  ToolState.penMemory (prefs penMemory, switchPen). Yazma desteği ToolState.smoothing (EMA, PdfDocumentView.addPoint; kalkınca rawLast'a tamamlanır).
+- Cetvel/açıölçer: pdf/GuideOverlay.kt, ToolState.guide (kaydedilmez); parmakla taşı/iki parmakla döndür, kenara oturma guideSnap.
+- Bilgi kartı çalışma: StudyDialog tam ekran, dönen kart, kaydırma. Widget: widget_exam.xml lacivert parıltı.
+- Asistan: AssistantSource.Course (ders PDF'lerinden özet), Dersler'de "Asistanla ders özeti".
+- Defter kapakları: Covers (prefs cover_<id>), CoverArt/CoverPicker; şablonlar WEEKLY, VOCAB, CORNELL_COLOR (PDFBox Helvetica: ı, ş, ğ, İ yazılmaz).
+- Çıkartmalar (Art.kt STICKERS, sticker_*.png; vm.importSticker → resim olarak eklenir), paletin üstünde son kullanılan renkler (customColors).
+- Sınav öncesi plan (ui/StudyTools.kt ExamPlanDialog, AssistantClient.studyPlan → kendi sınavlara task, slot Exam.PLAN_SLOT, hatırlatma yok),
+  deneme sınavı (PracticeSetupDialog/PracticeTestScreen, AssistantClient.practiceTest → Question; Dersler'de kart).
+- Konu haritası (ui/TopicMap.kt; vm.mastery = kaynak ilerlemesi + deneme puanı, prefs testScores JSON konu → %), ortak katalog
+  ön plana gelince 3 saatte bir yenilenir ve yeni kaynak sayısı bildirilir.
+- Speaking pratiği (ui/SpeakingScreen.kt; SpeechRecognizer en-US, duraklamada yeniden başlatılır; manifest <queries> RecognitionService;
+  AssistantClient.gradeSpeaking 4 ölçüt × 25, EssayFeedback; SpeakingStore filesDir/speaking yedeğe girer).
+- Katmanlar (ink/Layers.kt LayerSet, ink/<belge>/layers.json; Stroke.layer, InkStore v6; silgi/lasso sadece etkin katmanda,
+  gizli katman çizilmez/dışa aktarılmaz; sadece çizgiler, yazı/resim katmansız).
+- Sonsuz tuval: PaperSize.CANVAS 4800×4800 pt tek sayfa; PdfDocumentView canvasMode (genişlik ≥ CANVAS_MIN_PT): A4 ölçeğinde yerleşir,
+  minZoom tamamını gösterir, kaldığın yer prefs canvasView_<id>.
+- Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
+
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).
 3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),
 çizim ve bilgi kartı denemeleri, kalite katmanları, WebGL'siz statik görünüm. Logo: "A. Dengeli" (site/brand-src, make_logo.py).

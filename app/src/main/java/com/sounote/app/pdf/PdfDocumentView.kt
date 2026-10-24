@@ -29,7 +29,9 @@ import android.widget.OverScroller
 import java.io.File
 import com.sounote.app.ink.Eraser
 import com.sounote.app.ink.EraserMode
+import com.sounote.app.ink.GuideKind
 import com.sounote.app.ink.InkDocument
+import com.sounote.app.ink.LayerSet
 import com.sounote.app.ink.Clip
 import com.sounote.app.ink.ImageItem
 import com.sounote.app.ink.Images
@@ -85,9 +87,24 @@ class PdfDocumentView(context: Context) : View(context) {
             invalidate()
         }
 
+    /** Belgenin katmanları: gizliler çizilmez, yeni çizgi etkin katmana, silgi/lasso sadece etkin katmanda. */
+    var layers: LayerSet = LayerSet.DEFAULT
+        set(value) {
+            if (field == value) return
+            field = value
+            selection = null
+            discardInkNodes()
+            invalidate()
+        }
+
     var tools: ToolState = ToolState()
         set(value) {
             val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
+            if (value.guide != field.guide) {
+                guide.kind = value.guide
+                if (value.guide != GuideKind.NONE) guide.place(width, height)
+                invalidate()
+            }
             if (field.tool == Tool.LASSO && value.tool != Tool.LASSO) clearSelection()
             field = value
             if (formsChanged) {
@@ -148,6 +165,12 @@ class PdfDocumentView(context: Context) : View(context) {
     var onPlayAudio: ((file: String, ms: Long) -> Unit)? = null
 
     private val density = resources.displayMetrics.density
+
+    /** Cetvel / açıölçer (ekranda sabit). */
+    private val guide = GuideOverlay(density)
+    /** Bu çizgi hangi kenara oturuyor (0 = serbest). */
+    private var guideSnap = 0
+    private val snapOut = FloatArray(2)
     private val pageGap = 12f * density
 
     private var renderer: PdfRenderThread? = null
@@ -156,6 +179,15 @@ class PdfDocumentView(context: Context) : View(context) {
 
     // Yerleşim (belge koordinatı)
     private var fitWidth = 0f
+
+    /**
+     * Sonsuz tuval: sayfa çok genişse (PaperSize.CANVAS) sayfa ekrana sığdırılmaz; A4 genişliği ekranı
+     * dolduracak ölçekte yerleşir, her yöne kaydırılır ve uzaklaştırınca tamamı görünür.
+     */
+    private var canvasMode = false
+
+    /** Tuvalde açılışta gidilecek yer (merkez x/y oranı, yakınlaştırma); yoksa ortası. */
+    var pendingCanvasViewport: FloatArray? = null
     private var pageLefts = FloatArray(0)
     private var pageWidths = FloatArray(0)
     private var columnWidth = 0f
@@ -402,8 +434,9 @@ class PdfDocumentView(context: Context) : View(context) {
             anchorFrac = ((topDocY - pageTops[anchorPage]) / pageHeights[anchorPage]).coerceIn(-0.1f, 1f)
         }
 
-        fitWidth = width.toFloat()
-        columns = if (twoPage && width > height) 2 else 1
+        canvasMode = pageSizes[0].width >= CANVAS_MIN_PT
+        fitWidth = if (canvasMode) pageSizes[0].width * width / A4_WIDTH_PT else width.toFloat()
+        columns = if (twoPage && width > height && !canvasMode) 2 else 1
         columnWidth = if (columns == 2) (fitWidth - pageGap * 3) / 2f else fitWidth
         pageTops = FloatArray(n)
         pageHeights = FloatArray(n)
@@ -439,6 +472,16 @@ class PdfDocumentView(context: Context) : View(context) {
             (pageTops[anchorPage] - pageGap) * zoom
         } else {
             (pageTops[anchorPage] + anchorFrac * pageHeights[anchorPage]) * zoom
+        }
+        if (first && canvasMode) {
+            // Tuval: kaldığı yer ya da ortası
+            val v = pendingCanvasViewport
+            pendingCanvasViewport = null
+            if (v != null && v.size == 3) zoom = v[2].coerceIn(minZoom(), MAX_ZOOM)
+            val cx = (v?.get(0) ?: 0.5f) * fitWidth * zoom
+            val cy = (v?.get(1) ?: ((pageTops[0] + pageHeights[0] / 2) / contentHeight)) * contentHeight * zoom
+            offsetX = cx - width / 2f
+            offsetY = cy - height / 2f
         }
         clampOffsets()
         onViewportChanged()
@@ -689,11 +732,12 @@ class PdfDocumentView(context: Context) : View(context) {
             for (i in 1 until lassoCount) lassoPath.lineTo(lasso[i * 2], lasso[i * 2 + 1])
             canvas.drawPath(lassoPath, lassoPaint)
         }
+        if (guide.kind != GuideKind.NONE) guide.draw(canvas, pageScale(visibleRange().first) * GuideOverlay.PT_PER_MM)
     }
 
     private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
         val content = ink.content(page)
-        val strokes = content.strokes
+        val strokes = layers.arrange(content.strokes)
         val active = current?.takeIf { inputPage == page && !useFront }
         val hits = searchHits[page]
         val showOverlay = hits != null || (tools.tool == Tool.TEXT && (content.texts.isNotEmpty() || formFields[page]?.isNotEmpty() == true)) ||
@@ -765,7 +809,7 @@ class PdfDocumentView(context: Context) : View(context) {
         RenderNode("ink$page").apply {
             setPosition(0, 0, size.width, size.height)
             val c = beginRecording()
-            val strokes = ink.strokes(page)
+            val strokes = layers.arrange(ink.strokes(page))
             drawImages(c, page)
             // Fosforlu altta, kalem üstte.
             strokes.forEach { if (it.tool == InkTool.HIGHLIGHTER) strokeRenderer.draw(c, it) }
@@ -1033,6 +1077,12 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
 
+        // Cetvel/açıölçer tutuluyorsa parmak onu taşır, sayfa kaymaz.
+        if (guide.onTouch(event)) {
+            invalidate()
+            return
+        }
+
         trackTwoFingerTap(event)
 
         if (tools.tool == Tool.LASSO && handleFingerSelection(event)) return
@@ -1138,8 +1188,15 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun toPageY(page: Int, sy: Float) = (sy + offsetY - pageTops[page] * zoom) / pageScale(page)
 
     private fun beginInput(event: MotionEvent, idx: Int, fromStylus: Boolean, erase: Boolean) {
-        val x = event.getX(idx)
-        val y = event.getY(idx)
+        var x = event.getX(idx)
+        var y = event.getY(idx)
+        // Cetvel/açıölçer kenarına yakın başlayan kalem/fosforlu çizgisi kenara oturur.
+        guideSnap = if (!erase && (tools.tool == Tool.PEN || tools.tool == Tool.HIGHLIGHTER)) guide.snapMode(x, y) else 0
+        if (guideSnap != 0) {
+            guide.snap(guideSnap, x, y, snapOut)
+            x = snapOut[0]
+            y = snapOut[1]
+        }
         drawPointerId = event.getPointerId(idx)
         inputFromStylus = fromStylus
         erasing = erase
@@ -1199,11 +1256,14 @@ class PdfDocumentView(context: Context) : View(context) {
                     it.audioFile = file
                     it.audioMs = ms
                 }
+                it.layer = layers.active
             }
             // Bant her zaman düz şerit.
             straightLine = (highlighter && t.highlighterStraight) || tape
             shapeStartX = current!!.points[0]
             shapeStartY = current!!.points[1]
+            rawLastX = shapeStartX
+            rawLastY = shapeStartY
             snapped = false
             holdX = x
             holdY = y
@@ -1293,6 +1353,10 @@ class PdfDocumentView(context: Context) : View(context) {
     // ---- Şekil düzeltme: çizginin sonunda kalemi bekletince ----
 
     private var snapped = false
+
+    /** Son ham (süzülmemiş) kalem konumu, sayfa noktası. */
+    private var rawLastX = 0f
+    private var rawLastY = 0f
     private var straightLine = false
     private var shapeMode = false
     private var shapeStartX = 0f
@@ -1302,7 +1366,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private val holdCheck = Runnable {
         val b = current ?: return@Runnable
-        if (snapped || erasing) return@Runnable
+        if (snapped || erasing || guideSnap != 0) return@Runnable
         val lineOnly = b.tool == InkTool.HIGHLIGHTER
         val shape = ShapeRecognizer.recognize(b.points, b.count, lineOnly) ?: return@Runnable
         b.replaceAll(shape.points, shape.count)
@@ -1328,8 +1392,9 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun addPoint(b: StrokeBuilder, sx: Float, sy: Float, rawPressure: Float) {
-        var x = toPageX(inputPage, sx)
-        var y = toPageY(inputPage, sy)
+        if (guideSnap != 0) guide.snap(guideSnap, sx, sy, snapOut) else { snapOut[0] = sx; snapOut[1] = sy }
+        var x = toPageX(inputPage, snapOut[0])
+        var y = toPageY(inputPage, snapOut[1])
         if (straightLine) {
             // Düz fosforlu: başlangıçtan bu noktaya tek çizgi; yataya/dikeye yakınsa ona oturt.
             val x0 = b.points[0]
@@ -1340,6 +1405,15 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
         val p = if (b.pressureSensitive) b.lastPressure * 0.5f + tools.applyPressureCurve(rawPressure) * 0.5f else 1f
+        // Yazma desteği: el titremesini süz; çizgi kalemin biraz gerisinden yumuşakça gelir
+        // (kalem kalkınca son noktaya tamamlanır, bkz. endInput).
+        rawLastX = x
+        rawLastY = y
+        if (tools.smoothing > 0f && !shapeMode && guideSnap == 0) {
+            val k = 1f - tools.smoothing.coerceIn(0f, 1f) * 0.8f
+            x = b.lastX + (x - b.lastX) * k
+            y = b.lastY + (y - b.lastY) * k
+        }
         val minStep = MIN_POINT_DISTANCE_PX / pageScale(inputPage)
         val dx = x - b.lastX
         val dy = y - b.lastY
@@ -1354,7 +1428,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun updatePrediction(event: MotionEvent) {
         predictedCount = 0
         val p = predictor ?: return
-        if (!inputFromStylus) return
+        if (!inputFromStylus || guideSnap != 0) return
         p.record(event)
         val b = current ?: return
         val target = (SystemClock.uptimeMillis() + PREDICTION_MS) * 1_000_000L
@@ -1384,7 +1458,10 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun eraseAlong(ax: Float, ay: Float, bx: Float, by: Float) {
         val page = pageAtScreen(bx, by)
         if (ink.content(page).isEmpty) return
-        val strokes = ink.strokes(page)
+        // Sadece etkin katmandaki çizgiler silinir; ötekiler olduğu gibi kalır.
+        val all = ink.strokes(page)
+        val strokes = if (layers.single) all else all.filter { layers.editable(it) }
+        val locked = if (layers.single) emptyList() else all.filter { !layers.editable(it) }
         val r = tools.eraserSizeDp * density / pageScale(page)
         val x0 = toPageX(page, ax)
         val y0 = toPageY(page, ay)
@@ -1393,7 +1470,7 @@ class PdfDocumentView(context: Context) : View(context) {
         val result = when (tools.eraserMode) {
             EraserMode.STROKE -> Eraser.eraseStrokes(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
             EraserMode.PRECISE -> Eraser.erasePrecise(strokes, x0, y0, x1, y1, r, tools.eraserHighlighterOnly)
-        }
+        }?.let { if (locked.isEmpty()) it else locked + it }
         val before = ink.content(page)
         // İstenirse yazı kutuları ve resimler de (silginin değdiği) silinir.
         var texts = before.texts
@@ -1427,6 +1504,12 @@ class PdfDocumentView(context: Context) : View(context) {
         }
         if (shapeMode && current?.let { it.count < 2 } == true) current = null
         current?.let { s ->
+            // Yazma desteği geride bıraktıysa çizgiyi kalemin kalktığı yere kadar tamamla.
+            if (!snapped && !straightLine && !shapeMode && s.count > 1 &&
+                kotlin.math.hypot(rawLastX - s.lastX, rawLastY - s.lastY) > 0.05f
+            ) {
+                s.add(rawLastX, rawLastY, s.lastPressure)
+            }
             val stroke = s.build()
             // Akıllı fosforlu: altındaki metin satırlarına oturt (şekle dönmediyse).
             val snappedLines = if (stroke.tool == InkTool.HIGHLIGHTER && tools.smartHighlighter && !snapped) {
@@ -1736,7 +1819,7 @@ class PdfDocumentView(context: Context) : View(context) {
                     poly[i * 2] = toPageX(page, lasso[i * 2])
                     poly[i * 2 + 1] = toPageY(page, lasso[i * 2 + 1])
                 }
-                val sel = Selections.select(page, ink.content(page), poly, lassoCount)
+                val sel = Selections.select(page, ink.content(page), poly, lassoCount) { layers.editable(it) && layers.visible(it) }
                 selection = if (sel.isEmpty) null else sel
                 // Çizilen alan (notsuz olsa da): "Asistana sor" bu bölgenin PDF metnini kullanır.
                 val bounds = RectF(poly[0], poly[1], poly[0], poly[1])
@@ -1882,19 +1965,19 @@ class PdfDocumentView(context: Context) : View(context) {
         val clip = clipboard ?: return
         val page = currentPage.coerceIn(0, pageTops.size - 1)
         val offset = if (selection?.page == page) 16f else 0f
-        val (content, sel) = Selections.paste(page, ink.content(page), clip, offset, offset)
+        val (content, sel) = Selections.paste(page, ink.content(page), clip, offset, offset, layers.active)
         changing { ink.commit(page, content) }
         selection = sel
         notifySelection()
     }
 
     /** Resmi bakılan sayfanın ortasına, sayfa genişliğinin yarısı boyunda ekler ve seçer. */
-    fun insertImage(file: String, pixelWidth: Int, pixelHeight: Int) {
+    fun insertImage(file: String, pixelWidth: Int, pixelHeight: Int, widthFraction: Float = 0.5f) {
         if (pageTops.isEmpty() || pixelWidth <= 0 || pixelHeight <= 0) return
         val page = currentPage.coerceIn(0, pageTops.size - 1)
         val pageW = pageSizes[page].width.toFloat()
         val pageH = pageSizes[page].height.toFloat()
-        var w = pageW * 0.5f
+        var w = pageW * widthFraction
         var h = w * pixelHeight / pixelWidth
         if (h > pageH * 0.6f) {
             h = pageH * 0.6f
@@ -2158,8 +2241,21 @@ class PdfDocumentView(context: Context) : View(context) {
         }
     }
 
+    /** En uzak yakınlaştırma: tuvalde tamamı görünsün. */
+    private fun minZoom() = if (canvasMode && fitWidth > 0f) min(MIN_ZOOM, width / fitWidth * 0.95f) else MIN_ZOOM
+
+    /** Tuvalde ekranın ortası (içerik oranı) ve yakınlaştırma: kaldığı yeri saklamak için. */
+    fun canvasViewport(): FloatArray? {
+        if (!canvasMode || fitWidth == 0f || contentHeight == 0f) return null
+        return floatArrayOf(
+            ((offsetX + width / 2f) / zoom / fitWidth).coerceIn(0f, 1f),
+            ((offsetY + height / 2f) / zoom / contentHeight).coerceIn(0f, 1f),
+            zoom,
+        )
+    }
+
     private fun zoomAround(newZoom: Float, focusX: Float, focusY: Float) {
-        val z = newZoom.coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val z = newZoom.coerceIn(minZoom(), MAX_ZOOM)
         if (z == zoom) return
         val docX = (focusX + offsetX) / zoom
         val docY = (focusY + offsetY) / zoom
@@ -2190,6 +2286,9 @@ class PdfDocumentView(context: Context) : View(context) {
 
     companion object {
         private const val MIN_ZOOM = 0.4f
+        /** Bu genişlikten (nokta) büyük sayfa tuval sayılır. */
+        const val CANVAS_MIN_PT = 3000f
+        private const val A4_WIDTH_PT = 595f
         private const val MAX_ZOOM = 6f
         private const val DOUBLE_TAP_ZOOM = 2.5f
         private const val MAX_BASE_WIDTH = 2200f

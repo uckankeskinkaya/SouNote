@@ -77,7 +77,7 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
     val isEvren = url.contains("ssyz.org.tr")
     val keyHint = when {
         trimmed.isEmpty() -> null
-        trimmed.startsWith("evren_llm_") -> "✓ Evren anahtarı" to true
+        trimmed.startsWith("evren_llm_") -> "Evren anahtarı" to true
         isEvren -> "Evren anahtarı \"evren_llm_\" ile başlar. Tamamını kopyaladığından emin ol." to false
         else -> null
     }
@@ -93,12 +93,12 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                 runCatching { AssistantClient.chat(c, listOf(ChatMessage("user", "Reply with only: OK"))) }
             }
             test = result.fold(
-                onSuccess = { TestState.Done(true, "Asistan hazır 🎉 Artık soru sorabilirsin.") },
+                onSuccess = { TestState.Done(true, "Asistan hazır. Artık soru sorabilirsin.") },
                 onFailure = { e ->
                     when (e) {
                         is TermsNotAcceptedException -> TestState.Done(
                             true,
-                            "Anahtar doğru ✓ Son adım: asistana ilk soruyu sorunca Evren'in kullanım şartları çıkacak, okuyup onayla.",
+                            "Anahtar doğru. Son adım: asistana ilk soruyu sorunca Evren'in kullanım şartları çıkacak, okuyup onayla.",
                         )
                         else -> TestState.Done(false, e.message ?: "Bağlanılamadı. İnternetini kontrol et.")
                     }
@@ -147,7 +147,7 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                         val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(context)?.toString()?.trim()
                             ?.let { key = it; test = TestState.Idle }
-                    }) { Text("📋 Panodan yapıştır") }
+                    }) { Text("Panodan yapıştır") }
                     keyHint?.let { (text, ok) ->
                         Text(
                             text,
@@ -216,13 +216,13 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
         ) {
             val free = LocalDate.now().isBefore(EVREN_FREE_UNTIL)
             InfoLine(
-                "💸",
+                SouIcons.Info,
                 if (free) "Evren 1 Kasım 2026'ya kadar ücretsiz. Sonrası için Evren'in duyurularına bak."
                 else "Ücret ve kota bilgisi için Evren sitesine bak; ücretsiz dönem 1 Kasım 2026'da bitti.",
             )
-            InfoLine("📊", "Günlük kullanım sınırı var; dolarsa ertesi gün yenilenir.")
-            InfoLine("🔒", "Anahtarın sadece bu cihazda saklanır ve sadece Evren'e gönderilir. Kimseyle paylaşma.")
-            InfoLine("🙂", "e-Devlet şifren yoksa sorun değil: asistan dışında uygulamanın her şeyi çalışır.")
+            InfoLine(SouIcons.BarChart, "Günlük kullanım sınırı var.")
+            InfoLine(SouIcons.Lock, "Anahtarın sadece bu cihazda saklanır. Kimseyle paylaşma.")
+            InfoLine(SouIcons.Person, "e-Devlet şifren yoksa asistan dışında her şey çalışır.")
         }
     }
 }
@@ -248,9 +248,9 @@ private fun SetupStep(n: Int, title: String, body: String?, content: (@Composabl
 }
 
 @Composable
-private fun InfoLine(emoji: String, text: String) {
+private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(emoji, fontSize = 14.sp)
+        androidx.compose.material3.Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

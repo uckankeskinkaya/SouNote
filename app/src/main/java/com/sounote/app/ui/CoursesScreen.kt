@@ -34,9 +34,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -107,22 +104,22 @@ fun CoursesScreen(vm: LibraryViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text(course?.let { "${it.emoji} ${it.name}".trim() } ?: "Dersler") },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                title = { Text(course?.name ?: "Dersler") },
                 navigationIcon = {
                     if (course != null) {
-                        IconButton(onClick = { selected = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
+                        IconButton(onClick = { selected = null }) { Icon(SouIcons.ArrowBack, contentDescription = "Geri") }
                     }
                 },
                 actions = {
                     if (course != null) {
                         FavoriteButton(vm.isFavorite(QuickItem.COURSE, course.id), onToggle = { vm.toggleFavorite(QuickItem.COURSE, course.id) })
                     }
-                    IconButton(onClick = { vm.refreshCatalog() }) { Icon(Icons.Default.Refresh, contentDescription = "Yenile") }
+                    IconButton(onClick = { vm.refreshCatalog() }) { Icon(SouIcons.Refresh, contentDescription = "Yenile") }
                 },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -145,7 +142,7 @@ private fun EmptyCatalog(vm: LibraryViewModel) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.widthIn(max = 520.dp).padding(32.dp),
     ) {
-        Text("📚", fontSize = 48.sp)
+        Icon(SouIcons.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
         Text("Ders kaynakları henüz yüklenmedi", style = MaterialTheme.typography.titleMedium)
         Text(
             vm.catalogError ?: "Ortak liste internetten indirilir. İnternete bağlıyken yenile.",
@@ -172,61 +169,49 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
         if (vm.catalog.termStart != 0L) {
             item(span = { GridItemSpan(maxLineSpan) }) { ViewSwitch(byWeek = false, onTopics = {}, onWeeks = onWeeks) }
         }
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                "Bütün ders kaynakları konulara göre ayrıldı. Bu liste herkes için ortak; yeni kaynak eklenince burada görünür." +
-                    (if (vm.catalog.updated.isNotEmpty()) " Son güncelleme: ${vm.catalog.updated}" else ""),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         items(vm.catalog.courses, key = { it.id }) { c ->
             Box(Modifier.animateItem().appear(vm.catalog.courses.indexOf(c)).pressScale(), propagateMinConstraints = true) {
                 val topicIds = c.topics.map { it.id }.toSet()
                 val next = upcoming.firstOrNull { e -> e.topics.any { it in topicIds } }
                 val color = Color(c.color)
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
-                        .aspectRatio(0.95f)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f).compositeOver(Color.Black))))
+                        .card()
                         .clickable { onOpen(c) }
-                        .padding(16.dp),
+                        .padding(14.dp),
                 ) {
                     Row(verticalAlignment = Alignment.Top) {
-                        Text(c.emoji, fontSize = 36.sp, modifier = Modifier.weight(1f))
-                        if (vm.isFavorite(QuickItem.COURSE, c.id)) Text("★", color = Color(0xFFFFD54F), fontSize = 20.sp)
+                        CourseArt(c, if (narrow) 52.dp else 60.dp)
+                        Box(Modifier.weight(1f))
+                        if (vm.isFavorite(QuickItem.COURSE, c.id)) {
+                            Icon(SouIcons.StarFilled, contentDescription = "Favori", tint = LocalSouColors.current.star, modifier = Modifier.size(18.dp))
+                        }
                     }
-                    Text(c.name, color = Color.White, style = if (narrow) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        c.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
                     Text(
                         "${c.topics.size} konu · ${c.topics.sumOf { it.resources.size }} kaynak",
-                        color = Color.White.copy(alpha = 0.85f),
-                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                     val (done, total) = vm.progressOf(c.topics.flatMap { it.resources })
                     if (total > 0) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            ProgressBar(
-                                done / total.toFloat(),
-                                color = Color.White,
-                                modifier = Modifier.weight(1f).graphicsLayer { alpha = 0.95f },
-                            )
-                            Text(
-                                "  ${(100 * done / total)}%",
-                                color = Color.White,
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
+                        ProgressBar(done / total.toFloat(), Modifier.fillMaxWidth().padding(top = 8.dp), color = color, height = 4.dp)
                     }
                     if (next != null) {
                         Text(
-                            "${next.kindEmoji} ${next.title} · ${countdownText(next.time)}",
-                            color = Color.White,
+                            "${next.title} · ${countdownText(next.time)}",
+                            color = countdownColor(next.time),
                             style = MaterialTheme.typography.labelMedium,
-                            maxLines = 2,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.18f)).padding(6.dp),
+                            modifier = Modifier.padding(top = 4.dp),
                         )
                     }
                 }
@@ -238,6 +223,25 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
 @Composable
 private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<String>, onToggle: (String) -> Unit) {
     val context = LocalContext.current
+    var summaryOpen by remember { mutableStateOf(false) }
+    var testOpen by remember { mutableStateOf(false) }
+    var mapOpen by remember { mutableStateOf(false) }
+    var speakingOpen by remember { mutableStateOf(false) }
+    if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
+    if (testOpen) PracticeSetupDialog(vm, course) { testOpen = false }
+    if (mapOpen) {
+        TopicMapScreen(vm, course, onOpenTopic = { t ->
+            mapOpen = false
+            if (t.id !in expanded) onToggle(t.id)
+        }) { mapOpen = false }
+    }
+    if (summaryOpen) {
+        AssistantDialog(
+            vm,
+            AssistantSource.Course(course.name, vm.courseDocs(course)),
+            prefill = "Bu dersin konularını tek sayfada başlıklar ve maddelerle özetle",
+        ) { summaryOpen = false }
+    }
     val now = System.currentTimeMillis()
     val exams = vm.allExams.filter { it.time > now - 3 * 3_600_000L }
     LazyColumn(
@@ -246,11 +250,69 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
     ) {
         item { CourseHeader(vm, course) }
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().card().clickable { mapOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                IconBadge(SouIcons.AccountTree, Color(course.color))
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Konu haritası", style = MaterialTheme.typography.titleSmall)
+                    Text("Hangi konuda ne kadar hazırsın", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         val docs = vm.courseDocs(course)
+        if ("speaking" in (course.id + course.name).lowercase()) {
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().card().clickable { speakingOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    IconBadge(SouIcons.Mic, Color(course.color))
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text("Speaking pratiği", style = MaterialTheme.typography.titleSmall)
+                        Text("Konuş, yazıya dökülsün, asistan puanlasın", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        item {
+            // Asistan konudan çoktan seçmeli deneme sınavı hazırlar (indirilmiş PDF'ler varsa onlardan).
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().card().clickable { testOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                IconBadge(SouIcons.Quiz, LocalSouColors.current.success)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Deneme sınavı", style = MaterialTheme.typography.titleSmall)
+                    Text("Konudan çoktan seçmeli test, anında puan", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (docs.isNotEmpty()) {
+            item {
+                // Asistan bu dersin indirilmiş bütün PDF'lerini okuyup özet çıkarır.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().card().clickable { summaryOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    IconBadge(SouIcons.StarShine)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text("Asistanla ders özeti", style = MaterialTheme.typography.titleSmall)
+                        Text("${docs.size} belgeden özet, kelimeler ve sorular", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         if (docs.isNotEmpty()) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SectionHeader("Son açılan belgeler", subtitle = "Bu dersten indirdiklerin")
+                    SectionHeader("Son açılan belgeler")
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         items(docs.take(10), key = { "cd" + it.id }) { d ->
                             Box(Modifier.width(120.dp).pressScale()) {
@@ -266,7 +328,7 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
             Box(Modifier.animateItem(), propagateMinConstraints = true) {
                 val related = exams.filter { topic.id in it.topics }
                 TopicCard(
-                    vm, course, topic, related.map { "${it.kindEmoji} ${it.title} · ${countdownText(it.time)}" },
+                    vm, course, topic, related.map { "${it.title} · ${countdownText(it.time)}" },
                     open = topic.id in expanded,
                     onToggle = { onToggle(topic.id) },
                     onOpenLink = { res ->
@@ -275,16 +337,6 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
                     },
                 )
             }
-        }
-        item {
-            Text(
-                "PDF'ler \"İndir\" ile kütüphanende \"${course.name}\" klasörüne gelir; üstüne kalemle çalışabilirsin. " +
-                    "Word ve sunumlar \"Aç ↗\" ile WPS/Office'te açılır; oradan PDF olarak SouNote'a paylaşırsan kütüphanene gelir. " +
-                    "Videolar Drive'da açılır.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
-            )
         }
     }
 }
@@ -300,37 +352,31 @@ private fun CourseHeader(vm: LibraryViewModel, course: Course) {
     val next = vm.allExams.firstOrNull { e -> e.time > now && e.topics.any { it in topicIds } }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f).compositeOver(Color.Black))))
-            .padding(20.dp),
+        modifier = Modifier.fillMaxWidth().card().padding(16.dp),
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(course.emoji, fontSize = 34.sp)
-            Text(course.name, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+        CourseArt(course, 64.dp)
+        Column(Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                "${course.topics.size} konu · ${resources.size} kaynak · ${vm.courseDocs(course).size} indirilen belge",
-                color = Color.White.copy(alpha = 0.88f),
-                style = MaterialTheme.typography.labelLarge,
+                "${course.topics.size} konu · ${resources.size} kaynak",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
             )
             if (next != null) {
                 Text(
-                    "${next.kindEmoji} ${next.title} · ${countdownText(next.time)}",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.18f)).padding(6.dp),
+                    "${next.title} · ${countdownText(next.time)}",
+                    color = countdownColor(next.time),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
         if (total > 0) {
             ProgressRing(
                 done / total.toFloat(),
-                size = 72.dp,
-                stroke = 7.dp,
-                color = Color.White,
-                track = Color.White.copy(alpha = 0.25f),
-                labelColor = Color.White,
+                size = 56.dp,
+                stroke = 5.dp,
+                color = color,
             )
         }
     }
@@ -394,7 +440,7 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
     ) {
-        Text(icon, fontSize = 20.sp)
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         Text(
             res.title,
             style = MaterialTheme.typography.bodyMedium,
@@ -412,7 +458,7 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
             res.isOffice -> Row {
                 TextButton(onClick = { onOpenLink(res) }) { Text("Drive", maxLines = 1) }
                 TextButton(onClick = { vm.downloadForOtherApp(res) { openInOtherApp(context, vm, it, res) } }) {
-                    Text("Aç ↗", maxLines = 1)
+                    Text("Aç", maxLines = 1)
                 }
             }
             else -> TextButton(onClick = { onOpenLink(res) }) { Text("Drive'da aç") }
@@ -440,8 +486,8 @@ private fun openInOtherApp(context: Context, vm: LibraryViewModel, file: File, r
 @Composable
 private fun ViewSwitch(byWeek: Boolean, onTopics: () -> Unit, onWeeks: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-        androidx.compose.material3.FilterChip(selected = !byWeek, onClick = onTopics, label = { Text("📚 Konular", maxLines = 1) })
-        androidx.compose.material3.FilterChip(selected = byWeek, onClick = onWeeks, label = { Text("🗓️ Haftalar", maxLines = 1) })
+        androidx.compose.material3.FilterChip(selected = !byWeek, onClick = onTopics, label = { Text("Konular", maxLines = 1) })
+        androidx.compose.material3.FilterChip(selected = byWeek, onClick = onWeeks, label = { Text("Haftalar", maxLines = 1) })
     }
 }
 
@@ -504,7 +550,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                                 modifier = Modifier.weight(1f).height(8.dp).clip(RoundedCornerShape(4.dp)),
                             )
                             Text(
-                                if (done == tasks.size) "  Tamam 🎉" else "  $done/${tasks.size}",
+                                if (done == tasks.size) "  Tamam" else "  $done/${tasks.size}",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
                             )
@@ -512,7 +558,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                     }
                     weekExams.forEach { e ->
                         Text(
-                            "${e.kindEmoji} ${e.title} · ${countdownText(e.time)}",
+                            "${e.title} · ${countdownText(e.time)}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = countdownColor(e.time),
                             fontWeight = FontWeight.SemiBold,
@@ -549,7 +595,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                                     modifier = Modifier.fillMaxWidth().padding(end = 16.dp, top = 2.dp, bottom = 2.dp),
                                 ) {
                                     Checkbox(checked = key in vm.doneItems, onCheckedChange = { vm.toggleDone(key) })
-                                    Text(kindIcon(item.kind), fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
+                                    Icon(kindIcon(item.kind), contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(20.dp))
                                     Text(
                                         item.title,
                                         style = MaterialTheme.typography.bodyMedium,
@@ -584,11 +630,11 @@ private val DAY_NAMES = mapOf(
 )
 
 private fun kindIcon(kind: String) = when (kind) {
-    "pdf" -> "📄"
-    "pptx" -> "📊"
-    "docx" -> "📝"
-    "video" -> "🎬"
-    "audio" -> "🎧"
-    "html" -> "🧪"
-    else -> "🔗"
+    "pdf" -> SouIcons.PictureAsPdf
+    "pptx" -> SouIcons.Slideshow
+    "docx" -> SouIcons.Description
+    "video" -> SouIcons.PlayArrow
+    "audio" -> SouIcons.Headphones
+    "html" -> SouIcons.Quiz
+    else -> SouIcons.Link
 }

@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 
 /*
- * SouNote 2.0 tasarım sistemi: renk paletleri, vurgu rengi, tipografi, köşe ve boşluk token'ları.
+ * SouNote 3 tasarım sistemi (sade: nötr yüzeyler, tek vurgu rengi, emoji yerine simgeler): renk paletleri, vurgu rengi, tipografi, köşe ve boşluk token'ları.
  * Sabit tema: sistemin dinamik renkleri (HyperOS) bazı yüzeyleri düşük kontrastlı yapıyordu.
  * PDF sayfaları ve notların renkleri temadan etkilenmez (sayfa her zaman kendi rengiyle çizilir).
  */
@@ -38,40 +38,41 @@ import androidx.core.graphics.ColorUtils
 
 /** Koyu temanın yüzeyleri. Açık tema her zaman "SouNote Light". */
 enum class DarkPalette(val label: String, val description: String, val preview: Long) {
-    OBSIDIAN("Obsidian Purple", "Obsidyen yüzeyler, mor ve indigo vurgular", 0xFF13121C),
-    MIDNIGHT("Midnight Blue", "Gece mavisi, elektrik mavisi ve camgöbeği", 0xFF0E1527),
-    GRAPHITE("Grafit", "Nötr koyu gri (1.0 görünümü)", 0xFF16181C),
+    OBSIDIAN("Obsidyen", "Mor tonlu", 0xFF13121C),
+    MIDNIGHT("Lacivert", "Logodaki lacivert", 0xFF0A1029),
+    GRAPHITE("Grafit", "Nötr gri", 0xFF151619),
 }
 
 private val SouNoteLight = lightColorScheme(
-    primary = Color(0xFF4F46E5),
+    // Logonun elektrik mavisi ile lavantası arası: mavi-mor vurgu
+    primary = Color(0xFF3A4BE0),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE2E0FF),
-    onPrimaryContainer = Color(0xFF17126B),
-    secondary = Color(0xFF5A5D72),
+    primaryContainer = Color(0xFFDFE3FF),
+    onPrimaryContainer = Color(0xFF0A1563),
+    secondary = Color(0xFF5B5D78),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE3E4F2),
-    onSecondaryContainer = Color(0xFF1B1D2E),
-    tertiary = Color(0xFF00687A),
+    secondaryContainer = Color(0xFFE4E5F5),
+    onSecondaryContainer = Color(0xFF1A1C33),
+    tertiary = Color(0xFF6E4FD8),
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFCFEFF5),
-    onTertiaryContainer = Color(0xFF00313A),
-    background = Color(0xFFF6F6FA),
-    onBackground = Color(0xFF1A1B23),
-    surface = Color(0xFFFBFBFE),
-    onSurface = Color(0xFF1A1B23),
-    surfaceVariant = Color(0xFFE4E4EE),
-    onSurfaceVariant = Color(0xFF4A4B5A),
-    surfaceTint = Color(0xFF4F46E5),
-    outline = Color(0xFF777889),
-    outlineVariant = Color(0xFFCDCED9),
-    surfaceBright = Color(0xFFFBFBFE),
-    surfaceDim = Color(0xFFDCDCE4),
+    tertiaryContainer = Color(0xFFEAE2FF),
+    onTertiaryContainer = Color(0xFF250F66),
+    background = Color(0xFFF4F5FB),
+    onBackground = Color(0xFF14162B),
+    surface = Color(0xFFF8F9FE),
+    onSurface = Color(0xFF14162B),
+    surfaceVariant = Color(0xFFE3E5F2),
+    onSurfaceVariant = Color(0xFF555970),
+    surfaceTint = Color(0xFF3A4BE0),
+    outline = Color(0xFF7C8098),
+    outlineVariant = Color(0xFFD8DBEA),
+    surfaceBright = Color(0xFFF8F9FE),
+    surfaceDim = Color(0xFFD8DAE8),
     surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFF3F3F8),
-    surfaceContainer = Color(0xFFEDEDF4),
-    surfaceContainerHigh = Color(0xFFE7E7EF),
-    surfaceContainerHighest = Color(0xFFE1E1EA),
+    surfaceContainerLow = Color(0xFFEFF0F9),
+    surfaceContainer = Color(0xFFE9EBF6),
+    surfaceContainerHigh = Color(0xFFE3E5F2),
+    surfaceContainerHighest = Color(0xFFDDE0EE),
 )
 
 private val Obsidian = darkColorScheme(
@@ -106,65 +107,66 @@ private val Obsidian = darkColorScheme(
 )
 
 private val Midnight = darkColorScheme(
-    primary = Color(0xFF7AB8FF),
-    onPrimary = Color(0xFF00305F),
-    primaryContainer = Color(0xFF0F4C99),
-    onPrimaryContainer = Color(0xFFD6E6FF),
-    secondary = Color(0xFFBAC6E0),
-    onSecondary = Color(0xFF243048),
-    secondaryContainer = Color(0xFF2A3854),
-    onSecondaryContainer = Color(0xFFD9E3F8),
-    tertiary = Color(0xFF5FE1E6),
-    onTertiary = Color(0xFF00373A),
-    tertiaryContainer = Color(0xFF004F55),
-    onTertiaryContainer = Color(0xFFA8F4F7),
-    background = Color(0xFF0A1020),
-    onBackground = Color(0xFFE6ECF8),
-    surface = Color(0xFF0E1527),
-    onSurface = Color(0xFFE6ECF8),
-    surfaceVariant = Color(0xFF22304A),
-    onSurfaceVariant = Color(0xFFB9C5DB),
-    surfaceTint = Color(0xFF7AB8FF),
-    outline = Color(0xFF8090AD),
-    outlineVariant = Color(0xFF34435F),
-    surfaceBright = Color(0xFF2E3B57),
-    surfaceDim = Color(0xFF0A1020),
-    surfaceContainerLowest = Color(0xFF070C18),
-    surfaceContainerLow = Color(0xFF111A2E),
-    surfaceContainer = Color(0xFF152036),
-    surfaceContainerHigh = Color(0xFF1C2942),
-    surfaceContainerHighest = Color(0xFF24334F),
+    // Logonun lacivert zemini ve mavi-lavanta ışıkları
+    primary = Color(0xFFA9B8FF),
+    onPrimary = Color(0xFF0A1A6B),
+    primaryContainer = Color(0xFF2638B8),
+    onPrimaryContainer = Color(0xFFDDE3FF),
+    secondary = Color(0xFFC3C8EA),
+    onSecondary = Color(0xFF232A4D),
+    secondaryContainer = Color(0xFF242C55),
+    onSecondaryContainer = Color(0xFFDDE1F8),
+    tertiary = Color(0xFFC9B8FF),
+    onTertiary = Color(0xFF2E1772),
+    tertiaryContainer = Color(0xFF41308E),
+    onTertiaryContainer = Color(0xFFE8DFFF),
+    background = Color(0xFF060B22),
+    onBackground = Color(0xFFE6E9F8),
+    surface = Color(0xFF0A1029),
+    onSurface = Color(0xFFE6E9F8),
+    surfaceVariant = Color(0xFF1F2850),
+    onSurfaceVariant = Color(0xFFB5BCDB),
+    surfaceTint = Color(0xFFA9B8FF),
+    outline = Color(0xFF7C86B0),
+    outlineVariant = Color(0xFF263161),
+    surfaceBright = Color(0xFF283466),
+    surfaceDim = Color(0xFF060B22),
+    surfaceContainerLowest = Color(0xFF040819),
+    surfaceContainerLow = Color(0xFF0C1330),
+    surfaceContainer = Color(0xFF101839),
+    surfaceContainerHigh = Color(0xFF162045),
+    surfaceContainerHighest = Color(0xFF1D2851),
 )
 
 private val Graphite = darkColorScheme(
-    primary = Color(0xFFA9BEFF),
-    onPrimary = Color(0xFF0B2A73),
-    primaryContainer = Color(0xFF23439F),
-    onPrimaryContainer = Color(0xFFDCE4FF),
-    secondary = Color(0xFFBCC6DC),
-    onSecondary = Color(0xFF263041),
-    secondaryContainer = Color(0xFF3A4252),
-    onSecondaryContainer = Color(0xFFDCE2F0),
-    tertiary = Color(0xFFFFB86B),
-    onTertiary = Color(0xFF4A2800),
-    tertiaryContainer = Color(0xFF5E3A10),
-    onTertiaryContainer = Color(0xFFFFDCBE),
-    background = Color(0xFF111316),
-    onBackground = Color(0xFFE3E5EA),
-    surface = Color(0xFF16181C),
-    onSurface = Color(0xFFE3E5EA),
-    surfaceVariant = Color(0xFF2A2D34),
-    onSurfaceVariant = Color(0xFFC2C6CF),
-    surfaceTint = Color(0xFFA9BEFF),
-    outline = Color(0xFF8D929C),
-    outlineVariant = Color(0xFF50545E),
-    surfaceBright = Color(0xFF3A3D44),
-    surfaceDim = Color(0xFF111316),
-    surfaceContainerLowest = Color(0xFF0D0F12),
-    surfaceContainerLow = Color(0xFF1A1C20),
-    surfaceContainer = Color(0xFF1F2125),
-    surfaceContainerHigh = Color(0xFF292B30),
-    surfaceContainerHighest = Color(0xFF34363B),
+    primary = Color(0xFFB4B8FF),
+    onPrimary = Color(0xFF1F1F70),
+    primaryContainer = Color(0xFF34358A),
+    onPrimaryContainer = Color(0xFFE2E2FF),
+    secondary = Color(0xFFC3C6CF),
+    onSecondary = Color(0xFF2B2E35),
+    secondaryContainer = Color(0xFF2E3036),
+    onSecondaryContainer = Color(0xFFE0E2E8),
+    tertiary = Color(0xFF7FD3E3),
+    onTertiary = Color(0xFF00363F),
+    tertiaryContainer = Color(0xFF1C4048),
+    onTertiaryContainer = Color(0xFFCDEFF5),
+    background = Color(0xFF111214),
+    onBackground = Color(0xFFE8E9EC),
+    surface = Color(0xFF151619),
+    onSurface = Color(0xFFE8E9EC),
+    surfaceVariant = Color(0xFF2A2C31),
+    onSurfaceVariant = Color(0xFFB4B7BF),
+    surfaceTint = Color(0xFFB4B8FF),
+    outline = Color(0xFF8A8D96),
+    outlineVariant = Color(0xFF34363C),
+    surfaceBright = Color(0xFF37393F),
+    surfaceDim = Color(0xFF111214),
+    surfaceContainerLowest = Color(0xFF0C0D0F),
+    surfaceContainerLow = Color(0xFF17181B),
+    surfaceContainer = Color(0xFF1B1C20),
+    surfaceContainerHigh = Color(0xFF232529),
+    surfaceContainerHighest = Color(0xFF2C2E33),
 )
 
 // ---- Vurgu rengi ----
@@ -297,12 +299,8 @@ private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette):
     } else {
         listOf(scheme.primary, scheme.onPrimaryContainer)
     }
-    val aurora = when {
-        !dark -> Color.Transparent
-        palette == DarkPalette.MIDNIGHT -> Color(0xFF5FE1E6)
-        palette == DarkPalette.OBSIDIAN -> Color(0xFF8F7BFF)
-        else -> Color.Transparent
-    }
+    // Sade görünüm: koyu temada da parıltı yok.
+    val aurora = Color.Transparent
     return SouColors(
         isDark = dark,
         hero = hero,
@@ -311,7 +309,7 @@ private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette):
         warning = if (dark) Color(0xFFFFB86B) else Color(0xFFC2570C),
         danger = if (dark) Color(0xFFFF8A80) else Color(0xFFD64545),
         star = Color(0xFFF2B705),
-        cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.55f else 0.7f),
+        cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.6f else 0.55f),
     )
 }
 
@@ -328,8 +326,8 @@ private val SouTypography: Typography = Typography().let { t ->
         displaySmall = t.displaySmall.w(FontWeight.Bold),
         headlineLarge = t.headlineLarge.w(FontWeight.Bold, -0.25f),
         headlineMedium = t.headlineMedium.w(FontWeight.Bold),
-        headlineSmall = t.headlineSmall.w(FontWeight.Bold),
-        titleLarge = t.titleLarge.w(FontWeight.Bold),
+        headlineSmall = t.headlineSmall.w(FontWeight.SemiBold),
+        titleLarge = t.titleLarge.w(FontWeight.SemiBold),
         titleMedium = t.titleMedium.w(FontWeight.SemiBold, 0.1f),
         titleSmall = t.titleSmall.w(FontWeight.SemiBold, 0.1f),
         labelLarge = t.labelLarge.w(FontWeight.SemiBold, 0.1f),
@@ -431,7 +429,7 @@ private fun animated(target: ColorScheme, motion: MotionLevel): ColorScheme {
 @Composable
 fun SouNoteTheme(
     dark: Boolean? = null,
-    palette: DarkPalette = DarkPalette.OBSIDIAN,
+    palette: DarkPalette = DarkPalette.MIDNIGHT,
     accent: Accent = Accent.Auto,
     density: UiDensity = UiDensity.COMFORTABLE,
     motion: MotionLevel = MotionLevel.FULL,

@@ -69,11 +69,11 @@ object EssayText {
 /** Yazma koçunun bir önerisi: metindeki ifade → önerilen hali + neden. */
 data class CoachSuggestion(val original: String, val suggestion: String, val reason: String)
 
-enum class CoachMode(val label: String, val emoji: String, private val focus: String) {
-    GRAMMAR("Dil bilgisi", "🧩", "dil bilgisi (grammar) hataları: zaman, özne-yüklem uyumu, article, preposition, noktalama"),
-    VOCABULARY("Kelime seçimi", "📚", "kelime seçimi: tekrar eden, fazla basit ya da yanlış bağlamda kullanılan kelimeler için daha akademik/uygun alternatifler"),
-    SENTENCES("Cümle yapısı", "🔗", "cümle yapısı: çok uzun/kopuk cümleler, bağlaç (linker) eksikliği, cümle başlarının tekrarı"),
-    ORGANIZATION("Essay yapısı", "🏗️", "essay organizasyonu"),
+enum class CoachMode(val label: String, private val focus: String) {
+    GRAMMAR("Dil bilgisi", "dil bilgisi (grammar) hataları: zaman, özne-yüklem uyumu, article, preposition, noktalama"),
+    VOCABULARY("Kelime seçimi", "kelime seçimi: tekrar eden, fazla basit ya da yanlış bağlamda kullanılan kelimeler için daha akademik/uygun alternatifler"),
+    SENTENCES("Cümle yapısı", "cümle yapısı: çok uzun/kopuk cümleler, bağlaç (linker) eksikliği, cümle başlarının tekrarı"),
+    ORGANIZATION("Essay yapısı", "essay organizasyonu"),
     ;
 
     /** Öneri listesi isteyen modlar (organizasyon serbest değerlendirme döndürür). */

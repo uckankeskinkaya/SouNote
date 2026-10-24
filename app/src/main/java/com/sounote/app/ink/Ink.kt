@@ -5,7 +5,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Kayıtlı çizgi türü. Sıra diske yazıldığı için yeni tür sadece sona eklenir. */
-enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED, TAPE }
+/** Sıra dosyada saklanır (ordinal): yenileri sadece sona eklenir. */
+enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED, TAPE, NEON, DOTTED }
 
 /**
  * Tek bir çizgi. Koordinatlar sayfanın PDF noktası (1/72 inç) cinsinden; böylece
@@ -21,10 +22,12 @@ class Stroke(
     /** Ders kaydı sürerken çizildiyse: kayıt dosyası ve çizginin kayıttaki anı (ms). */
     val audioFile: String? = null,
     val audioMs: Long = 0L,
+    /** Katman kimliği (LayerSet); 0 = ilk katman. */
+    val layer: Int = 0,
 ) {
-    /** Aynı çizgi, yeni noktalar/renk/kalınlıkla (kayıt bağlantısı korunur). */
-    fun copy(color: Int = this.color, width: Float = this.width, points: FloatArray = this.points) =
-        Stroke(tool, color, width, pressureSensitive, points, audioFile, audioMs)
+    /** Aynı çizgi, yeni noktalar/renk/kalınlıkla (kayıt bağlantısı ve katman korunur). */
+    fun copy(color: Int = this.color, width: Float = this.width, points: FloatArray = this.points, layer: Int = this.layer) =
+        Stroke(tool, color, width, pressureSensitive, points, audioFile, audioMs, layer)
 
     val pointCount get() = points.size / 3
 
@@ -55,6 +58,7 @@ class StrokeBuilder(
     val pressureSensitive: Boolean,
     var audioFile: String? = null,
     var audioMs: Long = 0L,
+    var layer: Int = 0,
 ) {
     var points = FloatArray(3 * 256)
         private set
@@ -87,7 +91,7 @@ class StrokeBuilder(
         count = n
     }
 
-    fun build() = Stroke(tool, color, width, pressureSensitive, points.copyOf(count * 3), audioFile, audioMs)
+    fun build() = Stroke(tool, color, width, pressureSensitive, points.copyOf(count * 3), audioFile, audioMs, layer)
 }
 
 /**

@@ -22,14 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -77,18 +69,18 @@ private val TABS = listOf(
 )
 
 @Composable
-private fun TabIcon(tab: Tab) {
-    when (tab) {
-        Tab.HOME -> Icon(Icons.Default.Home, contentDescription = null)
-        Tab.LIBRARY -> Icon(painterResource(R.drawable.ic_folder), contentDescription = null)
-        Tab.COURSES -> Icon(painterResource(R.drawable.ic_pages), contentDescription = null)
-        Tab.EXAMS -> Icon(Icons.Default.DateRange, contentDescription = null)
-        Tab.WRITING -> Icon(Icons.Default.Create, contentDescription = null)
-        Tab.SETTINGS -> Icon(Icons.Default.Settings, contentDescription = null)
+private fun TabIcon(tab: Tab, selected: Boolean) {
+    val icon = when (tab) {
+        Tab.HOME -> if (selected) SouIcons.HomeFilled else SouIcons.Home
+        Tab.LIBRARY -> if (selected) SouIcons.FolderFilled else SouIcons.Folder
+        Tab.COURSES -> if (selected) SouIcons.SchoolFilled else SouIcons.School
+        Tab.EXAMS -> if (selected) SouIcons.CalendarMonthFilled else SouIcons.CalendarMonth
+        Tab.WRITING -> if (selected) SouIcons.EditNoteFilled else SouIcons.EditNote
+        Tab.SETTINGS -> if (selected) SouIcons.SettingsFilled else SouIcons.Settings
     }
+    Icon(icon, contentDescription = null)
 }
 
-/** Sekme adı tek satır kalsın: büyük yazı boyutunda "Kütüpha-ne" diye bölünmesin. */
 @Composable
 private fun TabLabel(label: String) {
     val scale = LocalDensity.current.fontScale
@@ -137,7 +129,7 @@ fun MainShell(vm: LibraryViewModel) {
         }
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    BoxWithConstraints(Modifier.fillMaxSize().souBackground()) {
         val kind = when {
             maxWidth < 600.dp -> NavKind.BAR
             vm.navStyle == NavStyle.RAIL -> NavKind.RAIL
@@ -157,7 +149,7 @@ fun MainShell(vm: LibraryViewModel) {
                 NavigationRail(
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                     header = {
-                        IconButton(onClick = toggleExpanded) { Icon(Icons.Default.Menu, contentDescription = "Menüyü genişlet") }
+                        IconButton(onClick = toggleExpanded) { Icon(SouIcons.Menu, contentDescription = "Menüyü genişlet") }
                         if (tall) AppLogo(40.dp, Modifier.padding(vertical = 8.dp), elevated = false)
                     },
                 ) {
@@ -169,14 +161,14 @@ fun MainShell(vm: LibraryViewModel) {
                             NavigationRailItem(
                                 selected = vm.tab == tab,
                                 onClick = { vm.tab = tab },
-                                icon = { TabIcon(tab) },
+                                icon = { TabIcon(tab, vm.tab == tab) },
                                 label = { TabLabel(label) },
                             )
                         }
                         NavigationRailItem(
                             selected = false,
                             onClick = { vm.searchOpen = true },
-                            icon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            icon = { Icon(SouIcons.Search, contentDescription = null) },
                             label = { TabLabel("Ara") },
                         )
                     }
@@ -190,7 +182,7 @@ fun MainShell(vm: LibraryViewModel) {
                             NavigationBarItem(
                                 selected = vm.tab == tab,
                                 onClick = { vm.tab = tab },
-                                icon = { TabIcon(tab) },
+                                icon = { TabIcon(tab, vm.tab == tab) },
                                 label = { TabLabel(label) },
                             )
                         }
@@ -234,14 +226,14 @@ private fun NavDrawer(vm: LibraryViewModel, tall: Boolean, onCollapse: () -> Uni
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
             if (tall) AppLogo(36.dp, Modifier.padding(start = 8.dp, end = 10.dp), elevated = false)
             Text("SouNote", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            IconButton(onClick = onCollapse) { Icon(Icons.Default.Menu, contentDescription = "Menüyü daralt") }
+            IconButton(onClick = onCollapse) { Icon(SouIcons.Menu, contentDescription = "Menüyü daralt") }
         }
         TABS.forEach { (tab, label) ->
             NavigationDrawerItem(
                 label = { Text(label, style = MaterialTheme.typography.labelLarge) },
                 selected = vm.tab == tab,
                 onClick = { vm.tab = tab },
-                icon = { TabIcon(tab) },
+                icon = { TabIcon(tab, vm.tab == tab) },
                 colors = itemColors,
                 modifier = Modifier.height(52.dp),
             )
@@ -257,7 +249,7 @@ private fun NavDrawer(vm: LibraryViewModel, tall: Boolean, onCollapse: () -> Uni
             label = { Text("Her yerde ara", style = MaterialTheme.typography.labelLarge) },
             selected = false,
             onClick = { vm.searchOpen = true },
-            icon = { Icon(Icons.Default.Search, contentDescription = null) },
+            icon = { Icon(SouIcons.Search, contentDescription = null) },
             colors = itemColors,
             modifier = Modifier.height(48.dp),
         )
@@ -265,7 +257,7 @@ private fun NavDrawer(vm: LibraryViewModel, tall: Boolean, onCollapse: () -> Uni
             label = { Text("Asistan", style = MaterialTheme.typography.labelLarge) },
             selected = false,
             onClick = { vm.openAssistant() },
-            icon = { Icon(Icons.Default.Face, contentDescription = null) },
+            icon = { Icon(SouIcons.StarShine, contentDescription = null) },
             colors = itemColors,
             modifier = Modifier.height(48.dp),
         )

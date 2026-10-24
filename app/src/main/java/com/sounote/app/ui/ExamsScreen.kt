@@ -33,9 +33,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DatePicker
@@ -79,8 +76,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -151,28 +146,45 @@ fun ExamsScreen(vm: LibraryViewModel) {
     val onItem = { e: Exam -> if (!e.global) editing = e }
     val onLong = { e: Exam -> if (!e.global) deleting = e }
     val motion = LocalMotionLevel.current
+    var planOpen by remember { mutableStateOf(false) }
+    if (planOpen) ExamPlanDialog(vm) { planOpen = false }
 
     Scaffold(
         topBar = {
             SouTopBar(
                 "Planlayıcı",
-                subtitle = "Sınavlar, ödevler ve sunumlar",
                 actions = {
-                    IconButton(onClick = {
-                        vm.openAssistant("Yaklaşan sınav ve ödevlerime göre bana önümüzdeki 7 gün için günlük, gerçekçi bir çalışma planı öner.")
-                    }) { Text("🤖", fontSize = 20.sp) }
-                    IconButton(onClick = { vm.refreshCatalog() }) { Icon(Icons.Default.Refresh, contentDescription = "Yenile") }
+                    Box {
+                        var aiMenu by remember { mutableStateOf(false) }
+                        IconButton(onClick = { aiMenu = true }) { Icon(SouIcons.StarShine, contentDescription = "Asistan") }
+                        androidx.compose.material3.DropdownMenu(expanded = aiMenu, onDismissRequest = { aiMenu = false }) {
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("Sınav öncesi plan") },
+                                leadingIcon = { Icon(SouIcons.Checklist, contentDescription = null) },
+                                onClick = { aiMenu = false; planOpen = true },
+                            )
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text("Asistana sor") },
+                                leadingIcon = { Icon(SouIcons.Chat, contentDescription = null) },
+                                onClick = {
+                                    aiMenu = false
+                                    vm.openAssistant("Yaklaşan sınav ve ödevlerime göre bana önümüzdeki 7 gün için günlük, gerçekçi bir çalışma planı öner.")
+                                },
+                            )
+                        }
+                    }
+                    IconButton(onClick = { vm.refreshCatalog() }) { Icon(SouIcons.Refresh, contentDescription = "Yenile") }
                 },
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { editing = newExam() },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                icon = { Icon(SouIcons.Add, contentDescription = null) },
                 text = { Text("Ekle") },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -184,23 +196,25 @@ fun ExamsScreen(vm: LibraryViewModel) {
                             onClick = { vm.updatePlannerView(v) },
                             label = { Text(v.label, maxLines = 1) },
                             leadingIcon = {
-                                Text(
+                                Icon(
                                     when (v) {
-                                        LibraryViewModel.PlannerView.LIST -> "☰"
-                                        LibraryViewModel.PlannerView.WEEK -> "🗓️"
-                                        LibraryViewModel.PlannerView.MONTH -> "📆"
-                                        LibraryViewModel.PlannerView.TIMELINE -> "⏳"
+                                        LibraryViewModel.PlannerView.LIST -> SouIcons.ViewAgenda
+                                        LibraryViewModel.PlannerView.WEEK -> SouIcons.ViewWeek
+                                        LibraryViewModel.PlannerView.MONTH -> SouIcons.CalendarMonth
+                                        LibraryViewModel.PlannerView.TIMELINE -> SouIcons.ViewTimeline
                                     },
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
                                 )
                             },
                         )
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                    listOf("" to "Tümü", "exam" to "📅 Sınav", "task" to "📝 Ödev", "presentation" to "🎤 Sunum").forEach { (k, label) ->
+                    listOf("" to "Tümü", "exam" to "Sınav", "task" to "Ödev", "presentation" to "Sunum").forEach { (k, label) ->
                         FilterChip(selected = kindFilter == k, onClick = { kindFilter = k }, label = { Text(label, maxLines = 1) })
                     }
-                    FilterChip(selected = !showDone, onClick = { showDone = !showDone }, label = { Text("Tamamlananları gizle", maxLines = 1) })
+                    FilterChip(selected = !showDone, onClick = { showDone = !showDone }, label = { Text("Bitenleri gizle", maxLines = 1) })
                     courses.forEach { c ->
                         FilterChip(
                             selected = courseFilter == c,
@@ -280,14 +294,14 @@ private fun PlannerTools(vm: LibraryViewModel, onGrades: () -> Unit, onReminders
                 .clickable(onClick = onGrades)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            Text("📊", fontSize = 24.sp)
+            IconBadge(SouIcons.Calculate)
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text("Not ortalamam", style = MaterialTheme.typography.bodyLarge)
                 val avg = g.average
                 val needed = g.needed
                 Text(
                     when {
-                        g.items.isEmpty() -> "Sınav ağırlıklarını ve puanlarını gir, ortalamanı gör"
+                        g.items.isEmpty() -> "Puan girilmedi"
                         avg == null -> "Henüz puan girilmedi"
                         needed != null && needed in 0.0..100.0 ->
                             "Ortalama ${"%.1f".format(avg)} · geçmek için kalanlardan ${"%.1f".format(needed)}"
@@ -297,31 +311,22 @@ private fun PlannerTools(vm: LibraryViewModel, onGrades: () -> Unit, onReminders
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text("›", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.widthIn(min = 280.dp, max = 520.dp).card().padding(horizontal = 16.dp, vertical = 10.dp),
         ) {
-            Text("🔔", fontSize = 22.sp)
+            IconBadge(SouIcons.Notifications)
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text("Hatırlatıcılar", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "3 gün ve 1 gün önce 19:00'da, 2 saat önce bildirim",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text("3 gün, 1 gün ve 2 saat önce", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Switch(checked = vm.remindersOn, onCheckedChange = onReminders)
         }
         if (vm.catalog.levels.isNotEmpty()) {
             Column(Modifier.widthIn(min = 280.dp, max = 520.dp).card().padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text("Kurun", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    "Sadece kendi kurunun sınav ve ödevleri görünür",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.padding(top = 6.dp).horizontalScroll(rememberScrollState()),
@@ -384,14 +389,11 @@ private fun PlannerList(
         item { header() }
         if (upcoming.isEmpty()) {
             item {
-                EmptyState(
-                    "🗓️", "Yaklaşan bir şey yok",
-                    "\"Ekle\" ile sınav, ödev ya da sunum ekleyebilirsin; ortak takvim yüklenince burada görünür.",
-                )
+                EmptyState(SouIcons.Event, "Yaklaşan bir şey yok", art = com.sounote.app.R.drawable.empty_calendar)
             }
         }
         groups.forEach { (label, list) ->
-            item(key = "h:$label") { SectionHeader(label, subtitle = "${list.size} kayıt", modifier = Modifier.padding(top = 6.dp)) }
+            item(key = "h:$label") { SectionHeader(label, modifier = Modifier.padding(top = 6.dp)) }
             items(list, key = { it.id }) { exam ->
                 Box(Modifier.animateItem(), propagateMinConstraints = true) {
                     ExamCard(exam, vm, onClick = { onItem(exam) }, onLongClick = { onLong(exam) })
@@ -442,7 +444,7 @@ private fun MiniExam(vm: LibraryViewModel, e: Exam, onItem: (Exam) -> Unit, onLo
         if (e.kind != "exam") {
             Checkbox(checked = done, onCheckedChange = { vm.toggleExamDone(e) }, modifier = Modifier.size(36.dp))
         } else {
-            Text(e.kindEmoji, modifier = Modifier.padding(horizontal = 8.dp))
+            Icon(e.kindIcon, contentDescription = null, tint = color, modifier = Modifier.padding(horizontal = 8.dp).size(18.dp))
         }
         Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
             Text(
@@ -529,10 +531,10 @@ private fun PlannerWeek(vm: LibraryViewModel, exams: List<Exam>, onItem: (Exam) 
 @Composable
 private fun PeriodHeader(title: String, onPrev: () -> Unit, onNext: () -> Unit, onToday: (() -> Unit)?) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        IconButton(onClick = onPrev) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Önceki") }
+        IconButton(onClick = onPrev) { Icon(SouIcons.ChevronLeft, contentDescription = "Önceki") }
         Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
         if (onToday != null) TextButton(onClick = onToday) { Text("Bugün") }
-        IconButton(onClick = onNext) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Sonraki") }
+        IconButton(onClick = onNext) { Icon(SouIcons.ChevronRight, contentDescription = "Sonraki") }
     }
 }
 
@@ -645,7 +647,7 @@ private fun PlannerTimeline(vm: LibraryViewModel, exams: List<Exam>, onItem: (Ex
     LaunchedEffect(Unit) { if (firstUpcoming > 0) listState.scrollToItem(firstUpcoming) }
     val lineColor = MaterialTheme.colorScheme.outlineVariant
     if (days.isEmpty()) {
-        EmptyState("⏳", "Zaman çizelgesi boş", "Son iki haftadan bu yana ve ileride kayıt yok.")
+        EmptyState(SouIcons.ViewTimeline, "Zaman çizelgesi boş")
         return
     }
     LazyColumn(
@@ -718,7 +720,7 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
             ).value
         } else 1f
         Text(
-            if (done) "Tamam ✓" else countdownText(exam.time),
+            if (done) "Tamam" else countdownText(exam.time),
             color = if (done) LocalSouColors.current.success else c,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
@@ -742,7 +744,7 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
         if (exam.kind != "exam") {
             Checkbox(checked = done, onCheckedChange = {
                 vm.toggleExamDone(exam)
-                if (!done) vm.showMessage("\"${exam.title.ifBlank { exam.course }}\" tamamlandı ✓")
+                if (!done) vm.showMessage("\"${exam.title.ifBlank { exam.course }}\" tamamlandı")
             })
         }
         Column(
@@ -754,7 +756,7 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
         }
         Column(Modifier.weight(1f).padding(start = if (compact) 12.dp else 14.dp, end = if (compact) 0.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(exam.kindEmoji + " ")
+                Icon(exam.kindIcon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 6.dp).size(18.dp))
                 Text(
                     exam.title.ifBlank { exam.course },
                     style = MaterialTheme.typography.titleMedium,
@@ -770,7 +772,6 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
                         color = LocalSouColors.current.danger,
                     )
                 }
-                if (exam.global) Text("  🌐", style = MaterialTheme.typography.labelSmall)
                 if (exam.levels.isNotEmpty() && exam.levels.size < 4) {
                     Text("  " + exam.levels.joinToString("·"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -831,7 +832,7 @@ private fun ExamDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                    listOf("exam" to "📅 Sınav", "task" to "📝 Ödev", "presentation" to "🎤 Sunum").forEach { (k, label) ->
+                    listOf("exam" to "Sınav", "task" to "Ödev", "presentation" to "Sunum").forEach { (k, label) ->
                         FilterChip(selected = kind == k, onClick = { kind = k }, label = { Text(label) })
                     }
                 }
@@ -847,8 +848,8 @@ private fun ExamDialog(
                     placeholder = { Text(if (kind == "exam") "ör. Quiz, Progress Test" else "ör. Opinion essay teslimi") },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { pickDate = true }) { Text("📅 " + SimpleDateFormat("d MMMM yyyy", TR).format(Date(time))) }
-                    OutlinedButton(onClick = { pickTime = true }) { Text("🕘 " + SimpleDateFormat("HH:mm", TR).format(Date(time))) }
+                    OutlinedButton(onClick = { pickDate = true }) { Text(SimpleDateFormat("d MMMM yyyy", TR).format(Date(time))) }
+                    OutlinedButton(onClick = { pickTime = true }) { Text(SimpleDateFormat("HH:mm", TR).format(Date(time))) }
                 }
                 OutlinedTextField(value = place, onValueChange = { place = it }, singleLine = true, label = { Text("Yer (isteğe bağlı)") })
                 OutlinedTextField(value = notes, onValueChange = { notes = it }, label = { Text("Not / konular (isteğe bağlı)") })

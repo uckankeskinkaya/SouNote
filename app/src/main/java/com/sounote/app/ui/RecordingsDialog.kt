@@ -10,10 +10,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -116,7 +112,7 @@ fun RecordingsDialog(recordings: List<Recording>, onDelete: (Recording) -> Unit,
                                     if (isPlaying && !paused) {
                                         Icon(painterResource(R.drawable.ic_pause), contentDescription = "Duraklat")
                                     } else {
-                                        Icon(Icons.Default.PlayArrow, contentDescription = "Dinle")
+                                        Icon(SouIcons.PlayArrow, contentDescription = "Dinle")
                                     }
                                 }
                                 Column(Modifier.weight(1f)) {
@@ -136,10 +132,10 @@ fun RecordingsDialog(recordings: List<Recording>, onDelete: (Recording) -> Unit,
                                     }
                                     context.startActivity(Intent.createChooser(send, "Ses kaydını paylaş"))
                                 }) {
-                                    Icon(Icons.Default.Share, contentDescription = "Paylaş")
+                                    Icon(SouIcons.Share, contentDescription = "Paylaş")
                                 }
                                 IconButton(onClick = { deleting = rec }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Sil")
+                                    Icon(SouIcons.Delete, contentDescription = "Sil")
                                 }
                             }
                             if (isPlaying && rec.durationMs > 0) {

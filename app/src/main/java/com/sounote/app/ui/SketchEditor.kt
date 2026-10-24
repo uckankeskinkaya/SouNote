@@ -91,7 +91,7 @@ internal fun SketchView(sketch: Sketch, onEdit: () -> Unit, onDelete: () -> Unit
                 .clickable(onClick = onEdit),
         ) { drawSketch(sketch.strokes, sketch.width) }
         Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = onEdit) { Text("✏️ Düzenle") }
+            TextButton(onClick = onEdit) { Text("Düzenle") }
             TextButton(onClick = onDelete) { Text("Sil", color = MaterialTheme.colorScheme.error) }
         }
     }
@@ -138,7 +138,7 @@ internal fun SketchEditor(initial: Sketch, onSave: (Sketch) -> Unit, onDismiss: 
                     SKETCH_WIDTHS.forEach { (label, w) ->
                         FilterChip(selected = !eraser && width == w, onClick = { width = w; eraser = false }, label = { Text(label) })
                     }
-                    FilterChip(selected = eraser, onClick = { eraser = !eraser }, label = { Text("🧽 Silgi") })
+                    FilterChip(selected = eraser, onClick = { eraser = !eraser }, label = { Text("Silgi") })
                 }
                 Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                     Canvas(

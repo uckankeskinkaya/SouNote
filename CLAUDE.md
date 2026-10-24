@@ -108,6 +108,22 @@ rollback işi sürümü ön sürüme çeker. Gradle cache-read-only: false. Derl
 etiket koyamıyor: "workflows" izni ister). Smoke ekran görüntüleri "screenshots" dalına itilir.
 İndirme sayfası docs/index.html (+ docs/img), GitHub Pages: Settings → Pages → main /docs (kullanıcı açmalı). README yenilendi.
 
+## SouNote 2.0 (🧪, dal ccr-c4eded18-21kvrf; yayınlanmadı)
+Bu dal CI'da derlenir ama release yapılmaz (build.yml `if`); ekran görüntüleri `screenshots-v2` dalına, debug APK `SouNote-2.0-debug-apk` artifact'ine.
+Yayın için kullanıcı onayı gerekir (build.yml'deki dal koşulu kaldırılır ya da main'e birleştirilir). versionName 2.0.<run>.
+- Tasarım: ui/Theme.kt (SouNote Light; koyu paletler DarkPalette OBSIDIAN/MIDNIGHT/GRAPHITE prefs darkPalette; vurgu Accent: prefs colorTheme
+  null/AUTO = tema rengi, enum adı = hazır, CUSTOM + accentCustom), Manrope (res/font, değişken, OFL assets/licenses), LocalSpacing (UiDensity prefs uiDensity),
+  LocalMotionLevel (prefs motionLevel; sistem animasyon ölçeği 0 ise OFF), LocalSouColors. Ortak bileşenler ui/Components.kt.
+- Gezinme (AppShell): <600dp alt çubuk (Ayarlar ana sayfadaki ⚙), 600–1000dp ray, ≥1000dp geniş menü; prefs navStyle. Sekmeler: HOME, LIBRARY, COURSES, EXAMS (Planlayıcı), WRITING, SETTINGS.
+- Ana sayfa modülleri: data/QuickAccess.kt HomeModule/HomeLayout (prefs homeOrder, homeHidden). Hızlı erişim QuickItem (prefs quickAccess JSON; doc/folder/course/note, pinned).
+  Çalışma serisi studyStreak() (studyday_ prefs, ≥1 dk).
+- Planlayıcı: Exam.priority/done (exams.json'a eklendi, eski dosya okunur); katalogdaki ödevlerin tamamı prefs examDone; tamamlananlara hatırlatma kurulmaz. prefs plannerView.
+- Yazı stüdyosu: WritingScreen + TextNoteScreen (Markdown işaretleri düz metinde: # başlık, **kalın**, _italik_; MarkdownVisual; PDF'te Essay.plain ile temizlenir),
+  data/Writing.kt Essay + WritingCoach (mevcut AssistantClient; öneri JSON; metin sadece "Uygula" ile değişir), WritingCoachPanel.
+- PDF: okuma modu (prefs readingMode, PdfDocumentView.readOnly → panOnly), lasso bölgesi onLassoRegion → PdfText.region (PDFTextStripperByArea) → AssistantSource.Document.selection.
+- Arama: SearchHit CourseHit/TopicHit/FolderHit/ExamHit + filtre çipleri, son aramalar (prefs recentSearches). Ayarlar: kategoriler + arama (SettingsScreen Entry).
+- Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·

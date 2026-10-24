@@ -163,6 +163,9 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Bilgi kartı çalışma: StudyDialog tam ekran, dönen kart, kaydırma. Widget: widget_exam.xml lacivert parıltı.
 - Asistan: AssistantSource.Course (ders PDF'lerinden özet), Dersler'de "Asistanla ders özeti".
 - Defter kapakları: Covers (prefs cover_<id>), CoverArt/CoverPicker; şablonlar WEEKLY, VOCAB, CORNELL_COLOR (PDFBox Helvetica: ı, ş, ğ, İ yazılmaz).
+- Çıkartmalar (Art.kt STICKERS, sticker_*.png; vm.importSticker → resim olarak eklenir), paletin üstünde son kullanılan renkler (customColors).
+- Sınav öncesi plan (ui/StudyTools.kt ExamPlanDialog, AssistantClient.studyPlan → kendi sınavlara task, slot Exam.PLAN_SLOT, hatırlatma yok),
+  deneme sınavı (PracticeSetupDialog/PracticeTestScreen, AssistantClient.practiceTest → Question; Dersler'de kart).
 - Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).

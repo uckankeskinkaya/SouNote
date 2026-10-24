@@ -38,6 +38,9 @@ private val WHATS_NEW = listOf(
     SouIcons.Widgets to "Yeni sınav widget'ı ve tablette iki sütunlu ana sayfa.",
     SouIcons.Event to "Sınav öncesi plan ve deneme sınavı: asistan gün gün plan ve konulardan test hazırlar.",
     SouIcons.Mood to "Çıkartmalar; renk paleti son kullandığın renkleri hatırlar.",
+    SouIcons.Layers to "Katmanlar ve sonsuz tuval.",
+    SouIcons.Mic to "Speaking pratiği: konuş, asistan puanlasın.",
+    SouIcons.AccountTree to "Konu haritası: hangi konuda ne kadar hazırsın.",
 )
 
 /** Yeni sürüm ve "Yenilikler" pencereleri (ana ekranda). */

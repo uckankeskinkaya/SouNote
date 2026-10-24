@@ -215,13 +215,27 @@ ${upcoming.ifBlank { "(kayıt yok)" }}
 
 /** PDF'ten metin çıkarır (asistana bağlam olarak). Sayfalar 0'dan başlar. */
 object PdfText {
-    fun extract(context: Context, source: Uri, from: Int, to: Int, maxChars: Int = 16_000): String {
+    private fun load(context: Context, source: Uri): PDDocument {
         PDFBoxResourceLoader.init(context.applicationContext)
-        val doc = if (source.scheme == "file") {
+        return if (source.scheme == "file") {
             PDDocument.load(File(requireNotNull(source.path)))
         } else {
             context.contentResolver.openInputStream(source)?.use { PDDocument.load(it) } ?: throw IOException("PDF açılamadı")
         }
+    }
+
+    /** Sayfanın bir bölgesindeki metin ([rect]: PDF noktası, sol üst köşe başlangıç). */
+    fun region(context: Context, source: Uri, page: Int, rect: android.graphics.RectF, maxChars: Int = 8_000): String =
+        load(context, source).use { doc ->
+            if (page !in 0 until doc.numberOfPages) return@use ""
+            val stripper = com.tom_roush.pdfbox.text.PDFTextStripperByArea()
+            stripper.addRegion("sel", android.graphics.RectF(rect).apply { inset(-2f, -2f) })
+            stripper.extractRegions(doc.getPage(page))
+            stripper.getTextForRegion("sel").replace(Regex("[ \\t]+"), " ").trim().take(maxChars)
+        }
+
+    fun extract(context: Context, source: Uri, from: Int, to: Int, maxChars: Int = 16_000): String {
+        val doc = load(context, source)
         return doc.use {
             val stripper = PDFTextStripper().apply {
                 startPage = (from + 1).coerceAtLeast(1)

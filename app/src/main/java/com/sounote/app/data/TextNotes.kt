@@ -127,7 +127,9 @@ object TextNotePdf {
                 when (part) {
                     is BodyPart.Text -> {
                         if (part.text.isEmpty()) continue
-                        val layout = StaticLayout.Builder.obtain(part.text, 0, part.text.length, bodyPaint, width)
+                        // Yazı stüdyosunun biçim işaretleri (#, **, _) PDF'te görünmesin.
+                        val text = Essay.plain(part.text)
+                        val layout = StaticLayout.Builder.obtain(text, 0, text.length, bodyPaint, width)
                             .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                             .setLineSpacing(0f, 1.3f)
                             .build()

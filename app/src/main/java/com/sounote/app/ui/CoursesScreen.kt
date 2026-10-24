@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -65,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.Course
+import com.sounote.app.data.QuickItem
 import com.sounote.app.data.Resource
 import com.sounote.app.data.Topic
 
@@ -87,10 +89,21 @@ fun CoursesScreen(vm: LibraryViewModel) {
         vm.focusTopic = null
     }
     BackHandler(enabled = course != null) { selected = null }
+    // Arama sonucundan ya da hızlı erişimden gelindi: dersi aç.
+    LaunchedEffect(vm.focusCourse) {
+        val id = vm.focusCourse ?: return@LaunchedEffect
+        if (catalog.courses.any { it.id == id }) {
+            selected = id
+            byWeek = false
+        }
+        vm.focusCourse = null
+    }
+    LaunchedEffect(selected) { selected?.let(vm::courseOpened) }
 
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 title = { Text(course?.let { "${it.emoji} ${it.name}".trim() } ?: "Dersler") },
                 navigationIcon = {
                     if (course != null) {
@@ -98,6 +111,9 @@ fun CoursesScreen(vm: LibraryViewModel) {
                     }
                 },
                 actions = {
+                    if (course != null) {
+                        FavoriteButton(vm.isFavorite(QuickItem.COURSE, course.id), onToggle = { vm.toggleFavorite(QuickItem.COURSE, course.id) })
+                    }
                     IconButton(onClick = { vm.refreshCatalog() }) { Icon(Icons.Default.Refresh, contentDescription = "Yenile") }
                 },
             )
@@ -174,13 +190,31 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
                         .clickable { onOpen(c) }
                         .padding(16.dp),
                 ) {
-                    Text(c.emoji, fontSize = 36.sp)
+                    Row(verticalAlignment = Alignment.Top) {
+                        Text(c.emoji, fontSize = 36.sp, modifier = Modifier.weight(1f))
+                        if (vm.isFavorite(QuickItem.COURSE, c.id)) Text("★", color = Color(0xFFFFD54F), fontSize = 20.sp)
+                    }
                     Text(c.name, color = Color.White, style = if (narrow) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(
                         "${c.topics.size} konu · ${c.topics.sumOf { it.resources.size }} kaynak",
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.labelLarge,
                     )
+                    val (done, total) = vm.progressOf(c.topics.flatMap { it.resources })
+                    if (total > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            ProgressBar(
+                                done / total.toFloat(),
+                                color = Color.White,
+                                modifier = Modifier.weight(1f).graphicsLayer { alpha = 0.95f },
+                            )
+                            Text(
+                                "  ${(100 * done / total)}%",
+                                color = Color.White,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
                     if (next != null) {
                         Text(
                             "${next.kindEmoji} ${next.title} · ${countdownText(next.time)}",
@@ -207,6 +241,23 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 32.dp),
         modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
     ) {
+        item { CourseHeader(vm, course) }
+        val docs = vm.courseDocs(course)
+        if (docs.isNotEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionHeader("Son açılan belgeler", subtitle = "Bu dersten indirdiklerin")
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        items(docs.take(10), key = { "cd" + it.id }) { d ->
+                            Box(Modifier.width(120.dp).pressScale()) {
+                                DocCard(d, onClick = { vm.open(d) }, favorite = vm.isFavorite(QuickItem.DOC, d.id))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item { SectionHeader("Konular", modifier = Modifier.padding(top = 6.dp)) }
         items(course.topics, key = { it.id }) { topic ->
             Box(Modifier.animateItem(), propagateMinConstraints = true) {
                 val related = exams.filter { topic.id in it.topics }
@@ -233,6 +284,53 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     }
 }
 
+/** Dersin üst kartı: emoji, renk, ilerleme ve sayılar. */
+@Composable
+private fun CourseHeader(vm: LibraryViewModel, course: Course) {
+    val color = Color(course.color)
+    val resources = course.topics.flatMap { it.resources }
+    val (done, total) = vm.progressOf(resources)
+    val now = System.currentTimeMillis()
+    val topicIds = course.topics.map { it.id }.toSet()
+    val next = vm.allExams.firstOrNull { e -> e.time > now && e.topics.any { it in topicIds } }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f).compositeOver(Color.Black))))
+            .padding(20.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(course.emoji, fontSize = 34.sp)
+            Text(course.name, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+            Text(
+                "${course.topics.size} konu · ${resources.size} kaynak · ${vm.courseDocs(course).size} indirilen belge",
+                color = Color.White.copy(alpha = 0.88f),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            if (next != null) {
+                Text(
+                    "${next.kindEmoji} ${next.title} · ${countdownText(next.time)}",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(Color.White.copy(alpha = 0.18f)).padding(6.dp),
+                )
+            }
+        }
+        if (total > 0) {
+            ProgressRing(
+                done / total.toFloat(),
+                size = 72.dp,
+                stroke = 7.dp,
+                color = Color.White,
+                track = Color.White.copy(alpha = 0.25f),
+                labelColor = Color.White,
+            )
+        }
+    }
+}
+
 @Composable
 private fun TopicCard(
     vm: LibraryViewModel,
@@ -250,11 +348,13 @@ private fun TopicCard(
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(topic.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                val (done, total) = vm.progressOf(topic.resources)
                 Text(
-                    "${topic.resources.size} kaynak",
+                    if (total > 0 && done > 0) "$done / $total kaynak tamamlandı" else "${topic.resources.size} kaynak",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (total > 0 && done == total) LocalSouColors.current.success else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (total > 0 && done > 0) ProgressBar(done / total.toFloat(), Modifier.fillMaxWidth(0.6f).padding(top = 2.dp), height = 4.dp)
                 exams.forEach { e ->
                     Text(
                         "Sınavda: $e",
@@ -268,7 +368,13 @@ private fun TopicCard(
         if (open) {
             topic.resources.forEach { res ->
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                ResourceRow(vm, course, topic, res, onOpenLink)
+                val key = vm.doneKey(res)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 4.dp)) {
+                    Checkbox(checked = key in vm.doneItems, onCheckedChange = { vm.toggleDone(key) })
+                    Box(Modifier.weight(1f).graphicsLayer { alpha = if (key in vm.doneItems) 0.6f else 1f }) {
+                        ResourceRow(vm, course, topic, res, onOpenLink)
+                    }
+                }
             }
         }
     }

@@ -16,6 +16,11 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.graphics.RectF
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -126,6 +131,24 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Bilgi kartları
     var cardsDialog by remember { mutableStateOf(false) }
     var assistantOpen by remember { mutableStateOf(false) }
+    // Lasso ile çizilen son bölge ve asistana gönderilecek metni
+    var lassoRegion by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
+    var askSelection by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val reading = vm.readingMode
+    fun askRegion() {
+        val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
+        scope.launch {
+            val text = vm.regionText(doc, p, r)
+            if (text.isBlank()) {
+                vm.showMessage("Seçili bölgede okunabilir metin yok (taranmış sayfa olabilir); sayfanın tamamı gönderilecek")
+                askSelection = null
+            } else {
+                askSelection = text
+            }
+            assistantOpen = true
+        }
+    }
     // Kayda bağlı çizgiye dokununca: (dosya adı, an, dokunma sayacı)
     var audioPlay by remember { mutableStateOf<Triple<String, Long, Int>?>(null) }
     var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
@@ -322,6 +345,10 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             )
                         }
                     }
+                    // Okuma ↔ not alma modu
+                    TextButton(onClick = { vm.updateReadingMode(!reading) }) {
+                        Text(if (reading) "✏️ Not al" else "📖 Oku")
+                    }
                     if (vm.recordingSince != 0L) {
                         TextButton(onClick = { toggleRecording() }) {
                             Text(
@@ -329,7 +356,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 color = Color(0xFFE53935),
                             )
                         }
-                    } else {
+                    } else if (!reading) {
                         IconButton(onClick = { toggleRecording() }) {
                             Icon(painterResource(R.drawable.ic_mic), contentDescription = "Ses kaydı başlat")
                         }
@@ -337,7 +364,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     IconButton(onClick = { vm.togglePagePanel() }) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
-                    IconButton(onClick = { assistantOpen = true }) {
+                    IconButton(onClick = { askSelection = null; assistantOpen = true }) {
                         Text("🤖", fontSize = 20.sp)
                     }
                     IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
@@ -353,11 +380,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             )
                         }
                     }
-                    IconButton(onClick = { ink.undo() }, enabled = canUndo) {
-                        Icon(painterResource(R.drawable.ic_undo), contentDescription = "Geri al")
-                    }
-                    IconButton(onClick = { ink.redo() }, enabled = canRedo) {
-                        Icon(painterResource(R.drawable.ic_redo), contentDescription = "İleri al")
+                    if (!reading) {
+                        IconButton(onClick = { ink.undo() }, enabled = canUndo) {
+                            Icon(painterResource(R.drawable.ic_undo), contentDescription = "Geri al")
+                        }
+                        IconButton(onClick = { ink.redo() }, enabled = canRedo) {
+                            Icon(painterResource(R.drawable.ic_redo), contentDescription = "İleri al")
+                        }
                     }
                     Box {
                         if (vm.exporting) {
@@ -529,7 +558,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 }
             }
-            InkToolbar(
+            if (!reading) InkToolbar(
                 state = tools,
                 onChange = vm::updateTools,
                 selection = SelectionUi(
@@ -541,6 +570,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     onDelete = { view?.deleteSelection() },
                     onDone = { view?.clearSelection() },
                     onMakeCard = { makeCard = view?.selectionRegion() },
+                    canAsk = lassoRegion != null || selCount > 0,
+                    onAsk = { askRegion() },
                 ),
                 onInsertImage = {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -619,6 +650,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                         audioPlay = Triple(file, ms, (audioPlay?.third ?: 0) + 1)
                                     }
                                 }
+                                onLassoRegion = { p, r -> lassoRegion = p to RectF(r) }
+                                readOnly = currentVm.readingMode
                                 onSelectionChanged = { n, clip ->
                                     selCount = n
                                     hasClip = clip
@@ -637,6 +670,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             v.twoPage = vm.twoPage
                             v.setDarkTheme(darkTheme)
                             v.setInverted(vm.nightReading)
+                            v.readOnly = vm.readingMode
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
@@ -645,6 +679,17 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    if (reading && vm.fullScreen) {
+                        Row(
+                            Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(50))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f)),
+                        ) {
+                            IconButton(onClick = { vm.toggleFullScreen() }) {
+                                Icon(painterResource(R.drawable.ic_fullscreen_exit), contentDescription = "Tam ekrandan çık")
+                            }
+                            IconButton(onClick = { vm.updateReadingMode(false) }) { Text("✏️") }
+                        }
+                    }
                     page?.let { (p, n) ->
                         if (n > 3) {
                             PageScrubber(
@@ -664,8 +709,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     if (assistantOpen) {
         AssistantDialog(
             vm,
-            AssistantSource.Document(doc, page?.first ?: 0, page?.second ?: 1),
-            onDismiss = { assistantOpen = false },
+            AssistantSource.Document(doc, lassoRegion?.first?.takeIf { askSelection != null } ?: page?.first ?: 0, page?.second ?: 1, askSelection),
+            onDismiss = {
+                assistantOpen = false
+                askSelection = null
+            },
         )
     }
 

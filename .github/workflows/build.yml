@@ -39,9 +39,25 @@ jobs:
           name: SouNote-apk
           path: SouNote.apk
 
+      # SouNote 2.0 geliştirme dalı: test için ayrıca debug APK (aynı anahtarla imzalı, mevcut uygulamanın üstüne kurulur).
+      - name: Debug APK (2.0 dalı)
+        if: github.ref_name == 'ccr-c4eded18-21kvrf'
+        run: |
+          ./gradlew assembleDebug --build-cache --parallel
+          cp app/build/outputs/apk/debug/app-debug.apk SouNote-2.0-debug.apk
+
+      - name: Debug APK'yı yükle (2.0 dalı)
+        if: github.ref_name == 'ccr-c4eded18-21kvrf'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SouNote-2.0-debug-apk
+          path: SouNote-2.0-debug.apk
+
   # APK test beklemeden yayınlanır (derlemeden ~1 dk sonra hazır).
   release:
     needs: build
+    # SouNote 2.0 geliştirme dalı yayınlanmaz (kullanıcı onayı olmadan Latest sürüm değişmesin).
+    if: github.ref_name != 'ccr-c4eded18-21kvrf'
     runs-on: ubuntu-latest
     concurrency:
       group: release
@@ -153,11 +169,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # 2.0 dalının görüntüleri ayrı dala gider; README'nin kullandığı "screenshots" dalı değişmez.
+          branch=screenshots
+          [ "${GITHUB_REF_NAME}" = "ccr-c4eded18-21kvrf" ] && branch=screenshots-v2
           cd shots
-          git init -q -b screenshots
+          git init -q -b "$branch"
           git config user.name ci; git config user.email ci@users.noreply.github.com
           git add -A; git commit -qm "build ${{ github.run_number }}" || exit 0
-          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" screenshots
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" "$branch"
 
   # Test başarısızsa yayınlanan sürümü geri çek (ön sürüm yap).
   rollback:

@@ -7,6 +7,9 @@ import kotlin.math.pow
 
 enum class Tool { PEN, HIGHLIGHTER, ERASER, TEXT, LASSO, TAPE, LASER, STAMP, SHAPE }
 
+/** Ekrandaki ölçüm aracı (kaydedilmez). */
+enum class GuideKind { NONE, RULER, PROTRACTOR }
+
 /** Şekil aracının çizdiği şekil. */
 enum class ShapeKind(val symbol: String, val label: String) {
     LINE("╱", "Çizgi"),
@@ -92,6 +95,10 @@ data class ToolState(
     val stampSizePt: Float = 24f,
     val shapeKind: ShapeKind = ShapeKind.RECT,
     val favorites: List<FavoritePen> = emptyList(),
+    /** Cetvel / açıölçer görünür mü (uygulama kapanınca kapanır). */
+    val guide: GuideKind = GuideKind.NONE,
+    /** Her kalem türünün son rengi ve kalınlığı: kalem değişince kaldığı yerden devam eder. */
+    val penMemory: Map<PenType, Pair<Int, Float>> = emptyMap(),
     /** Renk seçiciden seçilmiş son renkler (en yenisi başta). */
     val customColors: List<Int> = emptyList(),
 ) {
@@ -99,6 +106,14 @@ data class ToolState(
     fun applyPressureCurve(p: Float): Float {
         val gamma = 2f.pow((0.5f - pressureSensitivity) * 2f)
         return p.coerceIn(0f, 1f).pow(gamma)
+    }
+
+    /** Kalem türünü değiştirir: şimdikinin ayarını saklar, yenisinin hatırlanan ayarını yükler. */
+    fun switchPen(t: PenType): ToolState {
+        if (t == penType) return copy(tool = Tool.PEN)
+        val memory = penMemory + (penType to (penColor to penWidthMm))
+        val (color, width) = memory[t] ?: (penColor to (t.defaultWidthMm ?: penWidthMm))
+        return copy(tool = Tool.PEN, penType = t, penColor = color, penWidthMm = width, penMemory = memory)
     }
 
     fun withCustomColor(color: Int) =
@@ -158,6 +173,9 @@ data class ToolState(
                 }
             }.toString())
             .putString("customColors", customColors.joinToString(","))
+            .putString("penMemory", JSONObject().apply {
+                penMemory.forEach { (t, v) -> put(t.name, JSONObject().put("color", v.first).put("widthMm", v.second.toDouble())) }
+            }.toString())
             .apply()
     }
 
@@ -236,7 +254,20 @@ data class ToolState(
                 favorites = loadFavorites(prefs.getString("favorites", null)),
                 customColors = prefs.getString("customColors", null)
                     ?.split(",")?.mapNotNull { it.toIntOrNull() } ?: emptyList(),
+                penMemory = loadPenMemory(prefs.getString("penMemory", null)),
             )
+        }
+
+        private fun loadPenMemory(json: String?): Map<PenType, Pair<Int, Float>> {
+            if (json.isNullOrEmpty()) return emptyMap()
+            return runCatching {
+                val o = JSONObject(json)
+                o.keys().asSequence().mapNotNull { k ->
+                    val t = PenType.entries.firstOrNull { it.name == k } ?: return@mapNotNull null
+                    val v = o.getJSONObject(k)
+                    t to (v.getInt("color") to v.getDouble("widthMm").toFloat())
+                }.toMap()
+            }.getOrDefault(emptyMap())
         }
 
         private fun loadFavorites(json: String?): List<FavoritePen> {

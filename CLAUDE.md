@@ -48,8 +48,10 @@ yazı kalın + arka plan (InkStore v3), silgi yazı/resim de silebilir, Cornell 
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
-İmza anahtarı artık depoda değil: GitHub Secrets SOUNOTE_KEYSTORE_B64 (jks'nin base64'ü) + SOUNOTE_KEY_PASSWORD; alias "sounote".
-Anahtarı değiştirme, yoksa güncelleme kurulmaz ve notlar gider. (Eski haliyle git geçmişinde duruyor; tam çözüm v3 anahtar döndürme.)
+İmza: anahtar döndürüldü (APK Signature Scheme v3). Anahtarlar depoda değil, GitHub Secrets'ta: SOUNOTE_KEYSTORE_B64 (yeni, alias sounote2),
+SOUNOTE_OLD_KEYSTORE_B64 (eski, alias sounote; eski hali git geçmişinde açık), SOUNOTE_KEY_PASSWORD (ikisi için aynı). CI'da Gradle imzasız derler,
+apksigner eski+yeni anahtar ve lineage (--rotation-min-sdk-version 28) ile imzalar. Eski imzalı sürümün üstüne kurulum smoke.sh'de sınanır (build-88).
+Anahtarları değiştirme/kaybetme: yeni anahtar kaybolursa güncelleme imkânsız; yedeği kullanıcıda.
 
 Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu gönderirse önce onu düzelt.
 Eklendi (🧪, build-17+): seçimi döndürme (lasso üst tutamaç; TextBox/ImageItem.rotation, InkStore v4), akıllı fosforlu (Android 15+ metin alanları,

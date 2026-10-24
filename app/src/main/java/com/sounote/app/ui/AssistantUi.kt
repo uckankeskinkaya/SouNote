@@ -10,12 +10,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -296,7 +290,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
                 // Üst çubuk: geri, asistan kimliği, yeni sohbet, ayarlar
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kapat") }
+                    IconButton(onClick = onDismiss) { Icon(SouIcons.ArrowBack, contentDescription = "Kapat") }
                     BotAvatar(40.dp)
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text("SouNote Asistan", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
@@ -319,9 +313,9 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             messages.clear()
                             histories.remove(source.key())
                             error = null
-                        }) { Icon(Icons.Default.Refresh, contentDescription = "Yeni sohbet") }
+                        }) { Icon(SouIcons.Refresh, contentDescription = "Yeni sohbet") }
                     }
-                    IconButton(onClick = { setup = !setup }) { Icon(Icons.Default.Settings, contentDescription = "Asistan ayarları") }
+                    IconButton(onClick = { setup = !setup }) { Icon(SouIcons.Settings, contentDescription = "Asistan ayarları") }
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 if (setup) {
@@ -416,7 +410,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                                 onClick = { send(input) },
                                 enabled = canSend,
                                 modifier = Modifier.size(52.dp),
-                            ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Gönder") }
+                            ) { Icon(SouIcons.Send, contentDescription = "Gönder") }
                         }
                     }
                 }
@@ -509,7 +503,7 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
                     Text(emoji, fontSize = 20.sp)
                     Text(p, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 12.dp))
                     Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        SouIcons.ChevronRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

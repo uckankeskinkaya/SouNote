@@ -37,18 +37,18 @@ object QuickAccess {
 }
 
 /** Ana sayfa modülleri: sıralanabilir ve gizlenebilir. Ad tercihlerde saklanır, değiştirme. */
-enum class HomeModule(val label: String, val emoji: String) {
-    HERO("Karşılama ve bugün", "👋"),
-    CONTINUE("Kaldığın yer", "📖"),
-    REVIEW("Bugünkü tekrar (bilgi kartları)", "🃏"),
-    QUICK_ACCESS("Hızlı erişim (favoriler)", "⭐"),
-    UPCOMING("Yaklaşan sınav ve ödevler", "📅"),
-    WEEK_TASKS("Haftalık görevler", "✅"),
-    ACTIONS("Hızlı başla", "⚡"),
-    RECENT("Son kullanılanlar", "🕘"),
-    NOTES("Yazılı notlar", "📝"),
-    STATS("Çalışma istatistiği", "📊"),
-    TIP("İpucu", "💡"),
+enum class HomeModule(val label: String) {
+    HERO("Karşılama"),
+    CONTINUE("Kaldığın yer"),
+    REVIEW("Bugünkü tekrar"),
+    QUICK_ACCESS("Favoriler"),
+    UPCOMING("Yaklaşanlar"),
+    WEEK_TASKS("Haftalık görevler"),
+    ACTIONS("Hızlı başla"),
+    RECENT("Son kullanılanlar"),
+    NOTES("Yazılı notlar"),
+    STATS("Bu hafta"),
+    TIP("İpucu"),
 }
 
 data class HomeLayout(val order: List<HomeModule>, val hidden: Set<HomeModule>) {

@@ -23,10 +23,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,7 +70,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(4.dp)) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kapat") }
+                    IconButton(onClick = onDismiss) { Icon(SouIcons.ArrowBack, contentDescription = "Kapat") }
                     Text("Not ortalamam", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                     if (g.items.isNotEmpty()) {
                         androidx.compose.material3.TextButton(onClick = { confirmTemplate = true }) { Text("Okul şablonu") }
@@ -157,7 +153,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                             OutlinedButton(onClick = {
                                 update(items = g.items + GradeItem(System.currentTimeMillis(), "", 0.0, null))
                             }) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Icon(SouIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text(" Sınav ekle")
                             }
                             // Takvimdeki sınav adlarını (henüz listede olmayanları) öner
@@ -271,7 +267,7 @@ private fun GradeRow(item: GradeItem, onChange: (GradeItem) -> Unit, onDelete: (
                 label = { Text("Sınav / ödev") },
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Sil") }
+            IconButton(onClick = onDelete) { Icon(SouIcons.Delete, contentDescription = "Sil") }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(

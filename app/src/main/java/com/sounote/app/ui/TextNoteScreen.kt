@@ -25,10 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -371,7 +367,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 title = { Text(if (focus) "Odak modu" else "Yazı stüdyosu", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = ::close) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                        Icon(SouIcons.ArrowBack, contentDescription = "Geri")
                     }
                 },
                 actions = {
@@ -380,7 +376,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                     if (!focus && !narrowBar) TextButton(onClick = { vm.updateTextFontSize(fontSize + 2f) }) { Text("A+", fontSize = 18.sp) }
                     if (!focus) Box {
                         IconButton(onClick = { shareMenu = true }) {
-                            Icon(Icons.Default.Share, contentDescription = "Paylaş")
+                            Icon(SouIcons.Share, contentDescription = "Paylaş")
                         }
                         DropdownMenu(expanded = shareMenu, onDismissRequest = { shareMenu = false }) {
                             DropdownMenuItem(text = { Text("Metin olarak paylaş") }, onClick = { shareMenu = false; shareText() })
@@ -389,7 +385,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                     }
                     if (!focus) Box {
                         IconButton(onClick = { menu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
+                            Icon(SouIcons.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                             if (narrowBar) {

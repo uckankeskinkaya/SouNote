@@ -11,8 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,7 +61,7 @@ internal fun SideNotePanel(vm: LibraryViewModel, doc: DocRef, onClose: () -> Uni
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Yan notu kapat") }
+            IconButton(onClick = onClose) { Icon(SouIcons.Close, contentDescription = "Yan notu kapat") }
         }
         val color = MaterialTheme.colorScheme.onSurface
         BasicTextField(

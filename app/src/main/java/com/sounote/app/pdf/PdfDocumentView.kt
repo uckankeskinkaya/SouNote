@@ -86,6 +86,16 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
     var tools: ToolState = ToolState()
+        set(value) {
+            val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
+            if (field.tool == Tool.LASSO && value.tool != Tool.LASSO) clearSelection()
+            field = value
+            if (formsChanged) {
+                if (value.tool == Tool.TEXT) requestRender()
+                invalidate()
+            }
+            if (value.tool == Tool.HIGHLIGHTER) requestRender()
+        }
 
     /**
      * Okuma modu: kalem de parmak da sadece kaydırır/yakınlaştırır; not alınmaz.
@@ -100,16 +110,6 @@ class PdfDocumentView(context: Context) : View(context) {
 
     /** Parmakla çizim açık mı (okuma modunda hiçbir zaman). */
     private val drawsWithFinger get() = tools.fingerDraw && !readOnly
-        set(value) {
-            val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
-            if (field.tool == Tool.LASSO && value.tool != Tool.LASSO) clearSelection()
-            field = value
-            if (formsChanged) {
-                if (value.tool == Tool.TEXT) requestRender()
-                invalidate()
-            }
-            if (value.tool == Tool.HIGHLIGHTER) requestRender()
-        }
 
     /** Yazı aracıyla metin kutusuna (yeni ya da var olan) dokunuldu. */
     var onTextBoxRequest: ((page: Int, box: TextBox, isNew: Boolean) -> Unit)? = null

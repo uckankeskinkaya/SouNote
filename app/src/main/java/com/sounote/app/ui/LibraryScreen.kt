@@ -151,7 +151,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 actions = {
                     val list = vm.libraryView == LibraryViewModel.LibraryView.LIST
                     IconButton(onClick = {

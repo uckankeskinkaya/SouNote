@@ -116,7 +116,7 @@ fun EssayGraderScreen(vm: LibraryViewModel, onDismiss: () -> Unit) {
         onDismissRequest = { if (page == WritingPage.List) onDismiss() else page = WritingPage.List },
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().souBackground(), color = Color.Transparent) {
             AnimatedContent(
                 targetState = page,
                 contentKey = { it::class },

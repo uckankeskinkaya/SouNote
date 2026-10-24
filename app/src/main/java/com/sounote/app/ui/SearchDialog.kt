@@ -114,7 +114,7 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().souBackground(), color = Color.Transparent) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

@@ -50,6 +50,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -323,7 +325,7 @@ internal fun SouTopBar(
         navigationIcon = navigationIcon,
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = Color.Transparent,
             scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     )
@@ -445,5 +447,27 @@ internal fun ProgressBar(
     val p by animateFloatAsState(progress.coerceIn(0f, 1f), tween(if (animate) 600 else 0), label = "bar")
     Box(modifier.height(height).clip(RoundedCornerShape(50)).background(MaterialTheme.colorScheme.surfaceContainerHighest)) {
         Box(Modifier.fillMaxWidth(p).fillMaxHeight().clip(RoundedCornerShape(50)).background(color))
+    }
+}
+
+/**
+ * Uygulama zemini: logodaki gibi koyu lacivert üstünde mavi ve mor ışık parıltısı (açık temada çok hafif).
+ * Renkler temadan gelir; ekran içerikleri bunun üstünde saydam zeminle çizilir.
+ */
+@Composable
+internal fun Modifier.souBackground(): Modifier {
+    val scheme = MaterialTheme.colorScheme
+    val dark = LocalSouColors.current.isDark
+    val base = scheme.background
+    val glow1 = if (dark) scheme.primaryContainer.copy(alpha = 0.55f) else scheme.primary.copy(alpha = 0.10f)
+    val glow2 = if (dark) scheme.tertiaryContainer.copy(alpha = 0.38f) else scheme.tertiary.copy(alpha = 0.07f)
+    return drawBehind {
+        drawRect(base)
+        val r1 = size.maxDimension * 0.75f
+        val c1 = Offset(size.width * 0.9f, size.height * 0.02f)
+        drawCircle(Brush.radialGradient(listOf(glow1, Color.Transparent), center = c1, radius = r1), r1, c1)
+        val r2 = size.maxDimension * 0.6f
+        val c2 = Offset(size.width * 0.05f, size.height * 0.95f)
+        drawCircle(Brush.radialGradient(listOf(glow2, Color.Transparent), center = c2, radius = r2), r2, c2)
     }
 }

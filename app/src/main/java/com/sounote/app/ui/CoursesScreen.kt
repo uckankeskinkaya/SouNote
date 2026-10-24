@@ -104,7 +104,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 title = { Text(course?.name ?: "Dersler") },
                 navigationIcon = {
                     if (course != null) {
@@ -119,7 +119,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
                 },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())

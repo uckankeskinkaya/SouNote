@@ -35,6 +35,11 @@ enum class PenType(
     BRUSH("Fırça", "Basınca çok duyarlı", "F", InkTool.BRUSH, true),
     CALLIGRAPHY("Kaligrafi", "Yöne göre ince/kalın", "Kl", InkTool.CALLIGRAPHY, false),
     DASHED("Kesik çizgi", "Şekil ve şemalar için", "--", InkTool.DASHED, false),
+    GEL("Jel kalem", "Akıcı, hafif basınca duyarlı", "J", InkTool.PEN, true, 0.4f),
+    NEON("Neon", "Parlayan renkli çizgi", "N", InkTool.NEON, false, 0.8f),
+    DOTTED("Noktalı", "Nokta nokta çizgi", "··", InkTool.DOTTED, false, 0.8f),
+    BROAD("Geniş uç", "Kalın kaligrafi ucu; başlıklar için", "G", InkTool.CALLIGRAPHY, false, 2.2f),
+    SUMI("Mürekkep fırçası", "Kalın, uçları incelen fırça", "M", InkTool.BRUSH, true, 2.6f),
 }
 
 /** Araç çubuğunda tek dokunuşla seçilen kayıtlı kalem. */
@@ -53,6 +58,8 @@ data class ToolState(
     val penWidthMm: Float = 0.5f,
     /** 0 = sert (kalınlaşmak için çok bastır), 1 = yumuşak (hafif dokunuş da kalın). */
     val pressureSensitivity: Float = 0.5f,
+    /** Yazma desteği: el titremesini süzüp çizgiyi yumuşatır (0 = kapalı, 1 = en güçlü). */
+    val smoothing: Float = 0.35f,
     /** Kalemi çizginin sonunda bir an bekletince düz çizgi / şekil yap. */
     val shapeAssist: Boolean = true,
     /** Deneysel: çizilen çizgi ön tampona (daha az gecikme). */
@@ -123,6 +130,7 @@ data class ToolState(
             .putFloat("highlighterWidthMm", highlighterWidthMm)
             .putBoolean("highlighterStraight", highlighterStraight)
             .putBoolean("smartHighlighter", smartHighlighter)
+            .putFloat("smoothing", smoothing)
             .putString("eraserMode", eraserMode.name)
             .putFloat("eraserSizeDp", eraserSizeDp)
             .putBoolean("eraserHighlighterOnly", eraserHighlighterOnly)
@@ -209,6 +217,7 @@ data class ToolState(
                 highlighterWidthMm = prefs.getFloat("highlighterWidthMm", d.highlighterWidthMm),
                 highlighterStraight = prefs.getBoolean("highlighterStraight", d.highlighterStraight),
                 smartHighlighter = prefs.getBoolean("smartHighlighter", d.smartHighlighter),
+                smoothing = prefs.getFloat("smoothing", d.smoothing),
                 eraserMode = enumOr(prefs.getString("eraserMode", null), d.eraserMode),
                 eraserSizeDp = prefs.getFloat("eraserSizeDp", d.eraserSizeDp),
                 eraserHighlighterOnly = prefs.getBoolean("eraserHighlighterOnly", d.eraserHighlighterOnly),

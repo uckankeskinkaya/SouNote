@@ -5,7 +5,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** Kayıtlı çizgi türü. Sıra diske yazıldığı için yeni tür sadece sona eklenir. */
-enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED, TAPE }
+/** Sıra dosyada saklanır (ordinal): yenileri sadece sona eklenir. */
+enum class InkTool { PEN, HIGHLIGHTER, PENCIL, BRUSH, CALLIGRAPHY, DASHED, TAPE, NEON, DOTTED }
 
 /**
  * Tek bir çizgi. Koordinatlar sayfanın PDF noktası (1/72 inç) cinsinden; böylece

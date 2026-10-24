@@ -75,6 +75,10 @@ object PdfExporter {
             strokingAlphaConstant = StrokeRenderer.PENCIL_ALPHA
             nonStrokingAlphaConstant = StrokeRenderer.PENCIL_ALPHA
         }
+        val glowState = PDExtendedGraphicsState().apply {
+            strokingAlphaConstant = StrokeRenderer.NEON_GLOW_ALPHA
+            nonStrokingAlphaConstant = StrokeRenderer.NEON_GLOW_ALPHA
+        }
         val page = doc.getPage(index)
         val box = page.cropBox
         val rotation = ((page.rotation % 360) + 360) % 360
@@ -136,7 +140,18 @@ object PdfExporter {
             content.texts.forEach { drawText(cs, it) }
             // Ezber bantları dışa aktarılmaz: çalışma aracı, paylaşılan PDF'te yazıyı kapatmasın.
             content.strokes.filter { it.tool != InkTool.HIGHLIGHTER && it.tool != InkTool.TAPE }.forEach { stroke ->
-                if (stroke.tool == InkTool.PENCIL) {
+                if (stroke.tool == InkTool.NEON && stroke.pointCount > 1) {
+                    // Parıltı (saydam, geniş), renk, açık çekirdek
+                    cs.saveGraphicsState()
+                    cs.setGraphicsStateParameters(glowState)
+                    setColor(cs, stroke.color, stroking = true)
+                    run(cs, stroke.points, 0, stroke.pointCount - 1, stroke.width * StrokeRenderer.NEON_GLOW)
+                    cs.restoreGraphicsState()
+                    setColor(cs, stroke.color, stroking = true)
+                    run(cs, stroke.points, 0, stroke.pointCount - 1, stroke.width)
+                    setColor(cs, StrokeRenderer.neonCore(stroke.color), stroking = true)
+                    run(cs, stroke.points, 0, stroke.pointCount - 1, stroke.width * StrokeRenderer.NEON_CORE)
+                } else if (stroke.tool == InkTool.PENCIL) {
                     cs.saveGraphicsState()
                     cs.setGraphicsStateParameters(pencilState)
                     drawStroke(cs, stroke)
@@ -172,8 +187,12 @@ object PdfExporter {
             return
         }
         if (levels == null) {
-            if (s.tool == InkTool.DASHED) {
-                val (on, off) = StrokeRenderer.dashIntervals(s.width)
+            if (s.tool == InkTool.DASHED || s.tool == InkTool.DOTTED) {
+                val (on, off) = if (s.tool == InkTool.DOTTED) {
+                    StrokeRenderer.DOT_ON to StrokeRenderer.dotGap(s.width)
+                } else {
+                    StrokeRenderer.dashIntervals(s.width)
+                }
                 cs.saveGraphicsState()
                 cs.setLineDashPattern(floatArrayOf(on, off), 0f)
                 run(cs, pts, 0, n - 1, s.width)

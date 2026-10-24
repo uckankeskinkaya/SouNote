@@ -86,4 +86,9 @@ internal fun penArt(type: com.sounote.app.ink.PenType): Int = when (type) {
     com.sounote.app.ink.PenType.BRUSH -> R.drawable.pen_brush
     com.sounote.app.ink.PenType.CALLIGRAPHY -> R.drawable.pen_calligraphy
     com.sounote.app.ink.PenType.DASHED -> R.drawable.pen_fineliner
+    com.sounote.app.ink.PenType.GEL -> R.drawable.pen_gel
+    com.sounote.app.ink.PenType.NEON -> R.drawable.pen_neon
+    com.sounote.app.ink.PenType.DOTTED -> R.drawable.pen_dotted
+    com.sounote.app.ink.PenType.BROAD -> R.drawable.pen_broad
+    com.sounote.app.ink.PenType.SUMI -> R.drawable.pen_sumi
 }

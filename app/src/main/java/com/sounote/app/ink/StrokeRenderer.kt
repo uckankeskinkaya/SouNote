@@ -22,7 +22,8 @@ import kotlin.math.sin
  * olarak çizilir. Hızlıdır ve göze pürüzsüz görünür. PDF'e aktarma da aynı kademeleri kullanır.
  *
  * Fosforlu: MULTIPLY karışımı; altındaki yazı koyu kalır. Kurşun kalem: yarı saydam.
- * Kesik çizgi: sabit kalınlık, kesik kesik.
+ * Kesik çizgi: sabit kalınlık, kesik kesik. Noktalı: yuvarlak noktalar.
+ * Neon: geniş saydam parıltı + dolu çizgi + ince açık çekirdek.
  */
 class StrokeRenderer {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -59,11 +60,17 @@ class StrokeRenderer {
         if (tool == InkTool.TAPE) paint.alpha = (tapeAlpha * 255).roundToInt()
         // Bant düz kesik uçlu, diğerleri yuvarlak uçlu.
         paint.strokeCap = if (tool == InkTool.TAPE) Paint.Cap.BUTT else Paint.Cap.ROUND
-        paint.pathEffect = if (tool == InkTool.DASHED) {
-            val (on, off) = dashIntervals(width)
-            DashPathEffect(floatArrayOf(on, off), 0f)
-        } else {
-            null
+        paint.pathEffect = when (tool) {
+            InkTool.DASHED -> {
+                val (on, off) = dashIntervals(width)
+                DashPathEffect(floatArrayOf(on, off), 0f)
+            }
+            InkTool.DOTTED -> DashPathEffect(floatArrayOf(DOT_ON, dotGap(width)), 0f)
+            else -> null
+        }
+        if (tool == InkTool.NEON && n > 1) {
+            drawNeon(canvas, color, width, pts, n)
+            return
         }
         val levels = levels(tool, width, pressureSensitive, pts, n)
 
@@ -88,6 +95,18 @@ class StrokeRenderer {
                 runLevel = levels[i]
             }
         }
+    }
+
+    /** Neon: üç kat (parıltı, renk, açık çekirdek). */
+    private fun drawNeon(canvas: Canvas, color: Int, width: Float, pts: FloatArray, n: Int) {
+        paint.style = Paint.Style.STROKE
+        paint.color = color
+        paint.alpha = (NEON_GLOW_ALPHA * 255).roundToInt()
+        drawRun(canvas, pts, 0, n - 1, width * NEON_GLOW)
+        paint.alpha = 255
+        drawRun(canvas, pts, 0, n - 1, width)
+        paint.color = neonCore(color)
+        drawRun(canvas, pts, 0, n - 1, width * NEON_CORE)
     }
 
     private fun drawRun(canvas: Canvas, pts: FloatArray, from: Int, to: Int, strokeWidth: Float) {
@@ -115,6 +134,23 @@ class StrokeRenderer {
         const val MAX_PRESSURE_FACTOR = 1.6f
         const val PENCIL_ALPHA = 0.78f
         const val TAPE_REVEALED_ALPHA = 0.16f
+        const val NEON_GLOW = 2.6f
+        const val NEON_GLOW_ALPHA = 0.28f
+        const val NEON_CORE = 0.35f
+
+        /** Noktalı çizgi: sıfıra yakın "dolu" parça + yuvarlak uç = nokta. */
+        const val DOT_ON = 0.01f
+        fun dotGap(width: Float) = max(width * 2.2f, 2f)
+
+        /** Neon çekirdeği: rengin beyaza yakın hali. */
+        fun neonCore(color: Int): Int {
+            fun mix(c: Int) = (c + (255 - c) * 0.75f).roundToInt()
+            return android.graphics.Color.rgb(
+                mix(android.graphics.Color.red(color)),
+                mix(android.graphics.Color.green(color)),
+                mix(android.graphics.Color.blue(color)),
+            )
+        }
 
         /** Kaligrafi ucunun açısı: bu yönde giden çizgi en ince olur (sağ üste doğru). */
         private val NIB_ANGLE = (-PI / 4).toFloat()
@@ -130,6 +166,7 @@ class StrokeRenderer {
             InkTool.PEN -> if (pressureSensitive) MAX_PRESSURE_FACTOR else 1f
             InkTool.BRUSH -> 2f
             InkTool.CALLIGRAPHY -> 1.2f
+            InkTool.NEON -> NEON_GLOW
             else -> 1f
         }
 

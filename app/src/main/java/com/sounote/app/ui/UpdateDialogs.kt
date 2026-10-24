@@ -36,6 +36,8 @@ private val WHATS_NEW = listOf(
     SouIcons.StarShine to "Asistanla ders özeti: dersin bütün PDF'lerinden özet, kelimeler, sorular.",
     SouIcons.LibraryBooks to "Defter kapakları; haftalık plan, kelime defteri ve renkli Cornell şablonları.",
     SouIcons.Widgets to "Yeni sınav widget'ı ve tablette iki sütunlu ana sayfa.",
+    SouIcons.Event to "Sınav öncesi plan ve deneme sınavı: asistan gün gün plan ve konulardan test hazırlar.",
+    SouIcons.Mood to "Çıkartmalar; renk paleti son kullandığın renkleri hatırlar.",
 )
 
 /** Yeni sürüm ve "Yenilikler" pencereleri (ana ekranda). */

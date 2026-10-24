@@ -30,16 +30,17 @@
 |---|---|
 | 🎨 **Görünüm (3.0)** | Baştan sade tasarım: logodaki lacivert ve mavi-mor tonlar, emoji yerine simgeler, Canva çizimleri; telefonda alt çubuk, tablette yan menü ve yatayda iki sütunlu ana sayfa |
 | 🏠 **Ana sayfa** | Bölümleri sırala ya da gizle; favoriler ve sabitlenenlerle hızlı erişim |
-| ✍️ **Kalem** | 14 kalem (dolma, jel, ince uç, keçeli, pastel, neon, noktalı, fırça, kaligrafi…), her kalem ayarını hatırlar; yazma desteği (titreme süzme), cetvel ve açıölçer; fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
+| ✍️ **Kalem** | 14 kalem (dolma, jel, ince uç, keçeli, pastel, neon, noktalı, fırça, kaligrafi…), her kalem ayarını hatırlar; yazma desteği (titreme süzme), cetvel ve açıölçer, çıkartmalar, son kullanılan renkler; fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
 | 📄 **PDF** | Okuma modu, lasso ile seçilen bölgeyi asistana sor, tablette yan yana not; içe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
 | 📚 **Dersler** | Haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları WPS/Office'te açılır, PDF olarak SouNote'a paylaşılır; bitirdiklerini işaretle, haftanın ilerlemesini gör |
-| 📅 **Planlayıcı** | Liste, hafta, ay ve zaman çizelgesi; ödev tamamlama, öncelik, filtreler, hatırlatıcılar, ana ekran widget'ı |
+| 📅 **Planlayıcı** | Liste, hafta, ay ve zaman çizelgesi; ödev tamamlama, öncelik, filtreler, hatırlatıcılar, ana ekran widget'ı; asistanla sınav öncesi gün gün çalışma planı |
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; dokun çevir, kaydırarak bildim/bilemedim; aralıklı tekrar (Leitner) |
 | 🤖 **Asistan** | Açık belgeyi ya da bir dersin bütün PDF'lerini okur (ders özeti); özet, kelime listesi, soru, essay değerlendirmesi. Evren (e-Devlet) anahtarı için uygulama içinde adım adım kurulum |
 | 🔎 **Genel arama** | Dersler, klasörler, belgeler, notlar, sınavlar; PDF'lerin içinde sayfa sayfa; filtreler ve son aramalar |
 | 🖋️ **Yazı stüdyosu** | Essay şablonu, başlık/kalın/italik, kelime ve karakter sayacı, odak modu, yapı paneli; yazma koçu önerir, sen onaylarsın |
 | ✍️ **Writing pratiği** | Opinion essay/paragraph yaz; asistan L4 ölçütleriyle 100 üzerinden puanlar, hataları ve geliştirilmiş hali gösterir |
 | 🔥 **Çalışma serisi** | Art arda çalıştığın günler; belgede 5 dk, kart tekrarı, Writing, haftalık liste ya da yazılı not o günü sayar |
+| 🧪 **Deneme sınavı** | Dersin konularından asistan çoktan seçmeli test hazırlar (5/10/20 soru); sonuç ve yanlışların açıklaması |
 | 🔁 **Bugünkü tekrar** | Bütün belgelerde zamanı gelen bilgi kartları tek oturumda |
 | 📊 **Not ortalaması** | Puanlarını gir, geçmek için kalan sınavlardan kaç alman gerektiğini gör |
 | 📝 **Yazılı notlar** | Klavyeyle ya da kalemle yazma, yapılacaklar, çizim alanı |

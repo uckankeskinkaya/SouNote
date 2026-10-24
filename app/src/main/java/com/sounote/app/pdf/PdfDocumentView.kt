@@ -29,6 +29,7 @@ import android.widget.OverScroller
 import java.io.File
 import com.sounote.app.ink.Eraser
 import com.sounote.app.ink.EraserMode
+import com.sounote.app.ink.GuideKind
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.Clip
 import com.sounote.app.ink.ImageItem
@@ -88,6 +89,11 @@ class PdfDocumentView(context: Context) : View(context) {
     var tools: ToolState = ToolState()
         set(value) {
             val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
+            if (value.guide != field.guide) {
+                guide.kind = value.guide
+                if (value.guide != GuideKind.NONE) guide.place(width, height)
+                invalidate()
+            }
             if (field.tool == Tool.LASSO && value.tool != Tool.LASSO) clearSelection()
             field = value
             if (formsChanged) {
@@ -148,6 +154,12 @@ class PdfDocumentView(context: Context) : View(context) {
     var onPlayAudio: ((file: String, ms: Long) -> Unit)? = null
 
     private val density = resources.displayMetrics.density
+
+    /** Cetvel / açıölçer (ekranda sabit). */
+    private val guide = GuideOverlay(density)
+    /** Bu çizgi hangi kenara oturuyor (0 = serbest). */
+    private var guideSnap = 0
+    private val snapOut = FloatArray(2)
     private val pageGap = 12f * density
 
     private var renderer: PdfRenderThread? = null
@@ -689,6 +701,7 @@ class PdfDocumentView(context: Context) : View(context) {
             for (i in 1 until lassoCount) lassoPath.lineTo(lasso[i * 2], lasso[i * 2 + 1])
             canvas.drawPath(lassoPath, lassoPaint)
         }
+        if (guide.kind != GuideKind.NONE) guide.draw(canvas, pageScale(visibleRange().first) * GuideOverlay.PT_PER_MM)
     }
 
     private fun drawInk(canvas: Canvas, page: Int, r: RectF) {
@@ -1033,6 +1046,12 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
 
+        // Cetvel/açıölçer tutuluyorsa parmak onu taşır, sayfa kaymaz.
+        if (guide.onTouch(event)) {
+            invalidate()
+            return
+        }
+
         trackTwoFingerTap(event)
 
         if (tools.tool == Tool.LASSO && handleFingerSelection(event)) return
@@ -1138,8 +1157,15 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun toPageY(page: Int, sy: Float) = (sy + offsetY - pageTops[page] * zoom) / pageScale(page)
 
     private fun beginInput(event: MotionEvent, idx: Int, fromStylus: Boolean, erase: Boolean) {
-        val x = event.getX(idx)
-        val y = event.getY(idx)
+        var x = event.getX(idx)
+        var y = event.getY(idx)
+        // Cetvel/açıölçer kenarına yakın başlayan kalem/fosforlu çizgisi kenara oturur.
+        guideSnap = if (!erase && (tools.tool == Tool.PEN || tools.tool == Tool.HIGHLIGHTER)) guide.snapMode(x, y) else 0
+        if (guideSnap != 0) {
+            guide.snap(guideSnap, x, y, snapOut)
+            x = snapOut[0]
+            y = snapOut[1]
+        }
         drawPointerId = event.getPointerId(idx)
         inputFromStylus = fromStylus
         erasing = erase
@@ -1308,7 +1334,7 @@ class PdfDocumentView(context: Context) : View(context) {
 
     private val holdCheck = Runnable {
         val b = current ?: return@Runnable
-        if (snapped || erasing) return@Runnable
+        if (snapped || erasing || guideSnap != 0) return@Runnable
         val lineOnly = b.tool == InkTool.HIGHLIGHTER
         val shape = ShapeRecognizer.recognize(b.points, b.count, lineOnly) ?: return@Runnable
         b.replaceAll(shape.points, shape.count)
@@ -1334,8 +1360,9 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     private fun addPoint(b: StrokeBuilder, sx: Float, sy: Float, rawPressure: Float) {
-        var x = toPageX(inputPage, sx)
-        var y = toPageY(inputPage, sy)
+        if (guideSnap != 0) guide.snap(guideSnap, sx, sy, snapOut) else { snapOut[0] = sx; snapOut[1] = sy }
+        var x = toPageX(inputPage, snapOut[0])
+        var y = toPageY(inputPage, snapOut[1])
         if (straightLine) {
             // Düz fosforlu: başlangıçtan bu noktaya tek çizgi; yataya/dikeye yakınsa ona oturt.
             val x0 = b.points[0]
@@ -1350,7 +1377,7 @@ class PdfDocumentView(context: Context) : View(context) {
         // (kalem kalkınca son noktaya tamamlanır, bkz. endInput).
         rawLastX = x
         rawLastY = y
-        if (tools.smoothing > 0f && !shapeMode) {
+        if (tools.smoothing > 0f && !shapeMode && guideSnap == 0) {
             val k = 1f - tools.smoothing.coerceIn(0f, 1f) * 0.8f
             x = b.lastX + (x - b.lastX) * k
             y = b.lastY + (y - b.lastY) * k
@@ -1369,7 +1396,7 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun updatePrediction(event: MotionEvent) {
         predictedCount = 0
         val p = predictor ?: return
-        if (!inputFromStylus) return
+        if (!inputFromStylus || guideSnap != 0) return
         p.record(event)
         val b = current ?: return
         val target = (SystemClock.uptimeMillis() + PREDICTION_MS) * 1_000_000L

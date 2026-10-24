@@ -60,6 +60,7 @@ import com.sounote.app.R
 import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.FavoritePen
 import com.sounote.app.ink.PenType
+import com.sounote.app.ink.GuideKind
 import com.sounote.app.ink.Tool
 import com.sounote.app.ink.ToolState
 import java.util.Locale
@@ -140,6 +141,13 @@ fun InkToolbar(
                     onChange(state.copy(tool = Tool.STAMP))
                 }
                 ToolChip("Resim ekle", false, vector = SouIcons.Image, onClick = onInsertImage)
+                Separator()
+                ToolChip("Cetvel", state.guide == GuideKind.RULER, vector = SouIcons.Straighten) {
+                    onChange(state.copy(guide = if (state.guide == GuideKind.RULER) GuideKind.NONE else GuideKind.RULER))
+                }
+                ToolChip("Açıölçer", state.guide == GuideKind.PROTRACTOR, vector = SouIcons.Architecture) {
+                    onChange(state.copy(guide = if (state.guide == GuideKind.PROTRACTOR) GuideKind.NONE else GuideKind.PROTRACTOR))
+                }
                 Separator()
                 Favorites(state, onChange)
             }
@@ -320,7 +328,7 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
                             .border(if (sel) 2.dp else 0.dp, if (sel) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(14.dp))
                             .clickable {
                                 typeMenu = false
-                                onChange(state.copy(penType = t, penWidthMm = t.defaultWidthMm ?: state.penWidthMm))
+                                onChange(state.switchPen(t))
                             }
                             .padding(vertical = 8.dp),
                     ) {

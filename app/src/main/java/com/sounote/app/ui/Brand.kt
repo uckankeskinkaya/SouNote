@@ -26,23 +26,16 @@ object Brand {
     val gradient get() = Brush.linearGradient(listOf(Blue, Deep))
 }
 
-/** Uygulama simgesi: yuvarlatılmış kare içinde sayfa + kalem. */
+/** Uygulama logosu ("A. Dengeli"): gece mavisi kare içinde kâğıt ve dolma kalem (site ve simgeyle aynı). */
 @Composable
 fun AppLogo(size: Dp, modifier: Modifier = Modifier, elevated: Boolean = true) {
-    val shape = RoundedCornerShape(size * 0.26f)
-    Box(
-        contentAlignment = Alignment.Center,
+    val shape = RoundedCornerShape(size * 0.22f)
+    Image(
+        painterResource(R.drawable.logo_tile),
+        contentDescription = null,
         modifier = modifier
             .size(size)
             .then(if (elevated) Modifier.shadow(size * 0.12f, shape) else Modifier)
-            .clip(shape)
-            .background(Brand.gradient),
-    ) {
-        // Ön plan 108 birimlik tuvalin ortasındaki 66 birimde; kareyi doldursun diye büyütülür.
-        Image(
-            painterResource(R.drawable.ic_launcher_foreground),
-            contentDescription = null,
-            modifier = Modifier.requiredSize(size * 1.5f),
-        )
-    }
+            .clip(shape),
+    )
 }

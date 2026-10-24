@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -247,6 +248,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     var focus by rememberSaveable { mutableStateOf(false) }
     // Yan panel: 1 = yazma koçu, 2 = yapı (bölümler)
     var panel by remember { mutableStateOf(0) }
+    val narrowBar = LocalConfiguration.current.screenWidthDp < 600
     // Koç önerisi uygulanmadan önceki hali (bir adım geri almak için)
     var beforeCoach by remember { mutableStateOf<List<EditorPart>?>(null) }
     var editingSketch by remember { mutableStateOf<Sketch?>(null) }
@@ -374,8 +376,8 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                 },
                 actions = {
                     TextButton(onClick = { focus = !focus; if (focus) panel = 0 }) { Text(if (focus) "Odaktan çık" else "🎯 Odak") }
-                    if (!focus) TextButton(onClick = { vm.updateTextFontSize(fontSize - 2f) }) { Text("A−", fontSize = 14.sp) }
-                    if (!focus) TextButton(onClick = { vm.updateTextFontSize(fontSize + 2f) }) { Text("A+", fontSize = 18.sp) }
+                    if (!focus && !narrowBar) TextButton(onClick = { vm.updateTextFontSize(fontSize - 2f) }) { Text("A−", fontSize = 14.sp) }
+                    if (!focus && !narrowBar) TextButton(onClick = { vm.updateTextFontSize(fontSize + 2f) }) { Text("A+", fontSize = 18.sp) }
                     if (!focus) Box {
                         IconButton(onClick = { shareMenu = true }) {
                             Icon(Icons.Default.Share, contentDescription = "Paylaş")
@@ -390,6 +392,10 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            if (narrowBar) {
+                                DropdownMenuItem(text = { Text("A+  Yazıyı büyüt") }, onClick = { vm.updateTextFontSize(fontSize + 2f) })
+                                DropdownMenuItem(text = { Text("A−  Yazıyı küçült") }, onClick = { vm.updateTextFontSize(fontSize - 2f) })
+                            }
                             val pinned = vm.openText?.pinned == true
                             DropdownMenuItem(
                                 text = { Text(if (pinned) "Sabitlemeyi kaldır" else "Başa sabitle") },

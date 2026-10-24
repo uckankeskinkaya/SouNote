@@ -1,0 +1,53 @@
+name: İmza anahtarı oluştur (tek seferlik)
+
+# Yeni imza anahtarını GitHub'ın içinde üretir; anahtar kimsenin eline geçmez.
+# Şifre sadece "SIGNING_PASSWORD" gizli değerindedir. Anahtar şifreli olarak repoya konur
+# (keystore/sounote2.p12.enc) ve eski anahtardan yeniye geçiş kaydı (keystore/lineage.bin) oluşturulur.
+# Bir kez çalışır: yeni anahtar zaten varsa durur (üzerine yazmak güncellemeleri bozar).
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/keygen/request"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: keygen
+  cancel-in-progress: false
+
+jobs:
+  keygen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Anahtarı oluştur
+        env:
+          PW: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -f keystore/sounote2.p12.enc ]; then echo "::error::Yeni anahtar zaten var; üzerine yazılmaz."; exit 1; fi
+          if [ "${#PW}" -lt 16 ]; then echo "::error::SIGNING_PASSWORD gizli değeri yok ya da 16 karakterden kısa."; exit 1; fi
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+          keytool -genkeypair -keystore "$tmp/new.p12" -storetype PKCS12 -storepass:env PW -keypass:env PW \
+            -alias sounote2 -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=SouNote" >/dev/null
+          "$BT/apksigner" rotate --out keystore/lineage.bin \
+            --old-signer --ks keystore/sounote.jks --ks-pass pass:sounote --key-pass pass:sounote --ks-key-alias sounote \
+            --new-signer --ks "$tmp/new.p12" --ks-pass env:PW --ks-key-alias sounote2
+          "$BT/apksigner" lineage --in keystore/lineage.bin --print-certs -v
+          openssl enc -aes-256-cbc -pbkdf2 -iter 600000 -salt -in "$tmp/new.p12" -out keystore/sounote2.p12.enc -pass env:PW
+          # Şifre çözülebiliyor mu?
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in keystore/sounote2.p12.enc -out "$tmp/check.p12" -pass env:PW
+          cmp "$tmp/new.p12" "$tmp/check.p12"
+          keytool -list -keystore "$tmp/check.p12" -storetype PKCS12 -storepass:env PW | grep -q sounote2
+
+      - name: Repoya ekle
+        run: |
+          git config user.name ci; git config user.email ci@users.noreply.github.com
+          git add keystore/sounote2.p12.enc keystore/lineage.bin
+          git commit -m "İmza: yeni anahtar (şifreli) ve geçiş kaydı"
+          for i in 1 2 3; do git pull --rebase -q origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done
+          exit 1

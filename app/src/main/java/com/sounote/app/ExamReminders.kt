@@ -34,9 +34,12 @@ object ExamReminders {
 
     /** Kayıtlı ve ortak bütün sınavlar için alarmları yeniden kurar. */
     fun rescheduleAll(context: Context) {
-        val level = context.getSharedPreferences("viewer", Context.MODE_PRIVATE).getString("userLevel", null) ?: ""
+        val prefs = context.getSharedPreferences("viewer", Context.MODE_PRIVATE)
+        val level = prefs.getString("userLevel", null) ?: ""
+        val doneGlobal = prefs.getStringSet("examDone", emptySet()).orEmpty()
         val global = CatalogRepo.cached(context).exams.filter { level.isEmpty() || it.levels.isEmpty() || level in it.levels }
-        schedule(context, ExamStore(context).load() + global)
+        // Tamamlanan ödevler için hatırlatma kurulmaz.
+        schedule(context, (ExamStore(context).load() + global).filter { !it.done && it.id !in doneGlobal })
     }
 
     fun schedule(context: Context, exams: List<Exam>) {

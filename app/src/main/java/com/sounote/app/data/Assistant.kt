@@ -57,8 +57,17 @@ class TermsNotAcceptedException(message: String) : IOException(message)
 data class ChatMessage(val role: String, val content: String)
 
 object AssistantClient {
-    /** /chat/completions çağrısı; cevabın metnini döndürür. */
-    fun chat(config: AssistantConfig, messages: List<ChatMessage>): String {
+    /** /chat/completions çağrısı; cevabın metnini döndürür. Evren 429'da birkaç saniye bekletir: bir kez tekrar denenir. */
+    fun chat(config: AssistantConfig, messages: List<ChatMessage>): String =
+        try {
+            chatOnce(config, messages)
+        } catch (e: IOException) {
+            if (e is TermsNotAcceptedException || e.message?.contains("HTTP 429") != true) throw e
+            Thread.sleep(5_000)
+            chatOnce(config, messages)
+        }
+
+    private fun chatOnce(config: AssistantConfig, messages: List<ChatMessage>): String {
         val base = config.baseUrl.trim().trimEnd('/')
         val url = if (base.endsWith("/chat/completions")) base else "$base/chat/completions"
         val body = JSONObject()
@@ -81,9 +90,10 @@ object AssistantClient {
                 if (code == 403 && text.contains("terms_not_accepted")) throw TermsNotAcceptedException(msg ?: "Kullanım şartları onaylanmamış")
                 throw IOException(
                     when (code) {
-                        401, 403 -> "Anahtar geçersiz ya da yetkisiz (HTTP $code)"
+                        401 -> "Anahtar yanlış ya da iptal edilmiş. Evren → API Anahtarları'ndan yeni anahtar oluşturup asistan ayarlarına yapıştır (HTTP 401)"
+                        403 -> "Bu anahtarın erişim izni yok (HTTP 403)"
                         404 -> "Adres ya da model bulunamadı (HTTP 404)"
-                        429 -> "Çok fazla istek ya da kota doldu (HTTP 429)"
+                        429 -> "Evren şu an yoğun ya da günlük kullanım sınırın doldu. Biraz bekleyip tekrar dene (HTTP 429)"
                         else -> "Servis hatası (HTTP $code)"
                     } + (msg?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""),
                 )
@@ -164,6 +174,52 @@ ${source.take(12_000)}
         }.ifEmpty { throw IOException("Metinden kart çıkarılamadı") }
     }
 
+    /**
+     * Writing pratiği: yazıyı L4 (B1+) opinion yazısı ölçütlerine göre 100 üzerinden puanlar.
+     * Cevap JSON: total, summary, criteria[{name,score,max,comment}], strengths[], mistakes[{wrong,right,why}], improved.
+     */
+    fun gradeEssay(config: AssistantConfig, type: EssayType, topic: String, text: String): EssayFeedback {
+        val prompt = """
+Sen Ankara Üniversitesi YDYO İngilizce Hazırlık L4 (B1+, SpeakOut) yazma sınavı değerlendiricisisin. Öğrencinin ${type.label} yazısını puanla.
+Beklenen yapı: ${type.brief} Hedef uzunluk: ${type.minWords}-${type.maxWords} kelime.
+
+Ölçütler (toplam 100):
+1. "Görev ve içerik" (20): soruya net bir görüşle cevap, nedenler ve destekleyici örnekler/açıklamalar yeterli ve konuyla ilgili.
+2. "Düzen ve paragraf yapısı" (20): giriş-tez cümlesi, konu cümleleri, gelişme, sonuç; mantıklı sıra.
+3. "Bağlaçlar ve bütünlük" (20): linkers (Firstly, In addition, However, In conclusion...) doğru ve çeşitli; cümleler arası akış.
+4. "Dil bilgisi" (20): zaman uyumu, cümle yapısı, article/preposition, özne-yüklem uyumu; B1+ yapılar (relative clauses, conditionals, passive...).
+5. "Kelime bilgisi ve yazım" (20): uygun ve çeşitli kelime, collocations, yazım ve noktalama.
+Uzunluk hedefin çok altındaysa "Görev ve içerik" puanını düşür. B1+ öğrencisine adil ol; ne çok cömert ne çok sert.
+
+Açıklamaları Türkçe yaz; İngilizce örnekleri İngilizce bırak. En fazla 10 hata göster (en önemlileri).
+"improved": öğrencinin yazısının düzeltilmiş ve biraz geliştirilmiş hali (aynı fikirler, aynı uzunluk civarı, B1+ düzeyinde; yeni fikir ekleme).
+SADECE şu JSON'u döndür, başka hiçbir şey yazma:
+{"total": 0, "summary": "2-3 cümle genel değerlendirme", "criteria": [{"name": "...", "score": 0, "max": 20, "comment": "..."}],
+ "strengths": ["..."], "mistakes": [{"wrong": "öğrencinin yazdığı", "right": "doğrusu", "why": "kısa açıklama"}], "improved": "..."}
+
+Konu: $topic
+
+Öğrencinin yazısı:
+<<<
+${text.take(8_000)}
+>>>
+""".trim()
+        return EssayFeedback.parse(chat(config, listOf(ChatMessage("user", prompt))))
+    }
+
+    /** Writing pratiği için yeni bir konu önerir (tek cümle, İngilizce soru). */
+    fun suggestTopic(config: AssistantConfig, type: EssayType): String =
+        chat(
+            config,
+            listOf(
+                ChatMessage(
+                    "user",
+                    "İngilizce hazırlık L4 (B1+) öğrencisi için tek bir ${type.label} konusu yaz. Sadece konu sorusunu İngilizce yaz " +
+                        "(ör. \"... Do you agree or disagree?\"), başka hiçbir şey yazma.",
+                ),
+            ),
+        ).lineSequence().map { it.trim().trim('"', '*', '-', ' ') }.firstOrNull { it.length > 10 } ?: throw IOException("Konu alınamadı")
+
     /** Asistanın uygulamayı, kullanıcıyı ve sınav takvimini tanıması için sistem talimatı. */
     fun systemPrompt(catalog: Catalog, userName: String, now: Long = System.currentTimeMillis()): String {
         val fmt = SimpleDateFormat("d MMMM yyyy EEEE HH:mm", Locale.forLanguageTag("tr"))
@@ -202,6 +258,7 @@ Hazırlık programı kuralları (Ankara Üniversitesi YDYO Öğrenci El Kitabı 
 - Kur Atlama Sınavı: Dinleme-Okuma-Dil Kullanımı %60, Yazma %20, Sözlü %20.
 - L4 kurunu geçenler Güz Yeterlik Sınavına girer; en az 70 alan hazırlığı bitirir. Derslere en az %85 devam zorunlu (%15 devamsızlık hakkı).
 - L4 Güz sunumu: bireysel, 8-10 dakika + 5 dakika soru-cevap; konular sunumdan iki hafta önce verilir.
+- Uygulamadaki "Writing" (ana sayfa) ekranında essay yazılır, asistan 5 ölçütle (görev, düzen, bağlaçlar, dil bilgisi, kelime) 100 üzerinden puanlar.
 - Uygulamadaki "Not ortalamam" (Sınavlar sekmesi / ana sayfa → Ortalama) bu hesabı yapar.
 
 L4 ders konuları:
@@ -215,13 +272,27 @@ ${upcoming.ifBlank { "(kayıt yok)" }}
 
 /** PDF'ten metin çıkarır (asistana bağlam olarak). Sayfalar 0'dan başlar. */
 object PdfText {
-    fun extract(context: Context, source: Uri, from: Int, to: Int, maxChars: Int = 16_000): String {
+    private fun load(context: Context, source: Uri): PDDocument {
         PDFBoxResourceLoader.init(context.applicationContext)
-        val doc = if (source.scheme == "file") {
+        return if (source.scheme == "file") {
             PDDocument.load(File(requireNotNull(source.path)))
         } else {
             context.contentResolver.openInputStream(source)?.use { PDDocument.load(it) } ?: throw IOException("PDF açılamadı")
         }
+    }
+
+    /** Sayfanın bir bölgesindeki metin ([rect]: PDF noktası, sol üst köşe başlangıç). */
+    fun region(context: Context, source: Uri, page: Int, rect: android.graphics.RectF, maxChars: Int = 8_000): String =
+        load(context, source).use { doc ->
+            if (page !in 0 until doc.numberOfPages) return@use ""
+            val stripper = com.tom_roush.pdfbox.text.PDFTextStripperByArea()
+            stripper.addRegion("sel", android.graphics.RectF(rect).apply { inset(-2f, -2f) })
+            stripper.extractRegions(doc.getPage(page))
+            stripper.getTextForRegion("sel").replace(Regex("[ \\t]+"), " ").trim().take(maxChars)
+        }
+
+    fun extract(context: Context, source: Uri, from: Int, to: Int, maxChars: Int = 16_000): String {
+        val doc = load(context, source)
         return doc.use {
             val stripper = PDFTextStripper().apply {
                 startPage = (from + 1).coerceAtLeast(1)

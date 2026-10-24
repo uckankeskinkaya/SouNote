@@ -13,6 +13,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,9 +75,9 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-private const val PAGES = 5
+private const val PAGES = 4
 
-/** İlk açılışta tanıtım: dört tanıtım sayfası + kısa kurulum (ad, kalem/parmak, tema). */
+/** İlk açılışta tanıtım: hoş geldin, çalışma alanı, not alma ve kısa kurulum (ad, tema, kalem/parmak). Her ekran atlanabilir. */
 @Composable
 fun OnboardingScreen(vm: LibraryViewModel) {
     val pager = rememberPagerState(pageCount = { PAGES })
@@ -101,7 +102,7 @@ fun OnboardingScreen(vm: LibraryViewModel) {
             Modifier
                 .fillMaxWidth()
                 .height(320.dp)
-                .background(Brush.verticalGradient(listOf(Brand.Blue.copy(alpha = 0.16f), Color.Transparent))),
+                .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f), Color.Transparent))),
         )
         Column(Modifier.fillMaxSize().systemBarsPadding()) {
             Row(
@@ -115,32 +116,28 @@ fun OnboardingScreen(vm: LibraryViewModel) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 10.dp).weight(1f),
                 )
-                if (!last) TextButton(onClick = { go(PAGES - 1) }) { Text("Atla") }
+                // Atla: tanıtımı hemen bitirir (ayarlar varsayılan kalır, sonra Ayarlar'dan değiştirilebilir).
+                TextButton(onClick = ::finish) { Text("Atla") }
             }
             HorizontalPager(state = pager, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
                 when (page) {
                     0 -> IntroPage(
                         "SouNote'a hoş geldin",
-                        "Ders notların, PDF'lerin ve kalemin tek yerde. Belgelerinin üstüne yaz, çiz, işaretle; " +
-                            "kâğıt gibi ama daha akıllı.",
+                        "Ders notların, PDF'lerin ve kalemin tek yerde. Ücretsiz, açık kaynak ve hesap gerektirmez; " +
+                            "notların yalnızca bu cihazda kalır.",
                     ) { WelcomeArt() }
                     1 -> IntroPage(
-                        "Kalemle doğal yazı",
-                        "Basınca duyarlı kalemler, fosforlu ve silgi. Kalem yazar, parmak sayfayı kaydırır; " +
-                            "avucun ekrana değse de çizmez. Çizginin sonunda beklersen düzgün şekle döner.",
-                    ) { PenArt() }
-                    2 -> IntroPage(
-                        "Bütün belgelerin bir arada",
-                        "PDF içe aktar ya da ders klasörünü bağla: oraya attığın yeni PDF'ler kendiliğinden görünür. " +
-                            "Boş defterler, klasörler, etiketler ve arama.",
+                        "Çalışma alanın",
+                        "Dersler sekmesinde konular ve haftalık kaynaklar, Kütüphane'de PDF'lerin ve defterlerin, " +
+                            "Planlayıcı'da sınav, ödev ve sunumların. Ana sayfa hepsini bir araya getirir; istediğin gibi düzenleyebilirsin.",
                     ) { DocsArt() }
-                    3 -> IntroPage(
-                        "Daha iyi çalış",
-                        "Dersi kaydet, notuna dokununca kayıt o andan çalsın. Ezber bandıyla kendini sına, " +
-                            "bilgi kartlarıyla tekrar et, pomodoro ile odaklan.",
-                    ) { ToolsArt() }
+                    2 -> IntroPage(
+                        "Not al ve düzenle",
+                        "PDF'lerin üstüne basınca duyarlı kalemle yaz, fosforlu ile işaretle, şekil ve yazı ekle. " +
+                            "Kalem yazar, parmak kaydırır; avucun ekrana değse de çizmez. Sadece okuyacaksan okuma moduna geç.",
+                    ) { PenArt() }
                     else -> IntroPage(
-                        "Hazırlayalım",
+                        "Kendine göre ayarla",
                         "Birkaç küçük ayar. Hepsini sonra Ayarlar'dan değiştirebilirsin.",
                         extra = {
                             SetupOptions(
@@ -282,14 +279,25 @@ private fun SetupOptions(
                 modifier = Modifier.weight(1f),
             )
         }
-        Text("Görünüm", style = MaterialTheme.typography.titleSmall)
+        Text("Tema", style = MaterialTheme.typography.titleSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LibraryViewModel.ThemeMode.entries.forEach { m ->
                 FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })
             }
         }
+        Text("Koyu tema rengi", style = MaterialTheme.typography.titleSmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            DarkPalette.entries.forEach { p ->
+                FilterChip(
+                    selected = vm.darkPalette == p,
+                    onClick = { vm.updateDarkPalette(p) },
+                    label = { Text(p.label) },
+                    leadingIcon = { Box(Modifier.size(14.dp).clip(CircleShape).background(colorSchemeFor(true, p, Accent.Auto).primary)) },
+                )
+            }
+        }
         Text(
-            "🔒 Notların yalnızca bu cihazda saklanır, hiçbir yere gönderilmez.",
+            "🔒 Notların yalnızca bu cihazda saklanır. Hesap ya da izin gerekmez.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -489,47 +497,3 @@ private fun MiniDoc(color: Color, label: String, modifier: Modifier) {
 }
 
 /** Çalışma araçları: hafifçe nabız gibi atan simgeler. */
-@Composable
-private fun ToolsArt() {
-    val t = rememberInfiniteTransition(label = "tools")
-    val phase by t.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "phase")
-    val tools = listOf(
-        Triple(R.drawable.ic_mic, "Ses kaydı", Color(0xFFE5534B)),
-        Triple(R.drawable.ic_tape, "Ezber bandı", Color(0xFFE0893A)),
-        Triple(R.drawable.ic_lasso, "Lasso", Color(0xFF8E63CE)),
-        Triple(R.drawable.ic_highlighter, "Fosforlu", Color(0xFFC9A227)),
-        Triple(R.drawable.ic_pages, "Sayfalar", Color(0xFF3FA36B)),
-        Triple(R.drawable.ic_text, "Yazı", Color(0xFF3AA6B9)),
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        tools.chunked(3).forEachIndexed { row, chunk ->
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                chunk.forEachIndexed { col, (icon, label, color) ->
-                    val index = row * 3 + col
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(96.dp)) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .size(76.dp)
-                                .graphicsLayer {
-                                    val s = 1f + 0.07f * sin(2f * PI.toFloat() * (phase + index / 6f))
-                                    scaleX = s
-                                    scaleY = s
-                                }
-                                .clip(CircleShape)
-                                .background(color.copy(alpha = 0.16f)),
-                        ) {
-                            Icon(painterResource(icon), contentDescription = null, tint = color, modifier = Modifier.size(36.dp))
-                        }
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelLarge,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}

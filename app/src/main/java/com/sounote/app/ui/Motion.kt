@@ -2,6 +2,8 @@ package com.sounote.app.ui
 
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -32,31 +34,49 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Animasyonlar: basınca hafif küçülme, sırayla beliren kartlar, ekran geçişleri. */
+/**
+ * Hareket sistemi: ekranın amacına göre. Ana sayfa ve listelerde hafif geçişler; belge ve çizim
+ * ekranında animasyon yok. [MotionLevel] (Ayarlar → Arayüz ve sistemin animasyon ayarı) her yerde uyulur.
+ */
 object Motion {
     const val SHORT = 180
     const val MEDIUM = 280
 
+    private fun none(): ContentTransform = EnterTransition.None togetherWith ExitTransition.None
+
     /** Ana ekranlar arası (sekme) geçiş: yöne göre hafif kayma + solma. */
-    fun <S> tabTransition(forward: Boolean): AnimatedContentTransitionScope<S>.() -> ContentTransform = {
-        val dir = if (forward) 1 else -1
-        (fadeIn(tween(MEDIUM, delayMillis = 60)) + slideInHorizontally(tween(MEDIUM, easing = FastOutSlowInEasing)) { dir * it / 12 })
-            .togetherWith(fadeOut(tween(SHORT)) + slideOutHorizontally(tween(MEDIUM)) { -dir * it / 16 })
+    fun <S> tabTransition(forward: Boolean, level: MotionLevel = MotionLevel.FULL): AnimatedContentTransitionScope<S>.() -> ContentTransform = {
+        when (level) {
+            MotionLevel.OFF -> none()
+            MotionLevel.REDUCED -> fadeIn(tween(SHORT)) togetherWith fadeOut(tween(120))
+            MotionLevel.FULL -> {
+                val dir = if (forward) 1 else -1
+                (fadeIn(tween(MEDIUM, delayMillis = 60)) + slideInHorizontally(tween(MEDIUM, easing = FastOutSlowInEasing)) { dir * it / 14 })
+                    .togetherWith(fadeOut(tween(SHORT)) + slideOutHorizontally(tween(MEDIUM)) { -dir * it / 18 })
+            }
+        }
     }
 
     /** Belge / not açılıp kapanırken: büyüyerek gelir, küçülerek gider. */
-    fun <S> screenTransition(opening: Boolean): AnimatedContentTransitionScope<S>.() -> ContentTransform = {
-        if (opening) {
-            (fadeIn(tween(MEDIUM)) + scaleIn(tween(MEDIUM, easing = FastOutSlowInEasing), initialScale = 0.94f))
+    fun <S> screenTransition(opening: Boolean, level: MotionLevel = MotionLevel.FULL): AnimatedContentTransitionScope<S>.() -> ContentTransform = {
+        when {
+            level == MotionLevel.OFF -> none()
+            level == MotionLevel.REDUCED -> fadeIn(tween(SHORT)) togetherWith fadeOut(tween(120))
+            opening -> (fadeIn(tween(MEDIUM)) + scaleIn(tween(MEDIUM, easing = FastOutSlowInEasing), initialScale = 0.95f))
                 .togetherWith(fadeOut(tween(SHORT)))
-        } else {
-            fadeIn(tween(MEDIUM)).togetherWith(fadeOut(tween(SHORT)) + scaleOut(tween(SHORT), targetScale = 0.96f))
+            else -> fadeIn(tween(MEDIUM)).togetherWith(fadeOut(tween(SHORT)) + scaleOut(tween(SHORT), targetScale = 0.96f))
         }
+    }
+
+    /** Görünümler arası (ör. liste ↔ takvim) basit solma. */
+    fun <S> fade(level: MotionLevel): AnimatedContentTransitionScope<S>.() -> ContentTransform = {
+        if (level == MotionLevel.OFF) none() else fadeIn(tween(if (level == MotionLevel.FULL) MEDIUM else SHORT)) togetherWith fadeOut(tween(SHORT))
     }
 }
 
 /** Basılı tutarken yaylı küçülme. Tıklamayı yutmaz, mevcut clickable ile birlikte çalışır. */
 fun Modifier.pressScale(pressedScale: Float = 0.96f): Modifier = composed {
+    if (LocalMotionLevel.current == MotionLevel.OFF) return@composed this
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         if (pressed) pressedScale else 1f,
@@ -80,6 +100,8 @@ fun Modifier.pressScale(pressedScale: Float = 0.96f): Modifier = composed {
 
 /** İlk görünüşte sırayla beliren öğe: [index] kadar gecikmeyle aşağıdan yukarı kayarak solar. */
 fun Modifier.appear(index: Int = 0, stepMs: Int = 45): Modifier = composed {
+    val level = LocalMotionLevel.current
+    if (level != MotionLevel.FULL) return@composed this
     val alpha = remember { Animatable(0f) }
     val offset = remember { Animatable(1f) }
     val dy = with(LocalDensity.current) { 18.dp.toPx() }

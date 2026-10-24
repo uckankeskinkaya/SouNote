@@ -197,6 +197,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                 DropdownMenuItem(text = { Text("Hızlı not") }, onClick = { menu = false; vm.quickNote() })
                                 DropdownMenuItem(text = { Text("Yazılı not (klavye)") }, onClick = { menu = false; vm.newTextNote() })
                                 DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { menu = false; newNotebook = true })
+                                DropdownMenuItem(text = { Text("Sonsuz tuval") }, onClick = { menu = false; vm.newCanvas() })
                                 DropdownMenuItem(text = { Text("Yeni klasör") }, onClick = { menu = false; newFolder = true })
                                 DropdownMenuItem(text = { Text("PDF içe aktar") }, onClick = { menu = false; importPdf() })
                                 if (folder == null) {
@@ -921,19 +922,33 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                 )
                 Text("Kapak", style = MaterialTheme.typography.labelLarge)
                 CoverPicker(cover) { cover = it }
+                val canvas = size == PaperSize.CANVAS
                 Text("Sayfa", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PageTemplate.entries.forEach { t ->
+                    // Tuvalde sadece tekrar eden desenler anlamlı
+                    PageTemplate.entries.filter { !canvas || it in CANVAS_TEMPLATES }.forEach { t ->
                         FilterChip(selected = template == t, onClick = { template = t }, label = { Text(t.label) })
                     }
                 }
                 Text("Boyut", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaperSize.entries.forEach { p ->
-                        FilterChip(selected = size == p, onClick = { size = p }, label = { Text(p.label) })
+                        FilterChip(selected = size == p, onClick = {
+                            size = p
+                            if (p == PaperSize.CANVAS && template !in CANVAS_TEMPLATES) template = PageTemplate.DOTTED
+                        }, label = { Text(p.label) })
                     }
-                    FilterChip(selected = !landscape, onClick = { landscape = false }, label = { Text("Dikey") })
-                    FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
+                    if (!canvas) {
+                        FilterChip(selected = !landscape, onClick = { landscape = false }, label = { Text("Dikey") })
+                        FilterChip(selected = landscape, onClick = { landscape = true }, label = { Text("Yatay") })
+                    }
+                }
+                if (canvas) {
+                    Text(
+                        "Tek, çok büyük sayfa: her yöne kaydır, uzaklaştırınca tamamını gör.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Text("Kâğıt rengi", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -953,10 +968,14 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape, paper, cover) }) { Text("Oluştur") } },
+        confirmButton = {
+            TextButton(onClick = { onCreate(name, template, size, landscape && size != PaperSize.CANVAS, paper, cover) }) { Text("Oluştur") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
 }
+
+private val CANVAS_TEMPLATES = setOf(PageTemplate.BLANK, PageTemplate.GRID, PageTemplate.DOTTED)
 
 private fun LazyGridScope.fullWidth(content: @Composable () -> Unit) {
     item(span = { GridItemSpan(maxLineSpan) }) { content() }

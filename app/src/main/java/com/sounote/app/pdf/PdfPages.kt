@@ -36,6 +36,8 @@ enum class PaperSize(val label: String, val width: Float, val height: Float) {
     A4("A4", 595f, 842f),
     A5("A5", 420f, 595f),
     LETTER("Letter", 612f, 792f),
+    /** Sonsuz tuval: tek, çok büyük sayfa (~1,7 m × 1,7 m); görünüm onu tuval gibi açar. */
+    CANVAS("Sonsuz tuval", 4800f, 4800f),
 }
 
 /** Yeni defter kâğıt rengi (0–1 RGB). */
@@ -231,7 +233,8 @@ object PdfPages {
                     cs.stroke()
                 }
                 PageTemplate.DOTTED -> {
-                    val gap = 5f * MM
+                    // Tuvalde seyrek nokta (çok nokta çizimi yavaşlatır)
+                    val gap = if (w >= 3000f) 10f * MM else 5f * MM
                     val d = 1.3f
                     cs.setNonStrokingColor(0.62f, 0.66f, 0.72f)
                     var y = h - gap

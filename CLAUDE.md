@@ -48,7 +48,8 @@ yazı kalın + arka plan (InkStore v3), silgi yazı/resim de silebilir, Cornell 
 Tema sabit (dinamik renk yok): HyperOS dinamik renkleri kontrastı bozuyordu.
 
 Arayüz dili Türkçe. Paket: com.sounote.app. compile/targetSdk 36, minSdk 29.
-İmza anahtarı keystore/sounote.jks — değiştirme, yoksa güncelleme kurulmaz ve notlar gider.
+İmza anahtarı artık depoda değil: GitHub Secrets SOUNOTE_KEYSTORE_B64 (jks'nin base64'ü) + SOUNOTE_KEY_PASSWORD; alias "sounote".
+Anahtarı değiştirme, yoksa güncelleme kurulmaz ve notlar gider. (Eski haliyle git geçmişinde duruyor; tam çözüm v3 anahtar döndürme.)
 
 Yeni iş için: yeni özellikler 🧪 olarak eklenir; kullanıcı hata raporu gönderirse önce onu düzelt.
 Eklendi (🧪, build-17+): seçimi döndürme (lasso üst tutamaç; TextBox/ImageItem.rotation, InkStore v4), akıllı fosforlu (Android 15+ metin alanları,
@@ -109,8 +110,7 @@ etiket koyamıyor: "workflows" izni ister). Smoke ekran görüntüleri "screensh
 İndirme sayfası docs/index.html (+ docs/img), GitHub Pages: Settings → Pages → main /docs (kullanıcı açmalı). README yenilendi.
 
 ## SouNote 2.0 (🧪, dal ccr-c4eded18-21kvrf; yayınlanmadı)
-Bu dal CI'da derlenir ama release yapılmaz (build.yml `if`); ekran görüntüleri `screenshots-v2` dalına, debug APK `SouNote-2.0-debug-apk` artifact'ine.
-Yayın için kullanıcı onayı gerekir (build.yml'deki dal koşulu kaldırılır ya da main'e birleştirilir). versionName 2.0.<run>.
+Kullanıcı onayıyla yayınlandı (release adı SouNote 2.0.<run>); ekran görüntüleri `screenshots-v2` dalına, debug APK `SouNote-2.0-debug-apk` artifact'ine.
 - Tasarım: ui/Theme.kt (SouNote Light; koyu paletler DarkPalette OBSIDIAN/MIDNIGHT/GRAPHITE prefs darkPalette; vurgu Accent: prefs colorTheme
   null/AUTO = tema rengi, enum adı = hazır, CUSTOM + accentCustom), Manrope (res/font, değişken, OFL assets/licenses), LocalSpacing (UiDensity prefs uiDensity),
   LocalMotionLevel (prefs motionLevel; sistem animasyon ölçeği 0 ise OFF), LocalSouColors. Ortak bileşenler ui/Components.kt.

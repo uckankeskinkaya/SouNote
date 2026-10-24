@@ -21,8 +21,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -142,7 +140,7 @@ fun FlashcardsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
-                                IconButton(onClick = { onDelete(card) }) { Icon(Icons.Default.Delete, contentDescription = "Sil") }
+                                IconButton(onClick = { onDelete(card) }) { Icon(SouIcons.Delete, contentDescription = "Sil") }
                             }
                         }
                     }

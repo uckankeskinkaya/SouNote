@@ -24,10 +24,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -124,16 +120,16 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.widthIn(max = 820.dp).fillMaxWidth().padding(8.dp),
                 ) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kapat") }
+                    IconButton(onClick = onDismiss) { Icon(SouIcons.ArrowBack, contentDescription = "Kapat") }
                     TextField(
                         value = query,
                         onValueChange = { query = it },
                         singleLine = true,
                         placeholder = { Text("Ders, belge, not, sınav ara…") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        leadingIcon = { Icon(SouIcons.Search, contentDescription = null) },
                         trailingIcon = {
                             if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) { Icon(Icons.Default.Close, contentDescription = "Temizle") }
+                                IconButton(onClick = { query = "" }) { Icon(SouIcons.Close, contentDescription = "Temizle") }
                             }
                         },
                         shape = RoundedCornerShape(28.dp),

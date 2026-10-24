@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.ColorUtils
 
 /*
- * SouNote 2.0 tasarım sistemi: renk paletleri, vurgu rengi, tipografi, köşe ve boşluk token'ları.
+ * SouNote 3 tasarım sistemi (sade: nötr yüzeyler, tek vurgu rengi, emoji yerine simgeler): renk paletleri, vurgu rengi, tipografi, köşe ve boşluk token'ları.
  * Sabit tema: sistemin dinamik renkleri (HyperOS) bazı yüzeyleri düşük kontrastlı yapıyordu.
  * PDF sayfaları ve notların renkleri temadan etkilenmez (sayfa her zaman kendi rengiyle çizilir).
  */
@@ -38,40 +38,40 @@ import androidx.core.graphics.ColorUtils
 
 /** Koyu temanın yüzeyleri. Açık tema her zaman "SouNote Light". */
 enum class DarkPalette(val label: String, val description: String, val preview: Long) {
-    OBSIDIAN("Obsidian Purple", "Obsidyen yüzeyler, mor ve indigo vurgular", 0xFF13121C),
-    MIDNIGHT("Midnight Blue", "Gece mavisi, elektrik mavisi ve camgöbeği", 0xFF0E1527),
-    GRAPHITE("Grafit", "Nötr koyu gri (1.0 görünümü)", 0xFF16181C),
+    OBSIDIAN("Obsidyen", "Mor tonlu", 0xFF13121C),
+    MIDNIGHT("Gece mavisi", "Mavi tonlu", 0xFF0E1527),
+    GRAPHITE("Grafit", "Nötr gri", 0xFF151619),
 }
 
 private val SouNoteLight = lightColorScheme(
     primary = Color(0xFF4F46E5),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE2E0FF),
-    onPrimaryContainer = Color(0xFF17126B),
-    secondary = Color(0xFF5A5D72),
+    primaryContainer = Color(0xFFE6E5FB),
+    onPrimaryContainer = Color(0xFF1E1A66),
+    secondary = Color(0xFF5B5F6B),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE3E4F2),
-    onSecondaryContainer = Color(0xFF1B1D2E),
+    secondaryContainer = Color(0xFFE8E9EE),
+    onSecondaryContainer = Color(0xFF1C1E25),
     tertiary = Color(0xFF00687A),
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFCFEFF5),
+    tertiaryContainer = Color(0xFFD5EFF4),
     onTertiaryContainer = Color(0xFF00313A),
-    background = Color(0xFFF6F6FA),
-    onBackground = Color(0xFF1A1B23),
-    surface = Color(0xFFFBFBFE),
-    onSurface = Color(0xFF1A1B23),
-    surfaceVariant = Color(0xFFE4E4EE),
-    onSurfaceVariant = Color(0xFF4A4B5A),
+    background = Color(0xFFF5F6F8),
+    onBackground = Color(0xFF17181C),
+    surface = Color(0xFFF9FAFB),
+    onSurface = Color(0xFF17181C),
+    surfaceVariant = Color(0xFFE7E8EC),
+    onSurfaceVariant = Color(0xFF5E616B),
     surfaceTint = Color(0xFF4F46E5),
-    outline = Color(0xFF777889),
-    outlineVariant = Color(0xFFCDCED9),
-    surfaceBright = Color(0xFFFBFBFE),
-    surfaceDim = Color(0xFFDCDCE4),
+    outline = Color(0xFF80838D),
+    outlineVariant = Color(0xFFDDDFE4),
+    surfaceBright = Color(0xFFF9FAFB),
+    surfaceDim = Color(0xFFDCDDE1),
     surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFF3F3F8),
-    surfaceContainer = Color(0xFFEDEDF4),
-    surfaceContainerHigh = Color(0xFFE7E7EF),
-    surfaceContainerHighest = Color(0xFFE1E1EA),
+    surfaceContainerLow = Color(0xFFF1F2F5),
+    surfaceContainer = Color(0xFFECEDF1),
+    surfaceContainerHigh = Color(0xFFE6E7EC),
+    surfaceContainerHighest = Color(0xFFE0E1E6),
 )
 
 private val Obsidian = darkColorScheme(
@@ -137,34 +137,34 @@ private val Midnight = darkColorScheme(
 )
 
 private val Graphite = darkColorScheme(
-    primary = Color(0xFFA9BEFF),
-    onPrimary = Color(0xFF0B2A73),
-    primaryContainer = Color(0xFF23439F),
-    onPrimaryContainer = Color(0xFFDCE4FF),
-    secondary = Color(0xFFBCC6DC),
-    onSecondary = Color(0xFF263041),
-    secondaryContainer = Color(0xFF3A4252),
-    onSecondaryContainer = Color(0xFFDCE2F0),
-    tertiary = Color(0xFFFFB86B),
-    onTertiary = Color(0xFF4A2800),
-    tertiaryContainer = Color(0xFF5E3A10),
-    onTertiaryContainer = Color(0xFFFFDCBE),
-    background = Color(0xFF111316),
-    onBackground = Color(0xFFE3E5EA),
-    surface = Color(0xFF16181C),
-    onSurface = Color(0xFFE3E5EA),
-    surfaceVariant = Color(0xFF2A2D34),
-    onSurfaceVariant = Color(0xFFC2C6CF),
-    surfaceTint = Color(0xFFA9BEFF),
-    outline = Color(0xFF8D929C),
-    outlineVariant = Color(0xFF50545E),
-    surfaceBright = Color(0xFF3A3D44),
-    surfaceDim = Color(0xFF111316),
-    surfaceContainerLowest = Color(0xFF0D0F12),
-    surfaceContainerLow = Color(0xFF1A1C20),
-    surfaceContainer = Color(0xFF1F2125),
-    surfaceContainerHigh = Color(0xFF292B30),
-    surfaceContainerHighest = Color(0xFF34363B),
+    primary = Color(0xFFB4B8FF),
+    onPrimary = Color(0xFF1F1F70),
+    primaryContainer = Color(0xFF34358A),
+    onPrimaryContainer = Color(0xFFE2E2FF),
+    secondary = Color(0xFFC3C6CF),
+    onSecondary = Color(0xFF2B2E35),
+    secondaryContainer = Color(0xFF2E3036),
+    onSecondaryContainer = Color(0xFFE0E2E8),
+    tertiary = Color(0xFF7FD3E3),
+    onTertiary = Color(0xFF00363F),
+    tertiaryContainer = Color(0xFF1C4048),
+    onTertiaryContainer = Color(0xFFCDEFF5),
+    background = Color(0xFF111214),
+    onBackground = Color(0xFFE8E9EC),
+    surface = Color(0xFF151619),
+    onSurface = Color(0xFFE8E9EC),
+    surfaceVariant = Color(0xFF2A2C31),
+    onSurfaceVariant = Color(0xFFB4B7BF),
+    surfaceTint = Color(0xFFB4B8FF),
+    outline = Color(0xFF8A8D96),
+    outlineVariant = Color(0xFF34363C),
+    surfaceBright = Color(0xFF37393F),
+    surfaceDim = Color(0xFF111214),
+    surfaceContainerLowest = Color(0xFF0C0D0F),
+    surfaceContainerLow = Color(0xFF17181B),
+    surfaceContainer = Color(0xFF1B1C20),
+    surfaceContainerHigh = Color(0xFF232529),
+    surfaceContainerHighest = Color(0xFF2C2E33),
 )
 
 // ---- Vurgu rengi ----
@@ -297,12 +297,8 @@ private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette):
     } else {
         listOf(scheme.primary, scheme.onPrimaryContainer)
     }
-    val aurora = when {
-        !dark -> Color.Transparent
-        palette == DarkPalette.MIDNIGHT -> Color(0xFF5FE1E6)
-        palette == DarkPalette.OBSIDIAN -> Color(0xFF8F7BFF)
-        else -> Color.Transparent
-    }
+    // Sade görünüm: koyu temada da parıltı yok.
+    val aurora = Color.Transparent
     return SouColors(
         isDark = dark,
         hero = hero,
@@ -311,7 +307,7 @@ private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette):
         warning = if (dark) Color(0xFFFFB86B) else Color(0xFFC2570C),
         danger = if (dark) Color(0xFFFF8A80) else Color(0xFFD64545),
         star = Color(0xFFF2B705),
-        cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.55f else 0.7f),
+        cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.6f else 0.55f),
     )
 }
 
@@ -328,8 +324,8 @@ private val SouTypography: Typography = Typography().let { t ->
         displaySmall = t.displaySmall.w(FontWeight.Bold),
         headlineLarge = t.headlineLarge.w(FontWeight.Bold, -0.25f),
         headlineMedium = t.headlineMedium.w(FontWeight.Bold),
-        headlineSmall = t.headlineSmall.w(FontWeight.Bold),
-        titleLarge = t.titleLarge.w(FontWeight.Bold),
+        headlineSmall = t.headlineSmall.w(FontWeight.SemiBold),
+        titleLarge = t.titleLarge.w(FontWeight.SemiBold),
         titleMedium = t.titleMedium.w(FontWeight.SemiBold, 0.1f),
         titleSmall = t.titleSmall.w(FontWeight.SemiBold, 0.1f),
         labelLarge = t.labelLarge.w(FontWeight.SemiBold, 0.1f),
@@ -431,7 +427,7 @@ private fun animated(target: ColorScheme, motion: MotionLevel): ColorScheme {
 @Composable
 fun SouNoteTheme(
     dark: Boolean? = null,
-    palette: DarkPalette = DarkPalette.OBSIDIAN,
+    palette: DarkPalette = DarkPalette.GRAPHITE,
     accent: Accent = Accent.Auto,
     density: UiDensity = UiDensity.COMFORTABLE,
     motion: MotionLevel = MotionLevel.FULL,

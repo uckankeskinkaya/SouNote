@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -82,7 +79,7 @@ fun AudioPlayerBar(file: File, startMs: Long, key: Any, onClose: () -> Unit) {
                 }
             }) {
                 if (playing) Icon(painterResource(R.drawable.ic_pause), contentDescription = "Duraklat")
-                else Icon(Icons.Default.PlayArrow, contentDescription = "Çal")
+                else Icon(SouIcons.PlayArrow, contentDescription = "Çal")
             }
             Text(
                 formatDuration(position.toLong()) + " / " + formatDuration(duration.toLong()),
@@ -98,7 +95,7 @@ fun AudioPlayerBar(file: File, startMs: Long, key: Any, onClose: () -> Unit) {
                 modifier = Modifier.weight(1f),
             )
             Text("Notla eşleşen kayıt", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Kapat") }
+            IconButton(onClick = onClose) { Icon(SouIcons.Close, contentDescription = "Kapat") }
         }
     }
 }

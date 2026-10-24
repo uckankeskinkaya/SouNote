@@ -33,9 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -150,7 +147,7 @@ fun EssayGraderScreen(vm: LibraryViewModel, onDismiss: () -> Unit) {
 @Composable
 private fun TopBar(title: String, onBack: () -> Unit, actions: @Composable () -> Unit = {}) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(4.dp)) {
-        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
+        IconButton(onClick = onBack) { Icon(SouIcons.ArrowBack, contentDescription = "Geri") }
         Text(
             title,
             style = MaterialTheme.typography.titleLarge,
@@ -263,7 +260,7 @@ private fun EssayList(vm: LibraryViewModel, onBack: () -> Unit, onNew: (EssayTyp
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    IconButton(onClick = { deleting = e }) { Icon(Icons.Default.Delete, contentDescription = "Sil", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    IconButton(onClick = { deleting = e }) { Icon(SouIcons.Delete, contentDescription = "Sil", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
         }

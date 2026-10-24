@@ -25,8 +25,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -156,7 +154,7 @@ fun PagePanel(
                             PageThumb(i, ink, loader)
                             if (i in bookmarks) {
                                 Icon(
-                                    Icons.Default.Star, null,
+                                    SouIcons.StarFilled, null,
                                     tint = Color(0xFFF2B705),
                                     modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(18.dp),
                                 )
@@ -222,7 +220,7 @@ fun PagePanel(
 private fun IconToggle(on: Boolean, onClick: () -> Unit) {
     androidx.compose.material3.IconButton(onClick = onClick) {
         Icon(
-            Icons.Default.Star,
+            SouIcons.StarFilled,
             contentDescription = "Sadece yer imleri",
             tint = if (on) Color(0xFFF2B705) else MaterialTheme.colorScheme.onSurfaceVariant,
         )

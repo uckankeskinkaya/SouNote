@@ -133,7 +133,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     // ---- 2.0 görünüm ve arayüz tercihleri (hepsi cihazda, güvenli varsayılanlarla) ----
 
     /** Koyu temanın yüzeyleri. */
-    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.OBSIDIAN)
+    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.GRAPHITE)
         private set
 
     fun updateDarkPalette(p: DarkPalette) {

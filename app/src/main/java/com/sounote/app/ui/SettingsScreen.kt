@@ -33,9 +33,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -56,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -92,17 +90,17 @@ internal fun shareErrorReport(context: Context) {
 }
 
 /** Ayar kategorileri. */
-private enum class Category(val label: String, val emoji: String, val description: String) {
-    PROFILE("Profil", "🙂", "Adın"),
-    APPEARANCE("Görünüm", "🎨", "Tema, koyu palet, vurgu rengi"),
-    INTERFACE("Arayüz", "🧭", "Yoğunluk, animasyonlar, menü, ana sayfa"),
-    NOTES("Not alma", "✍️", "Kalem, parmakla çizim, kayıt, yazı"),
-    PDF("PDF", "📄", "Gece okuma, çift sayfa, okuma modu"),
-    AI("Yapay zekâ", "🤖", "Asistan servisi"),
-    SECURITY("Güvenlik", "🔒", "Uygulama kilidi"),
-    DATA("Veriler", "💾", "Yedekleme, geri yükleme, çöp kutusu"),
-    HELP("Yardım ve paylaşım", "❓", "Güncelleme, kullanım, hata raporu, arkadaşa gönder"),
-    ABOUT("Hakkında", "ℹ️", "Sürüm, geliştirici, açık kaynak"),
+private enum class Category(val label: String, val icon: ImageVector) {
+    PROFILE("Profil", SouIcons.AccountCircle),
+    APPEARANCE("Görünüm", SouIcons.Palette),
+    INTERFACE("Arayüz", SouIcons.DashboardCustomize),
+    NOTES("Not alma", SouIcons.Stylus),
+    PDF("PDF", SouIcons.PictureAsPdf),
+    AI("Asistan", SouIcons.StarShine),
+    SECURITY("Güvenlik", SouIcons.Lock),
+    DATA("Veriler", SouIcons.Backup),
+    HELP("Yardım", SouIcons.Help),
+    ABOUT("Hakkında", SouIcons.Info),
 }
 
 /** Aranabilir tek bir ayar satırı. */
@@ -186,11 +184,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
 
     val entries = listOf(
         Entry(Category.PROFILE, "Adın", "ad isim profil kullanıcı") {
-            SettingRow("🙂", "Adın", subtitle = vm.userName.ifBlank { "Ana sayfada seni adınla karşılayalım" }, onClick = { nameDialog = true })
+            SettingRow(SouIcons.Person, "Adın", subtitle = vm.userName.ifBlank { null }, onClick = { nameDialog = true })
         },
         Entry(Category.APPEARANCE, "Tema", "tema açık koyu karanlık sistem gece") {
             Column {
-                SettingRow("🌗", "Tema", subtitle = "Açık (SouNote Light), koyu ya da sistemle aynı")
+                SettingRow(SouIcons.Contrast, "Tema")
                 ChipRow {
                     LibraryViewModel.ThemeMode.entries.forEach { m ->
                         FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })
@@ -200,18 +198,18 @@ fun SettingsScreen(vm: LibraryViewModel) {
         },
         Entry(Category.APPEARANCE, "Koyu tema paleti", "palet obsidian midnight grafit mor mavi koyu") {
             Column {
-                SettingRow("🌌", "Koyu tema paleti", subtitle = vm.darkPalette.description)
+                SettingRow(SouIcons.DarkMode, "Koyu tema rengi")
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxWidth().padding(start = 68.dp, end = 16.dp, bottom = 14.dp),
+                    modifier = Modifier.fillMaxWidth().padding(start = 56.dp, end = 16.dp, bottom = 14.dp),
                 ) {
                     DarkPalette.entries.forEach { p ->
                         val sel = vm.darkPalette == p
                         val preview = colorSchemeFor(true, p, Accent.Auto)
                         Column(
                             Modifier
-                                .width(150.dp)
+                                .width(132.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color(p.preview))
                                 .border(if (sel) 3.dp else 1.dp, if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
@@ -225,7 +223,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                                 }
                             }
                             Text(p.label, color = preview.onSurface, style = MaterialTheme.typography.labelLarge)
-                            if (sel) Text("Seçili ✓", color = preview.primary, style = MaterialTheme.typography.labelSmall)
+                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = preview.primary, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -233,11 +231,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
         },
         Entry(Category.APPEARANCE, "Vurgu rengi", "renk vurgu accent özel renk mavi mor yeşil") {
             Column {
-                SettingRow("🎨", "Vurgu rengi", subtitle = vm.accent.label)
+                SettingRow(SouIcons.Palette, "Vurgu rengi", subtitle = vm.accent.label)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 68.dp, end = 16.dp, bottom = 14.dp),
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 56.dp, end = 16.dp, bottom = 14.dp),
                 ) {
                     FilterChip(selected = vm.accent == Accent.Auto, onClick = { vm.updateAccent(Accent.Auto) }, label = { Text("Tema rengi") })
                     ColorTheme.entries.forEach { c ->
@@ -251,14 +249,14 @@ fun SettingsScreen(vm: LibraryViewModel) {
                                 .border(if (sel) 3.dp else 0.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
                                 .clickable(onClickLabel = c.label) { vm.updateAccent(Accent.Preset(c)) },
                         ) {
-                            if (sel) Text("✓", color = Color.White, fontWeight = FontWeight.Bold)
+                            if (sel) Icon(SouIcons.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                         }
                     }
                     val custom = vm.accent as? Accent.Custom
                     FilterChip(
                         selected = custom != null,
                         onClick = { accentPicker = true },
-                        label = { Text("Özel renk…") },
+                        label = { Text("Özel") },
                         leadingIcon = if (custom != null) ({ Box(Modifier.size(16.dp).clip(CircleShape).background(Color(custom.argb))) }) else null,
                     )
                 }
@@ -266,7 +264,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
         },
         Entry(Category.INTERFACE, "Yoğunluk", "yoğunluk kompakt rahat boşluk sıkı") {
             Column {
-                SettingRow("📏", "Yoğunluk", subtitle = "Kompakt düzende kartlar arası boşluklar küçülür")
+                SettingRow(SouIcons.ViewAgenda, "Yoğunluk")
                 ChipRow {
                     UiDensity.entries.forEach { d ->
                         FilterChip(selected = vm.uiDensity == d, onClick = { vm.updateDensity(d) }, label = { Text(d.label) })
@@ -276,10 +274,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
         },
         Entry(Category.INTERFACE, "Animasyonlar", "animasyon hareket azalt kapalı yavaş performans") {
             Column {
-                SettingRow(
-                    "✨", "Animasyonlar",
-                    subtitle = "Belge ve çizim ekranında animasyon yok. Android'de animasyonlar kapalıysa burada ne seçersen seç kapalı kalır.",
-                )
+                SettingRow(SouIcons.Bolt, "Animasyonlar")
                 ChipRow {
                     MotionLevel.entries.forEach { m ->
                         FilterChip(selected = vm.motionLevel == m, onClick = { vm.updateMotion(m) }, label = { Text(m.label) })
@@ -289,7 +284,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
         },
         Entry(Category.INTERFACE, "Gezinme menüsü", "menü navigasyon ray çekmece sol menü tablet") {
             Column {
-                SettingRow("🧭", "Gezinme menüsü (tablet)", subtitle = "Telefonda her zaman alt çubuk kullanılır")
+                SettingRow(SouIcons.Widgets, "Menü (tablet)")
                 ChipRow {
                     LibraryViewModel.NavStyle.entries.forEach { n ->
                         FilterChip(selected = vm.navStyle == n, onClick = { vm.updateNavStyle(n) }, label = { Text(n.label) })
@@ -298,32 +293,29 @@ fun SettingsScreen(vm: LibraryViewModel) {
             }
         },
         Entry(Category.INTERFACE, "Ana sayfa düzeni", "ana sayfa modül sırala gizle düzen varsayılan") {
-            SettingRow("🏠", "Ana sayfa düzeni", subtitle = "Modülleri sırala, gizle ya da varsayılana dön", onClick = { layoutDialog = true })
+            SettingRow(SouIcons.Home, "Ana sayfa düzeni", onClick = { layoutDialog = true })
         },
         Entry(Category.INTERFACE, "Hızlı erişim", "favori sabitle hızlı erişim sırala") {
-            SettingRow("⭐", "Hızlı erişim (favoriler)", subtitle = "${vm.quickItems.size} öğe · sırala, sabitle, çıkar", onClick = { quickDialog = true })
+            SettingRow(SouIcons.Star, "Favoriler", subtitle = "${vm.quickItems.size} öğe", onClick = { quickDialog = true })
         },
         Entry(Category.INTERFACE, "Tanıtımı tekrar göster", "tanıtım onboarding başlangıç") {
-            SettingRow("🎬", "Tanıtımı tekrar göster", onClick = { vm.replayOnboarding() })
+            SettingRow(SouIcons.Slideshow, "Tanıtımı tekrar göster", onClick = { vm.replayOnboarding() })
         },
         Entry(Category.NOTES, "Parmakla çiz", "parmak kalem çizim dokunma") {
-            SwitchRow("👆", "Parmakla çiz", "Kalemin yoksa aç: tek parmak çizer, iki parmak kaydırır", tools.fingerDraw) {
+            SwitchRow(SouIcons.TouchApp, "Parmakla çiz", "Tek parmak çizer, iki parmak kaydırır", tools.fingerDraw) {
                 vm.updateTools(tools.copy(fingerDraw = it))
             }
         },
         Entry(Category.NOTES, "Düşük gecikme", "gecikme hız kalem deneysel") {
-            SwitchRow("⚡", "Düşük gecikme (deneysel)", "Kalem çizgisi ekrana daha hızlı düşer", tools.lowLatency) {
+            SwitchRow(SouIcons.Bolt, "Düşük gecikme", "Deneysel", tools.lowLatency) {
                 vm.updateTools(tools.copy(lowLatency = it))
             }
         },
         Entry(Category.NOTES, "Otomatik kayıt", "kayıt otomatik kaydet") {
-            SettingRow(
-                "💾", "Otomatik kayıt",
-                subtitle = "Her zaman açık: notlar çizdikten 1 saniye içinde, yazılı notlar yazdıkça kaydedilir; uygulamadan çıkarken de kaydedilir.",
-            )
+            SettingRow(SouIcons.CheckCircle, "Otomatik kayıt", subtitle = "Her zaman açık")
         },
         Entry(Category.NOTES, "Yazı boyutu", "yazı boyutu font büyük küçük yazılı not") {
-            SettingRow("🔠", "Yazılı not yazı boyutu", subtitle = "${vm.textFontSize.toInt()} pt") {
+            SettingRow(SouIcons.FormatSize, "Yazılı not yazı boyutu", subtitle = "${vm.textFontSize.toInt()} pt") {
                 Row {
                     TextButton(onClick = { vm.updateTextFontSize(vm.textFontSize - 2f) }) { Text("A−") }
                     TextButton(onClick = { vm.updateTextFontSize(vm.textFontSize + 2f) }) { Text("A+") }
@@ -331,42 +323,35 @@ fun SettingsScreen(vm: LibraryViewModel) {
             }
         },
         Entry(Category.PDF, "Gece okuma", "gece karanlık ters renk okuma") {
-            SwitchRow("🌙", "Gece okuma", "Belgelerde renkleri ters çevirir, karanlıkta gözü yormaz", vm.nightReading) { vm.toggleNightReading() }
+            SwitchRow(SouIcons.DarkMode, "Gece okuma", "Sayfa renklerini ters çevirir", vm.nightReading) { vm.toggleNightReading() }
         },
         Entry(Category.PDF, "Yatayda çift sayfa", "çift sayfa yatay iki sayfa") {
-            SwitchRow("📖", "Yatayda çift sayfa", "Tablet yan dururken iki sayfa yan yana", vm.twoPage) { vm.updateTwoPage(it) }
+            SwitchRow(SouIcons.AutoStories, "Yatayda çift sayfa", checked = vm.twoPage) { vm.updateTwoPage(it) }
         },
         Entry(Category.PDF, "Okuma modu", "okuma modu araç çubuğu gizle kalem") {
-            SwitchRow(
-                "👓", "Belgeleri okuma modunda aç",
-                "Araç çubuğu gizli, kalem sayfayı kaydırır; not almak için ✏️ ile geç",
-                vm.readingMode,
-            ) { vm.updateReadingMode(it) }
+            SwitchRow(SouIcons.MenuBook, "Belgeleri okuma modunda aç", checked = vm.readingMode) { vm.updateReadingMode(it) }
         },
         Entry(Category.AI, "Asistan ayarları", "asistan yapay zeka ai anahtar model servis evren") {
             SettingRow(
-                "🤖", "Asistan ayarları",
+                SouIcons.StarShine, "Asistan ayarları",
                 subtitle = if (vm.assistantConfig.ready) "Hazır · ${vm.assistantConfig.model}" else "API anahtarı girilmedi",
                 onClick = { assistantSetup = true },
             )
         },
         Entry(Category.AI, "Gizlilik", "gizlilik veri gönder yapay zeka") {
-            SettingRow(
-                "🛡️", "Ne gönderilir?",
-                subtitle = "Asistanı ya da yazma koçunu kullandığında sadece sorduğun metin (ve seçtiğin sayfa/not) ayarladığın servise gider. Anahtar yalnızca bu cihazda saklanır.",
-            )
+            SettingRow(SouIcons.Lock, "Sadece sorduğun metin gönderilir", subtitle = "Anahtar bu cihazda kalır")
         },
         Entry(Category.SECURITY, "Uygulama kilidi", "kilit parmak izi yüz şifre güvenlik") {
-            SwitchRow("🔒", "Uygulama kilidi", "Açılışta parmak izi, yüz ya da ekran kilidi şifresi ister", vm.appLock) { vm.updateAppLock(it) }
+            SwitchRow(SouIcons.Lock, "Uygulama kilidi", "Parmak izi, yüz ya da şifre", vm.appLock) { vm.updateAppLock(it) }
         },
         Entry(Category.DATA, "Şimdi yedekle", "yedek yedekle zip") {
-            SettingRow("💾", "Şimdi yedekle", subtitle = "Bütün belgeler ve notlar tek bir zip dosyasına", onClick = {
+            SettingRow(SouIcons.Download, "Şimdi yedekle", onClick = {
                 val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
                 backupLauncher.launch("SouNote-yedek-$date.zip")
             })
         },
         Entry(Category.DATA, "Drive'a yedekle", "drive google bulut yedek") {
-            SettingRow("📤", "Drive'a yedekle", subtitle = "Yedeği Google Drive'a (ya da başka bir yere) gönder", onClick = {
+            SettingRow(SouIcons.CloudUpload, "Drive'a yedekle", onClick = {
                 vm.backupToShare { file ->
                     val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
                     val send = Intent(Intent.ACTION_SEND).apply {
@@ -382,25 +367,25 @@ fun SettingsScreen(vm: LibraryViewModel) {
         },
         Entry(Category.DATA, "Otomatik yedek", "otomatik yedek günlük klasör") {
             SettingRow(
-                "☁️", "Otomatik yedek",
+                SouIcons.Backup, "Otomatik yedek",
                 subtitle = if (vm.autoBackupFolder != null) "Açık · günde bir" else "Kapalı",
                 onClick = { autoBackupDialog = true },
             )
         },
         Entry(Category.DATA, "Yedekten geri yükle", "geri yükle restore yedek") {
-            SettingRow("♻️", "Yedekten geri yükle", subtitle = "Başka tabletten ya da eski yedekten", onClick = {
+            SettingRow(SouIcons.SettingsBackupRestore, "Yedekten geri yükle", onClick = {
                 restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream"))
             })
         },
         Entry(Category.DATA, "Çöp kutusu", "çöp sil geri al kalıcı") {
             SettingRow(
-                "🗑️", "Çöp kutusu",
-                subtitle = if (vm.trash.isEmpty()) "Boş" else "${vm.trash.size} belge · ${LibraryViewModel.TRASH_DAYS} gün sonra silinir",
+                SouIcons.Delete, "Çöp kutusu",
+                subtitle = if (vm.trash.isEmpty()) "Boş" else "${vm.trash.size} belge",
                 onClick = { trashDialog = true },
             )
         },
         Entry(Category.DATA, "Çalışma istatistiği", "istatistik çalışma süre seri") {
-            SettingRow("📊", "Çalışma istatistiği", subtitle = "Bugün, bu hafta, seri, en çok çalışılanlar", onClick = { statsDialog = true })
+            SettingRow(SouIcons.BarChart, "Çalışma istatistiği", onClick = { statsDialog = true })
         },
         Entry(Category.HELP, "Güncellemeleri denetle", "güncelleme sürüm yeni yönetici test") {
             // Sürüm satırına art arda 7 dokunuş: yönetici modu (test sürümleri) aç/kapa
@@ -408,7 +393,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
             var lastTap by remember { mutableStateOf(0L) }
             Column {
                 SettingRow(
-                    "🔄", "Güncellemeleri denetle",
+                    SouIcons.Sync, "Güncellemeleri denetle",
                     subtitle = "Sürüm ${vm.installedVersion}" + (if (vm.testChannel) " · yönetici" else "") +
                         (vm.update?.let { " · yeni sürüm var: ${it.name}" } ?: ""),
                     onClick = {
@@ -426,27 +411,23 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 )
                 if (vm.testChannel) {
                     RowDivider()
-                    SwitchRow(
-                        "🧪", "Yönetici modu",
-                        "Yayınlanmamış test sürümlerini de alırsın; arkadaşların sadece yayınlananları alır",
-                        true,
-                    ) { vm.switchTestChannel(it) }
+                    SwitchRow(SouIcons.BugReport, "Yönetici modu", "Test sürümlerini de alırsın", true) { vm.switchTestChannel(it) }
                 }
             }
         },
         Entry(Category.HELP, "Nasıl kullanılır?", "yardım hareket kısayol kullanım") {
-            SettingRow("❓", "Nasıl kullanılır?", subtitle = "Hareketler ve kısayollar", onClick = { helpDialog = true })
+            SettingRow(SouIcons.Help, "Nasıl kullanılır?", onClick = { helpDialog = true })
         },
         Entry(Category.HELP, "Hata raporu gönder", "hata rapor sorun çökme") {
-            SettingRow("🐞", "Hata raporu gönder", subtitle = "Bir sorun olursa geliştiriciye yolla", onClick = { shareErrorReport(context) })
+            SettingRow(SouIcons.BugReport, "Hata raporu gönder", onClick = { shareErrorReport(context) })
         },
         Entry(Category.HELP, "İndirme bağlantısını paylaş", "paylaş arkadaş bağlantı indir") {
-            SettingRow("🔗", "İndirme bağlantısını paylaş", subtitle = "Bağlantıya tıklayan herkes en yeni sürümü indirir", onClick = { shareLink() })
+            SettingRow(SouIcons.Link, "İndirme bağlantısını paylaş", onClick = { shareLink() })
         },
         Entry(Category.HELP, "Uygulamayı dosya olarak gönder", "apk gönder bluetooth quick share") {
             SettingRow(
-                "📲", "Uygulamayı dosya olarak gönder",
-                subtitle = if (preparingApk) "Hazırlanıyor…" else "Quick Share ya da Bluetooth ile, internetsiz",
+                SouIcons.Share, "Uygulamayı dosya olarak gönder",
+                subtitle = if (preparingApk) "Hazırlanıyor…" else null,
                 onClick = { shareApk() },
             )
         },
@@ -469,10 +450,10 @@ fun SettingsScreen(vm: LibraryViewModel) {
             topBar = {
                 SouTopBar(
                     if (!wide && category != null && q.isEmpty()) category.label else "Ayarlar",
-                    subtitle = if (!wide && category != null && q.isEmpty()) category.description else "Kişiselleştirme merkezi",
+                    subtitle = null,
                     navigationIcon = {
                         if (!wide && category != null && q.isEmpty()) {
-                            IconButton(onClick = { selected = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
+                            IconButton(onClick = { selected = null }) { Icon(SouIcons.ArrowBack, contentDescription = "Geri") }
                         }
                     },
                 )
@@ -504,20 +485,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
                                             .clickable { selected = c.name; query = "" }
                                             .padding(horizontal = 12.dp, vertical = 12.dp),
                                     ) {
-                                        EmojiTile(c.emoji, MaterialTheme.colorScheme.primary, 38.dp)
-                                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                                            Text(c.label, style = MaterialTheme.typography.titleSmall)
-                                            Text(
-                                                c.description,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis,
-                                            )
-                                        }
+                                        Icon(c.icon, contentDescription = null, tint = if (sel) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(c.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 16.dp))
                                         if (!wide) {
                                             Icon(
-                                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                SouIcons.ChevronRight,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
@@ -541,7 +513,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                                     .verticalScroll(rememberScrollState())
                                     .padding(start = 16.dp, end = 16.dp, bottom = 32.dp),
                             ) {
-                                SettingsGroup("${c.emoji}  ${c.label}", Modifier.appear()) {
+                                SettingsGroup(c.label, Modifier.appear()) {
                                     entries.filter { it.category == c }.forEachIndexed { i, e ->
                                         if (i > 0) RowDivider()
                                         e.content()
@@ -630,7 +602,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
 private fun ChipRow(content: @Composable () -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 68.dp, end = 16.dp, bottom = 12.dp),
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(start = 56.dp, end = 16.dp, bottom = 12.dp),
     ) { content() }
 }
 
@@ -639,10 +611,10 @@ private fun ChipRow(content: @Composable () -> Unit) {
 private fun SearchResults(results: List<Entry>, modifier: Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (results.isEmpty()) {
-            EmptyState("🔍", "Ayar bulunamadı", "Başka bir kelimeyle dene: ör. tema, yedek, kalem, kilit.")
+            EmptyState(SouIcons.Search, "Ayar bulunamadı")
         }
         results.groupBy { it.category }.forEach { (c, list) ->
-            SettingsGroup("${c.emoji}  ${c.label}") {
+            SettingsGroup(c.label) {
                 list.forEachIndexed { i, e ->
                     if (i > 0) RowDivider()
                     e.content()
@@ -667,9 +639,7 @@ private fun About(onGitHub: () -> Unit, onLicenses: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            "PDF'lerin ve defterlerin üstüne kalemle not alma uygulaması. Ücretsiz, açık kaynak, hesap gerektirmez.\n" +
-                "Notların yalnızca bu cihazda saklanır. İnternet sadece ders kataloğu, güncelleme denetimi, " +
-                "ders kaynağı indirme ve (kurarsan) asistan için kullanılır.",
+            "Ücretsiz ve açık kaynak. Notların sadece bu cihazda saklanır.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -711,28 +681,25 @@ private fun LicensesDialog(onDismiss: () -> Unit) {
 @Composable
 private fun HelpDialog(onDismiss: () -> Unit) {
     val items = listOf(
-        "✍️" to "Kalem yazar, tek parmak kaydırır, iki parmak yakınlaştırır.",
-        "↩️" to "İki parmakla dokun: geri al. Üç parmakla dokun: ileri al.",
-        "🧽" to "Kalemin yan tuşuna basarak çizersen silgi olur.",
-        "📐" to "Çizginin sonunda kalemi beklet: düz çizgi, daire ya da dikdörtgen olur.",
-        "🎯" to "Lasso: seç, taşı, büyüt, döndür, rengini değiştir, kopyala, karta çevir ya da asistana sor.",
-        "👓" to "Okuma modu (📖): araç çubuğu gizlenir, kalem de sayfayı kaydırır. Not almak için ✏️.",
-        "⭐" to "Belge, klasör, ders ve notları favorilere ekle; ana sayfada hızlı erişimde görünür.",
-        "🎙️" to "Ders kaydı açıkken yazdığın nota sonra dokun: kayıt o andan çalar.",
-        "🙈" to "Ezber bandı: üstünü kapattığın yere parmakla dokununca açılır/kapanır.",
-        "📑" to "Sayfalar düğmesi: sayfa ekle, sil, taşı, çoğalt; PDF içindekiler.",
-        "📤" to "Paylaş düğmesi: notlu PDF'i paylaş, kaydet ya da yazdır.",
-        "⌨️" to "Klavye: Ctrl+Z / Ctrl+Y, PageUp / PageDown, Ctrl+F ara, Ctrl+P yazdır.",
-        "📄" to "Word dosyalarını önce PDF'e çevir, sonra içe aktar.",
+        SouIcons.Stylus to "Kalem yazar, tek parmak kaydırır, iki parmak yakınlaştırır.",
+        SouIcons.Undo to "İki parmakla dokun: geri al. Üç parmakla: ileri al.",
+        SouIcons.InkEraser to "Kalemin yan tuşuyla çizersen silgi olur.",
+        SouIcons.Shapes to "Çizginin sonunda kalemi beklet: düz çizgi, daire ya da dikdörtgen olur.",
+        SouIcons.GestureSelect to "Lasso: seç, taşı, büyüt, döndür, kopyala, karta çevir, asistana sor.",
+        SouIcons.MenuBook to "Okuma modunda kalem de sayfayı kaydırır.",
+        SouIcons.Star to "Yıldızladıkların ana sayfada favorilerde görünür.",
+        SouIcons.Mic to "Ses kaydı açıkken yazdığın nota dokun: kayıt o andan çalar.",
+        SouIcons.VisibilityOff to "Ezber bandının üstüne dokununca açılır, kapanır.",
+        SouIcons.Keyboard to "Ctrl+Z / Ctrl+Y, PageUp / PageDown, Ctrl+F ara, Ctrl+P yazdır.",
     )
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nasıl kullanılır?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
-                items.forEach { (emoji, text) ->
+                items.forEach { (icon, text) ->
                     Row {
-                        Text(emoji, fontSize = 18.sp, modifier = Modifier.padding(end = 12.dp))
+                        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 12.dp).size(20.dp))
                         Text(text, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
@@ -750,10 +717,7 @@ private fun AutoBackupDialog(vm: LibraryViewModel, onPickFolder: () -> Unit, onD
         title = { Text("Otomatik yedek") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Açıkken bütün kütüphane günde bir (değişiklik olduysa) seçtiğin klasöre yedeklenir. " +
-                        "İki dosya dönüşümlü yazılır, biri her zaman sağlam kalır. Drive gibi bir bulut klasörü seçersen tablet bozulsa da notların kurtulur.",
-                )
+                Text("Kütüphane günde bir seçtiğin klasöre yedeklenir. Drive klasörü seçersen tablet bozulsa da notların kurtulur.")
                 if (enabled) {
                     val last = vm.lastAutoBackup()
                     Text(

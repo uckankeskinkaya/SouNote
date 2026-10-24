@@ -26,11 +26,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -114,7 +109,7 @@ fun InkToolbar(
                 // Kalemi olmayanlar için en başta, hemen görünür
                 FingerToggle(state.fingerDraw) { onChange(state.copy(fingerDraw = !state.fingerDraw)) }
                 Separator()
-                ToolChip("Kalem", state.tool == Tool.PEN, vector = Icons.Default.Edit) {
+                ToolChip("Kalem", state.tool == Tool.PEN, vector = SouIcons.Edit) {
                     onChange(state.copy(tool = Tool.PEN))
                 }
                 ToolChip("Fosforlu", state.tool == Tool.HIGHLIGHTER, drawable = R.drawable.ic_highlighter) {
@@ -241,7 +236,7 @@ private fun Favorites(state: ToolState, onChange: (ToolState) -> Unit) {
         AssistChip(
             onClick = { onChange(state.copy(favorites = state.favorites + current)) },
             label = { Text(if (state.favorites.isEmpty()) "Favorilere ekle" else "Ekle") },
-            leadingIcon = { Icon(Icons.Default.Star, null, Modifier.size(18.dp)) },
+            leadingIcon = { Icon(SouIcons.StarFilled, null, Modifier.size(18.dp)) },
         )
     }
 }
@@ -293,7 +288,7 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
         AssistChip(
             onClick = { typeMenu = true },
             label = { Text(state.penType.label) },
-            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null, Modifier.size(18.dp)) },
+            trailingIcon = { Icon(SouIcons.ArrowDropDown, null, Modifier.size(18.dp)) },
         )
         DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
             PenType.entries.forEach { t ->
@@ -326,7 +321,7 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
 private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) { Icon(Icons.Default.Settings, contentDescription = "Kalem ayarları") }
+        IconButton(onClick = { open = true }) { Icon(SouIcons.Settings, contentDescription = "Kalem ayarları") }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Column(Modifier.width(320.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall)

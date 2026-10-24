@@ -31,13 +31,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star as OutlinedStar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
@@ -58,9 +51,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -342,7 +332,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 },
                 navigationIcon = {
                     IconButton(onClick = vm::closeDoc) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
+                        Icon(SouIcons.ArrowBack, contentDescription = "Geri")
                     }
                 },
                 actions = {
@@ -383,14 +373,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         Text("🤖", fontSize = 20.sp)
                     }
                     IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
-                        Icon(Icons.Default.Search, contentDescription = "Ara")
+                        Icon(SouIcons.Search, contentDescription = "Ara")
                     }
                     }
                     if (!narrow) page?.let { (p, _) ->
                         val marked = p in vm.bookmarks
                         IconButton(onClick = { vm.toggleBookmark(doc, p) }) {
                             Icon(
-                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                if (marked) SouIcons.StarFilled else SouIcons.Star,
                                 contentDescription = "Yer imi",
                                 tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
                             )
@@ -409,7 +399,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             CircularProgressIndicator(Modifier.padding(12.dp).size(24.dp), strokeWidth = 2.5.dp)
                         } else {
                             IconButton(onClick = { exportMenu = true }) {
-                                Icon(Icons.Default.Share, contentDescription = "Dışa aktar")
+                                Icon(SouIcons.Share, contentDescription = "Dışa aktar")
                             }
                         }
                         DropdownMenu(expanded = exportMenu, onDismissRequest = { exportMenu = false }) {
@@ -445,7 +435,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                     Box {
                         IconButton(onClick = { moreMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
+                            Icon(SouIcons.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
                             if (narrow) {
@@ -461,7 +451,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 )
                                 DropdownMenuItem(
                                     text = { Text("PDF'te ara") },
-                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                    leadingIcon = { Icon(SouIcons.Search, contentDescription = null) },
                                     onClick = { moreMenu = false; if (searchOpen) closeSearch() else searchOpen = true },
                                 )
                                 page?.let { (p, _) ->
@@ -470,7 +460,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                         text = { Text(if (marked) "Yer imini kaldır" else "Yer imi ekle") },
                                         leadingIcon = {
                                             Icon(
-                                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                                if (marked) SouIcons.StarFilled else SouIcons.Star,
                                                 contentDescription = null,
                                                 tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
                                             )
@@ -602,7 +592,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 showHit()
                             }
                         }, enabled = hits.isNotEmpty()) {
-                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Önceki")
+                            Icon(SouIcons.KeyboardArrowUp, contentDescription = "Önceki")
                         }
                         IconButton(onClick = {
                             if (hits.isNotEmpty()) {
@@ -610,11 +600,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 showHit()
                             }
                         }, enabled = hits.isNotEmpty()) {
-                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Sonraki")
+                            Icon(SouIcons.KeyboardArrowDown, contentDescription = "Sonraki")
                         }
                         TextButton(onClick = { runSearch() }) { Text("Ara") }
                         IconButton(onClick = { closeSearch() }) {
-                            Icon(Icons.Default.Close, contentDescription = "Kapat")
+                            Icon(SouIcons.Close, contentDescription = "Kapat")
                         }
                     }
                 }

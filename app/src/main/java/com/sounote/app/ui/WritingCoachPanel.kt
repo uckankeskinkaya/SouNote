@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -67,7 +65,7 @@ internal fun WritingSidePanel(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Paneli kapat") }
+                IconButton(onClick = onClose) { Icon(SouIcons.Close, contentDescription = "Paneli kapat") }
             }
         }
         val text = remember(body) { body.lineSequence().filterNot { it.startsWith(Sketches.MARKER) }.joinToString("\n") }

@@ -2179,7 +2179,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
         const val TRASH_DAYS = 30
         /** "Yenilikler" penceresinin ana sürümü: 2.0'a güncelleyen kullanıcı bir kez görür. */
-        const val MAJOR = 2
+        const val MAJOR = 3
         const val LOCK_AFTER_MS = 60_000L
         /** Belgede bu kadar çalışılan gün seriye sayılır. */
         private const val STREAK_MIN_STUDY = 5L * 60 * 1000

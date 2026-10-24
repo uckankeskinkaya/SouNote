@@ -28,10 +28,14 @@ import com.sounote.app.data.Updates
 
 /** Son ana sürümle gelenler ("Yenilikler" penceresi; eski sürümden güncelleyen bir kez görür). */
 private val WHATS_NEW = listOf(
-    SouIcons.Palette to "Baştan sade tasarım: daha az kalabalık, okunaklı ekranlar.",
-    SouIcons.Star to "Emoji yerine simgeler; derslerde yeni çizimler.",
-    SouIcons.InkPen to "Yeni kalemler: ince uç, keçeli kalem ve pastel; kalem kutusunda görselleriyle seç.",
-    SouIcons.Home to "Yeni ana sayfa: kısa özet, tek satır hızlı başla, yaklaşanlar listesi.",
+    SouIcons.Palette to "Baştan sade tasarım: logodaki lacivert ve mavi-mor tonlar, emoji yerine simgeler.",
+    SouIcons.InkPen to "14 kalem: ince uç, keçeli, pastel, jel, neon, noktalı, geniş uç, mürekkep fırçası…; her kalem kendi ayarını hatırlar.",
+    SouIcons.Draw to "Yazma desteği: el titremesini süzer, çizgileri yumuşak ve bağlantılı yapar.",
+    SouIcons.Straighten to "Cetvel ve açıölçer: kenarına yakın çizgi kenara oturur.",
+    SouIcons.Style to "Yeni bilgi kartı ekranı: dokun çevir, sağa bildim, sola bilemedim.",
+    SouIcons.StarShine to "Asistanla ders özeti: dersin bütün PDF'lerinden özet, kelimeler, sorular.",
+    SouIcons.LibraryBooks to "Defter kapakları; haftalık plan, kelime defteri ve renkli Cornell şablonları.",
+    SouIcons.Widgets to "Yeni sınav widget'ı ve tablette iki sütunlu ana sayfa.",
 )
 
 /** Yeni sürüm ve "Yenilikler" pencereleri (ana ekranda). */

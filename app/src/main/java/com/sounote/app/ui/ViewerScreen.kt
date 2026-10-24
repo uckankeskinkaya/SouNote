@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.graphics.RectF
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
@@ -140,6 +141,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     val reading = vm.readingMode
     // Telefonda üst çubuk dar: bazı düğmeler ⋮ menüsüne taşınır.
     val narrowBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
+    val wideViewer = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 840
+    var sideNote by remember { mutableStateOf(false) }
     fun askRegion() {
         val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
         scope.launch {
@@ -465,6 +468,12 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                     )
                                 }
                             }
+                            if (wideViewer) {
+                                DropdownMenuItem(
+                                    text = { Text(if (sideNote) "📝 Yan notu kapat" else "📝 Yan yana not aç") },
+                                    onClick = { moreMenu = false; sideNote = !sideNote },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },
                                 onClick = {
@@ -734,6 +743,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         }
                     }
                 }
+            }
+            // Geniş ekranda belgeye bağlı yazılı not, PDF ile yan yana.
+            if (sideNote && wideViewer) {
+                androidx.compose.material3.VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Box(Modifier.width(360.dp).fillMaxHeight()) { SideNotePanel(vm, doc) { sideNote = false } }
             }
             }
         }

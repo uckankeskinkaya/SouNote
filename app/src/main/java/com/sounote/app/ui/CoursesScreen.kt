@@ -225,7 +225,14 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     val context = LocalContext.current
     var summaryOpen by remember { mutableStateOf(false) }
     var testOpen by remember { mutableStateOf(false) }
+    var mapOpen by remember { mutableStateOf(false) }
     if (testOpen) PracticeSetupDialog(vm, course) { testOpen = false }
+    if (mapOpen) {
+        TopicMapScreen(vm, course, onOpenTopic = { t ->
+            mapOpen = false
+            if (t.id !in expanded) onToggle(t.id)
+        }) { mapOpen = false }
+    }
     if (summaryOpen) {
         AssistantDialog(
             vm,
@@ -241,6 +248,19 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
     ) {
         item { CourseHeader(vm, course) }
+        item {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().card().clickable { mapOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                IconBadge(SouIcons.AccountTree, Color(course.color))
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Konu haritası", style = MaterialTheme.typography.titleSmall)
+                    Text("Hangi konuda ne kadar hazırsın", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         val docs = vm.courseDocs(course)
         item {
             // Asistan konudan çoktan seçmeli deneme sınavı hazırlar (indirilmiş PDF'ler varsa onlardan).

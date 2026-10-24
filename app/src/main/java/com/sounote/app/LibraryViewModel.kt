@@ -561,6 +561,32 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun progressOf(resources: List<com.sounote.app.data.Resource>): Pair<Int, Int> =
         resources.count { doneKey(it) in doneItems } to resources.size
 
+    /** Deneme sınavı sonuçları: konu kimliği (bütün ders için "course:<id>") → son yüzde (0–100). */
+    var testScores by mutableStateOf(
+        runCatching {
+            val o = org.json.JSONObject(prefs.getString("testScores", "{}")!!)
+            o.keys().asSequence().associateWith { o.getInt(it) }
+        }.getOrDefault(emptyMap()),
+    )
+        private set
+
+    fun recordTestScore(key: String, percent: Int) {
+        markActive()
+        testScores = testScores + (key to percent.coerceIn(0, 100))
+        prefs.edit().putString("testScores", org.json.JSONObject(testScores).toString()).apply()
+    }
+
+    /** Konunun hakimiyeti (0–1): kaynak ilerlemesi, deneme yapıldıysa puanla ortalaması. */
+    fun mastery(topic: com.sounote.app.data.Topic): Float {
+        val (done, total) = progressOf(topic.resources)
+        val res = if (total > 0) done / total.toFloat() else null
+        val test = testScores[topic.id]?.div(100f)
+        return when {
+            res != null && test != null -> (res + test) / 2
+            else -> res ?: test ?: 0f
+        }
+    }
+
     /** Dersin klasörüne indirilmiş belgeler (son açılan başta). */
     fun courseDocs(course: Course): List<DocRef> {
         val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return emptyList()
@@ -686,6 +712,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         checkUpdate(manual = false)
     }
 
+    private var catalogFetchedAt = 0L
+
     fun refreshCatalog(quiet: Boolean = false) {
         if (catalogLoading) return
         viewModelScope.launch {
@@ -693,6 +721,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val result = withContext(Dispatchers.IO) { runCatching { CatalogRepo.fetch(getApplication()) } }
             catalogLoading = false
             result.onSuccess {
+                catalogFetchedAt = System.currentTimeMillis()
+                // Yeni eklenen kaynakları bildir (ilk yüklemede değil).
+                val before = catalog.courses.flatMap { c -> c.topics.flatMap { t -> t.resources.map(::doneKey) } }.toSet()
+                val added = it.courses.sumOf { c -> c.topics.sumOf { t -> t.resources.count { r -> doneKey(r) !in before } } }
+                if (before.isNotEmpty() && added > 0) message = "Derslere $added yeni kaynak eklendi"
                 catalog = it
                 catalogError = null
                 withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) }) }
@@ -933,6 +966,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun onAppForeground() {
         if (appLock && backgroundSince != 0L && System.currentTimeMillis() - backgroundSince > LOCK_AFTER_MS) locked = true
         backgroundSince = 0L
+        // Ortak katalog uzun süre açık kalan uygulamada da güncel kalsın.
+        if (System.currentTimeMillis() - catalogFetchedAt > 3 * 3_600_000L) refreshCatalog(quiet = true)
     }
 
     fun unlocked() {

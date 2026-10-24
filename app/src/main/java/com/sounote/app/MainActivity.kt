@@ -26,6 +26,7 @@ import androidx.compose.runtime.key
 import androidx.core.content.IntentCompat
 import com.sounote.app.data.DocRef
 import com.sounote.app.data.TextNote
+import com.sounote.app.ui.LocalMotionLevel
 import com.sounote.app.ui.LockScreen
 import com.sounote.app.ui.Motion
 import com.sounote.app.ui.MainShell
@@ -54,7 +55,15 @@ class MainActivity : ComponentActivity() {
                 LibraryViewModel.ThemeMode.DARK -> true
                 LibraryViewModel.ThemeMode.SYSTEM -> null
             }
-            SouNoteTheme(dark, vm.colorTheme) {
+            val isDark = dark ?: androidx.compose.foundation.isSystemInDarkTheme()
+            // Durum ve gezinme çubuğu simgeleri uygulamanın temasına uysun (sistem temasına değil).
+            androidx.compose.runtime.SideEffect {
+                androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !isDark
+                    isAppearanceLightNavigationBars = !isDark
+                }
+            }
+            SouNoteTheme(isDark, vm.darkPalette, vm.accent, vm.uiDensity, vm.motionLevel) {
                 Box(Modifier.fillMaxSize()) {
                     SouNoteApp(vm)
                     // Kilit ekranı üstte durur; altındaki belge açık kalır, kilit açılınca kaldığı yerden devam.
@@ -206,6 +215,7 @@ private fun SouNoteApp(vm: LibraryViewModel) {
         is Screen.Text -> BackHandler { vm.closeTextNote() }
         else -> Unit
     }
+    val motion = LocalMotionLevel.current
     AnimatedContent(
         targetState = screen,
         contentKey = { it.key },
@@ -216,7 +226,7 @@ private fun SouNoteApp(vm: LibraryViewModel) {
             if (sameDoc) {
                 EnterTransition.None togetherWith ExitTransition.None
             } else {
-                Motion.screenTransition<Screen>(targetState.depth >= initialState.depth).invoke(this)
+                Motion.screenTransition<Screen>(targetState.depth >= initialState.depth, motion).invoke(this)
             }
         },
         label = "screen",

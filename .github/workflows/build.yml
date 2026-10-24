@@ -6,6 +6,13 @@ on:
       - "**.md"
       - ".github/workflows/probe.yml"
       - "docs/**"
+      - ".github/publish/**"
+      - ".github/video/**"
+      - ".github/workflows/video.yml"
+      - ".github/workflows/publish.yml"
+      - ".github/workflows/site.yml"
+      - ".github/workflows/keygen.yml"
+      - ".github/keygen/**"
       - "site/**"
   workflow_dispatch:
 
@@ -24,7 +31,7 @@ jobs:
           java-version: 17
 
       # Önbellek bu dalda da yazılsın (varsayılan: sadece ana dalda yazar; burada hiç kullanılmıyordu).
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
         with:
           cache-read-only: false
 
@@ -34,13 +41,44 @@ jobs:
           ./gradlew assembleRelease --build-cache --parallel
           cp app/build/outputs/apk/release/app-release.apk SouNote.apk
 
+      # Anahtar değişimi (APK imza şeması v3): eski anahtar herkese açık olduğu için yeni, gizli anahtara geçildi.
+      # APK eski + yeni anahtar ve geçiş kaydıyla imzalanır: eski sürümlerin üstüne kurulur, ama sadece eski
+      # anahtarla imzalanmış (sahte) bir APK artık bu sürümün üstüne kurulamaz.
+      - name: Yeni anahtarla imzala
+        env:
+          PW: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -euo pipefail
+          mkdir -p old
+          cp SouNote.apk old/SouNote-oldkey.apk
+          if [ ! -f keystore/sounote2.p12.enc ]; then echo "::notice::Yeni anahtar henüz yok; eski anahtarla imzalandı."; exit 0; fi
+          if [ -z "$PW" ]; then echo "::error::SIGNING_PASSWORD gizli değeri yok; yeni anahtar olmadan derlenen sürüm güncellenmiş cihazlara kurulamaz."; exit 1; fi
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 -in keystore/sounote2.p12.enc -out "$tmp/new.p12" -pass env:PW
+          "$BT/apksigner" sign \
+            --ks keystore/sounote.jks --ks-pass pass:sounote --key-pass pass:sounote --ks-key-alias sounote \
+            --next-signer --ks "$tmp/new.p12" --ks-pass env:PW --ks-key-alias sounote2 \
+            --lineage keystore/lineage.bin --rotation-min-sdk-version 28 \
+            --out SouNote.apk old/SouNote-oldkey.apk
+          "$BT/apksigner" verify -v --print-certs SouNote.apk | grep -E "Verified using|certificate SHA-256" | head -8
+          touch old/rotated
+
       - name: Artifact olarak yükle
         uses: actions/upload-artifact@v4
         with:
           name: SouNote-apk
           path: SouNote.apk
 
-  # APK test beklemeden yayınlanır (derlemeden ~1 dk sonra hazır).
+      - name: Eski anahtarlı kopya (imza testi için)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SouNote-oldkey
+          path: old
+          retention-days: 3
+
+  # Her push bir TEST sürümü (ön sürüm) üretir: sadece yönetici (test kanalını açan) alır.
+  # Herkese gitmesi için "Sürümü yayınla" iş akışı çalıştırılır (publish.yml).
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -69,25 +107,49 @@ jobs:
         if: steps.tip.outputs.latest == 'true'
         run: git log -1 --format=%B | grep -v -E '^(Co-Authored-By|Claude-Session):' > notes.md || echo "Yeni derleme" > notes.md
 
-      - name: Release oluştur
+      - name: Test sürümü oluştur
         if: steps.tip.outputs.latest == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: SouNote 1.0.${{ github.run_number }}
+          name: Test 2.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
-          # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
-          prerelease: false
-          make_latest: true
-          # Uygulamadaki "Yeni sürüm" penceresi bu metni gösterir.
+          prerelease: true
+          make_latest: false
           body_path: notes.md
-          # catalog.json: uygulama açılışta haftalık kaynakları buradan günceller (releases/latest/download/catalog.json).
-          files: |
-            SouNote.apk
-            app/src/main/assets/catalog.json
+          files: SouNote.apk
 
-  # Yayınla aynı anda emülatörde çökme testi. Uygulama çökerse sürüm "ön sürüm" yapılır:
-  # releases/latest (indirme bağlantısı ve uygulamadaki güncelleme bildirimi) bir önceki sağlam sürüme döner.
+      # Sabit "test" kanalı: en yeni test APK'sı + test.json (GitHub sürüm listesi ön sürümleri güvenilir göstermiyor;
+      # uygulamanın yönetici modu, video ve "Sürümü yayınla" en yeni test sürümünü buradan okur).
+      - name: Test kanalını güncelle
+        if: steps.tip.outputs.latest == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="${{ github.repository }}"
+          N="${{ github.run_number }}"
+          python3 -c "import json,sys; print(json.dumps({'build': int(sys.argv[1]), 'name': 'Test 2.0.' + sys.argv[1], 'notes': open('notes.md').read().strip(), 'sha': sys.argv[2]}, ensure_ascii=False))" "$N" "$GITHUB_SHA" > test.json
+          if ! gh release view test -R "$R" >/dev/null 2>&1; then
+            gh release create test -R "$R" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Test kanalı" --notes "Yönetici için en yeni test derlemesi (otomatik güncellenir)."
+          fi
+          gh release upload test SouNote.apk test.json -R "$R" --clobber
+
+      # Haftalık ders kataloğu ayrı kanalda ("catalog" etiketi): yayın beklemeden herkese gider.
+      - name: Kataloğu güncelle
+        if: steps.tip.outputs.latest == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="${{ github.repository }}"
+          if ! gh release view catalog -R "$R" >/dev/null 2>&1; then
+            gh release create catalog -R "$R" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Ders kataloğu" --notes "Uygulamanın haftalık ders kaynakları listesi (otomatik güncellenir)."
+          fi
+          gh release upload catalog app/src/main/assets/catalog.json -R "$R" --clobber
+
+  # Test sürümüyle aynı anda emülatörde çökme testi. Uygulama çökerse test sürümüne uyarı yazılır;
+  # "Sürümü yayınla" böyle bir sürümü herkese göndermez.
   smoke:
     needs: build
     runs-on: ubuntu-latest
@@ -99,6 +161,11 @@ jobs:
         with:
           name: SouNote-apk
           path: a
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: SouNote-oldkey
+          path: old
 
       - name: KVM
         run: |
@@ -118,7 +185,7 @@ jobs:
 
       - name: Emülatör kaydı oluştur
         if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 36
           target: google_apis
@@ -130,7 +197,7 @@ jobs:
           script: echo "Emülatör kaydı hazır"
 
       - name: Emülatörde çökme testi
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 36
           target: google_apis
@@ -160,17 +227,15 @@ jobs:
           git add -A; git commit -qm "build ${{ github.run_number }}" || exit 0
           git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}" screenshots
 
-  # Test başarısızsa yayınlanan sürümü geri çek (ön sürüm yap).
+  # Test başarısızsa test sürümüne uyarı yaz (yayınlanması engellenir).
   rollback:
     needs: [release, smoke]
     if: failure() && needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Sürümü ön sürüme çek
+      - name: Uyarı yaz
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit "build-${{ github.run_number }}" -R "${{ github.repository }}" --prerelease --latest=false \
-            --notes "⚠️ Bu derleme çökme testinden geçemedi; indirme bağlantısı önceki sürüme döndü."
-          prev=$(gh release list -R "${{ github.repository }}" --exclude-pre-releases --exclude-drafts --limit 1 --json tagName -q '.[0].tagName')
-          [ -n "$prev" ] && gh release edit "$prev" -R "${{ github.repository }}" --latest
+          gh release edit "build-${{ github.run_number }}" -R "${{ github.repository }}" \
+            --notes "⚠️ Bu derleme çökme testinden geçemedi; yayınlanmamalı."

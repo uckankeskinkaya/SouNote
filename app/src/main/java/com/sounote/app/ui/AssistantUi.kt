@@ -93,7 +93,8 @@ import kotlinx.coroutines.withContext
 /** Asistanın nereden açıldığı: belge (sayfasıyla), yazılı not ya da genel. */
 sealed interface AssistantSource {
     data object General : AssistantSource
-    data class Document(val doc: DocRef, val page: Int, val pageCount: Int) : AssistantSource
+    /** [selection]: lasso ile seçilen bölgenin metni (varsa "Seçim" bağlamı açılır). */
+    data class Document(val doc: DocRef, val page: Int, val pageCount: Int, val selection: String? = null) : AssistantSource
     data class Note(val title: String, val text: String) : AssistantSource
 }
 
@@ -108,15 +109,16 @@ private fun AssistantSource.key() = when (this) {
 
 /** Yardımcı asistan: soru sor, belgeyi/notu özetlet, alıştırma iste, yazını kontrol ettir. */
 @Composable
-fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: () -> Unit) {
+fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: String = "", onDismiss: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val messages = remember { mutableStateListOf<ChatMessage>().apply { addAll(histories[source.key()].orEmpty()) } }
-    var input by remember { mutableStateOf("") }
+    var input by remember { mutableStateOf(prefill) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    // Belgeden açıldıysa: 0 = bu sayfa, 1 = tüm belge, 2 = belgesiz
-    var docScope by remember { mutableStateOf(0) }
+    // Belgeden açıldıysa: 0 = bu sayfa, 1 = tüm belge, 2 = belgesiz, 3 = seçili bölge
+    val selection = (source as? AssistantSource.Document)?.selection?.takeIf { it.isNotBlank() }
+    var docScope by remember { mutableStateOf(if (selection != null) 3 else 0) }
     val docTexts = remember { HashMap<Int, String>() }
     var setup by remember { mutableStateOf(!vm.assistantConfig.ready) }
     // Servis kullanım şartlarının onayını istiyorsa: metni ve sürümü
@@ -134,11 +136,11 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
         if (makingCards || busy) return
         makingCards = true
         error = null
-        // "Belgesiz" seçiliyken de bu sayfadan üret.
-        val sc = if (docScope == 2) 0 else docScope
+        // "Belgesiz" ya da "Seçim" seçiliyken: seçim varsa ondan, yoksa bu sayfadan üret.
+        val sc = if (docScope >= 2) 0 else docScope
         scope.launch {
             val r = runCatching {
-                val text = docTexts[sc] ?: run {
+                val text = (if (docScope == 3) selection else null) ?: docTexts[sc] ?: run {
                     val (from, to) = if (sc == 0) doc.page to doc.page else 0 to doc.pageCount - 1
                     vm.documentText(doc.doc, from, to).also { docTexts[sc] = it }
                 }
@@ -159,7 +161,10 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
         scope.launch {
             val result = runCatching {
                 val contextText = when (source) {
-                    is AssistantSource.Document -> if (docScope == 2) {
+                    is AssistantSource.Document -> if (docScope == 3 && selection != null) {
+                        "Kullanıcı \"${source.doc.title}\" belgesinin ${source.page + 1}. sayfasında bir bölge seçti. Seçili metin:\n\"\"\"\n" +
+                            selection.take(8_000) + "\n\"\"\""
+                    } else if (docScope == 2) {
                         null
                     } else {
                         docTexts[docScope] ?: run {
@@ -377,6 +382,9 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
                                 modifier = Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 6.dp),
                             ) {
                                 Text("Bağlam:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (selection != null) {
+                                    FilterChip(selected = docScope == 3, onClick = { docScope = 3 }, label = { Text("Seçili bölge") })
+                                }
                                 FilterChip(selected = docScope == 0, onClick = { docScope = 0 }, label = { Text("Bu sayfa (${source.page + 1})") })
                                 FilterChip(selected = docScope == 1, onClick = { docScope = 1 }, label = { Text("Tüm belge") })
                                 FilterChip(selected = docScope == 2, onClick = { docScope = 2 }, label = { Text("Belgesiz") })
@@ -420,7 +428,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, onDismiss: ()
 /** Asistanın simgesi: tema renginde degrade daire içinde ✦. */
 @Composable
 private fun BotAvatar(size: Dp) {
-    val hero = LocalColorTheme.current.heroColors
+    val hero = listOf(MaterialTheme.colorScheme.primary, LocalSouColors.current.hero.last())
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(hero)),
@@ -432,19 +440,26 @@ private fun BotAvatar(size: Dp) {
 @Composable
 private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, onSetup: () -> Unit, onAsk: (String) -> Unit) {
     val prompts = when (source) {
-        is AssistantSource.Document -> listOf(
+        is AssistantSource.Document -> if (source.selection.isNullOrBlank()) listOf(
             "📝" to "Bu sayfayı Türkçe özetle",
             "📚" to "Buradaki önemli kelimeleri anlamlarıyla listele",
             "❓" to "Bu sayfadan bana 5 soru sor",
             "🧩" to "Buradaki grammar konusunu örneklerle anlat",
+        ) else listOf(
+            "💡" to "Seçili metni basitçe açıkla",
+            "🇹🇷" to "Seçili metni Türkçeye çevir",
+            "📚" to "Seçili metindeki zor kelimeleri anlamlarıyla listele",
+            "❓" to "Seçili metinden bana 3 soru sor",
         )
         is AssistantSource.Note -> listOf(
+            "❓" to "Bu nottan 5 çalışma sorusu üret (cevaplarıyla)",
             "✨" to "Bu notu toparla ve özetle",
             "✅" to "Yazımdaki hataları düzelt",
             "🎯" to "Bu essay'i L4 kriterlerine göre değerlendir",
         )
         AssistantSource.General -> listOf(
             "📅" to "Sıradaki sınavıma ne çalışmalıyım?",
+            "🗓️" to "Yaklaşan sınavlarıma göre bana bu hafta için çalışma planı öner",
             "🧩" to "Present perfect ile past simple farkı ne?",
             "✍️" to "Bana opinion essay için bir plan yap",
             "🎙️" to "Uygulamada ses kaydı nasıl kullanılır?",
@@ -465,7 +480,11 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
         )
         Text(
             when (source) {
-                is AssistantSource.Document -> "Bu belgeyi okuyorum. Özet, kelime listesi, soru ya da konu anlatımı isteyebilirsin."
+                is AssistantSource.Document -> if (source.selection.isNullOrBlank()) {
+                    "Bu belgeyi okuyorum. Özet, kelime listesi, soru ya da konu anlatımı isteyebilirsin."
+                } else {
+                    "Seçtiğin bölgeyi okuyorum. Açıklama, çeviri ya da soru isteyebilirsin."
+                }
                 is AssistantSource.Note -> "Notunu okuyorum. Düzeltme, özet ya da değerlendirme isteyebilirsin."
                 AssistantSource.General -> "İngilizce, L4 dersleri, sınavların ve uygulama hakkında her şeyi sorabilirsin."
             },
@@ -589,53 +608,4 @@ private fun SmallAction(label: String, onClick: () -> Unit) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 6.dp),
     )
-}
-
-/** Servis ayarları: OpenAI uyumlu adres, model ve anahtar (sadece bu cihazda saklanır). */
-@Composable
-internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -> Unit) {
-    var url by remember { mutableStateOf(config.baseUrl) }
-    var model by remember { mutableStateOf(config.model) }
-    var key by remember { mutableStateOf(config.apiKey) }
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .card()
-            .padding(16.dp),
-    ) {
-        Text("Asistan ayarları", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Text(
-            "OpenAI uyumlu bir sohbet servisi gerekir. Evren anahtarı (evren_llm_…) için \"Evren\" düğmesine bas, anahtarı yapıştır, kaydet. " +
-                "Anahtar sadece bu cihazda saklanır, uygulamayla birlikte paylaşılmaz.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        OutlinedTextField(value = url, onValueChange = { url = it }, singleLine = true, label = { Text("API adresi") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = model, onValueChange = { model = it }, singleLine = true, label = { Text("Model adı") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(
-            value = key,
-            onValueChange = { key = it },
-            singleLine = true,
-            label = { Text("API anahtarı") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = {
-                url = AssistantConfig.EVREN_URL
-                model = AssistantConfig.EVREN_MODEL
-            }) { Text("Evren") }
-            TextButton(onClick = {
-                url = AssistantConfig.DEEPSEEK_URL
-                model = AssistantConfig.DEEPSEEK_MODEL
-            }) { Text("DeepSeek") }
-            Spacer(Modifier.weight(1f))
-            Button(onClick = { onSave(AssistantConfig(url, model, key).fixed()) }, enabled = url.isNotBlank() && model.isNotBlank() && key.isNotBlank()) {
-                Text("Kaydet", maxLines = 1, softWrap = false)
-            }
-        }
-    }
 }

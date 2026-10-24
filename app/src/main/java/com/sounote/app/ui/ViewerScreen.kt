@@ -2,6 +2,8 @@
 
 package com.sounote.app.ui
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.platform.LocalConfiguration
 import android.content.Intent
 import android.view.KeyEvent
 import android.Manifest
@@ -16,6 +18,14 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.graphics.RectF
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -126,6 +136,26 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Bilgi kartları
     var cardsDialog by remember { mutableStateOf(false) }
     var assistantOpen by remember { mutableStateOf(false) }
+    // Lasso ile çizilen son bölge ve asistana gönderilecek metni
+    var lassoRegion by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
+    var askSelection by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val reading = vm.readingMode
+    val wideViewer = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 840
+    var sideNote by remember { mutableStateOf(false) }
+    fun askRegion() {
+        val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
+        scope.launch {
+            val text = vm.regionText(doc, p, r)
+            if (text.isBlank()) {
+                vm.showMessage("Seçili bölgede okunabilir metin yok (taranmış sayfa olabilir); sayfanın tamamı gönderilecek")
+                askSelection = null
+            } else {
+                askSelection = text
+            }
+            assistantOpen = true
+        }
+    }
     // Kayda bağlı çizgiye dokununca: (dosya adı, an, dokunma sayacı)
     var audioPlay by remember { mutableStateOf<Triple<String, Long, Int>?>(null) }
     var makeCard by remember { mutableStateOf<Pair<Int, RectF>?>(null) }
@@ -293,6 +323,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         }
     }
 
+    // Telefonda üst çubuğa her düğme sığmıyor (geri düğmesinin üstüne biniyordu): az kullanılanlar ⋮ menüsüne gider.
+    val narrow = LocalConfiguration.current.screenWidthDp < 600
     Scaffold(
         topBar = {
             if (!vm.fullScreen) TopAppBar(
@@ -322,28 +354,39 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             )
                         }
                     }
+                    // Okuma ↔ not alma modu
+                    IconButton(onClick = { vm.updateReadingMode(!reading) }) {
+                        Text(
+                            if (reading) "✏️" else "📖",
+                            fontSize = 20.sp,
+                            modifier = Modifier.semantics { contentDescription = if (reading) "Not al" else "Oku" },
+                        )
+                    }
                     if (vm.recordingSince != 0L) {
                         TextButton(onClick = { toggleRecording() }) {
                             Text(
-                                "● " + formatDuration(now - vm.recordingSince) + "  Durdur",
+                                "● " + formatDuration(now - vm.recordingSince) + if (narrow) "" else "  Durdur",
                                 color = Color(0xFFE53935),
+                                maxLines = 1,
                             )
                         }
-                    } else {
+                    } else if (!reading && !narrow) {
                         IconButton(onClick = { toggleRecording() }) {
                             Icon(painterResource(R.drawable.ic_mic), contentDescription = "Ses kaydı başlat")
                         }
                     }
+                    if (!narrow) {
                     IconButton(onClick = { vm.togglePagePanel() }) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
-                    IconButton(onClick = { assistantOpen = true }) {
+                    IconButton(onClick = { askSelection = null; assistantOpen = true }) {
                         Text("🤖", fontSize = 20.sp)
                     }
                     IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
                         Icon(Icons.Default.Search, contentDescription = "Ara")
                     }
-                    page?.let { (p, _) ->
+                    }
+                    if (!narrow) page?.let { (p, _) ->
                         val marked = p in vm.bookmarks
                         IconButton(onClick = { vm.toggleBookmark(doc, p) }) {
                             Icon(
@@ -353,11 +396,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             )
                         }
                     }
-                    IconButton(onClick = { ink.undo() }, enabled = canUndo) {
-                        Icon(painterResource(R.drawable.ic_undo), contentDescription = "Geri al")
-                    }
-                    IconButton(onClick = { ink.redo() }, enabled = canRedo) {
-                        Icon(painterResource(R.drawable.ic_redo), contentDescription = "İleri al")
+                    if (!reading) {
+                        IconButton(onClick = { ink.undo() }, enabled = canUndo) {
+                            Icon(painterResource(R.drawable.ic_undo), contentDescription = "Geri al")
+                        }
+                        IconButton(onClick = { ink.redo() }, enabled = canRedo) {
+                            Icon(painterResource(R.drawable.ic_redo), contentDescription = "İleri al")
+                        }
                     }
                     Box {
                         if (vm.exporting) {
@@ -403,6 +448,51 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                            if (narrow) {
+                                DropdownMenuItem(
+                                    text = { Text("Sayfalar") },
+                                    leadingIcon = { Icon(painterResource(R.drawable.ic_pages), contentDescription = null) },
+                                    onClick = { moreMenu = false; vm.togglePagePanel() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Asistan") },
+                                    leadingIcon = { Text("🤖", fontSize = 18.sp) },
+                                    onClick = { moreMenu = false; askSelection = null; assistantOpen = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("PDF'te ara") },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                    onClick = { moreMenu = false; if (searchOpen) closeSearch() else searchOpen = true },
+                                )
+                                page?.let { (p, _) ->
+                                    val marked = p in vm.bookmarks
+                                    DropdownMenuItem(
+                                        text = { Text(if (marked) "Yer imini kaldır" else "Yer imi ekle") },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (marked) Icons.Filled.Star else Icons.Outlined.OutlinedStar,
+                                                contentDescription = null,
+                                                tint = if (marked) Color(0xFFF2B705) else LocalContentColor.current,
+                                            )
+                                        },
+                                        onClick = { moreMenu = false; vm.toggleBookmark(doc, p) },
+                                    )
+                                }
+                                if (!reading && vm.recordingSince == 0L) {
+                                    DropdownMenuItem(
+                                        text = { Text("Ses kaydı başlat") },
+                                        leadingIcon = { Icon(painterResource(R.drawable.ic_mic), contentDescription = null) },
+                                        onClick = { moreMenu = false; toggleRecording() },
+                                    )
+                                }
+                                HorizontalDivider()
+                            }
+                            if (wideViewer) {
+                                DropdownMenuItem(
+                                    text = { Text(if (sideNote) "📝 Yan notu kapat" else "📝 Yan yana not aç") },
+                                    onClick = { moreMenu = false; sideNote = !sideNote },
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },
                                 onClick = {
@@ -529,7 +619,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 }
             }
-            InkToolbar(
+            if (!reading) InkToolbar(
                 state = tools,
                 onChange = vm::updateTools,
                 selection = SelectionUi(
@@ -541,6 +631,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     onDelete = { view?.deleteSelection() },
                     onDone = { view?.clearSelection() },
                     onMakeCard = { makeCard = view?.selectionRegion() },
+                    canAsk = lassoRegion != null || selCount > 0,
+                    onAsk = { askRegion() },
                 ),
                 onInsertImage = {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -603,8 +695,13 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onUndoGesture = { this.ink.undo() }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
-                                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                                        .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                    // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)
+                                    if (uri.scheme?.lowercase() !in setOf("http", "https", "mailto", "tel")) {
+                                        currentVm.showMessage("Bu bağlantı türü açılmıyor")
+                                    } else {
+                                        runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                            .onFailure { currentVm.showMessage("Bağlantı açılamadı") }
+                                    }
                                 }
                                 onFormSaved = { currentVm.showMessage("Form kaydedildi") }
                                 formSaveTarget = currentVm.formSaveTarget(doc)
@@ -619,6 +716,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                         audioPlay = Triple(file, ms, (audioPlay?.third ?: 0) + 1)
                                     }
                                 }
+                                onLassoRegion = { p, r -> lassoRegion = p to RectF(r) }
+                                readOnly = currentVm.readingMode
                                 onSelectionChanged = { n, clip ->
                                     selCount = n
                                     hasClip = clip
@@ -637,6 +736,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             v.twoPage = vm.twoPage
                             v.setDarkTheme(darkTheme)
                             v.setInverted(vm.nightReading)
+                            v.readOnly = vm.readingMode
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
@@ -645,6 +745,17 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    if (reading && vm.fullScreen) {
+                        Row(
+                            Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(50))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f)),
+                        ) {
+                            IconButton(onClick = { vm.toggleFullScreen() }) {
+                                Icon(painterResource(R.drawable.ic_fullscreen_exit), contentDescription = "Tam ekrandan çık")
+                            }
+                            IconButton(onClick = { vm.updateReadingMode(false) }) { Text("✏️") }
+                        }
+                    }
                     page?.let { (p, n) ->
                         if (n > 3) {
                             PageScrubber(
@@ -657,6 +768,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 }
             }
+            // Geniş ekranda belgeye bağlı yazılı not, PDF ile yan yana.
+            if (sideNote && wideViewer) {
+                androidx.compose.material3.VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Box(Modifier.width(360.dp).fillMaxHeight()) { SideNotePanel(vm, doc) { sideNote = false } }
+            }
             }
         }
     }
@@ -664,8 +780,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     if (assistantOpen) {
         AssistantDialog(
             vm,
-            AssistantSource.Document(doc, page?.first ?: 0, page?.second ?: 1),
-            onDismiss = { assistantOpen = false },
+            AssistantSource.Document(doc, lassoRegion?.first?.takeIf { askSelection != null } ?: page?.first ?: 0, page?.second ?: 1, askSelection),
+            onDismiss = {
+                assistantOpen = false
+                askSelection = null
+            },
         )
     }
 
@@ -735,9 +854,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             cards = list,
             image = { vm.cardImage(doc, it) },
             onReview = { card, known -> vm.reviewCard(doc, card, known) },
-            onGoToPage = { p ->
+            onGoToPage = { c ->
                 study = null
-                view?.goToPage(p)
+                view?.goToPage(c.page)
             },
             onDismiss = { study = null },
         )

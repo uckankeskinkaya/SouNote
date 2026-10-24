@@ -14,15 +14,16 @@ android {
         targetSdk = 36
         // CI'da her derleme numarası artar, böylece yeni APK eskisinin üstüne kurulur.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.0.$versionCode"
+        versionName = "2.0.$versionCode"
         // Sadece telefon/tablet işlemcileri (emülatör x86 kodları APK'yı şişiriyordu).
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 
-    // Kişisel uygulama: sabit anahtar repoda. Anahtar değişirse güncelleme kurulmaz
-    // ve uygulamayı silmek (notları kaybetmek) gerekir, o yüzden bu dosyayı değiştirme.
+    // Gradle eski (emekli, zaten herkese açık) anahtarla imzalar; CI bu APK'yı yeni gizli anahtar + geçiş kaydıyla
+    // (APK imza şeması v3, keystore/sounote2.p12.enc + lineage.bin, şifre SIGNING_PASSWORD secret'ında) yeniden imzalar.
+    // Anahtarlar değişirse güncelleme kurulmaz ve uygulamayı silmek (notları kaybetmek) gerekir.
     signingConfigs {
         create("sounote") {
             storeFile = rootProject.file("keystore/sounote.jks")

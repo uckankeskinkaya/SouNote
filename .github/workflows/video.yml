@@ -1,0 +1,96 @@
+name: Tanıtım videosu
+
+# .github/video/ değişince: en yeni derlemeyi emülatörde gezip sahneleri kaydeder, kurgular,
+# docs/video/ altına (çalışma dalı ve main) koyar; site videoyu buradan gösterir.
+on:
+  push:
+    branches-ignore: [main, screenshots]
+    paths:
+      - ".github/video/**"
+      - ".github/workflows/video.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: En yeni APK
+        run: |
+          # Bu commit'in derlemesi yayınlanana kadar bekle (en fazla ~10 dk), yoksa en yeni derleme
+          n=$(gh api "repos/$R/actions/runs?head_sha=$GITHUB_SHA" -q '[.workflow_runs[] | select(.name == "APK derle")][0].run_number')
+          tag=""
+          for i in $(seq 1 40); do
+            if [ -n "$n" ] && gh release view "build-$n" -R "$R" >/dev/null 2>&1; then tag="build-$n"; break; fi
+            sleep 15
+          done
+          if [ -z "$tag" ]; then
+            # Bu commit yayınlanmadıysa test kanalındaki en yeni APK
+            gh release download test -R "$R" -p SouNote.apk -D a && exit 0
+          fi
+          echo "APK: $tag"
+          gh release download "$tag" -R "$R" -p SouNote.apk -D a
+
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Emülatör önbelleği
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-36-pixel6-v1
+
+      - name: Sahneleri kaydet
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: bash ./.github/video/record.sh
+
+      - name: Kurgula
+        run: |
+          which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg >/dev/null)
+          ls /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf || sudo apt-get install -y -qq fonts-dejavu-core
+          pip install -q pillow
+          python3 .github/video/compose.py
+
+      - name: Ham sahneler (inceleme için)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: |
+            scenes
+            out/sounote.mp4
+
+      - name: Siteye koy (çalışma dalı + main)
+        run: |
+          mkdir -p /tmp/v && cp out/sounote.mp4 out/poster.jpg /tmp/v/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for br in "$GITHUB_REF_NAME" main; do
+            git fetch -q --depth=1 origin "$br"
+            git checkout -q -B "v-$br" "origin/$br"
+            mkdir -p docs/video && cp /tmp/v/* docs/video/
+            git add docs/video
+            git diff --cached --quiet || git commit -qm "Site: tanıtım videosu güncellendi"
+            git push -q origin "HEAD:$br"
+          done

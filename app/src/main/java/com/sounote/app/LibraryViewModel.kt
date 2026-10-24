@@ -34,7 +34,14 @@ import com.sounote.app.data.Exam
 import com.sounote.app.data.ExamStore
 import com.sounote.app.data.Resource
 import com.sounote.app.data.Topic
+import com.sounote.app.ui.Accent
 import com.sounote.app.ui.ColorTheme
+import com.sounote.app.ui.DarkPalette
+import com.sounote.app.ui.MotionLevel
+import com.sounote.app.ui.UiDensity
+import com.sounote.app.data.HomeLayout
+import com.sounote.app.data.QuickAccess
+import com.sounote.app.data.QuickItem
 import com.sounote.app.data.TextNote
 import com.sounote.app.data.TextNotePdf
 import com.sounote.app.data.TextNoteStore
@@ -123,12 +130,174 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString("theme", mode.name).apply()
     }
 
-    var colorTheme by mutableStateOf(enumValueOrNull<ColorTheme>(prefs.getString("colorTheme", null)) ?: ColorTheme.BLUE)
+    // ---- 2.0 görünüm ve arayüz tercihleri (hepsi cihazda, güvenli varsayılanlarla) ----
+
+    /** Koyu temanın yüzeyleri. */
+    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.OBSIDIAN)
         private set
 
-    fun updateColorTheme(c: ColorTheme) {
-        colorTheme = c
-        prefs.edit().putString("colorTheme", c.name).apply()
+    fun updateDarkPalette(p: DarkPalette) {
+        darkPalette = p
+        prefs.edit().putString("darkPalette", p.name).apply()
+    }
+
+    /** Vurgu rengi. 1.0'da seçilen renk ("colorTheme") aynen korunur; seçilmemişse temanın kendi rengi. */
+    var accent by mutableStateOf(loadAccent())
+        private set
+
+    private fun loadAccent(): Accent = when (val n = prefs.getString("colorTheme", null)) {
+        null, "AUTO" -> Accent.Auto
+        "CUSTOM" -> Accent.Custom(prefs.getInt("accentCustom", 0xFF4F46E5.toInt()))
+        else -> enumValueOrNull<ColorTheme>(n)?.let { Accent.Preset(it) } ?: Accent.Auto
+    }
+
+    fun updateAccent(a: Accent) {
+        accent = a
+        prefs.edit().apply {
+            when (a) {
+                Accent.Auto -> putString("colorTheme", "AUTO")
+                is Accent.Preset -> putString("colorTheme", a.theme.name)
+                is Accent.Custom -> putString("colorTheme", "CUSTOM").putInt("accentCustom", a.argb)
+            }
+        }.apply()
+    }
+
+    var uiDensity by mutableStateOf(enumValueOrNull<UiDensity>(prefs.getString("uiDensity", null)) ?: UiDensity.COMFORTABLE)
+        private set
+
+    fun updateDensity(d: UiDensity) {
+        uiDensity = d
+        prefs.edit().putString("uiDensity", d.name).apply()
+    }
+
+    var motionLevel by mutableStateOf(enumValueOrNull<MotionLevel>(prefs.getString("motionLevel", null)) ?: MotionLevel.FULL)
+        private set
+
+    fun updateMotion(m: MotionLevel) {
+        motionLevel = m
+        prefs.edit().putString("motionLevel", m.name).apply()
+    }
+
+    /** Geniş ekranda gezinme menüsü: ekrana göre, hep dar ray ya da hep geniş menü. */
+    enum class NavStyle(val label: String) { AUTO("Ekrana göre"), RAIL("Dar ray"), EXPANDED("Geniş menü") }
+
+    var navStyle by mutableStateOf(enumValueOrNull<NavStyle>(prefs.getString("navStyle", null)) ?: NavStyle.AUTO)
+        private set
+
+    fun updateNavStyle(n: NavStyle) {
+        navStyle = n
+        prefs.edit().putString("navStyle", n.name).apply()
+    }
+
+    // ---- Ana sayfa düzeni ----
+
+    var homeLayout by mutableStateOf(HomeLayout.parse(prefs.getString("homeOrder", null), prefs.getString("homeHidden", null)))
+        private set
+
+    fun updateHomeLayout(l: HomeLayout) {
+        homeLayout = l
+        prefs.edit()
+            .putString("homeOrder", l.order.joinToString(",") { it.name })
+            .putString("homeHidden", l.hidden.joinToString(",") { it.name })
+            .apply()
+    }
+
+    fun resetHomeLayout() = updateHomeLayout(HomeLayout.DEFAULT)
+
+    // ---- Hızlı erişim: favoriler ve sabitlenenler ----
+
+    var quickItems by mutableStateOf(QuickAccess.parse(prefs.getString("quickAccess", null)))
+        private set
+
+    private fun saveQuick(items: List<QuickItem>) {
+        quickItems = items
+        prefs.edit().putString("quickAccess", QuickAccess.toJson(items)).apply()
+    }
+
+    fun isFavorite(type: String, id: String) = quickItems.any { it.type == type && it.id == id }
+
+    fun toggleFavorite(type: String, id: String) {
+        if (isFavorite(type, id)) {
+            saveQuick(quickItems.filterNot { it.type == type && it.id == id })
+            message = "Favorilerden çıkarıldı"
+        } else {
+            saveQuick(quickItems + QuickItem(type, id))
+            message = "Favorilere eklendi ⭐"
+        }
+    }
+
+    fun togglePinned(item: QuickItem) = saveQuick(quickItems.map { if (it.key == item.key) it.copy(pinned = !it.pinned) else it })
+
+    fun moveQuick(item: QuickItem, delta: Int) {
+        val i = quickItems.indexOfFirst { it.key == item.key }
+        if (i < 0) return
+        val j = (i + delta).coerceIn(0, quickItems.size - 1)
+        saveQuick(quickItems.toMutableList().apply { add(j, removeAt(i)) })
+    }
+
+    fun removeQuick(item: QuickItem) = saveQuick(quickItems.filterNot { it.key == item.key })
+
+    /** Ders açıldığında (son kullanılanlar için). */
+    fun courseOpened(id: String) {
+        prefs.edit().putLong("courseOpened_$id", System.currentTimeMillis()).apply()
+    }
+
+    fun lastCourseOpen(id: String) = prefs.getLong("courseOpened_$id", 0L)
+
+    /** Arama sonucundan ya da hızlı erişimden açılacak ders. */
+    var focusCourse by mutableStateOf<String?>(null)
+
+    // ---- Kütüphane ve planlayıcı görünümü ----
+
+    enum class LibraryView { GRID, LIST }
+
+    var libraryView by mutableStateOf(enumValueOrNull<LibraryView>(prefs.getString("libraryView", null)) ?: LibraryView.GRID)
+        private set
+
+    fun updateLibraryView(v: LibraryView) {
+        libraryView = v
+        prefs.edit().putString("libraryView", v.name).apply()
+    }
+
+    /** Kütüphanede sadece favoriler. */
+    var favoritesOnly by mutableStateOf(false)
+
+    enum class PlannerView(val label: String) { LIST("Liste"), WEEK("Hafta"), MONTH("Ay"), TIMELINE("Zaman çizelgesi") }
+
+    var plannerView by mutableStateOf(enumValueOrNull<PlannerView>(prefs.getString("plannerView", null)) ?: PlannerView.LIST)
+        private set
+
+    fun updatePlannerView(v: PlannerView) {
+        plannerView = v
+        prefs.edit().putString("plannerView", v.name).apply()
+    }
+
+    // ---- Belge: okuma / not alma modu ----
+
+    /** Okuma modunda araç çubuğu gizlenir ve kalem çizmez (kaydırır). */
+    var readingMode by mutableStateOf(prefs.getBoolean("readingMode", false))
+        private set
+
+    fun updateReadingMode(on: Boolean) {
+        readingMode = on
+        prefs.edit().putBoolean("readingMode", on).apply()
+    }
+
+    // ---- Son aramalar ----
+
+    var recentSearches by mutableStateOf(prefs.getString("recentSearches", null).orEmpty().split('\n').filter { it.isNotBlank() })
+        private set
+
+    fun rememberSearch(q: String) {
+        val t = q.trim()
+        if (t.length < 2) return
+        recentSearches = (listOf(t) + recentSearches.filter { !it.equals(t, ignoreCase = true) }).take(8)
+        prefs.edit().putString("recentSearches", recentSearches.joinToString("\n")).apply()
+    }
+
+    fun clearRecentSearches() {
+        recentSearches = emptyList()
+        prefs.edit().remove("recentSearches").apply()
     }
 
     /** Yedeği oluşturup Drive'a (ya da seçilen uygulamaya) gönderir. */
@@ -152,10 +321,20 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- Ana ekran: sekmeler, tanıtım, kullanıcı adı ----
 
-    enum class Tab { HOME, LIBRARY, COURSES, EXAMS, SETTINGS }
+    enum class Tab { HOME, LIBRARY, COURSES, EXAMS, WRITING, SETTINGS }
 
     /** Belge kapanınca aynı sekmeye dönülsün diye burada tutulur. */
     var tab by mutableStateOf(Tab.HOME)
+
+    /** Her yerden açılabilen evrensel arama. */
+    var searchOpen by mutableStateOf(false)
+
+    /** Genel asistan penceresi; değer, giriş kutusuna önceden yazılacak metin (null = kapalı). */
+    var assistantPrefill by mutableStateOf<String?>(null)
+
+    fun openAssistant(prefill: String = "") {
+        assistantPrefill = prefill
+    }
 
     var onboarded by mutableStateOf(prefs.getBoolean("onboarded", false))
         private set
@@ -163,7 +342,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun finishOnboarding() {
         onboarded = true
         // Yeni kurulumda "Yenilikler" penceresi çıkmasın.
-        prefs.edit().putBoolean("onboarded", true).putInt("seenBuild", installedBuild).putInt("seenMajor", 1).apply()
+        prefs.edit().putBoolean("onboarded", true).putInt("seenBuild", installedBuild).putInt("seenMajor", MAJOR).apply()
     }
 
     /** Ayarlar → Tanıtımı tekrar göster. */
@@ -202,9 +381,20 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         textNotes = withContext(Dispatchers.IO) { runCatching { textStore.list() }.getOrDefault(emptyList()) }
     }
 
-    fun newTextNote() {
+    /** Belgeye bağlı yan not (PDF ile yan yana yazılan yazılı not). Yazılınca normal yazılı not olarak saklanır. */
+    fun sideNoteFor(doc: DocRef): TextNote {
+        val id = prefs.getString("sideNote_${doc.id}", null)
+        textNotes.find { it.id == id }?.let { return it }
         val now = System.currentTimeMillis()
-        openText = TextNote(java.util.UUID.randomUUID().toString(), "", "", now, now)
+        val note = TextNote(id ?: java.util.UUID.randomUUID().toString(), "${doc.title} – notlar", "", now, now)
+        prefs.edit().putString("sideNote_${doc.id}", note.id).apply()
+        return note
+    }
+
+    /** Yeni yazılı not; [body] şablon olabilir (ör. essay bölümleri). */
+    fun newTextNote(body: String = "") {
+        val now = System.currentTimeMillis()
+        openText = TextNote(java.util.UUID.randomUUID().toString(), "", body, now, now)
     }
 
     fun openTextNote(note: TextNote) {
@@ -221,9 +411,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Değiştiyse kaydeder; başlık ve metin boşsa not silinir. */
     fun saveTextNote(id: String, title: String, body: String) {
         if (id in deletedTextIds) return
+        if (body.isNotBlank()) markActive()
         val old = textNotes.find { it.id == id } ?: openText?.takeIf { it.id == id }
         val stored = textNotes.any { it.id == id }
-        if (title.isBlank() && body.isBlank()) {
+        // Boş ya da hiç doldurulmamış essay şablonu: not olarak saklanmaz.
+        if (title.isBlank() && (body.isBlank() || body.trim() == com.sounote.app.data.EssayText.TEMPLATE.trim())) {
             if (stored) {
                 textNotes = textNotes.filter { it.id != id }
                 textWrites.trySend { textStore.delete(id) }
@@ -304,6 +496,29 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var remindersOn by mutableStateOf(ExamReminders.enabled(app))
         private set
+    // ---- Writing pratiği ----
+
+    private val essayStore = com.sounote.app.data.EssayStore(app)
+    var essays by mutableStateOf<List<com.sounote.app.data.Essay>>(emptyList())
+        private set
+
+    fun loadEssays() {
+        viewModelScope.launch { essays = withContext(Dispatchers.IO) { essayStore.all() } }
+    }
+
+    fun saveEssay(e: com.sounote.app.data.Essay) {
+        if (e.text.isNotBlank()) markActive()
+        essays = (listOf(e) + essays.filter { it.id != e.id }).sortedByDescending { it.updated }
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { essayStore.save(e) }.onFailure { ErrorLog.record("Yazı kaydedilemedi", it) }
+        }
+    }
+
+    fun deleteEssay(e: com.sounote.app.data.Essay) {
+        essays = essays.filter { it.id != e.id }
+        viewModelScope.launch(Dispatchers.IO) { essayStore.delete(e.id) }
+    }
+
     // ---- Not ortalaması ----
 
     private val gradeStore = com.sounote.app.data.GradeStore(app)
@@ -326,6 +541,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     fun toggleDone(key: String) {
+        if (key !in doneItems) markActive()
         doneItems = if (key in doneItems) doneItems - key else doneItems + key
         prefs.edit().putStringSet("weekDone", doneItems).apply()
     }
@@ -339,6 +555,16 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .map { Triple(it.day, it.order, Triple(doneKey(it), it.title, it.kind)) }
         // Pazartesi..Cuma (1–5), self-study (0) en sonda
         return (res + missing).sortedWith(compareBy({ if (it.first == 0) 9 else it.first }, { it.second })).map { it.third }.distinctBy { it.first }
+    }
+
+    /** Konunun/dersin tamamlanan kaynak sayısı ve toplamı (haftalık listedeki işaretlerden). */
+    fun progressOf(resources: List<com.sounote.app.data.Resource>): Pair<Int, Int> =
+        resources.count { doneKey(it) in doneItems } to resources.size
+
+    /** Dersin klasörüne indirilmiş belgeler (son açılan başta). */
+    fun courseDocs(course: Course): List<DocRef> {
+        val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return emptyList()
+        return imported.filter { it.folderId == folder.id }.sortedByDescending { maxOf(lastOpened(it), it.addedAt) }
     }
 
     fun doneKey(r: com.sounote.app.data.Resource) = "r:" + r.url.ifBlank { r.week.toString() + ":" + r.title }
@@ -359,7 +585,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         userLevel = level
         prefs.edit().putString("userLevel", level).apply()
         viewModelScope.launch(Dispatchers.IO) {
-            ExamReminders.schedule(getApplication(), allExams)
+            ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
             ExamWidget.updateAll(getApplication())
         }
     }
@@ -368,6 +594,32 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Kendi eklediklerim + ortak katalogdakiler (kurumun), tarihe göre. */
     val allExams: List<Exam> get() = (myExams + catalog.exams.filter(::forMyLevel)).sortedBy { it.time }
+
+    /** Ortak katalogdaki ödevlerin "tamamlandı" işaretleri (katalog dosyası değiştirilmez). */
+    var examDoneGlobal by mutableStateOf(prefs.getStringSet("examDone", emptySet())!!.toSet())
+        private set
+
+    fun isDone(e: Exam) = e.done || e.id in examDoneGlobal
+
+    fun toggleExamDone(e: Exam) {
+        if (e.global) {
+            examDoneGlobal = if (e.id in examDoneGlobal) examDoneGlobal - e.id else examDoneGlobal + e.id
+            prefs.edit().putStringSet("examDone", examDoneGlobal).apply()
+            viewModelScope.launch(Dispatchers.IO) {
+                ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
+                ExamWidget.updateAll(getApplication())
+            }
+        } else {
+            saveExam(e.copy(done = !e.done))
+        }
+    }
+
+    /** Ders adına göre renk: katalogdaki dersin rengi, yoksa addan türetilmiş sabit bir renk. */
+    fun courseColor(name: String): Int {
+        catalog.courses.find { it.name.equals(name, ignoreCase = true) }?.let { return it.color }
+        if (name.isBlank()) return 0xFF7A7F89.toInt()
+        return COURSE_COLORS[Math.floorMod(name.lowercase().hashCode(), COURSE_COLORS.size)]
+    }
 
     init {
         refreshCatalog(quiet = true)
@@ -386,7 +638,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         val now = System.currentTimeMillis()
         if (!manual && now - prefs.getLong("updateChecked", 0L) < 6 * 3_600_000L) return
         viewModelScope.launch {
-            val r = withContext(Dispatchers.IO) { runCatching { com.sounote.app.data.Updates.latest() } }
+            val r = withContext(Dispatchers.IO) {
+                runCatching { if (testChannel) com.sounote.app.data.Updates.latestIncludingTests() else com.sounote.app.data.Updates.latest() }
+            }
             r.onSuccess { rel ->
                 prefs.edit().putLong("updateChecked", now).apply()
                 val newer = rel.build > installedBuild
@@ -394,6 +648,20 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 if (manual && !newer) message = "Uygulama güncel ($installedVersion)"
             }.onFailure { if (manual) message = "Güncelleme denetlenemedi: internet bağlantısını kontrol et" }
         }
+    }
+
+    /**
+     * Yönetici / test kanalı: açıkken yayınlanmamış test sürümleri de bildirilir. Ayarlar'da sürüm satırına
+     * 7 kez dokununca açılır/kapanır (arkadaşlar sadece yayınlanmış sürümleri alır).
+     */
+    var testChannel by mutableStateOf(prefs.getBoolean("testChannel", false))
+        private set
+
+    fun switchTestChannel(on: Boolean) {
+        testChannel = on
+        prefs.edit().putBoolean("testChannel", on).putLong("updateChecked", 0L).apply()
+        message = if (on) "Yönetici modu açık: test sürümlerini de alacaksın" else "Yönetici modu kapalı: sadece yayınlanan sürümler"
+        if (on) checkUpdate(manual = true)
     }
 
     /** "Sonra": bu sürüm için bir daha kendiliğinden sorma. */
@@ -405,13 +673,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Uygulama güncellendikten sonra ilk açılışta "Yenilikler" penceresi. İlk kurulumda gösterilmez. */
     var showWhatsNew by mutableStateOf(
         prefs.getBoolean("onboarded", false) && prefs.getInt("seenBuild", 0) < installedBuild &&
-            prefs.getInt("seenMajor", 0) < 1,
+            prefs.getInt("seenMajor", 0) < MAJOR,
     )
         private set
 
     fun dismissWhatsNew() {
         showWhatsNew = false
-        prefs.edit().putInt("seenBuild", installedBuild).putInt("seenMajor", 1).apply()
+        prefs.edit().putInt("seenBuild", installedBuild).putInt("seenMajor", MAJOR).apply()
     }
 
     init {
@@ -427,7 +695,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             result.onSuccess {
                 catalog = it
                 catalogError = null
-                withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams) }
+                withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) }) }
                 ExamWidget.updateAll(getApplication())
             }.onFailure {
                 catalogError = "İnternete bağlanılamadı; son indirilen liste gösteriliyor"
@@ -450,7 +718,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         val list = myExams
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { examStore.save(list) }.onFailure { ErrorLog.record("Sınavlar kaydedilemedi", it) }
-            ExamReminders.schedule(getApplication(), allExams)
+            ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
             ExamWidget.updateAll(getApplication())
         }
     }
@@ -484,6 +752,29 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Word/PPT kaynağını önbelleğe indirir; [onReady] ile başka uygulamada (WPS, Office) açılır.
+     * Oradan "PDF olarak paylaş → SouNote" ile kütüphaneye gelir.
+     */
+    fun downloadForOtherApp(res: Resource, onReady: (File) -> Unit) {
+        if (downloading != null) return
+        viewModelScope.launch {
+            downloading = res.url
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val dir = File(getApplication<Application>().cacheDir, "exports").apply { mkdirs() }
+                    val name = res.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80).ifBlank { "kaynak" }
+                    File(dir, "$name.${res.kind}").also { CatalogRepo.download(res, it) }
+                }
+            }
+            downloading = null
+            result.onSuccess(onReady).onFailure {
+                ErrorLog.record("Kaynak indirilemedi", it)
+                message = "İndirilemedi: ${it.message ?: "bağlantı hatası"}"
+            }
+        }
+    }
+
     /** Bu kaynak daha önce indirildi mi (aynı adla dersin klasöründe). */
     fun downloadedDoc(course: Course, res: Resource): DocRef? {
         val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return null
@@ -505,6 +796,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         com.sounote.app.data.PdfText.extract(getApplication(), repo.resolveForOpen(doc).uri, from, to)
     }
 
+    /** Lasso ile seçilen bölgenin PDF metni (asistana "seçili metni açıkla" için). */
+    suspend fun regionText(doc: DocRef, page: Int, rect: RectF): String = withContext(Dispatchers.IO) {
+        runCatching { com.sounote.app.data.PdfText.region(getApplication(), repo.resolveForOpen(doc).uri, page, rect) }
+            .onFailure { ErrorLog.record("Bölge metni okunamadı", it) }
+            .getOrDefault("")
+    }
+
     // ---- Genel arama ----
 
     /** Arama sonucu: belge adı, PDF sayfası, yazılı not ya da bilgi kartı. */
@@ -513,6 +811,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         data class PdfPage(val doc: DocRef, val page: Int, val snippet: String) : SearchHit
         data class Note(val note: com.sounote.app.data.TextNote, val snippet: String) : SearchHit
         data class FlashCard(val doc: DocRef, val card: Card) : SearchHit
+        data class CourseHit(val course: Course) : SearchHit
+        data class TopicHit(val course: Course, val topic: Topic) : SearchHit
+        data class FolderHit(val folder: UserFolder) : SearchHit
+        data class ExamHit(val exam: Exam) : SearchHit
     }
 
     private val searchIndex = com.sounote.app.data.SearchIndex(app)
@@ -561,6 +863,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         val norm = com.sounote.app.data.SearchIndex.Companion::norm
         val out = ArrayList<SearchHit>()
         val docs = imported
+        // Dersler, konular, klasörler, sınav/ödevler: cihazdaki listelerde (internete gitmez).
+        catalog.courses.forEach { c ->
+            if (q in norm(c.name)) out += SearchHit.CourseHit(c)
+            c.topics.filter { q in norm(it.name) }.forEach { out += SearchHit.TopicHit(c, it) }
+        }
+        userFolders.filter { q in norm(it.name) }.forEach { out += SearchHit.FolderHit(it) }
+        allExams.filter { q in norm(it.title + " " + it.course + " " + it.notes) }.forEach { out += SearchHit.ExamHit(it) }
         docs.filter { q in norm(it.title) }.forEach { out += SearchHit.DocTitle(it) }
         textNotes.forEach { n ->
             val text = n.title + " " + n.plainBody
@@ -664,6 +973,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putLong("study_$id", studyTime(id) + ms)
             .putLong("studyday_$day", prefs.getLong("studyday_$day", 0L) + ms)
             .apply()
+        if (prefs.getLong("studyday_$day", 0L) >= STREAK_MIN_STUDY) markActive()
         ExamWidget.updateAll(getApplication())
     }
 
@@ -680,6 +990,55 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun dayKey(t: Long) = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(java.util.Date(t))
+
+    // ---- Çalışma serisi ----
+
+    /**
+     * Çalışılan günler (yyyy-MM-dd). Bir gün sayılır: belgede 5 dk çalışma, kart tekrarı, Writing, haftalık listeden
+     * işaretleme ya da yazılı not. Önceki sürümlerden kalan çalışma süreleri de (5 dk ve üstü) sayılır.
+     */
+    var activeDays by mutableStateOf(loadActiveDays())
+        private set
+
+    private fun loadActiveDays(): Set<String> {
+        val saved = prefs.getStringSet("activeDays", emptySet())!!.toSet()
+        val fromStudy = prefs.all.filter { (k, v) -> k.startsWith("studyday_") && (v as? Long ?: 0L) >= STREAK_MIN_STUDY }
+            .keys.map { it.removePrefix("studyday_") }
+        return saved + fromStudy
+    }
+
+    /** Bugünü çalışılmış say; seri 3, 7, 14, 30… güne ulaşınca kutlar. */
+    fun markActive() {
+        val today = dayKey(System.currentTimeMillis())
+        if (today in activeDays) return
+        // Bir yıldan eskileri tutma (yyyy-MM-dd metin olarak da sıralanır).
+        val oldest = dayKey(System.currentTimeMillis() - 400L * 24 * 60 * 60 * 1000)
+        activeDays = (activeDays + today).filter { it >= oldest }.toSet()
+        val s = streak
+        prefs.edit()
+            .putStringSet("activeDays", activeDays)
+            .putInt("bestStreak", maxOf(prefs.getInt("bestStreak", 0), s))
+            .apply()
+        if (s in STREAK_MILESTONES) showMessage("🔥 $s günlük seri! Böyle devam")
+    }
+
+    val activeToday: Boolean get() = dayKey(System.currentTimeMillis()) in activeDays
+
+    fun isActiveDay(t: Long) = dayKey(t) in activeDays
+
+    /** Bugün (ya da bugün henüz çalışılmadıysa dün) biten, art arda çalışılan gün sayısı. */
+    val streak: Int
+        get() {
+            val dayMs = 24L * 60 * 60 * 1000
+            val now = System.currentTimeMillis()
+            val days = activeDays
+            var i = if (dayKey(now) in days) 0 else 1
+            var n = 0
+            while (dayKey(now - i * dayMs) in days) { n++; i++ }
+            return n
+        }
+
+    val bestStreak: Int get() = maxOf(prefs.getInt("bestStreak", 0), streak)
 
     // ---- Pomodoro ----
 
@@ -918,8 +1277,43 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun reviewCard(doc: DocRef, card: Card, known: Boolean) {
+        markActive()
         val updated = Flashcards.review(card, known)
         saveCards(doc, cards.map { if (it.id == card.id) updated else it })
+    }
+
+    // ---- Bugünkü tekrar: bütün belgelerde zamanı gelmiş kartlar ----
+
+    /** Tekrarı gelmiş kart sayısı (ana sayfa kartı için). */
+    var dueCount by mutableStateOf(0)
+        private set
+
+    fun refreshDue() {
+        viewModelScope.launch { dueCount = dueCards().size }
+    }
+
+    /** Zamanı gelmiş kartlar, belgeleriyle (kutusu küçük olan önce). */
+    suspend fun dueCards(): List<Pair<DocRef, Card>> = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        imported.flatMap { d -> Flashcards.load(getApplication(), d.id).filter { it.due <= now }.map { d to it } }
+            .sortedBy { it.second.box }
+    }
+
+    /** Herhangi bir belgenin kartını değerlendirir (belge açık olmasa da). */
+    fun reviewAny(doc: DocRef, card: Card, known: Boolean) {
+        markActive()
+        if (openDoc?.id == doc.id) {
+            reviewCard(doc, card, known)
+        } else {
+            val updated = Flashcards.review(card, known)
+            viewModelScope.launch(Dispatchers.IO) {
+                runCatching {
+                    val list = Flashcards.load(getApplication(), doc.id)
+                    Flashcards.save(getApplication(), doc.id, list.map { if (it.id == card.id) updated else it })
+                }.onFailure { ErrorLog.record("Kart kaydedilemedi", it) }
+            }
+        }
+        if (known) dueCount = (dueCount - 1).coerceAtLeast(0)
     }
 
     fun deleteCard(doc: DocRef, card: Card) {
@@ -1452,6 +1846,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeDoc() {
+        refreshDue()
         studyPause()
         fullScreen = false
         stopRecording(null)
@@ -1586,6 +1981,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             val (imp, roots) = withContext(Dispatchers.IO) { repo.importedDocs() to repo.linkedFolders() }
             imported = imp
             rootFolders = roots
+            dueCount = dueCards().size
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             loadTextNotes()
             if (currentFolder != null && userFolders.none { it.id == currentFolder }) currentFolder = null
@@ -1739,6 +2135,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     private fun purgeNow(id: String) {
         repo.delete(id)
         store.delete(id)
+        if (isFavorite(QuickItem.DOC, id)) viewModelScope.launch { saveQuick(quickItems.filterNot { it.type == QuickItem.DOC && it.id == id }) }
     }
 
     fun trashDaysLeft(doc: DocRef): Int {
@@ -1770,9 +2167,18 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             name?.let { n -> enumValues<T>().firstOrNull { it.name == n } }
 
         private const val TAG = "LibraryViewModel"
+        private val COURSE_COLORS = intArrayOf(
+            0xFF5B7FD6.toInt(), 0xFF3FA36B.toInt(), 0xFFE0893A.toInt(), 0xFFD65B7F.toInt(),
+            0xFF8E63CE.toInt(), 0xFF3AA6B9.toInt(), 0xFFC9A227.toInt(), 0xFF6D7DE0.toInt(),
+        )
         private const val SAVE_DELAY_MS = 800L
         private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
         const val TRASH_DAYS = 30
+        /** "Yenilikler" penceresinin ana sürümü: 2.0'a güncelleyen kullanıcı bir kez görür. */
+        const val MAJOR = 2
         const val LOCK_AFTER_MS = 60_000L
+        /** Belgede bu kadar çalışılan gün seriye sayılır. */
+        private const val STREAK_MIN_STUDY = 5L * 60 * 1000
+        private val STREAK_MILESTONES = setOf(3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365)
     }
 }

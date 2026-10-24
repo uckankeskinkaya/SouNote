@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -26,6 +27,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.RadioButton
 import com.sounote.app.data.NaturalOrder
 import com.sounote.app.data.UserFolder
+import com.sounote.app.data.QuickItem
+import androidx.compose.material3.TopAppBarDefaults
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -155,7 +158,17 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         }
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
                 actions = {
+                    val list = vm.libraryView == LibraryViewModel.LibraryView.LIST
+                    IconButton(onClick = {
+                        vm.updateLibraryView(if (list) LibraryViewModel.LibraryView.GRID else LibraryViewModel.LibraryView.LIST)
+                    }) {
+                        Icon(
+                            painterResource(if (list) R.drawable.ic_grid else R.drawable.ic_view_list),
+                            contentDescription = if (list) "Izgara görünümü" else "Liste görünümü",
+                        )
+                    }
                     IconButton(onClick = {
                         searching = !searching
                         if (!searching) vm.searchQuery = ""
@@ -165,7 +178,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     var sortMenu by remember { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { sortMenu = true }) {
-                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Sırala")
+                            Icon(painterResource(R.drawable.ic_sort), contentDescription = "Sırala")
                         }
                         DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
                             LibraryViewModel.SortMode.entries.forEach { m ->
@@ -205,17 +218,20 @@ fun LibraryScreen(vm: LibraryViewModel) {
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (vm.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             if (searching) {
-                OutlinedTextField(
+                SouSearchField(
                     value = vm.searchQuery,
                     onValueChange = { vm.searchQuery = it },
-                    singleLine = true,
-                    placeholder = { Text("Belge ya da klasör ara") },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                    placeholder = "Belge, klasör ya da not ara",
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                 )
             }
 
             val docMenu: @Composable (DocRef, () -> Unit) -> Unit = { doc, dismiss ->
+                val fav = vm.isFavorite(QuickItem.DOC, doc.id)
+                DropdownMenuItem(
+                    text = { Text(if (fav) "Favorilerden çıkar" else "Favorilere ekle") },
+                    onClick = { dismiss(); vm.toggleFavorite(QuickItem.DOC, doc.id) },
+                )
                 DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
                 DropdownMenuItem(text = { Text("Klasöre taşı") }, onClick = { dismiss(); movingDoc = doc })
                 DropdownMenuItem(text = { Text("Etiketler") }, onClick = { dismiss(); taggingDoc = doc })
@@ -226,17 +242,24 @@ fun LibraryScreen(vm: LibraryViewModel) {
                 DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deleting = doc })
             }
             val folderMenu: @Composable (UserFolder, () -> Unit) -> Unit = { f, dismiss ->
-                DropdownMenuItem(text = { Text("Adı / rengi değiştir") }, onClick = { dismiss(); folderDialog = f })
+                val fav = vm.isFavorite(QuickItem.FOLDER, f.id)
+                DropdownMenuItem(
+                    text = { Text(if (fav) "Favorilerden çıkar" else "Favorilere ekle") },
+                    onClick = { dismiss(); vm.toggleFavorite(QuickItem.FOLDER, f.id) },
+                )
+                DropdownMenuItem(text = { Text("Adı, rengi, simgeyi değiştir") }, onClick = { dismiss(); folderDialog = f })
                 DropdownMenuItem(text = { Text("Başka klasöre taşı") }, onClick = { dismiss(); movingFolder = f })
                 DropdownMenuItem(text = { Text("Sil") }, onClick = { dismiss(); deletingFolder = f })
             }
             fun countIn(f: UserFolder) = vm.imported.count { it.folderId == f.id } + folders.count { it.parentId == f.id }
 
+            val list = vm.libraryView == LibraryViewModel.LibraryView.LIST
+            val isFav = { d: DocRef -> vm.isFavorite(QuickItem.DOC, d.id) }
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(170.dp),
+                columns = if (list) GridCells.Adaptive(360.dp) else GridCells.Adaptive(170.dp),
                 contentPadding = PaddingValues(20.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (list) 12.dp else 20.dp),
+                verticalArrangement = Arrangement.spacedBy(if (list) 8.dp else 20.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
                 val query = vm.searchQuery.trim().lowercase(TR)
@@ -249,7 +272,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         fullWidth { SectionTitle("Klasörler") }
                         items(fs, key = { "u" + it.id }) { f ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                UserFolderCard(f, countIn(f), onClick = { vm.searchQuery = ""; searching = false; vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                                LibFolder(list, f, countIn(f), favorite = vm.isFavorite(QuickItem.FOLDER, f.id), onClick = { vm.searchQuery = ""; searching = false; vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
                             }
                         }
                     }
@@ -258,9 +281,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         items(ds, key = { "s" + it.id }) { doc ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
                                 if (doc.imported) {
-                                    DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                                    LibDoc(list, doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc), favorite = isFav(doc))
                                 } else {
-                                    DocCard(doc, onClick = { vm.open(doc) })
+                                    LibDoc(list, doc, onClick = { vm.open(doc) })
                                 }
                             }
                         }
@@ -272,7 +295,11 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         fullWidth { SectionTitle("Yazılı notlar") }
                         items(ts, key = { "sn" + it.id }) { n ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                                if (list) {
+                                    TextNoteRow(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                                } else {
+                                    TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                                }
                             }
                         }
                     }
@@ -281,12 +308,12 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     val listing = vm.listing
                     items(listing.folders, key = { "f" + it.documentId }) { f ->
                         Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                            FolderCard(f, onClick = { vm.openFolder(f) })
+                            LibLinkedFolder(list, f, onClick = { vm.openFolder(f) })
                         }
                     }
                     items(vm.sorted(listing.docs), key = { it.id }) { doc ->
                         Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                            DocCard(doc, onClick = { vm.open(doc) })
+                            LibDoc(list, doc, onClick = { vm.open(doc) })
                         }
                     }
                     if (listing.folders.isEmpty() && listing.docs.isEmpty()) {
@@ -294,19 +321,57 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     }
                 } else {
                     val tag = vm.tagFilter
-                    if (folder == null && vm.allTags.isNotEmpty()) {
+                    val favOnly = vm.favoritesOnly && folder == null
+                    if (folder == null) {
                         fullWidth {
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                             ) {
-                                FilterChip(selected = tag == null, onClick = { vm.tagFilter = null }, label = { Text("Tümü") })
+                                FilterChip(
+                                    selected = tag == null && !favOnly,
+                                    onClick = { vm.tagFilter = null; vm.favoritesOnly = false },
+                                    label = { Text("Tümü") },
+                                )
+                                FilterChip(
+                                    selected = favOnly,
+                                    onClick = { vm.favoritesOnly = !vm.favoritesOnly; vm.tagFilter = null },
+                                    label = { Text("⭐ Favoriler") },
+                                )
                                 vm.allTags.forEach { t ->
                                     FilterChip(
                                         selected = tag == t,
-                                        onClick = { vm.tagFilter = if (tag == t) null else t },
+                                        onClick = { vm.tagFilter = if (tag == t) null else t; vm.favoritesOnly = false },
                                         label = { Text("#$t") },
                                     )
+                                }
+                            }
+                        }
+                    }
+                    if (favOnly) {
+                        val favFolders = folders.filter { vm.isFavorite(QuickItem.FOLDER, it.id) }
+                        val favDocs = vm.sorted(vm.imported.filter(isFav))
+                        if (favFolders.isEmpty() && favDocs.isEmpty()) {
+                            fullWidth {
+                                EmptyState(
+                                    "⭐", "Henüz favori yok",
+                                    "Bir belgeye ya da klasöre basılı tut ve \"Favorilere ekle\" de. Favoriler ana sayfadaki hızlı erişimde de görünür.",
+                                )
+                            }
+                        }
+                        if (favFolders.isNotEmpty()) {
+                            fullWidth { SectionTitle("Klasörler") }
+                            items(favFolders, key = { "fu" + it.id }) { f ->
+                                Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                    LibFolder(list, f, countIn(f), favorite = true, onClick = { vm.favoritesOnly = false; vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                                }
+                            }
+                        }
+                        if (favDocs.isNotEmpty()) {
+                            fullWidth { SectionTitle("Belgeler") }
+                            items(favDocs, key = { "fd" + it.id }) { doc ->
+                                Box(Modifier.animateItem(), propagateMinConstraints = true) {
+                                    LibDoc(list, doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc), favorite = true)
                                 }
                             }
                         }
@@ -316,12 +381,12 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         fullWidth { SectionTitle("#$tag · ${tagged.size} belge") }
                         items(tagged, key = { "t" + it.id }) { doc ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                                LibDoc(list, doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc), favorite = isFav(doc))
                             }
                         }
                     }
                     // Son açılanlar: kaldığın belgeye hızlı dönüş
-                    val recent = if (folder == null && tag == null) {
+                    val recent = if (folder == null && tag == null && !favOnly && !list) {
                         vm.imported.filter { vm.lastOpened(it) > 0 }.sortedByDescending { vm.lastOpened(it) }.take(10)
                     } else {
                         emptyList()
@@ -345,41 +410,45 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                         }
                     }
-                    if (folder == null && tag == null && vm.rootFolders.isNotEmpty()) {
+                    if (folder == null && tag == null && !favOnly && vm.rootFolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Bağlı klasörler") }
                         items(vm.rootFolders, key = { "r" + it.treeUri }) { f ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                FolderCard(f, onClick = { vm.openFolder(f) }, onLongClick = { unlinking = f })
+                                LibLinkedFolder(list, f, onClick = { vm.openFolder(f) }, onLongClick = { unlinking = f })
                             }
                         }
                     }
-                    val subfolders = if (tag != null) emptyList() else folders.filter { it.parentId == vm.currentFolder }.sortedWith(compareBy(NaturalOrder) { it.name })
+                    val subfolders = if (tag != null || favOnly) emptyList() else folders.filter { it.parentId == vm.currentFolder }.sortedWith(compareBy(NaturalOrder) { it.name })
                     if (subfolders.isNotEmpty()) {
                         fullWidth { SectionTitle("Klasörler") }
                         items(subfolders, key = { "u" + it.id }) { f ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                UserFolderCard(f, countIn(f), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
+                                LibFolder(list, f, countIn(f), favorite = vm.isFavorite(QuickItem.FOLDER, f.id), onClick = { vm.openUserFolder(f.id) }, menu = { folderMenu(f, it) })
                             }
                         }
                     }
-                    if (folder == null && tag == null && vm.textNotes.isNotEmpty()) {
+                    if (folder == null && tag == null && !favOnly && vm.textNotes.isNotEmpty()) {
                         fullWidth { SectionTitle("Yazılı notlar") }
                         items(vm.textNotes, key = { "n" + it.id }) { n ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                                if (list) {
+                                    TextNoteRow(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                                } else {
+                                    TextNoteCard(n, onClick = { vm.openTextNote(n) }, menu = { d -> TextNoteMenuItems(n, vm, d) { deletingText = n } })
+                                }
                             }
                         }
                     }
-                    val docs = if (tag != null) emptyList() else vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
+                    val docs = if (tag != null || favOnly) emptyList() else vm.sorted(vm.imported.filter { it.folderId == vm.currentFolder })
                     if (docs.isNotEmpty()) {
                         fullWidth { SectionTitle("Belgeler") }
                         items(docs, key = { it.id }) { doc ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc))
+                                LibDoc(list, doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, subtitle = cardSubtitle(vm, doc), favorite = isFav(doc))
                             }
                         }
                     }
-                    if (folder == null && tag == null && vm.orphans.isNotEmpty()) {
+                    if (folder == null && tag == null && !favOnly && vm.orphans.isNotEmpty()) {
                         fullWidth {
                             Column {
                                 SectionTitle("Kaynağı bulunamayan notlu belgeler")
@@ -393,7 +462,8 @@ fun LibraryScreen(vm: LibraryViewModel) {
                         }
                         items(vm.orphans, key = { "o" + it.id }) { doc ->
                             Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                                DocCard(
+                                LibDoc(
+                                    list,
                                     doc,
                                     onClick = { vm.open(doc) },
                                     menu = { d ->
@@ -404,7 +474,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                             }
                         }
                     }
-                    if (tag == null && folder == null && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty() && vm.textNotes.isEmpty()) {
+                    if (tag == null && folder == null && !favOnly && vm.loaded && vm.rootFolders.isEmpty() && vm.imported.isEmpty() && folders.isEmpty() && vm.orphans.isEmpty() && vm.textNotes.isEmpty()) {
                         fullWidth { EmptyLibrary(onImport = importPdf, onLinkFolder = linkFolder, onNewNotebook = { newNotebook = true }) }
                     } else if (folder != null && subfolders.isEmpty() && docs.isEmpty()) {
                         fullWidth {
@@ -780,10 +850,11 @@ private fun TagsDialog(doc: DocRef, allTags: List<String>, onSave: (List<String>
     )
 }
 
-/** Çalışma istatistiği: bugün, bu hafta ve son 7 günün çubukları; en çok çalışılan belgeler. */
+/** Çalışma istatistiği: bugün, son 7 gün, seri; günlük çubuklar ve en çok çalışılan belgeler. Hesaplama 1.0 ile aynı. */
 @Composable
 internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     val days = remember { vm.studyDays(7) }
+    val streak = vm.streak
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
     val dayName = remember { SimpleDateFormat("EEE d", TR) }
     val top = remember { vm.imported.map { it to vm.studyTime(it.id) }.filter { it.second >= 60_000 }.sortedByDescending { it.second }.take(5) }
@@ -791,30 +862,31 @@ internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("Çalışma istatistiği") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Bugün: ${formatStudy(days.first().second)}", style = MaterialTheme.typography.titleMedium)
-                Text("Son 7 gün: ${formatStudy(days.sumOf { it.second })}", style = MaterialTheme.typography.bodyMedium)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatTile("⏱", formatStudy(days.first().second), "Bugün", Modifier.weight(1f))
+                    StatTile("📅", formatStudy(days.sumOf { it.second }), "Son 7 gün", Modifier.weight(1f))
+                    StatTile("🔥", "$streak gün", "Seri", Modifier.weight(1f))
+                }
                 days.reversed().forEach { (t, ms) ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(dayName.format(Date(t)), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(56.dp))
-                        Box(
-                            Modifier
-                                .height(14.dp)
-                                .fillMaxWidth((ms.toFloat() / max).coerceIn(0.02f, 1f) * 0.75f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.primary),
-                        )
-                        Text(formatStudy(ms), style = MaterialTheme.typography.labelSmall)
+                        ProgressBar(ms.toFloat() / max, Modifier.weight(1f), height = 12.dp)
+                        Text(formatStudy(ms), style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(64.dp), textAlign = TextAlign.End)
                     }
                 }
                 if (top.isNotEmpty()) {
                     Text("En çok çalışılan", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
                     top.forEach { (doc, ms) ->
-                        Text("${doc.title} · ${formatStudy(ms)}", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📄", modifier = Modifier.padding(end = 8.dp))
+                            Text(doc.title, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            Text(formatStudy(ms), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
                 Text(
-                    "Belge açıkken geçen süre sayılır.",
+                    "Belge açıkken geçen süre sayılır. Seri: belgede 5 dk çalışma, kart tekrarı, Writing, haftalık liste ya da yazılı not olan art arda günler (en uzun: ${vm.bestStreak} gün).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -908,27 +980,14 @@ private fun Hint(text: String) {
 
 @Composable
 private fun EmptyLibrary(onImport: () -> Unit, onLinkFolder: () -> Unit, onNewNotebook: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().padding(top = 96.dp),
+    EmptyState(
+        "📚", "Kütüphanen boş",
+        "Boş bir defter aç, bir PDF içe aktar ya da ders notlarının olduğu klasörü bağla.",
+        modifier = Modifier.padding(top = 56.dp),
     ) {
-        Text("Kütüphanen boş", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Boş bir defter aç, bir PDF içe aktar ya da ders notlarının olduğu klasörü bağla.",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Button(onClick = onNewNotebook) { Text("Yeni defter") }
-            OutlinedButton(onClick = onImport) { Text("PDF içe aktar") }
-            OutlinedButton(onClick = onLinkFolder) { Text("Klasör bağla") }
-        }
+        Button(onClick = onNewNotebook) { Text("Yeni defter") }
+        OutlinedButton(onClick = onImport) { Text("PDF içe aktar") }
+        OutlinedButton(onClick = onLinkFolder) { Text("Klasör bağla") }
     }
 }
 
@@ -964,6 +1023,7 @@ internal fun DocCard(
     onClick: () -> Unit,
     menu: (@Composable (dismiss: () -> Unit) -> Unit)? = null,
     subtitle: String? = null,
+    favorite: Boolean = false,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Column(
@@ -983,6 +1043,7 @@ internal fun DocCard(
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CardShape),
         ) {
             Thumbnail(doc)
+            if (favorite) FavoriteBadge(Modifier.align(Alignment.TopEnd).padding(6.dp))
             if (menu != null) {
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     menu { menuOpen = false }
@@ -1056,5 +1117,143 @@ internal fun Thumbnail(doc: DocRef) {
             )
         }
     }
+    }
+}
+
+/** Kartın köşesindeki favori yıldızı. */
+@Composable
+internal fun FavoriteBadge(modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.size(24.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)),
+    ) { Text("★", color = LocalSouColors.current.star, fontSize = 14.sp) }
+}
+
+/** Kütüphane listesindeki satır: küçük resim/simge, başlık, alt yazı, favori ve menü. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun LibRow(
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit,
+    menu: (@Composable (dismiss: () -> Unit) -> Unit)?,
+    favorite: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    leading: @Composable () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .card(16.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick ?: if (menu != null) ({ menuOpen = true }) else null,
+            )
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Box(Modifier.width(46.dp).aspectRatio(0.75f).clip(RoundedCornerShape(8.dp))) { leading() }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (!subtitle.isNullOrEmpty()) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (favorite) Text("★", color = LocalSouColors.current.star, fontSize = 18.sp, modifier = Modifier.padding(end = 4.dp))
+        if (menu != null) {
+            Box {
+                IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Seçenekler") }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LibDoc(
+    list: Boolean,
+    doc: DocRef,
+    onClick: () -> Unit,
+    menu: (@Composable (dismiss: () -> Unit) -> Unit)? = null,
+    subtitle: String? = null,
+    favorite: Boolean = false,
+) {
+    if (!list) {
+        DocCard(doc, onClick, menu, subtitle, favorite)
+        return
+    }
+    val opened = remember(doc.id) { SimpleDateFormat("d MMM yyyy", TR).format(Date(doc.lastModified)) }
+    LibRow(doc.title, subtitle?.ifEmpty { null } ?: opened, onClick, menu, favorite) {
+        Box(Modifier.fillMaxSize().background(Color.White).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))) {
+            Thumbnail(doc)
+        }
+    }
+}
+
+@Composable
+private fun LibFolder(
+    list: Boolean,
+    folder: UserFolder,
+    count: Int,
+    favorite: Boolean,
+    onClick: () -> Unit,
+    menu: @Composable (dismiss: () -> Unit) -> Unit,
+) {
+    if (!list) {
+        Box {
+            UserFolderCard(folder, count, onClick, menu)
+            if (favorite) FavoriteBadge(Modifier.align(Alignment.TopEnd).padding(6.dp))
+        }
+        return
+    }
+    LibRow(folder.name, "$count öğe", onClick, menu, favorite) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize().background(Color(folder.color)),
+        ) {
+            if (folder.icon.isNotEmpty()) {
+                Text(folder.icon, fontSize = 22.sp)
+            } else {
+                Icon(painterResource(R.drawable.ic_folder), contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun LibLinkedFolder(list: Boolean, folder: FolderRef, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
+    if (!list) {
+        FolderCard(folder, onClick, onLongClick)
+        return
+    }
+    LibRow(folder.name, "Bağlı klasör", onClick, null, onLongClick = onLongClick) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.secondaryContainer)) {
+            Icon(
+                painterResource(R.drawable.ic_folder),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+    }
+}
+
+/** Yazılı notun liste satırı. */
+@Composable
+internal fun TextNoteRow(note: TextNote, onClick: () -> Unit, menu: @Composable (dismiss: () -> Unit) -> Unit) {
+    val edited = remember(note.updated) { SimpleDateFormat("d MMM HH:mm", TR).format(Date(note.updated)) }
+    val words = remember(note.body) { note.plainBody.split(Regex("\\s+")).count { it.isNotBlank() } }
+    LibRow(note.displayTitle, (if (note.pinned) "📌 " else "") + "$edited · $words kelime", onClick, menu) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize().background(Color(0xFFFFFDF5)).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp)),
+        ) { Text(if (note.hasSketch) "🎨" else "📝", fontSize = 20.sp) }
     }
 }

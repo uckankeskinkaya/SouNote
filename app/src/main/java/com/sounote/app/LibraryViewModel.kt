@@ -381,6 +381,16 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         textNotes = withContext(Dispatchers.IO) { runCatching { textStore.list() }.getOrDefault(emptyList()) }
     }
 
+    /** Belgeye bağlı yan not (PDF ile yan yana yazılan yazılı not). Yazılınca normal yazılı not olarak saklanır. */
+    fun sideNoteFor(doc: DocRef): TextNote {
+        val id = prefs.getString("sideNote_${doc.id}", null)
+        textNotes.find { it.id == id }?.let { return it }
+        val now = System.currentTimeMillis()
+        val note = TextNote(id ?: java.util.UUID.randomUUID().toString(), "${doc.title} – notlar", "", now, now)
+        prefs.edit().putString("sideNote_${doc.id}", note.id).apply()
+        return note
+    }
+
     /** Yeni yazılı not; [body] şablon olabilir (ör. essay bölümleri). */
     fun newTextNote(body: String = "") {
         val now = System.currentTimeMillis()

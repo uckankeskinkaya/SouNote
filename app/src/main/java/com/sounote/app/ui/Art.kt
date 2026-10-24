@@ -2,6 +2,8 @@ package com.sounote.app.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -91,4 +93,84 @@ internal fun penArt(type: com.sounote.app.ink.PenType): Int = when (type) {
     com.sounote.app.ink.PenType.DOTTED -> R.drawable.pen_dotted
     com.sounote.app.ink.PenType.BROAD -> R.drawable.pen_broad
     com.sounote.app.ink.PenType.SUMI -> R.drawable.pen_sumi
+}
+
+/** Defter kapakları (Canva). Seçim belge başına tercihlerde: "cover_<belge kimliği>" (0 = kapak yok, ilk sayfa görünür). */
+object Covers {
+    val ART = listOf(
+        R.drawable.cover_1, R.drawable.cover_2, R.drawable.cover_3,
+        R.drawable.cover_4, R.drawable.cover_5, R.drawable.cover_6,
+    )
+
+    /** Kapak değişince kartlar yeniden çizilsin. */
+    private val version = androidx.compose.runtime.mutableIntStateOf(0)
+
+    fun get(context: android.content.Context, id: String): Int {
+        version.intValue
+        return context.getSharedPreferences("viewer", android.content.Context.MODE_PRIVATE).getInt("cover_$id", 0)
+            .takeIf { it in 0..ART.size } ?: 0
+    }
+
+    fun set(context: android.content.Context, id: String, cover: Int) {
+        context.getSharedPreferences("viewer", android.content.Context.MODE_PRIVATE).edit().putInt("cover_$id", cover).apply()
+        version.intValue++
+    }
+}
+
+/** Kapak resmi; etiket alanına belgenin adı yazılır. */
+@Composable
+internal fun CoverArt(cover: Int, title: String, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        Image(
+            painterResource(Covers.ART[cover - 1]),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier.matchParentSize(),
+        )
+        // Kapaktaki beyaz etiket: üstten ~%10, genişliğin ~%50'si
+        androidx.compose.material3.Text(
+            title,
+            color = Color(0xFF1A1C2E),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 2,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = maxHeight * 0.115f)
+                .size(width = maxWidth * 0.46f, height = maxHeight * 0.1f),
+        )
+    }
+}
+
+/** Kapak seçici: "Kapak yok" + hazır kapaklar. */
+@Composable
+internal fun CoverPicker(selected: Int, onSelect: (Int) -> Unit) {
+    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+        items(Covers.ART.size + 1) { i ->
+            val sel = i == selected
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(width = 52.dp, height = 64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .then(
+                        if (sel) Modifier.border(2.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp)) else Modifier,
+                    )
+                    .clickable { onSelect(i) },
+            ) {
+                if (i == 0) {
+                    Icon(SouIcons.Description, contentDescription = "Kapak yok", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    Image(
+                        painterResource(Covers.ART[i - 1]),
+                        contentDescription = "Kapak $i",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+            }
+        }
+    }
 }

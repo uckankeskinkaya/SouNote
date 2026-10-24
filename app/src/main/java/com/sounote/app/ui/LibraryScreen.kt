@@ -116,6 +116,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
     val linkFolder = { pickFolder.launch(null) }
 
     var renaming by remember { mutableStateOf<DocRef?>(null) }
+    var coverFor by remember { mutableStateOf<DocRef?>(null) }
     var deleting by remember { mutableStateOf<DocRef?>(null) }
     var unlinking by remember { mutableStateOf<FolderRef?>(null) }
     var newNotebook by remember { mutableStateOf(false) }
@@ -226,6 +227,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     onClick = { dismiss(); vm.toggleFavorite(QuickItem.DOC, doc.id) },
                 )
                 DropdownMenuItem(text = { Text("Yeniden adlandır") }, onClick = { dismiss(); renaming = doc })
+                DropdownMenuItem(text = { Text("Kapak") }, onClick = { dismiss(); coverFor = doc })
                 DropdownMenuItem(text = { Text("Klasöre taşı") }, onClick = { dismiss(); movingDoc = doc })
                 DropdownMenuItem(text = { Text("Etiketler") }, onClick = { dismiss(); taggingDoc = doc })
                 DropdownMenuItem(
@@ -477,6 +479,15 @@ fun LibraryScreen(vm: LibraryViewModel) {
         }
     }
 
+    coverFor?.let { doc ->
+        val ctx = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { coverFor = null },
+            title = { Text("Kapak") },
+            text = { CoverPicker(Covers.get(ctx, doc.id)) { Covers.set(ctx, doc.id, it) } },
+            confirmButton = { TextButton(onClick = { coverFor = null }) { Text("Tamam") } },
+        )
+    }
     renaming?.let { doc ->
         var text by remember(doc.id) { mutableStateOf(doc.title) }
         AlertDialog(
@@ -498,9 +509,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
     }
     if (newNotebook) {
         NotebookDialog(
-            onCreate = { name, template, size, landscape, paper ->
+            onCreate = { name, template, size, landscape, paper, cover ->
                 newNotebook = false
-                vm.createNotebook(name, template, size, landscape, paper)
+                vm.createNotebook(name, template, size, landscape, paper, cover)
             },
             onDismiss = { newNotebook = false },
         )
@@ -889,8 +900,9 @@ internal fun StatsDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
 
 /** Yeni boş defter: ad + sayfa şablonu. */
 @Composable
-internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor) -> Unit, onDismiss: () -> Unit) {
+internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean, PaperColor, Int) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
+    var cover by remember { mutableStateOf(1) }
     var paper by remember { mutableStateOf(PaperColor.WHITE) }
     var template by remember { mutableStateOf(PageTemplate.LINED) }
     var size by remember { mutableStateOf(PaperSize.A4) }
@@ -907,6 +919,8 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                     label = { Text("Ad") },
                     placeholder = { Text("Defter") },
                 )
+                Text("Kapak", style = MaterialTheme.typography.labelLarge)
+                CoverPicker(cover) { cover = it }
                 Text("Sayfa", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PageTemplate.entries.forEach { t ->
@@ -937,14 +951,9 @@ internal fun NotebookDialog(onCreate: (String, PageTemplate, PaperSize, Boolean,
                         )
                     }
                 }
-                Text(
-                    "Defterde sayfa paneli ya da ⋮ menüsünden yeni sayfa eklersin.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         },
-        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape, paper) }) { Text("Oluştur") } },
+        confirmButton = { TextButton(onClick = { onCreate(name, template, size, landscape, paper, cover) }) { Text("Oluştur") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Vazgeç") } },
     )
 }
@@ -1083,6 +1092,11 @@ private fun CardTitle(text: String) {
 @Composable
 internal fun Thumbnail(doc: DocRef) {
     val context = LocalContext.current
+    val cover = Covers.get(context, doc.id)
+    if (cover > 0) {
+        CoverArt(cover, doc.title, Modifier.fillMaxSize())
+        return
+    }
     // İlk sayfanın notları değişince kapak da yenilensin.
     val inkStamp = InkStore(context).pageStamp(doc.id, 0)
     val bitmap by produceState<Bitmap?>(Thumbnails.cached(context, doc), doc.id, doc.lastModified, inkStamp) {

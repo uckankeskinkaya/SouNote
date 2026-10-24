@@ -4,7 +4,12 @@
 set -x
 P=com.sounote.app
 mkdir -p shots
-adb install -r a/SouNote.apk || exit 1
+# Anahtar döndürme testi: önce eski anahtarla imzalı yayınlanmış sürüm (build-88) kurulur, yeni APK üstüne
+# güncelleme olarak kurulmalı. Kurulamazsa (INSTALL_FAILED_UPDATE_INCOMPATIBLE) kullanıcılar güncelleyemez: hata.
+curl -sSL -o old.apk https://github.com/uckankeskinkaya/SouNote/releases/download/build-88/SouNote.apk
+adb install old.apk || { echo "::error::Eski sürüm kurulamadı"; exit 1; }
+adb install -r a/SouNote.apk || { echo "::error::Yeni APK eski sürümün üstüne kurulamadı (imza uyumsuz)"; exit 1; }
+echo "Eski imzalı sürümün üstüne güncelleme başarılı"
 adb shell pm grant $P android.permission.POST_NOTIFICATIONS || true
 adb logcat -b crash -c || true
 shot() { sleep 1; adb exec-out screencap -p > "shots/$1.png"; }

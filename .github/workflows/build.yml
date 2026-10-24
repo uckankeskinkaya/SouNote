@@ -27,25 +27,53 @@ jobs:
         with:
           cache-read-only: false
 
-      # İmza anahtarı depoda değil, GitHub Secrets'ta (Settings → Secrets and variables → Actions).
-      - name: İmza anahtarını hazırla
+      # İmza anahtarları depoda değil, GitHub Secrets'ta (Settings → Secrets and variables → Actions):
+      # SOUNOTE_KEYSTORE_B64 (yeni, gizli anahtar), SOUNOTE_OLD_KEYSTORE_B64 (eski anahtar), SOUNOTE_KEY_PASSWORD.
+      # Anahtar döndürme (APK Signature Scheme v3): APK yeni anahtarla imzalanır, içine "eski → yeni" kaydı (lineage)
+      # konur; eski anahtarla kurulmuş uygulama bu yüzden güncellemeyi kabul eder, notlar silinmez.
+      - name: İmza anahtarlarını hazırla
         env:
-          KS: ${{ secrets.SOUNOTE_KEYSTORE_B64 }}
+          NEW_KS: ${{ secrets.SOUNOTE_KEYSTORE_B64 }}
+          OLD_KS: ${{ secrets.SOUNOTE_OLD_KEYSTORE_B64 }}
           KP: ${{ secrets.SOUNOTE_KEY_PASSWORD }}
         run: |
-          if [ -z "$KS" ] || [ -z "$KP" ]; then
-            echo "::error::SOUNOTE_KEYSTORE_B64 ve SOUNOTE_KEY_PASSWORD secret'ları eksik (Settings → Secrets and variables → Actions)"
+          if [ -z "$NEW_KS" ] || [ -z "$OLD_KS" ] || [ -z "$KP" ]; then
+            echo "::error::SOUNOTE_KEYSTORE_B64, SOUNOTE_OLD_KEYSTORE_B64 ve SOUNOTE_KEY_PASSWORD secret'ları gerekli (Settings → Secrets and variables → Actions)"
             exit 1
           fi
-          echo "$KS" | base64 -d > "$RUNNER_TEMP/sounote.jks"
-          echo "SOUNOTE_KEYSTORE=$RUNNER_TEMP/sounote.jks" >> "$GITHUB_ENV"
-          echo "SOUNOTE_KEY_PASSWORD=$KP" >> "$GITHUB_ENV"
+          echo "$NEW_KS" | base64 -d > "$RUNNER_TEMP/new.jks"
+          echo "$OLD_KS" | base64 -d > "$RUNNER_TEMP/old.jks"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "Build-tools: $BT"
+          echo "BT=$BT" >> "$GITHUB_ENV"
+          # Eski → yeni anahtar kaydı (sertifikalar ve eski anahtarın onayı; gizli bilgi içermez).
+          "$BT/apksigner" rotate --out "$RUNNER_TEMP/sounote.lineage" \
+            --old-signer --ks "$RUNNER_TEMP/old.jks" --ks-key-alias sounote --ks-pass env:KP \
+            --new-signer --ks "$RUNNER_TEMP/new.jks" --ks-key-alias sounote2 --ks-pass env:KP
+          "$BT/apksigner" lineage --in "$RUNNER_TEMP/sounote.lineage" --print-certs
 
       - name: APK derle
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease --build-cache --parallel
-          cp app/build/outputs/apk/release/app-release.apk SouNote.apk
+
+      # [in] → [out]: hizala, eski + yeni anahtar ve lineage ile imzala, v3 imzasını ve iki sertifikayı doğrula.
+      - name: APK'yı imzala
+        env:
+          KP: ${{ secrets.SOUNOTE_KEY_PASSWORD }}
+        run: |
+          sign() {
+            "$BT/zipalign" -f -p 4 "$1" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" sign \
+              --ks "$RUNNER_TEMP/old.jks" --ks-key-alias sounote --ks-pass env:KP \
+              --next-signer --ks "$RUNNER_TEMP/new.jks" --ks-key-alias sounote2 --ks-pass env:KP \
+              --lineage "$RUNNER_TEMP/sounote.lineage" --rotation-min-sdk-version 28 \
+              --out "$2" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" verify -v --print-certs "$2" | tee "$RUNNER_TEMP/verify.txt" | grep -E "Verified using|Signer|SHA-256"
+            grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" "$RUNNER_TEMP/verify.txt" || { echo "::error::v3 imzası yok"; exit 1; }
+            "$BT/apksigner" lineage --in "$2" --print-certs
+          }
+          sign app/build/outputs/apk/release/app-release-unsigned.apk SouNote.apk
 
       - name: Artifact olarak yükle
         uses: actions/upload-artifact@v4
@@ -53,12 +81,20 @@ jobs:
           name: SouNote-apk
           path: SouNote.apk
 
-      # SouNote 2.0 geliştirme dalı: test için ayrıca debug APK (aynı anahtarla imzalı, mevcut uygulamanın üstüne kurulur).
+      # SouNote 2.0 dalı: test için ayrıca debug APK (aynı anahtarlarla imzalı, mevcut uygulamanın üstüne kurulur).
       - name: Debug APK (2.0 dalı)
         if: github.ref_name == 'ccr-c4eded18-21kvrf'
+        env:
+          KP: ${{ secrets.SOUNOTE_KEY_PASSWORD }}
         run: |
           ./gradlew assembleDebug --build-cache --parallel
-          cp app/build/outputs/apk/debug/app-debug.apk SouNote-2.0-debug.apk
+          "$BT/zipalign" -f -p 4 app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/aligned-debug.apk"
+          "$BT/apksigner" sign \
+            --ks "$RUNNER_TEMP/old.jks" --ks-key-alias sounote --ks-pass env:KP \
+            --next-signer --ks "$RUNNER_TEMP/new.jks" --ks-key-alias sounote2 --ks-pass env:KP \
+            --lineage "$RUNNER_TEMP/sounote.lineage" --rotation-min-sdk-version 28 \
+            --out SouNote-2.0-debug.apk "$RUNNER_TEMP/aligned-debug.apk"
+          "$BT/apksigner" verify --print-certs SouNote-2.0-debug.apk | grep -E "Signer|SHA-256"
 
       - name: Debug APK'yı yükle (2.0 dalı)
         if: github.ref_name == 'ccr-c4eded18-21kvrf'

@@ -288,7 +288,12 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
                 .clickable { typeMenu = true }
                 .padding(start = 6.dp, end = 8.dp),
         ) {
-            PenImage(state.penType, Modifier.size(width = 44.dp, height = 18.dp), horizontal = true)
+            // Kalem çizimi her temada açık zeminde (koyu kalemler koyu temada kaybolmasın).
+            PenImage(
+                state.penType,
+                Modifier.size(width = 48.dp, height = 24.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F2F5)),
+                horizontal = true,
+            )
             Text(state.penType.label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 6.dp))
             Icon(SouIcons.ArrowDropDown, null, Modifier.size(18.dp))
         }
@@ -311,7 +316,8 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
                         modifier = Modifier
                             .width(70.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(if (sel) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .background(Color(0xFFF1F2F5))
+                            .border(if (sel) 2.dp else 0.dp, if (sel) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(14.dp))
                             .clickable {
                                 typeMenu = false
                                 onChange(state.copy(penType = t, penWidthMm = t.defaultWidthMm ?: state.penWidthMm))
@@ -322,6 +328,7 @@ private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustom
                         Text(
                             t.label,
                             style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF1A1C20),
                             maxLines = 2,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.padding(top = 6.dp),

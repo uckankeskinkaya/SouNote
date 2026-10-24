@@ -269,14 +269,6 @@ private fun NavDrawer(vm: LibraryViewModel, tall: Boolean, onCollapse: () -> Uni
             colors = itemColors,
             modifier = Modifier.height(48.dp),
         )
-        NavigationDrawerItem(
-            label = { Text("Hızlı not", style = MaterialTheme.typography.labelLarge) },
-            selected = false,
-            onClick = { vm.quickNote() },
-            icon = { Icon(painterResource(R.drawable.ic_shortcut_note), contentDescription = null) },
-            colors = itemColors,
-            modifier = Modifier.height(48.dp),
-        )
     }
 }
 

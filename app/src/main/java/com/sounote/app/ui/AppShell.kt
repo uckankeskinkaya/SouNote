@@ -129,7 +129,7 @@ fun MainShell(vm: LibraryViewModel) {
         }
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    BoxWithConstraints(Modifier.fillMaxSize().souBackground()) {
         val kind = when {
             maxWidth < 600.dp -> NavKind.BAR
             vm.navStyle == NavStyle.RAIL -> NavKind.RAIL

@@ -286,7 +286,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().souBackground(), color = Color.Transparent) {
             Column(Modifier.fillMaxSize().systemBarsPadding().imePadding()) {
                 // Üst çubuk: geri, asistan kimliği, yeni sohbet, ayarlar
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 4.dp)) {

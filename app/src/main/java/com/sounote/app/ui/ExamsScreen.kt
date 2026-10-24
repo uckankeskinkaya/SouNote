@@ -166,7 +166,7 @@ fun ExamsScreen(vm: LibraryViewModel) {
                 text = { Text("Ekle") },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())

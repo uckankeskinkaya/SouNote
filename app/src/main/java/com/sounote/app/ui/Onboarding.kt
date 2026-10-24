@@ -96,7 +96,7 @@ fun OnboardingScreen(vm: LibraryViewModel) {
         scope.launch { pager.animateScrollToPage(page) }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(Modifier.fillMaxSize().souBackground()) {
         // Üstte hafif marka rengi
         Box(
             Modifier

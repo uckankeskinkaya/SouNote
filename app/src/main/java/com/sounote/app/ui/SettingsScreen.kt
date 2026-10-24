@@ -458,7 +458,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                     },
                 )
             },
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = Color.Transparent,
         ) { padding ->
             Row(Modifier.padding(padding).fillMaxSize()) {
                 val showList = wide || (category == null && q.isEmpty())

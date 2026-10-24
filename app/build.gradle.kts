@@ -21,24 +21,29 @@ android {
         }
     }
 
-    // Kişisel uygulama: sabit anahtar repoda. Anahtar değişirse güncelleme kurulmaz
-    // ve uygulamayı silmek (notları kaybetmek) gerekir, o yüzden bu dosyayı değiştirme.
+    // İmza anahtarı depoda DEĞİL: CI'da GitHub Secrets'tan gelir (SOUNOTE_KEYSTORE_B64 → dosya, SOUNOTE_KEY_PASSWORD).
+    // Anahtar aynı kalmalı: değişirse güncelleme kurulmaz ve uygulamayı silmek (notları kaybetmek) gerekir.
+    val keystorePath = System.getenv("SOUNOTE_KEYSTORE")
+    val signPassword = System.getenv("SOUNOTE_KEY_PASSWORD")
+    val canSign = keystorePath != null && signPassword != null && file(keystorePath).exists()
     signingConfigs {
-        create("sounote") {
-            storeFile = rootProject.file("keystore/sounote.jks")
-            storePassword = "sounote"
-            keyAlias = "sounote"
-            keyPassword = "sounote"
+        if (canSign) {
+            create("sounote") {
+                storeFile = file(keystorePath!!)
+                storePassword = signPassword
+                keyAlias = "sounote"
+                keyPassword = signPassword
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("sounote")
+            if (canSign) signingConfig = signingConfigs.getByName("sounote")
         }
         debug {
-            signingConfig = signingConfigs.getByName("sounote")
+            if (canSign) signingConfig = signingConfigs.getByName("sounote")
         }
     }
 

@@ -27,6 +27,20 @@ jobs:
         with:
           cache-read-only: false
 
+      # İmza anahtarı depoda değil, GitHub Secrets'ta (Settings → Secrets and variables → Actions).
+      - name: İmza anahtarını hazırla
+        env:
+          KS: ${{ secrets.SOUNOTE_KEYSTORE_B64 }}
+          KP: ${{ secrets.SOUNOTE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KS" ] || [ -z "$KP" ]; then
+            echo "::error::SOUNOTE_KEYSTORE_B64 ve SOUNOTE_KEY_PASSWORD secret'ları eksik (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/sounote.jks"
+          echo "SOUNOTE_KEYSTORE=$RUNNER_TEMP/sounote.jks" >> "$GITHUB_ENV"
+          echo "SOUNOTE_KEY_PASSWORD=$KP" >> "$GITHUB_ENV"
+
       - name: APK derle
         run: |
           chmod +x gradlew
@@ -56,8 +70,6 @@ jobs:
   # APK test beklemeden yayınlanır (derlemeden ~1 dk sonra hazır).
   release:
     needs: build
-    # SouNote 2.0 geliştirme dalı yayınlanmaz (kullanıcı onayı olmadan Latest sürüm değişmesin).
-    if: github.ref_name != 'ccr-c4eded18-21kvrf'
     runs-on: ubuntu-latest
     concurrency:
       group: release
@@ -89,7 +101,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: SouNote 1.0.${{ github.run_number }}
+          name: SouNote 2.0.${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           # En yeni derleme "Latest" olur: releases/latest/download/SouNote.apk hep en yeni APK'yı indirir.
           prerelease: false

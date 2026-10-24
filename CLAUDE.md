@@ -150,7 +150,7 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - 2.0.1 (✅ yayınlandı build-99): yeni logo (drawable-nodpi/logo_tile.png, ic_logo_fg.png; AppLogo, simge, açılış), sade ana sayfa (HomeLayout DEFAULT_HIDDEN TIP+NOTES, 6 hızlı işlem).
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
 
-## SouNote 3.0 (🧪, dal ccr-c4eded18-21kvrf; build-110+)
+## SouNote 3.0 (✅ yayınlandı build-124, 24 Ekim; PR #5 ile main)
 - Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).
   Renkler logoya göre: açık tema mavi-mor (#3A4BE0), koyu varsayılan MIDNIGHT "Lacivert" (logodaki lacivert). Zemin Modifier.souBackground()
   (lacivert + mavi/mor ışık parıltısı); ekran Scaffold'ları saydam. Kart: Modifier.card() kenarlıksız (koyuda ince kenar).

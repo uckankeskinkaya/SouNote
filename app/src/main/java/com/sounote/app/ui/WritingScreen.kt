@@ -67,6 +67,7 @@ fun WritingScreen(vm: LibraryViewModel) {
     var newMenu by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<TextNote?>(null) }
     var graderOpen by remember { mutableStateOf(false) }
+    var speakingOpen by remember { mutableStateOf(false) }
     val q = query.trim().lowercase(TR)
     val notes = vm.textNotes.filter { n ->
         (q.isEmpty() || n.title.lowercase(TR).contains(q) || n.plainBody.lowercase(TR).contains(q)) &&
@@ -103,6 +104,11 @@ fun WritingScreen(vm: LibraryViewModel) {
                         text = { Text("Süreli essay (puanlı)") },
                         leadingIcon = { Icon(SouIcons.Timer, contentDescription = null) },
                         onClick = { newMenu = false; graderOpen = true },
+                    )
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text("Speaking pratiği") },
+                        leadingIcon = { Icon(SouIcons.Mic, contentDescription = null) },
+                        onClick = { newMenu = false; speakingOpen = true },
                     )
                 }
             }
@@ -161,6 +167,7 @@ fun WritingScreen(vm: LibraryViewModel) {
     }
 
     if (graderOpen) EssayGraderScreen(vm) { graderOpen = false }
+    if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
     deleting?.let { n ->
         AlertDialog(
             onDismissRequest = { deleting = null },

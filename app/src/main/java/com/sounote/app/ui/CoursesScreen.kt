@@ -226,6 +226,8 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     var summaryOpen by remember { mutableStateOf(false) }
     var testOpen by remember { mutableStateOf(false) }
     var mapOpen by remember { mutableStateOf(false) }
+    var speakingOpen by remember { mutableStateOf(false) }
+    if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
     if (testOpen) PracticeSetupDialog(vm, course) { testOpen = false }
     if (mapOpen) {
         TopicMapScreen(vm, course, onOpenTopic = { t ->
@@ -262,6 +264,21 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
             }
         }
         val docs = vm.courseDocs(course)
+        if ("speaking" in (course.id + course.name).lowercase()) {
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().card().clickable { speakingOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    IconBadge(SouIcons.Mic, Color(course.color))
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text("Speaking pratiği", style = MaterialTheme.typography.titleSmall)
+                        Text("Konuş, yazıya dökülsün, asistan puanlasın", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         item {
             // Asistan konudan çoktan seçmeli deneme sınavı hazırlar (indirilmiş PDF'ler varsa onlardan).
             Row(

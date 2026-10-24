@@ -11,6 +11,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Speaking pratiği: cihazın konuşma tanıma servisi (Android 11+ paket görünürlüğü) -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".SouNoteApp"
         android:allowBackup="true"

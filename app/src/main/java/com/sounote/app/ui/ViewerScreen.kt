@@ -16,6 +16,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import android.graphics.RectF
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -136,6 +138,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var askSelection by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val reading = vm.readingMode
+    // Telefonda üst çubuk dar: bazı düğmeler ⋮ menüsüne taşınır.
+    val narrowBar = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
     fun askRegion() {
         val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
         scope.launch {
@@ -346,8 +350,12 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         }
                     }
                     // Okuma ↔ not alma modu
-                    TextButton(onClick = { vm.updateReadingMode(!reading) }) {
-                        Text(if (reading) "✏️ Not al" else "📖 Oku")
+                    IconButton(onClick = { vm.updateReadingMode(!reading) }) {
+                        Text(
+                            if (reading) "✏️" else "📖",
+                            fontSize = 20.sp,
+                            modifier = Modifier.semantics { contentDescription = if (reading) "Not al" else "Oku" },
+                        )
                     }
                     if (vm.recordingSince != 0L) {
                         TextButton(onClick = { toggleRecording() }) {
@@ -356,7 +364,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 color = Color(0xFFE53935),
                             )
                         }
-                    } else if (!reading) {
+                    } else if (!reading && !narrowBar) {
                         IconButton(onClick = { toggleRecording() }) {
                             Icon(painterResource(R.drawable.ic_mic), contentDescription = "Ses kaydı başlat")
                         }
@@ -364,13 +372,15 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     IconButton(onClick = { vm.togglePagePanel() }) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
-                    IconButton(onClick = { askSelection = null; assistantOpen = true }) {
-                        Text("🤖", fontSize = 20.sp)
+                    if (!narrowBar) {
+                        IconButton(onClick = { askSelection = null; assistantOpen = true }) {
+                            Text("🤖", fontSize = 20.sp)
+                        }
+                        IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Ara")
+                        }
                     }
-                    IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
-                        Icon(Icons.Default.Search, contentDescription = "Ara")
-                    }
-                    page?.let { (p, _) ->
+                    if (!narrowBar) page?.let { (p, _) ->
                         val marked = p in vm.bookmarks
                         IconButton(onClick = { vm.toggleBookmark(doc, p) }) {
                             Icon(
@@ -432,6 +442,29 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
                         DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                            // Dar ekranda (telefon) üst çubuğa sığmayanlar burada.
+                            if (narrowBar) {
+                                DropdownMenuItem(
+                                    text = { Text("🤖 Asistan") },
+                                    onClick = { moreMenu = false; askSelection = null; assistantOpen = true },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("🔍 Belgede ara") },
+                                    onClick = { moreMenu = false; searchOpen = true },
+                                )
+                                page?.let { (p, _) ->
+                                    DropdownMenuItem(
+                                        text = { Text(if (p in vm.bookmarks) "★ Yer imini kaldır" else "☆ Yer imi ekle") },
+                                        onClick = { moreMenu = false; vm.toggleBookmark(doc, p) },
+                                    )
+                                }
+                                if (!reading && vm.recordingSince == 0L) {
+                                    DropdownMenuItem(
+                                        text = { Text("🎙️ Ses kaydı başlat") },
+                                        onClick = { moreMenu = false; toggleRecording() },
+                                    )
+                                }
+                            }
                             DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },
                                 onClick = {

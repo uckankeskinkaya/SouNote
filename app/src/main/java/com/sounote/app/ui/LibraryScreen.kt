@@ -178,7 +178,7 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     var sortMenu by remember { mutableStateOf(false) }
                     Box {
                         IconButton(onClick = { sortMenu = true }) {
-                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Sırala")
+                            Icon(painterResource(R.drawable.ic_sort), contentDescription = "Sırala")
                         }
                         DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
                             LibraryViewModel.SortMode.entries.forEach { m ->

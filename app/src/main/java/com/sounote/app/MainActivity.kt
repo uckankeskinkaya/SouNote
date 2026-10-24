@@ -55,7 +55,15 @@ class MainActivity : ComponentActivity() {
                 LibraryViewModel.ThemeMode.DARK -> true
                 LibraryViewModel.ThemeMode.SYSTEM -> null
             }
-            SouNoteTheme(dark, vm.darkPalette, vm.accent, vm.uiDensity, vm.motionLevel) {
+            val isDark = dark ?: androidx.compose.foundation.isSystemInDarkTheme()
+            // Durum ve gezinme çubuğu simgeleri uygulamanın temasına uysun (sistem temasına değil).
+            androidx.compose.runtime.SideEffect {
+                androidx.core.view.WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !isDark
+                    isAppearanceLightNavigationBars = !isDark
+                }
+            }
+            SouNoteTheme(isDark, vm.darkPalette, vm.accent, vm.uiDensity, vm.motionLevel) {
                 Box(Modifier.fillMaxSize()) {
                     SouNoteApp(vm)
                     // Kilit ekranı üstte durur; altındaki belge açık kalır, kilit açılınca kaldığı yerden devam.

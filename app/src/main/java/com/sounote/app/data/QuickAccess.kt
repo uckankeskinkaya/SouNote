@@ -39,8 +39,8 @@ object QuickAccess {
 /** Ana sayfa modülleri: sıralanabilir ve gizlenebilir. Ad tercihlerde saklanır, değiştirme. */
 enum class HomeModule(val label: String, val emoji: String) {
     HERO("Karşılama ve bugün", "👋"),
-    QUICK_ACCESS("Hızlı erişim (favoriler)", "⭐"),
     CONTINUE("Kaldığın yer", "📖"),
+    QUICK_ACCESS("Hızlı erişim (favoriler)", "⭐"),
     UPCOMING("Yaklaşan sınav ve ödevler", "📅"),
     WEEK_TASKS("Haftalık görevler", "✅"),
     ACTIONS("Hızlı başla", "⚡"),

@@ -115,7 +115,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                                     .background(MaterialTheme.colorScheme.primaryContainer)
                                     .padding(16.dp),
                             ) {
-                                Text("🎓 Ankara Üniversitesi Hazırlık", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text("Ankara Üniversitesi Hazırlık", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                                 Text(
                                     "Öğrenci El Kitabı 2026-2027'deki hesap: kur içi sınav ve ödevler %40 (2 kısa sınav, 2 ara sınav, " +
                                         "2 sözlü, 2 yazma) + Kur Atlama Sınavı %60. Kuru geçmek için en az 70.",
@@ -211,13 +211,13 @@ private fun Summary(g: Grades) {
             when {
                 g.items.isEmpty() -> Text("Henüz sınav eklemedin", style = MaterialTheme.typography.titleSmall)
                 needed == null -> Text(
-                    if ((avg ?: 0.0) >= g.passMark) "Tebrikler, geçtin 🎉" else "Bütün puanlar girildi; geçme notunun altında",
+                    if ((avg ?: 0.0) >= g.passMark) "Tebrikler, geçtin" else "Bütün puanlar girildi; geçme notunun altında",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                 )
-                needed <= 0 -> Text("Kalanlardan 0 alsan bile geçiyorsun 🎉", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                needed <= 0 -> Text("Kalanlardan 0 alsan bile geçiyorsun", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 needed > 100 -> Text(
-                    "Kalan sınavlardan ${fmt(needed)} ortalama gerekiyor; 100'ü aşıyor 😕",
+                    "Kalan sınavlardan ${fmt(needed)} ortalama gerekiyor; 100'ü aşıyor",
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.error,
                 )

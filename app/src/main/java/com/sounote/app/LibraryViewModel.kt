@@ -222,7 +222,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             message = "Favorilerden çıkarıldı"
         } else {
             saveQuick(quickItems + QuickItem(type, id))
-            message = "Favorilere eklendi ⭐"
+            message = "Favorilere eklendi"
         }
     }
 
@@ -1019,7 +1019,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putStringSet("activeDays", activeDays)
             .putInt("bestStreak", maxOf(prefs.getInt("bestStreak", 0), s))
             .apply()
-        if (s in STREAK_MILESTONES) showMessage("🔥 $s günlük seri! Böyle devam")
+        if (s in STREAK_MILESTONES) showMessage("$s günlük seri")
     }
 
     val activeToday: Boolean get() = dayKey(System.currentTimeMillis()) in activeDays

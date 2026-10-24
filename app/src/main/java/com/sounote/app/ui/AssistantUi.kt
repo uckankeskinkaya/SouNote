@@ -298,8 +298,8 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             when {
                                 busy -> "yazıyor…"
                                 !vm.assistantConfig.ready -> "Kurulum gerekli"
-                                source is AssistantSource.Document -> "📄 " + source.doc.title
-                                source is AssistantSource.Note -> "📝 " + source.title.ifBlank { "Yazılı not" }
+                                source is AssistantSource.Document -> source.doc.title
+                                source is AssistantSource.Note -> source.title.ifBlank { "Yazılı not" }
                                 else -> "İngilizce, L4 dersleri ve uygulama"
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -393,7 +393,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                             TextField(
                                 value = input,
                                 onValueChange = { input = it },
-                                placeholder = { Text(if (vm.assistantConfig.ready) "Mesaj yaz…" else "Önce ⚙️ ile asistanı kur") },
+                                placeholder = { Text(if (vm.assistantConfig.ready) "Mesaj yaz…" else "Önce asistanı kur") },
                                 maxLines = 6,
                                 shape = RoundedCornerShape(24.dp),
                                 colors = TextFieldDefaults.colors(
@@ -419,7 +419,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
     }
 }
 
-/** Asistanın simgesi: tema renginde degrade daire içinde ✦. */
+/** Asistanın simgesi: tema renginde daire içinde yıldız. */
 @Composable
 private fun BotAvatar(size: Dp) {
     val hero = listOf(MaterialTheme.colorScheme.primary, LocalSouColors.current.hero.last())
@@ -427,7 +427,7 @@ private fun BotAvatar(size: Dp) {
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(hero)),
     ) {
-        Text("✦", color = Color.White, fontSize = (size.value * 0.45f).sp, fontWeight = FontWeight.Bold)
+        Icon(SouIcons.StarShine, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.5f))
     }
 }
 
@@ -435,28 +435,28 @@ private fun BotAvatar(size: Dp) {
 private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, onSetup: () -> Unit, onAsk: (String) -> Unit) {
     val prompts = when (source) {
         is AssistantSource.Document -> if (source.selection.isNullOrBlank()) listOf(
-            "📝" to "Bu sayfayı Türkçe özetle",
-            "📚" to "Buradaki önemli kelimeleri anlamlarıyla listele",
-            "❓" to "Bu sayfadan bana 5 soru sor",
-            "🧩" to "Buradaki grammar konusunu örneklerle anlat",
+            SouIcons.EditNote to "Bu sayfayı Türkçe özetle",
+            SouIcons.LibraryBooks to "Buradaki önemli kelimeleri anlamlarıyla listele",
+            SouIcons.Quiz to "Bu sayfadan bana 5 soru sor",
+            SouIcons.Extension to "Buradaki grammar konusunu örneklerle anlat",
         ) else listOf(
-            "💡" to "Seçili metni basitçe açıkla",
-            "🇹🇷" to "Seçili metni Türkçeye çevir",
-            "📚" to "Seçili metindeki zor kelimeleri anlamlarıyla listele",
-            "❓" to "Seçili metinden bana 3 soru sor",
+            SouIcons.Lightbulb to "Seçili metni basitçe açıkla",
+            SouIcons.Translate to "Seçili metni Türkçeye çevir",
+            SouIcons.LibraryBooks to "Seçili metindeki zor kelimeleri anlamlarıyla listele",
+            SouIcons.Quiz to "Seçili metinden bana 3 soru sor",
         )
         is AssistantSource.Note -> listOf(
-            "❓" to "Bu nottan 5 çalışma sorusu üret (cevaplarıyla)",
-            "✨" to "Bu notu toparla ve özetle",
-            "✅" to "Yazımdaki hataları düzelt",
-            "🎯" to "Bu essay'i L4 kriterlerine göre değerlendir",
+            SouIcons.Quiz to "Bu nottan 5 çalışma sorusu üret (cevaplarıyla)",
+            SouIcons.StarShine to "Bu notu toparla ve özetle",
+            SouIcons.TaskAlt to "Yazımdaki hataları düzelt",
+            SouIcons.Flag to "Bu essay'i L4 kriterlerine göre değerlendir",
         )
         AssistantSource.General -> listOf(
-            "📅" to "Sıradaki sınavıma ne çalışmalıyım?",
-            "🗓️" to "Yaklaşan sınavlarıma göre bana bu hafta için çalışma planı öner",
-            "🧩" to "Present perfect ile past simple farkı ne?",
-            "✍️" to "Bana opinion essay için bir plan yap",
-            "🎙️" to "Uygulamada ses kaydı nasıl kullanılır?",
+            SouIcons.Event to "Sıradaki sınavıma ne çalışmalıyım?",
+            SouIcons.CalendarMonth to "Yaklaşan sınavlarıma göre bana bu hafta için çalışma planı öner",
+            SouIcons.Extension to "Present perfect ile past simple farkı ne?",
+            SouIcons.Draw to "Bana opinion essay için bir plan yap",
+            SouIcons.Mic to "Uygulamada ses kaydı nasıl kullanılır?",
         )
     }
     val name = userName.trim().split(" ").firstOrNull().orEmpty()
@@ -467,7 +467,7 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
     ) {
         BotAvatar(72.dp)
         Text(
-            if (name.isNotEmpty()) "Merhaba $name 👋" else "Merhaba 👋",
+            if (name.isNotEmpty()) "Merhaba $name" else "Merhaba",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 6.dp),
@@ -500,7 +500,7 @@ private fun Welcome(source: AssistantSource, userName: String, ready: Boolean, o
                         .clickable(enabled = ready) { onAsk(p) }
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                 ) {
-                    Text(emoji, fontSize = 20.sp)
+                    Icon(emoji, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                     Text(p, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f).padding(start = 12.dp))
                     Icon(
                         SouIcons.ChevronRight,

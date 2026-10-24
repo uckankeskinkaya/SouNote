@@ -74,11 +74,6 @@ data class Exam(
         else -> "Sınav"
     }
 
-    val kindEmoji get() = when (kind) {
-        "task" -> "📝"
-        "presentation" -> "🎤"
-        else -> "📅"
-    }
 }
 
 data class Catalog(

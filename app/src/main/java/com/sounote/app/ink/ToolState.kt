@@ -23,12 +23,17 @@ enum class PenType(
     val short: String,
     val inkTool: InkTool,
     val usesPressure: Boolean,
+    /** Bu kalem seçilince önerilen kalınlık (mm); null = kullanıcının kalınlığı korunur. */
+    val defaultWidthMm: Float? = null,
 ) {
     FOUNTAIN("Dolma kalem", "Bastırdıkça kalınlaşır", "", InkTool.PEN, true),
-    BALLPOINT("Tükenmez", "Her zaman aynı kalınlık", "T", InkTool.PEN, false),
-    PENCIL("Kurşun kalem", "Yarı saydam, sabit kalınlık", "Kş", InkTool.PENCIL, false),
-    BRUSH("Fırça", "Basınca çok duyarlı, uçları incelir", "F", InkTool.BRUSH, true),
-    CALLIGRAPHY("Kaligrafi", "Yöne göre ince/kalın, güzel yazı için", "Kl", InkTool.CALLIGRAPHY, false),
+    BALLPOINT("Tükenmez", "Sabit kalınlık", "T", InkTool.PEN, false),
+    FINELINER("İnce uç", "Çok ince, sabit; şema ve küçük yazı", "İ", InkTool.PEN, false, 0.25f),
+    MARKER("Keçeli kalem", "Kalın ve dolgun; başlıklar için", "K", InkTool.PEN, false, 1.6f),
+    PENCIL("Kurşun kalem", "Yarı saydam", "Kş", InkTool.PENCIL, false),
+    PASTEL("Pastel", "Geniş, yumuşak, yarı saydam", "P", InkTool.PENCIL, false, 2.4f),
+    BRUSH("Fırça", "Basınca çok duyarlı", "F", InkTool.BRUSH, true),
+    CALLIGRAPHY("Kaligrafi", "Yöne göre ince/kalın", "Kl", InkTool.CALLIGRAPHY, false),
     DASHED("Kesik çizgi", "Şekil ve şemalar için", "--", InkTool.DASHED, false),
 }
 

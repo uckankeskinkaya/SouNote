@@ -46,7 +46,7 @@ class ExamWidget : AppWidgetProvider() {
             if (next != null) {
                 val days = ExamReminders.daysUntil(next.time)
                 views.setTextViewText(R.id.widget_label, "Sıradaki sınav")
-                views.setTextViewText(R.id.widget_title, next.kindEmoji + " " + next.title.ifBlank { next.course })
+                views.setTextViewText(R.id.widget_title, next.title.ifBlank { next.course })
                 views.setTextViewText(
                     R.id.widget_date,
                     SimpleDateFormat("d MMMM EEEE", tr).format(Date(next.time)) + (if (next.slot.isNotBlank()) " · ${next.slot}" else ""),
@@ -61,9 +61,9 @@ class ExamWidget : AppWidgetProvider() {
                 )
             } else {
                 views.setTextViewText(R.id.widget_label, "SouNote")
-                views.setTextViewText(R.id.widget_title, "Yaklaşan sınav yok 🎉")
+                views.setTextViewText(R.id.widget_title, "Yaklaşan sınav yok")
                 views.setTextViewText(R.id.widget_date, "")
-                views.setTextViewText(R.id.widget_countdown, "📚")
+                views.setTextViewText(R.id.widget_countdown, "")
             }
             views.setTextViewText(
                 R.id.widget_study,

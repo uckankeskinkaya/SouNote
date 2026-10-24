@@ -206,7 +206,7 @@ fun StudyDialog(
                 Spacer(Modifier.height(16.dp))
                 if (card == null) {
                     Text(
-                        "$total kartın $known tanesini ilk seferde bildin. 👏",
+                        "$total kartın $known tanesini ilk seferde bildin.",
                         style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center,
                     )

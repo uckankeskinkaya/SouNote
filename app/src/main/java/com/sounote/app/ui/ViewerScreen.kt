@@ -339,16 +339,16 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     vm.pomodoro?.let { p ->
                         TextButton(onClick = { pomodoroDialog = true }) {
                             Text(
-                                (if (p.onBreak) "☕ " else "🍅 ") + formatDuration((p.endsAt - now).coerceAtLeast(0L)),
+                                (if (p.onBreak) "Mola " else "") + formatDuration((p.endsAt - now).coerceAtLeast(0L)),
                                 color = if (p.onBreak) Color(0xFF2E7D32) else MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
                     // Okuma ↔ not alma modu
                     IconButton(onClick = { vm.updateReadingMode(!reading) }) {
-                        Text(
-                            if (reading) "✏️" else "📖",
-                            fontSize = 20.sp,
+                        Icon(
+                            if (reading) SouIcons.InkPen else SouIcons.MenuBook,
+                            contentDescription = null,
                             modifier = Modifier.semantics { contentDescription = if (reading) "Not al" else "Oku" },
                         )
                     }
@@ -370,7 +370,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         Icon(painterResource(R.drawable.ic_pages), contentDescription = "Sayfalar")
                     }
                     IconButton(onClick = { askSelection = null; assistantOpen = true }) {
-                        Text("🤖", fontSize = 20.sp)
+                        Icon(SouIcons.StarShine, contentDescription = "Asistan")
                     }
                     IconButton(onClick = { if (searchOpen) closeSearch() else searchOpen = true }) {
                         Icon(SouIcons.Search, contentDescription = "Ara")
@@ -446,7 +446,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Asistan") },
-                                    leadingIcon = { Text("🤖", fontSize = 18.sp) },
+                                    leadingIcon = { Icon(SouIcons.StarShine, contentDescription = null) },
                                     onClick = { moreMenu = false; askSelection = null; assistantOpen = true },
                                 )
                                 DropdownMenuItem(
@@ -479,7 +479,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             }
                             if (wideViewer) {
                                 DropdownMenuItem(
-                                    text = { Text(if (sideNote) "📝 Yan notu kapat" else "📝 Yan yana not aç") },
+                                    text = { Text(if (sideNote) "Yan notu kapat" else "Yan yana not aç") },
+                                    leadingIcon = { Icon(SouIcons.EditNote, contentDescription = null) },
                                     onClick = { moreMenu = false; sideNote = !sideNote },
                                 )
                             }
@@ -743,7 +744,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             IconButton(onClick = { vm.toggleFullScreen() }) {
                                 Icon(painterResource(R.drawable.ic_fullscreen_exit), contentDescription = "Tam ekrandan çık")
                             }
-                            IconButton(onClick = { vm.updateReadingMode(false) }) { Text("✏️") }
+                            IconButton(onClick = { vm.updateReadingMode(false) }) { Icon(SouIcons.InkPen, contentDescription = "Not al") }
                         }
                     }
                     page?.let { (p, n) ->

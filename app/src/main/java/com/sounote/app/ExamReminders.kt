@@ -106,7 +106,7 @@ object ExamReminders {
         )
         val n = android.app.Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_shortcut_note)
-            .setContentTitle("📅 $title")
+            .setContentTitle(title)
             .setContentText(listOf(whenText, place).filter { it.isNotBlank() }.joinToString(" · "))
             .setContentIntent(open)
             .setAutoCancel(true)

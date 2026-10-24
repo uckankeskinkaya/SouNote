@@ -329,7 +329,7 @@ fun HomeScreen(vm: LibraryViewModel) {
                         } else {
                             next.forEach { e ->
                                 Box(Modifier.pressScale(0.98f)) {
-                                    ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {})
+                                    ExamCard(e, vm, onClick = { vm.tab = LibraryViewModel.Tab.EXAMS }, onLongClick = {}, showTopics = false)
                                 }
                             }
                         }
@@ -381,17 +381,8 @@ fun HomeScreen(vm: LibraryViewModel) {
                         QuickAction(rememberVectorPainter(Icons.Default.Face), "Asistan", "İngilizce ve ders soruları sor", Color(0xFF00897B)) {
                             vm.openAssistant()
                         },
-                        QuickAction(rememberVectorPainter(Icons.Default.Star), "Essay puanla", "Süreyle yaz, asistan L4 ölçütleriyle puanlasın", Color(0xFFC2357A)) {
-                            graderOpen = true
-                        },
-                        QuickAction(rememberVectorPainter(Icons.Default.Star), "Ortalama", "Notlarını gir, geçmek için gerekeni gör", Color(0xFFC2570C)) {
-                            gradesOpen = true
-                        },
                         QuickAction(painterResource(R.drawable.ic_pdf), "PDF içe aktar", "Ders notlarını getir", Color(0xFFD64545)) {
                             importPdf()
-                        },
-                        QuickAction(painterResource(R.drawable.ic_folder), "Klasör bağla", "Yeni PDF'ler kendiliğinden gelsin", Color(0xFF3FA36B)) {
-                            pickFolder.launch(null)
                         },
                     ),
                 )

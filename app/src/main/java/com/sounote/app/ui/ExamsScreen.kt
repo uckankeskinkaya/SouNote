@@ -696,7 +696,7 @@ private fun defaultExamTime(): Long = Calendar.getInstance().apply {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onLongClick: () -> Unit) {
+internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onLongClick: () -> Unit, showTopics: Boolean = true) {
     val accent = if (exam.course.isBlank()) MaterialTheme.colorScheme.primary else Color(vm.courseColor(exam.course))
     val done = vm.isDone(exam)
     val day = remember(exam.time) { SimpleDateFormat("d", TR).format(Date(exam.time)) }
@@ -783,7 +783,7 @@ internal fun ExamCard(exam: Exam, vm: LibraryViewModel, onClick: () -> Unit, onL
             if (exam.notes.isNotBlank()) {
                 Text(exam.notes, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            val topics = exam.topics.mapNotNull { vm.catalog.topic(it) }
+            val topics = if (showTopics) exam.topics.mapNotNull { vm.catalog.topic(it) } else emptyList()
             if (topics.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     topics.forEach { (_, t) ->

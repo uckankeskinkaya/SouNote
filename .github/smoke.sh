@@ -79,7 +79,6 @@ app; tap "Yazı"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot
 tap "📑 Yapı"; shot 07b-yapi; back; back; back
 app; tap "Ana sayfa"; top; tap "Asistan"; sleep 2; shot 08-asistan; back
 app; tap "Ana sayfa"; top; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back
-app; tap "Ana sayfa"; tap "Ortalama"; sleep 2; tap "Bu hesabı kur"; sleep 1; shot 10-ortalama; back
 app; tap "Planlayıcı"; tap "Not ortalamam"; sleep 2; shot 10b-ortalama; back
 
 # 6) Hızlı geçişler + döndürme (yatayda navigasyon rayı)

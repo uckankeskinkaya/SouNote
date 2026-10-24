@@ -33,9 +33,9 @@ export const SCREENS: ScreenDef[] = [
   {
     id: "home", label: "Ana sayfa", orientation: "portrait", src: "screens/home.webp",
     hotspots: [
-      { u: 0.5, v: 0.03, title: "Genel arama", text: "Belge adlarında, PDF'lerin içinde sayfa sayfa, yazılı notlarda ve bilgi kartlarında arar." },
-      { u: 0.5, v: 0.2, title: "Günün özeti", text: "Karşılama, bugünkü çalışma süren ve çalışma serin." },
-      { u: 0.5, v: 0.6, title: "Hızlı başla", text: "Yeni defter, hızlı not, Writing pratiği, asistan ve not ortalaması tek dokunuşta." },
+      { u: 0.45, v: 0.03, title: "Her şeyde ara", text: "Dersler, klasörler, belgeler, notlar, sınavlar ve PDF'lerin içi; filtreler ve son aramalar." },
+      { u: 0.5, v: 0.12, title: "Günün özeti", text: "Karşılama, bugünkü çalışma süren ve çalışma serin." },
+      { u: 0.5, v: 0.72, title: "Senin ana sayfan", text: "Bölümleri sırala ya da gizle; favorilerin hızlı erişimde." },
     ],
   },
   {
@@ -59,15 +59,18 @@ export const SCREENS: ScreenDef[] = [
     hotspots: [{ u: 0.5, v: 0.5, title: "Konu konu kaynaklar", text: "Grammar, Vocabulary, Reading, Listening, Writing ve Speaking." }],
   },
   {
-    id: "exams", label: "Sınavlar", orientation: "portrait", src: "screens/exams.webp",
+    id: "exams", label: "Planlayıcı", orientation: "portrait", src: "screens/exams.webp",
     hotspots: [
-      { u: 0.5, v: 0.24, title: "Hatırlatıcılar", text: "3 gün ve 1 gün önce akşam 19:00'da, sınavdan 2 saat önce bildirim." },
-      { u: 0.2, v: 0.4, title: "Geri sayım", text: "Her sınavın tarihi ve kaç gün kaldığı." },
-      { u: 0.78, v: 0.84, title: "Sınav ekle", text: "Kendi sınavlarını ve ödevlerini de ekleyebilirsin." },
+      { u: 0.5, v: 0.055, title: "Dört görünüm", text: "Liste, hafta, ay ve zaman çizelgesi." },
+      { u: 0.5, v: 0.4, title: "Aylık takvim", text: "Sınav ve ödev günleri ders rengiyle işaretli; güne dokununca o günün listesi." },
+      { u: 0.8, v: 0.84, title: "Ekle", text: "Sınav, ödev ya da sunum; öncelik ve hatırlatıcıyla." },
     ],
   },
-  { id: "writing", label: "Writing pratiği", orientation: "portrait", src: "screens/writing.webp",
-    hotspots: [{ u: 0.5, v: 0.17, title: "Yeni yazı", text: "Konu seç, süreyle yaz; asistan 100 üzerinden puanlar. Asistan için kendi servis anahtarın gerekir." }] },
+  { id: "writing", label: "Yazı stüdyosu", orientation: "portrait", src: "screens/writing.webp",
+    hotspots: [
+      { u: 0.3, v: 0.055, title: "Yazma koçu", text: "Dil bilgisi, kelime ve yapı önerileri; sen onaylamadan metnine dokunmaz." },
+      { u: 0.5, v: 0.5, title: "Essay yapısı", text: "Giriş, gelişme ve sonuç bölümleri ve kelime sayıları." },
+    ] },
   { id: "grades", label: "Not ortalaması", orientation: "portrait", src: "screens/grades.webp",
     hotspots: [{ u: 0.5, v: 0.17, title: "Geçmek için kalan", text: "Kalan sınavlardan ortalama kaç alman gerektiğini gösterir." }] },
   { id: "week", label: "Haftalık liste", orientation: "portrait", src: "screens/week.webp" },

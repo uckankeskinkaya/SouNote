@@ -20,7 +20,7 @@
 <p align="center">
   <img src="docs/img/home.png" width="200" alt="Ana sayfa">
   <img src="docs/img/courses.png" width="200" alt="Dersler">
-  <img src="docs/img/exams.png" width="200" alt="Sınavlar">
+  <img src="docs/img/exams.png" width="200" alt="Planlayıcı">
   <img src="docs/img/grades.png" width="200" alt="Not ortalaması">
 </p>
 
@@ -28,13 +28,16 @@
 
 | | |
 |---|---|
+| 🎨 **Görünüm (2.0)** | SouNote Light, Obsidian Purple ve Midnight Blue temaları, istediğin vurgu rengi; telefonda alt çubuk, tablette yan menü; animasyon ve yoğunluk ayarı |
+| 🏠 **Ana sayfa** | Bölümleri sırala ya da gizle; favoriler ve sabitlenenlerle hızlı erişim |
 | ✍️ **Kalem** | Basınca duyarlı kalem türleri, fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
-| 📄 **PDF** | İçe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
+| 📄 **PDF** | Okuma modu, lasso ile seçilen bölgeyi asistana sor, tablette yan yana not; içe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
 | 📚 **Dersler** | Haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları WPS/Office'te açılır, PDF olarak SouNote'a paylaşılır; bitirdiklerini işaretle, haftanın ilerlemesini gör |
-| 📅 **Sınavlar** | Takvim, geri sayım, hatırlatıcı bildirimler, ana ekran widget'ı |
+| 📅 **Planlayıcı** | Liste, hafta, ay ve zaman çizelgesi; ödev tamamlama, öncelik, filtreler, hatırlatıcılar, ana ekran widget'ı |
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; aralıklı tekrar (Leitner) |
 | 🤖 **Asistan** | Açık belgeyi okur; özet, kelime listesi, soru, essay değerlendirmesi. Evren (e-Devlet) anahtarı için uygulama içinde adım adım kurulum |
-| 🔎 **Genel arama** | PDF'lerin içinde sayfa sayfa, yazılı notlarda ve kartlarda |
+| 🔎 **Genel arama** | Dersler, klasörler, belgeler, notlar, sınavlar; PDF'lerin içinde sayfa sayfa; filtreler ve son aramalar |
+| 🖋️ **Yazı stüdyosu** | Essay şablonu, başlık/kalın/italik, kelime ve karakter sayacı, odak modu, yapı paneli; yazma koçu önerir, sen onaylarsın |
 | ✍️ **Writing pratiği** | Opinion essay/paragraph yaz; asistan L4 ölçütleriyle 100 üzerinden puanlar, hataları ve geliştirilmiş hali gösterir |
 | 🔥 **Çalışma serisi** | Art arda çalıştığın günler; belgede 5 dk, kart tekrarı, Writing, haftalık liste ya da yazılı not o günü sayar |
 | 🔁 **Bugünkü tekrar** | Bütün belgelerde zamanı gelen bilgi kartları tek oturumda |
@@ -57,5 +60,5 @@ Android 10 ve üstü, tablet ve telefon.
 - Kotlin + Jetpack Compose, `compileSdk 36`, `minSdk 29`. PDF: Android `PdfRenderer` + [PdfBox-Android](https://github.com/TomRoush/PdfBox-Android).
 - Her push'ta GitHub Actions APK'yı derler, emülatörde açıp ekranları gezerek **çökme testi** yapar; test geçerse [Releases](https://github.com/uckankeskinkaya/SouNote/releases)'a yükler.
 - Ders kataloğu `app/src/main/assets/catalog.json` (`tools/make_catalog.py` ile üretilir); her sürümle birlikte yayınlanır, uygulama açılışta en yenisini çeker.
-- İmza anahtarları depoda tutulmaz, GitHub Secrets'tadır (`SOUNOTE_KEYSTORE_B64`, `SOUNOTE_OLD_KEYSTORE_B64`, `SOUNOTE_KEY_PASSWORD`). Anahtar v3 anahtar döndürmeyle değiştirildi; eski sürümlerin üstüne güncelleme kurulur.
+- İmza: eski anahtar herkese açık olduğu için v3 anahtar döndürmeyle yeni anahtara geçildi; yeni anahtar `keystore/sounote2.p12.enc` olarak şifreli, şifresi sadece GitHub Secrets'ta (`SIGNING_PASSWORD`). Eski sürümlerin üstüne güncelleme kurulur.
 - Ayrıntılı teknik notlar: [`CLAUDE.md`](CLAUDE.md).

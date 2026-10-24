@@ -224,6 +224,8 @@ private fun CourseGrid(vm: LibraryViewModel, onWeeks: () -> Unit, onOpen: (Cours
 private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<String>, onToggle: (String) -> Unit) {
     val context = LocalContext.current
     var summaryOpen by remember { mutableStateOf(false) }
+    var testOpen by remember { mutableStateOf(false) }
+    if (testOpen) PracticeSetupDialog(vm, course) { testOpen = false }
     if (summaryOpen) {
         AssistantDialog(
             vm,
@@ -240,6 +242,20 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     ) {
         item { CourseHeader(vm, course) }
         val docs = vm.courseDocs(course)
+        item {
+            // Asistan konudan çoktan seçmeli deneme sınavı hazırlar (indirilmiş PDF'ler varsa onlardan).
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().card().clickable { testOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                IconBadge(SouIcons.Quiz, LocalSouColors.current.success)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Deneme sınavı", style = MaterialTheme.typography.titleSmall)
+                    Text("Konudan çoktan seçmeli test, anında puan", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         if (docs.isNotEmpty()) {
             item {
                 // Asistan bu dersin indirilmiş bütün PDF'lerini okuyup özet çıkarır.

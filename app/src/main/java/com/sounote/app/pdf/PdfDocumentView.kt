@@ -1937,12 +1937,12 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     /** Resmi bakılan sayfanın ortasına, sayfa genişliğinin yarısı boyunda ekler ve seçer. */
-    fun insertImage(file: String, pixelWidth: Int, pixelHeight: Int) {
+    fun insertImage(file: String, pixelWidth: Int, pixelHeight: Int, widthFraction: Float = 0.5f) {
         if (pageTops.isEmpty() || pixelWidth <= 0 || pixelHeight <= 0) return
         val page = currentPage.coerceIn(0, pageTops.size - 1)
         val pageW = pageSizes[page].width.toFloat()
         val pageH = pageSizes[page].height.toFloat()
-        var w = pageW * 0.5f
+        var w = pageW * widthFraction
         var h = w * pixelHeight / pixelWidth
         if (h > pageH * 0.6f) {
             h = pageH * 0.6f

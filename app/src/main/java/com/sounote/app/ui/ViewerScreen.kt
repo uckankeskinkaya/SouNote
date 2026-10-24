@@ -628,6 +628,12 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 onInsertImage = {
                     imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
+                onSticker = { res ->
+                    vm.importSticker(doc, res) { file, w, h ->
+                        vm.updateTools(vm.tools.copy(tool = Tool.LASSO))
+                        view?.insertImage(file, w, h, widthFraction = 0.16f)
+                    }
+                },
                 leading = if (vm.fullScreen) fullScreenButtons else null,
                 onRevealTapes = { view?.setAllTapes(it) },
             )

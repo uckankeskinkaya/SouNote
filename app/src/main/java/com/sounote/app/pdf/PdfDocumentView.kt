@@ -1204,6 +1204,8 @@ class PdfDocumentView(context: Context) : View(context) {
             straightLine = (highlighter && t.highlighterStraight) || tape
             shapeStartX = current!!.points[0]
             shapeStartY = current!!.points[1]
+            rawLastX = shapeStartX
+            rawLastY = shapeStartY
             snapped = false
             holdX = x
             holdY = y
@@ -1293,6 +1295,10 @@ class PdfDocumentView(context: Context) : View(context) {
     // ---- Şekil düzeltme: çizginin sonunda kalemi bekletince ----
 
     private var snapped = false
+
+    /** Son ham (süzülmemiş) kalem konumu, sayfa noktası. */
+    private var rawLastX = 0f
+    private var rawLastY = 0f
     private var straightLine = false
     private var shapeMode = false
     private var shapeStartX = 0f
@@ -1340,6 +1346,15 @@ class PdfDocumentView(context: Context) : View(context) {
             return
         }
         val p = if (b.pressureSensitive) b.lastPressure * 0.5f + tools.applyPressureCurve(rawPressure) * 0.5f else 1f
+        // Yazma desteği: el titremesini süz; çizgi kalemin biraz gerisinden yumuşakça gelir
+        // (kalem kalkınca son noktaya tamamlanır, bkz. endInput).
+        rawLastX = x
+        rawLastY = y
+        if (tools.smoothing > 0f && !shapeMode) {
+            val k = 1f - tools.smoothing.coerceIn(0f, 1f) * 0.8f
+            x = b.lastX + (x - b.lastX) * k
+            y = b.lastY + (y - b.lastY) * k
+        }
         val minStep = MIN_POINT_DISTANCE_PX / pageScale(inputPage)
         val dx = x - b.lastX
         val dy = y - b.lastY
@@ -1427,6 +1442,12 @@ class PdfDocumentView(context: Context) : View(context) {
         }
         if (shapeMode && current?.let { it.count < 2 } == true) current = null
         current?.let { s ->
+            // Yazma desteği geride bıraktıysa çizgiyi kalemin kalktığı yere kadar tamamla.
+            if (!snapped && !straightLine && !shapeMode && s.count > 1 &&
+                kotlin.math.hypot(rawLastX - s.lastX, rawLastY - s.lastY) > 0.05f
+            ) {
+                s.add(rawLastX, rawLastY, s.lastPressure)
+            }
             val stroke = s.build()
             // Akıllı fosforlu: altındaki metin satırlarına oturt (şekle dönmediyse).
             val snappedLines = if (stroke.tool == InkTool.HIGHLIGHTER && tools.smartHighlighter && !snapped) {

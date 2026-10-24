@@ -40,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -304,6 +305,16 @@ fun SettingsScreen(vm: LibraryViewModel) {
         Entry(Category.NOTES, "Parmakla çiz", "parmak kalem çizim dokunma") {
             SwitchRow(SouIcons.TouchApp, "Parmakla çiz", "Tek parmak çizer, iki parmak kaydırır", tools.fingerDraw) {
                 vm.updateTools(tools.copy(fingerDraw = it))
+            }
+        },
+        Entry(Category.NOTES, "Yazma desteği", "yazma desteği titreme yumuşat düzelt çizgi bağla stabilizatör") {
+            Column {
+                SettingRow(SouIcons.Draw, "Yazma desteği", subtitle = if (tools.smoothing == 0f) "Kapalı" else "%${(tools.smoothing * 100).toInt()}")
+                Slider(
+                    value = tools.smoothing,
+                    onValueChange = { vm.updateTools(tools.copy(smoothing = (it * 20).toInt() / 20f)) },
+                    modifier = Modifier.padding(start = 56.dp, end = 16.dp, bottom = 8.dp),
+                )
             }
         },
         Entry(Category.NOTES, "Düşük gecikme", "gecikme hız kalem deneysel") {

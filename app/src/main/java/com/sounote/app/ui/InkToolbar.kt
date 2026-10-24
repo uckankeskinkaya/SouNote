@@ -360,7 +360,7 @@ private fun PenImage(type: PenType, modifier: Modifier, horizontal: Boolean = fa
     }
 }
 
-/** Kalem ayarları menüsü: basınç hassasiyeti ve şekil düzeltme. */
+/** Kalem ayarları menüsü: yazma desteği, basınç hassasiyeti, şekil düzeltme. */
 @Composable
 private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
     var open by remember { mutableStateOf(false) }
@@ -368,9 +368,24 @@ private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
         IconButton(onClick = { open = true }) { Icon(SouIcons.Settings, contentDescription = "Kalem ayarları") }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Column(Modifier.width(320.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall)
+                Text("Yazma desteği", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    if (state.penType.usesPressure) "Dolma kalem ve fırçada etkili" else "Dolma kalem ya da fırça seçince etkili olur",
+                    "El titremesini süzer, çizgileri yumuşak ve bağlantılı yapar",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Slider(
+                    value = state.smoothing,
+                    onValueChange = { onChange(state.copy(smoothing = (it * 20).roundToInt() / 20f)) },
+                    valueRange = 0f..1f,
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Kapalı", style = MaterialTheme.typography.labelSmall)
+                    Text("Güçlü", style = MaterialTheme.typography.labelSmall)
+                }
+                Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp))
+                Text(
+                    if (state.penType.usesPressure) "Bu kalemde etkili" else "Dolma, jel ya da fırça kalemde etkili",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SouNote · Ders çalışmanın en sade hâli</title>
+<meta name="description" content="SouNote; PDF'lerin üstüne kalemle yazmayı, sınav takvimini, bilgi kartlarını ve not ortalamasını tek bir Android uygulamasında toplar. Ücretsiz, kaynak kodu açık, hesap istemez.">
+<meta name="author" content="Uçkan Keskinkaya">
+<meta name="theme-color" content="#050814">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://uckankeskinkaya.github.io/SouNote/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:site_name" content="SouNote">
+<meta property="og:title" content="SouNote · Ders çalışmanın en sade hâli">
+<meta property="og:description" content="Kalemle not, ders kaynakları, sınav takvimi, bilgi kartları ve not ortalaması tek uygulamada. Ücretsiz Android uygulaması.">
+<meta property="og:url" content="https://uckankeskinkaya.github.io/SouNote/">
+<meta property="og:image" content="https://uckankeskinkaya.github.io/SouNote/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SouNote logosu: kıvrık bir not kâğıdı ve dolma kalem">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="32x32" href="brand/logo-a-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="brand/logo-a-64.png">
+<link rel="apple-touch-icon" href="brand/logo-a-180.png">
+<link rel="preload" href="brand/logo-a-paper.png" as="image">
+<script>
+  // Erken sınıflar: JS var mı, hareket azaltılmış mı, açılış gösterilecek mi (oturumda bir kez).
+  (function () {
+    var d = document.documentElement, reduce = matchMedia("(prefers-reduced-motion: reduce)").matches, seen = false;
+    try { seen = sessionStorage.getItem("sn-intro") === "1"; } catch (e) {}
+    d.className = "js" + (reduce ? " reduce" : "") + (!reduce && !seen && !/[?&]intro=0/.test(location.search) ? " has-intro" : "");
+  })();
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SouNote",
+  "operatingSystem": "Android 10+",
+  "applicationCategory": "EducationalApplication",
+  "inLanguage": "tr",
+  "url": "https://uckankeskinkaya.github.io/SouNote/",
+  "downloadUrl": "https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
+  "author": { "@type": "Person", "name": "Uçkan Keskinkaya", "url": "https://github.com/uckankeskinkaya" }
+}
+</script>
+<script type="module" src="./src/main.ts"></script>
+</head>
+<body>
+<a class="skip-link" href="#icerik">İçeriğe geç</a>
+
+<!-- Açılış: logo birleşir, ışık geçer, logo tabletin ekranına iner. Gezinme ve indirme bu sırada da kullanılabilir. -->
+<div class="intro" id="intro" aria-hidden="true">
+  <div class="intro__aura"></div>
+  <div class="intro__logo" id="intro-logo">
+    <img class="intro__paper" src="brand/logo-a-paper.png" alt="" width="512" height="512">
+    <img class="intro__pen" src="brand/logo-a-pen.png" alt="" width="512" height="512">
+    <span class="intro__sheen"></span>
+  </div>
+  <p class="intro__word">Sou<span>Note</span></p>
+</div>
+
+<header class="nav" id="nav">
+  <nav class="nav__bar" aria-label="Ana menü">
+    <a class="nav__brand" href="#top" aria-label="SouNote, sayfanın başı">
+      <img src="brand/logo-a-64.png" alt="" width="32" height="32">
+      <span>SouNote</span>
+    </a>
+    <ul class="nav__links">
+      <li><a href="#hikaye">Hikâye</a></li>
+      <li><a href="#ozellikler">Özellikler</a></li>
+      <li><a href="#dene">Dene</a></li>
+      <li><a href="#gelistirici">Geliştirici</a></li>
+      <li><a href="#sss">SSS</a></li>
+    </ul>
+    <a class="btn btn--primary btn--sm nav__cta" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+      <span>İndir</span>
+    </a>
+    <button class="nav__toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menüyü aç">
+      <span></span><span></span>
+    </button>
+  </nav>
+  <div class="nav__menu" id="nav-menu" hidden>
+    <ul>
+      <li><a href="#hikaye"><small>01</small>Hikâye</a></li>
+      <li><a href="#ozellikler"><small>02</small>Özellikler</a></li>
+      <li><a href="#dene"><small>03</small>Dene</a></li>
+      <li><a href="#gelistirici"><small>04</small>Geliştirici</a></li>
+      <li><a href="#karsilastirma"><small>05</small>Neden SouNote?</a></li>
+      <li><a href="#sss"><small>06</small>Sık sorulanlar</a></li>
+    </ul>
+    <a class="btn btn--primary btn--block" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>SouNote'u ücretsiz indir</a>
+    <a class="btn btn--ghost btn--block" href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">Kaynak kodu (GitHub)</a>
+  </div>
+</header>
+
+<!-- Tek, kalıcı WebGL tuvali: tablet bütün sahneler boyunca burada yaşar. -->
+<canvas class="stage" id="stage" aria-hidden="true"></canvas>
+<div class="explore-backdrop" id="explore-backdrop" hidden></div>
+<div class="hotspots" id="hotspots" aria-live="polite"></div>
+<div class="explore-ui" id="explore-ui" role="dialog" aria-modal="false" aria-labelledby="explore-title" hidden>
+  <p class="explore-ui__title" id="explore-title">3D inceleme</p>
+  <p class="explore-ui__hint" id="explore-hint">Sürükleyerek çevir · ok tuşları da çalışır · Esc ile çık</p>
+  <div class="explore-ui__row" role="toolbar" aria-label="Tableti çevir">
+    <button type="button" class="chip" data-x="left" aria-label="Sola çevir">⟲</button>
+    <button type="button" class="chip" data-x="up" aria-label="Yukarı eğ">↑</button>
+    <button type="button" class="chip" data-x="down" aria-label="Aşağı eğ">↓</button>
+    <button type="button" class="chip" data-x="right" aria-label="Sağa çevir">⟳</button>
+    <button type="button" class="chip" data-x="flip">Ön / Arka</button>
+    <button type="button" class="chip" data-x="orient" aria-pressed="false">Yatay</button>
+  </div>
+  <div class="explore-ui__row">
+    <button type="button" class="chip" data-x="prev" aria-label="Önceki ekran">‹</button>
+    <span class="explore-ui__screen" id="explore-screen" aria-live="polite">Ana sayfa</span>
+    <button type="button" class="chip" data-x="next" aria-label="Sonraki ekran">›</button>
+    <button type="button" class="chip" data-x="spots" aria-pressed="true">Bilgi noktaları</button>
+    <button type="button" class="chip chip--close" data-x="close">Kapat ✕</button>
+  </div>
+</div>
+
+<main id="icerik">
+
+  <!-- ============ 1 · Hero ============ -->
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="hero__copy">
+      <p class="eyebrow"><span class="eyebrow__dot"></span>Ücretsiz · Açık kaynak · Android</p>
+      <h1 class="display" id="hero-title">Ders çalışmanın <span class="grad">en sade hâli.</span></h1>
+      <p class="lead">SouNote; PDF'lerin üstüne kalemle yazmayı, sınav takvimini, bilgi kartlarını ve not ortalamanı tek bir uygulamada toplar. Hesap açmadan, ücretsiz.</p>
+      <div class="cta-row">
+        <a class="btn btn--primary btn--lg" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+          Android için indir
+        </a>
+        <a class="btn btn--ghost btn--lg" href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.5 8-4 4 4 4m7-8 4 4-4 4m-2-10-3 12"/></svg>
+          Kaynak kodu
+        </a>
+      </div>
+      <p class="hero__meta"><span>Android 10 ve üstü</span><span data-release="version"></span><span data-release="size"></span></p>
+    </div>
+    <div class="hero__stage">
+      <div class="slot" data-slot="hero" aria-hidden="true"></div>
+      <figure class="tablet-fallback" data-fallback>
+        <div class="tablet-fallback__device"><img src="screens/home.webp" alt="SouNote ana sayfası: günün karşılaması, hızlı başla düğmeleri ve yaklaşan sınavlar" width="720" height="1600"></div>
+      </figure>
+      <button class="btn btn--glass explore-open" type="button" data-explore>
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></svg>
+        3D İncele
+      </button>
+    </div>
+    <a class="scroll-cue" href="#hikaye"><span class="scroll-cue__line"></span>Hikâyeyi kaydırarak keşfet</a>
+  </section>
+
+  <!-- ============ 2 · Sorun ============ -->
+  <section class="story" id="hikaye" data-progress="sticky" aria-labelledby="problem-title">
+    <div class="story__pin">
+      <div class="slot slot--aside" data-slot="problem" aria-hidden="true"></div>
+      <div class="story__copy">
+        <p class="kicker"><span>01</span>Sorun</p>
+        <h2 class="headline" id="problem-title">Sadece not almak istiyordum.</h2>
+        <p class="story__text">Ders PDF'lerimin üstüne kalemle yazmak, sınavlarımı takip etmek, öğrendiklerimi tekrar etmek. Hepsi bu. Ama kullandığım uygulama, ihtiyacım olanı sunmak yerine karşıma yeni engeller çıkarıyordu.</p>
+        <ol class="frictions">
+          <li style="--i:0"><span>Önce hesap aç.</span></li>
+          <li style="--i:1"><span>İhtiyacım olan özellik ya yok ya da ücretli.</span></li>
+          <li style="--i:2"><span>Notlar bir yerde, sınav takvimi başka yerde.</span></li>
+          <li style="--i:3"><span>Tekrar kartları bambaşka bir uygulamada.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3 · Karar ============ -->
+  <section class="decision" id="karar" data-progress="pass" aria-labelledby="decision-title">
+    <div class="code-rain" aria-hidden="true" data-code></div>
+    <div class="decision__inner">
+      <p class="kicker"><span>02</span>Karar</p>
+      <blockquote class="decision__quote">
+        <p id="decision-title">Aradığım uygulamayı bulamayınca, <em>kendim geliştirmeye</em> karar verdim.</p>
+      </blockquote>
+      <p class="decision__text">Bilgisayarım yoktu. Kodu tabletimde yazdım; her değişikliği GitHub'da otomatik derletip çıkan APK'yı yine tablete kurdum. Önce PDF'in üstüne yazabilen bir kalem, sonra ders çalışırken "keşke şu da olsa" dediğim her şey.</p>
+      <ol class="pipeline" aria-label="SouNote nasıl geliştiriliyor">
+        <li style="--i:0"><b>Tablette kod</b><span>Kotlin, Android</span></li>
+        <li style="--i:1"><b>GitHub Actions</b><span>Her değişiklikte derleme</span></li>
+        <li style="--i:2"><b>Emülatör testi</b><span>Ekranları gezip çökme arar</span></li>
+        <li style="--i:3"><b>APK</b><span>Doğrudan tablete</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ 4 · Sonuç ============ -->
+  <section class="solution" id="sonuc" data-progress="sticky" aria-labelledby="solution-title">
+    <div class="solution__pin">
+      <div class="solution__head">
+        <p class="kicker"><span>03</span>Sonuç</p>
+        <h2 class="headline" id="solution-title">Böylece <span class="grad">SouNote</span> doğdu.</h2>
+        <p class="solution__lead">Bugün SouNote, kalemle not almayı, ders kaynaklarını, sınav takvimini, bilgi kartlarını ve not ortalamasını bir araya getiren bir çalışma uygulaması.</p>
+      </div>
+      <div class="slot slot--center" data-slot="solution" aria-hidden="true"></div>
+      <ul class="pillars">
+        <li><b>Ücretsiz</b><span>Ücretli sürüm yok, reklam yok.</span></li>
+        <li><b>Açık kaynak</b><span>Kodun tamamı GitHub'da, herkes inceleyebilir.</span></li>
+        <li><b>Hesap yok</b><span>Kayıt istemez. Sadece seni adınla selamlamak için adını sorar, istersen geçebilirsin.</span></li>
+        <li><b>Hepsi bir arada</b><span>Defter, takvim, kartlar ve ortalama aynı yerde.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 5 · Geliştirici ============ -->
+  <section class="developer" id="gelistirici" data-progress="pass" aria-labelledby="dev-title">
+    <div class="code-rain code-rain--dev" aria-hidden="true" data-code></div>
+    <div class="developer__inner">
+      <p class="kicker"><span>04</span>Geliştirici</p>
+      <article class="dev-card" data-tilt>
+        <div class="dev-card__glare" aria-hidden="true"></div>
+        <div class="dev-card__top">
+          <div class="dev-card__mono" aria-hidden="true">UK</div>
+          <div>
+            <h2 class="dev-card__name" id="dev-title">Uçkan Keskinkaya</h2>
+            <p class="dev-card__role">SouNote Geliştiricisi</p>
+          </div>
+        </div>
+        <p class="dev-card__text">SouNote'u kendi derslerim için yazmaya başladım. İçindeki her özellik, ders çalışırken bir şeyin eksikliğini hissettiğim bir andan çıktı. Kodun tamamı herkese açık; incelemek, hata bildirmek ya da fikir vermek istersen GitHub'dayım.</p>
+        <div class="dev-card__links">
+          <a class="btn btn--primary" href="https://github.com/uckankeskinkaya" rel="noopener">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.5c.5.1.6-.2.6-.5v-1.7c-2.6.6-3.2-1.2-3.2-1.2-.4-1.1-1-1.4-1-1.4-.9-.6 0-.6 0-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.8.8.1-.6.3-1.1.6-1.3-2.1-.2-4.3-1-4.3-4.7 0-1 .4-1.9 1-2.6-.1-.2-.4-1.2.1-2.5 0 0 .8-.3 2.6 1a9 9 0 0 1 4.8 0c1.8-1.3 2.6-1 2.6-1 .5 1.3.2 2.3.1 2.5.6.7 1 1.6 1 2.6 0 3.7-2.2 4.5-4.3 4.7.3.3.6.9.6 1.8v2.6c0 .3.2.6.7.5A9.5 9.5 0 0 0 12 2.5Z"/></svg>
+            GitHub Profilim
+          </a>
+          <a class="btn btn--ghost" href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m8.5 8-4 4 4 4m7-8 4 4-4 4m-2-10-3 12"/></svg>
+            Kaynak Kodunu İncele
+          </a>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 6 · Özellikler ============ -->
+  <section class="features" id="ozellikler" aria-labelledby="features-title">
+    <header class="features__head">
+      <p class="kicker"><span>05</span>Özellikler</p>
+      <h2 class="headline" id="features-title">Ders çalışırken ihtiyacın olan araçlar, tek uygulamada.</h2>
+      <p class="section-lead">Aşağıdaki ekranlar uygulamanın gerçek ekran görüntüleri.</p>
+    </header>
+
+    <article class="feature" id="f-kalem" data-side="right">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-kalem" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/notebook.webp" alt="Defter ekranı: kalem türleri, fosforlu, silgi ve renkler" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">01</p>
+        <h3>Kâğıt gibi yaz, PDF gibi sakla.</h3>
+        <p>Ders PDF'lerini içe aktar ya da bir klasör bağla, üstüne basınca duyarlı kalemle yaz. Kalemin yoksa "Parmakla yaz"ı aç: tek parmak çizer, iki parmak kaydırır.</p>
+        <ul class="ticks"><li>Dolma, tükenmez, kurşun, fırça ve kaligrafi kalemleri</li><li>Fosforlu, silgi, lasso, şekil düzeltme, metin kutusu</li><li>Notlu PDF olarak dışa aktar ya da yazdır</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-dersler" data-side="left">
+      <div class="feature__visual"><div class="slot slot--sticky slot--wide" data-slot="f-dersler" aria-hidden="true"></div>
+        <figure class="feature__shot feature__shot--wide" data-fallback><img src="screens/courses-land.webp" alt="Dersler ekranı yatay: Grammar, Vocabulary, Reading ve Listening kartları" loading="lazy" width="1600" height="720"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">02</p>
+        <h3>Haftanın kaynakları, konu konu.</h3>
+        <p>Grammar'dan Speaking'e bütün ders kaynakları konulara ve haftalara ayrılmış hâlde gelir. Yeni kaynak eklenince uygulama güncellemesi beklemeden listede görünür.</p>
+        <ul class="ticks"><li>PDF kaynağı tek dokunuşla kütüphaneye</li><li>Word ve PowerPoint dosyaları başka uygulamada açılır, PDF olarak geri gelir</li><li>Tabletin yatay düzeninde yan menü</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-sinavlar" data-side="right">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-sinavlar" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/exams.webp" alt="Sınavlar ekranı: hatırlatıcılar ve geri sayımlı sınav listesi" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">03</p>
+        <h3>Sınavı unutma, geri sayım hep önünde.</h3>
+        <p>Sınav takvimi gün gün; her sınavın kaç gün kaldığı ve hangi derste olduğu tek bakışta. Kendi sınavlarını ve ödevlerini de ekleyebilirsin.</p>
+        <ul class="ticks"><li>3 gün, 1 gün ve 2 saat önce hatırlatıcı</li><li>Ana ekran widget'ı</li><li>Kendi sınav ve ödevlerin</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-writing" data-side="left">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-writing" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/writing.webp" alt="Writing pratiği ekranı: Opinion Essay ve Opinion Paragraph seçenekleri" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">04</p>
+        <h3>Essay'ini yaz, puanını gör.</h3>
+        <p>Konu seç, süreyle yaz. Yardımcı asistan yazını ölçütlere göre 100 üzerinden puanlar, hatalarını ve düzeltilmiş hâlini gösterir.</p>
+        <ul class="ticks"><li>Opinion Essay ve Opinion Paragraph</li><li>Asistan açık PDF'ini okuyup özetleyebilir, kart üretebilir</li><li>Asistan için kendi yapay zekâ servis anahtarın gerekir</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-ortalama" data-side="right">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-ortalama" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/grades.webp" alt="Not ortalamam ekranı: geçme notu ve sınav ağırlıkları" loading="lazy" width="720" height="1600"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">05</p>
+        <h3>Geçmek için kaç alman gerektiğini bil.</h3>
+        <p>Puanlarını ve sınav ağırlıklarını gir; SouNote ortalamanı hesaplar ve kalan sınavlardan kaç alman gerektiğini söyler. Okul şablonu hazır, istersen kendininkini kurarsın.</p>
+        <ul class="ticks"><li>Ağırlıklı ortalama ve geçme notu</li><li>Kalan sınavlar için gereken ortalama</li><li>Hazır okul şablonu</li></ul>
+      </div>
+    </article>
+
+    <article class="feature" id="f-gunluk" data-side="left">
+      <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-gunluk" aria-hidden="true"></div>
+        <figure class="feature__shot" data-fallback><img src="screens/week.webp" alt="Ana sayfada haftalık liste: işaretlenebilir ders kaynakları" loading="lazy" width="540" height="1200"></figure></div>
+      <div class="feature__copy">
+        <p class="feature__num">06</p>
+        <h3>Her gün biraz. Serin büyüsün.</h3>
+        <p>Haftalık listede o haftanın kaynaklarını bitirdikçe işaretle. Bilgi kartlarında zamanı gelenler "Bugünkü tekrar"da toplanır; çalıştığın her gün serine eklenir.</p>
+        <ul class="ticks"><li>Haftalık liste ve ilerleme</li><li>Bilgi kartları, aralıklı tekrar (Leitner, 5 kutu)</li><li>Çalışma serisi ve haftalık çalışma süresi</li></ul>
+      </div>
+    </article>
+
+    <div class="more" id="dahasi">
+      <h3 class="more__title">Ve dahası</h3>
+      <ul class="more__list">
+        <li><b>Genel arama</b>PDF'lerin içinde sayfa sayfa, yazılı notlarda ve kartlarda</li>
+        <li><b>Yazılı notlar</b>Klavyeyle ya da kalemle, yapılacaklar ve çizim alanı</li>
+        <li><b>Ders ses kaydı</b>Kayıt sırasında aldığın notlar, kaydın o anına bağlanır</li>
+        <li><b>Paylaşma</b>Notlu belgeyi arkadaşına gönder, onda notlarıyla açılsın</li>
+        <li><b>Yedekleme</b>Otomatik yedek, Drive'a yedek ve geri yükleme</li>
+        <li><b>Pomodoro</b>25/5 ve 50/10 çalışma döngüleri</li>
+        <li><b>Uygulama kilidi</b>Parmak izi ya da ekran kilidiyle</li>
+        <li><b>Gece okuma</b>Belgelerde renkleri ters çevir</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 7 · Dene ============ -->
+  <section class="play" id="dene" aria-labelledby="play-title">
+    <header class="play__head">
+      <p class="kicker"><span>06</span>Dene</p>
+      <h2 class="headline" id="play-title">Denemek ister misin?</h2>
+      <p class="section-lead">İki küçük tarayıcı denemesi. Uygulamanın kendisi değil; ama hissini verir. Hiçbir şey kaydedilmez.</p>
+    </header>
+    <div class="play__grid">
+      <div class="demo demo--draw" id="demo-draw">
+        <div class="demo__poster">
+          <svg class="demo__art" viewBox="0 0 320 140" aria-hidden="true"><path d="M20 96c18-40 34-52 44-30 9 20-6 40 10 40s22-50 46-50 10 52 34 50 18-36 40-36 12 30 34 30 22-40 52-46"/></svg>
+          <h3>Kalemle yaz</h3>
+          <p>Fare, parmak ya da kalemle çiz. Kalem, silgi, renkler, kalınlık, geri al.</p>
+          <button class="btn btn--primary" type="button" data-demo="draw">Denemek ister misin?</button>
+        </div>
+      </div>
+      <div class="demo demo--cards" id="demo-cards">
+        <div class="demo__poster">
+          <div class="demo__stack" aria-hidden="true"><i></i><i></i><i></i></div>
+          <h3>Bilgi kartları</h3>
+          <p>Kartı çevir, kaydır: "Öğrendim" ya da "Tekrar et". Sonunda kısa bir mini test.</p>
+          <button class="btn btn--primary" type="button" data-demo="cards">Denemek ister misin?</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8 · Karşılaştırma ============ -->
+  <section class="compare" id="karsilastirma" aria-labelledby="compare-title">
+    <header class="compare__head">
+      <p class="kicker"><span>07</span>Neden SouNote?</p>
+      <h2 class="headline" id="compare-title">Bir çalışma uygulaması seçerken şunları sor.</h2>
+      <p class="section-lead">Her uygulamanın cevabı farklı. SouNote'unkiler bunlar, eksikleriyle birlikte.</p>
+    </header>
+    <dl class="qa">
+      <div><dt>Ücret istiyor mu?</dt><dd><b class="ok">Hayır.</b> Tamamen ücretsiz; ücretli sürüm, abonelik ya da reklam yok.</dd></div>
+      <div><dt>Hesap açmak zorunda mıyım?</dt><dd><b class="ok">Hayır.</b> Kayıt yok, giriş yok. Uygulamayı açıp kullanmaya başlarsın.</dd></div>
+      <div><dt>Kodunu görebilir miyim?</dt><dd><b class="ok">Evet.</b> Kaynak kodu GitHub'da herkese açık; her sürüm orada otomatik derlenir.</dd></div>
+      <div><dt>Notlarım nerede duruyor?</dt><dd><b class="ok">Cihazında.</b> Yedeği sen alırsın: seçtiğin klasöre otomatik ya da Drive'a. Asistanı kullanırsan sorduğun metin, ayarladığın yapay zekâ servisine gider.</dd></div>
+      <div><dt>PDF'lerimle çalışabilir miyim?</dt><dd><b class="ok">Evet.</b> İçe aktar, kalemle yaz, form doldur, sayfa ekle, notlu PDF olarak dışa aktar.</dd></div>
+      <div><dt>Planlamaya yardım ediyor mu?</dt><dd><b class="ok">Evet.</b> Sınav takvimi, hatırlatıcılar, widget, haftalık liste ve not ortalaması.</dd></div>
+      <div><dt>Hangi cihazlarda çalışıyor?</dt><dd><b class="warn">Şimdilik sadece Android.</b> Android 10 ve üstü telefon ve tabletler. iPhone ve iPad sürümü yok.</dd></div>
+      <div><dt>Play Store'da mı?</dt><dd><b class="warn">Hayır.</b> APK olarak buradan indirilir. Nedenini <a href="#sss">aşağıda</a> anlattık.</dd></div>
+    </dl>
+  </section>
+
+  <!-- ============ 9 · İndir ============ -->
+  <section class="finale" id="indir" aria-labelledby="download-title">
+    <div class="finale__pin">
+      <div class="finale__visual"><div class="slot slot--finale" data-slot="finale" aria-hidden="true"></div>
+        <figure class="tablet-fallback tablet-fallback--finale" data-fallback><div class="tablet-fallback__device tablet-fallback__device--brand"><img src="brand/logo-a-256.png" alt="SouNote logosu" width="256" height="256"></div></figure></div>
+      <div class="download">
+        <p class="kicker"><span>08</span>İndir</p>
+        <h2 class="headline" id="download-title">SouNote'u Ücretsiz İndir</h2>
+        <p class="download__lead">Android telefonun ya da tabletin için. Kurduktan sonra yeni sürümleri uygulama kendisi haber verir; üstüne kurduğunda notların silinmez.</p>
+        <a class="btn btn--primary btn--xl" href="https://github.com/uckankeskinkaya/SouNote/releases/latest/download/SouNote.apk" data-apk>
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
+          SouNote.apk'yı indir
+        </a>
+        <dl class="download__meta">
+          <div><dt>Sürüm</dt><dd data-release="version-full">En son sürüm</dd></div>
+          <div><dt>Boyut</dt><dd data-release="size-full">—</dd></div>
+          <div><dt>Yayın</dt><dd data-release="date">—</dd></div>
+          <div><dt>Gereksinim</dt><dd>Android 10+</dd></div>
+        </dl>
+        <p class="download__notes" data-release="notes" hidden></p>
+        <div class="download__links">
+          <a href="https://github.com/uckankeskinkaya/SouNote/releases" rel="noopener">Tüm sürümler</a>
+          <a href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">Kaynak kodu</a>
+          <button type="button" class="linklike" data-video>Tanıtım videosu (1 dk)</button>
+          <a id="vt-link" href="https://www.virustotal.com/gui/home/upload" rel="noopener">VirusTotal'da kontrol et</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="install">
+      <h3 class="install__title">Bir dakikada kur</h3>
+      <ol class="steps">
+        <li><b>İndir</b><span>Düğmeye bas. Chrome uyarırsa "Yine de indir" de.</span></li>
+        <li><b>Aç</b><span>Bildirimden ya da Dosyalar → İndirilenler'den SouNote.apk'ya dokun.</span></li>
+        <li><b>İzin ver</b><span>"Bilinmeyen uygulamalar" uyarısında bu kaynağa izin ver ve geri dön.</span></li>
+        <li><b>Yükle</b><span>"Yükle"ye bas. Kısa bir tanıtım seni karşılar.</span></li>
+      </ol>
+      <p class="hash" data-release="hash"></p>
+    </div>
+
+    <div class="faq" id="sss">
+      <h3 class="install__title">Sık sorulanlar</h3>
+      <details><summary>Telefon "zararlı olabilir" diyor, güvenli mi?</summary><p>SouNote Play Store'da olmadığı için Chrome "Bu dosya zararlı olabilir", Play Protect ise "Bilinmeyen geliştirici" ya da "Güvenli olmayan uygulama engellendi" diyebilir. Bu, mağaza dışından gelen her uygulamada çıkan genel bir uyarıdır. Play Protect'te "Diğer ayrıntılar → Yine de yükle" diyebilirsin. İçin rahat etsin istersen dosyayı kurmadan önce VirusTotal'da taratabilirsin; yukarıdaki bağlantı bu sürümün raporunu açar. "Zararlı uygulama tespit edildi" ya da belirli bir virüs adı görürsen kurma, dosyayı bu sayfadan yeniden indir.</p></details>
+      <details><summary>Neden Play Store'da değil?</summary><p>Google Play geliştirici hesabı ücretli; yeni bireysel hesaplar ayrıca uygulamayı yayınlamadan önce en az 12 test kullanıcısıyla 14 gün kapalı test yapmak zorunda. Kimlik doğrulama, gizlilik ve veri güvenliği formları ve her güncellemenin incelemeye girmesi de cabası. Ücretsiz bir öğrenci projesi için bu fazla masraf ve bekleme demek; burada ise hata düzeltmeleri ve haftalık ders kaynakları hemen sana ulaşıyor.</p></details>
+      <details><summary>Güncellemeler nasıl geliyor?</summary><p>Yeni sürüm çıkınca uygulama haber verir; "İndir"e basıp üstüne kurman yeterli, notların silinmez. Haftalık ders kaynakları uygulama güncellemesi gerektirmeden gelir.</p></details>
+      <details><summary>Notlarım nerede saklanıyor?</summary><p>Cihazında. SouNote'un bir hesabı ya da notları topladığı bir sunucusu yok. Kaybolmasın diye Ayarlar'dan otomatik yedeği açabilir ya da Drive'a yedek alabilirsin. Yardımcı asistanı kullanırsan, sorduğun metin ayarlarda girdiğin yapay zekâ servisine gönderilir.</p></details>
+      <details><summary>Kalemim yok, kullanabilir miyim?</summary><p>Evet. "Parmakla yaz"ı aç; tek parmak çizer, iki parmak kaydırır ve yakınlaştırır.</p></details>
+      <details><summary>Asistan ücretli mi?</summary><p>Uygulama ücretsiz. Asistan için kendi yapay zekâ servis anahtarını Ayarlar'a girmen gerekir; uygulama, e-Devlet ile alınabilen bir anahtar için adım adım kurulum gösterir. Anahtar uygulamanın içine gömülü değildir, sadece senin cihazında durur.</p></details>
+      <details><summary>iPhone ya da iPad'de çalışır mı?</summary><p>Hayır, şimdilik sadece Android 10 ve üstü.</p></details>
+      <details><summary>Word dosyalarımı açabilir miyim?</summary><p>Word ve PowerPoint dosyaları SouNote içinde açılmaz. WPS ya da Office'te açıp PDF olarak SouNote'a paylaşırsan kütüphanene gelir ve üstüne kalemle yazabilirsin.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer__brand">
+    <img src="brand/logo-a-64.png" alt="" width="40" height="40">
+    <div><b>SouNote</b><span>Ders çalışmanın en sade hâli.</span></div>
+  </div>
+  <nav class="footer__nav" aria-label="Alt menü">
+    <a href="#hikaye">Hikâye</a><a href="#ozellikler">Özellikler</a><a href="#dene">Dene</a><a href="#gelistirici">Geliştirici</a><a href="#indir">İndir</a>
+  </nav>
+  <nav class="footer__nav" aria-label="GitHub bağlantıları">
+    <a href="https://github.com/uckankeskinkaya/SouNote" rel="noopener">Kaynak kodu</a>
+    <a href="https://github.com/uckankeskinkaya/SouNote/releases" rel="noopener">Sürümler</a>
+    <a href="https://github.com/uckankeskinkaya/SouNote/issues" rel="noopener">Hata bildir</a>
+    <a href="https://github.com/uckankeskinkaya" rel="noopener">Uçkan Keskinkaya</a>
+  </nav>
+  <p class="footer__note">Uçkan Keskinkaya tarafından, kendi dersleri için geliştirildi. Ekranlar uygulamanın gerçek görüntüleridir; "Dene" bölümündeki denemeler tarayıcı için hazırlanmış örneklerdir.</p>
+</footer>
+
+<dialog class="video-dialog" id="video-dialog" aria-label="SouNote tanıtım videosu">
+  <form method="dialog"><button class="chip chip--close" aria-label="Videoyu kapat">Kapat ✕</button></form>
+  <video data-src="video/sounote.mp4" poster="video/poster.jpg" controls playsinline preload="none"></video>
+</dialog>
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+</body>
+</html>

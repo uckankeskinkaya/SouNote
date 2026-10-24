@@ -1,0 +1,24 @@
+{
+  "name": "sounote-site",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "description": "SouNote tanıtım ve indirme sitesi (GitHub Pages, docs/ klasörüne derlenir)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --base /SouNote/",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/smoke.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "5.9",
+    "vite": "^8.3.5"
+  }
+}

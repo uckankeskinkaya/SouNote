@@ -179,6 +179,15 @@ class PdfDocumentView(context: Context) : View(context) {
 
     // Yerleşim (belge koordinatı)
     private var fitWidth = 0f
+
+    /**
+     * Sonsuz tuval: sayfa çok genişse (PaperSize.CANVAS) sayfa ekrana sığdırılmaz; A4 genişliği ekranı
+     * dolduracak ölçekte yerleşir, her yöne kaydırılır ve uzaklaştırınca tamamı görünür.
+     */
+    private var canvasMode = false
+
+    /** Tuvalde açılışta gidilecek yer (merkez x/y oranı, yakınlaştırma); yoksa ortası. */
+    var pendingCanvasViewport: FloatArray? = null
     private var pageLefts = FloatArray(0)
     private var pageWidths = FloatArray(0)
     private var columnWidth = 0f
@@ -425,8 +434,9 @@ class PdfDocumentView(context: Context) : View(context) {
             anchorFrac = ((topDocY - pageTops[anchorPage]) / pageHeights[anchorPage]).coerceIn(-0.1f, 1f)
         }
 
-        fitWidth = width.toFloat()
-        columns = if (twoPage && width > height) 2 else 1
+        canvasMode = pageSizes[0].width >= CANVAS_MIN_PT
+        fitWidth = if (canvasMode) pageSizes[0].width * width / A4_WIDTH_PT else width.toFloat()
+        columns = if (twoPage && width > height && !canvasMode) 2 else 1
         columnWidth = if (columns == 2) (fitWidth - pageGap * 3) / 2f else fitWidth
         pageTops = FloatArray(n)
         pageHeights = FloatArray(n)
@@ -462,6 +472,16 @@ class PdfDocumentView(context: Context) : View(context) {
             (pageTops[anchorPage] - pageGap) * zoom
         } else {
             (pageTops[anchorPage] + anchorFrac * pageHeights[anchorPage]) * zoom
+        }
+        if (first && canvasMode) {
+            // Tuval: kaldığı yer ya da ortası
+            val v = pendingCanvasViewport
+            pendingCanvasViewport = null
+            if (v != null && v.size == 3) zoom = v[2].coerceIn(minZoom(), MAX_ZOOM)
+            val cx = (v?.get(0) ?: 0.5f) * fitWidth * zoom
+            val cy = (v?.get(1) ?: ((pageTops[0] + pageHeights[0] / 2) / contentHeight)) * contentHeight * zoom
+            offsetX = cx - width / 2f
+            offsetY = cy - height / 2f
         }
         clampOffsets()
         onViewportChanged()
@@ -2221,8 +2241,21 @@ class PdfDocumentView(context: Context) : View(context) {
         }
     }
 
+    /** En uzak yakınlaştırma: tuvalde tamamı görünsün. */
+    private fun minZoom() = if (canvasMode && fitWidth > 0f) min(MIN_ZOOM, width / fitWidth * 0.95f) else MIN_ZOOM
+
+    /** Tuvalde ekranın ortası (içerik oranı) ve yakınlaştırma: kaldığı yeri saklamak için. */
+    fun canvasViewport(): FloatArray? {
+        if (!canvasMode || fitWidth == 0f || contentHeight == 0f) return null
+        return floatArrayOf(
+            ((offsetX + width / 2f) / zoom / fitWidth).coerceIn(0f, 1f),
+            ((offsetY + height / 2f) / zoom / contentHeight).coerceIn(0f, 1f),
+            zoom,
+        )
+    }
+
     private fun zoomAround(newZoom: Float, focusX: Float, focusY: Float) {
-        val z = newZoom.coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val z = newZoom.coerceIn(minZoom(), MAX_ZOOM)
         if (z == zoom) return
         val docX = (focusX + offsetX) / zoom
         val docY = (focusY + offsetY) / zoom
@@ -2253,6 +2286,9 @@ class PdfDocumentView(context: Context) : View(context) {
 
     companion object {
         private const val MIN_ZOOM = 0.4f
+        /** Bu genişlikten (nokta) büyük sayfa tuval sayılır. */
+        const val CANVAS_MIN_PT = 3000f
+        private const val A4_WIDTH_PT = 595f
         private const val MAX_ZOOM = 6f
         private const val DOUBLE_TAP_ZOOM = 2.5f
         private const val MAX_BASE_WIDTH = 2200f

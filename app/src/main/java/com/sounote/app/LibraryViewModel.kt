@@ -1918,6 +1918,17 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Sonsuz tuval: noktalı, çok büyük tek sayfa. */
+    fun newCanvas() = createNotebook("Tuval", PageTemplate.DOTTED, PaperSize.CANVAS)
+
+    /** Tuvalde kaldığın yer: "x,y,zoom" (prefs canvasView_<belge>). */
+    fun canvasViewport(doc: DocRef): FloatArray? =
+        prefs.getString("canvasView_${doc.id}", null)?.split(",")?.mapNotNull { it.toFloatOrNull() }?.takeIf { it.size == 3 }?.toFloatArray()
+
+    fun saveCanvasViewport(doc: DocRef, v: FloatArray?) {
+        if (v != null) prefs.edit().putString("canvasView_${doc.id}", v.joinToString(",")).apply()
+    }
+
     fun closeDoc() {
         refreshDue()
         studyPause()

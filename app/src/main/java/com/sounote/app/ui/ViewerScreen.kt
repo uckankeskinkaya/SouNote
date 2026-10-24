@@ -748,6 +748,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 this.ink = ink
                                 this.tools = tools
                                 this.layers = layers
+                                pendingCanvasViewport = currentVm.canvasViewport(doc)
                                 open(doc.uri, initialPage)
                                 view = this
                             }
@@ -765,6 +766,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             if (v.ink !== ink) v.ink = ink
                         },
                         onRelease = {
+                            vm.saveCanvasViewport(doc, it.pdfView.canvasViewport())
                             it.release()
                             view = null
                         },

@@ -86,6 +86,20 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
     var tools: ToolState = ToolState()
+
+    /**
+     * Okuma modu: kalem de parmak da sadece kaydırır/yakınlaştırır; not alınmaz.
+     * Bağlantılar ve ezber bandına dokunma çalışmaya devam eder.
+     */
+    var readOnly = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value && selection != null) clearSelection()
+        }
+
+    /** Parmakla çizim açık mı (okuma modunda hiçbir zaman). */
+    private val drawsWithFinger get() = tools.fingerDraw && !readOnly
         set(value) {
             val formsChanged = (field.tool == Tool.TEXT) != (value.tool == Tool.TEXT)
             if (field.tool == Tool.LASSO && value.tool != Tool.LASSO) clearSelection()
@@ -850,7 +864,7 @@ class PdfDocumentView(context: Context) : View(context) {
         override fun onDown(e: MotionEvent): Boolean = true
 
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
-            if (tools.fingerDraw && !multiTouch) return false
+            if (drawsWithFinger && !multiTouch) return false
             if (pinchBox != null || selMode == SelMode.PINCH) return true
             if (fingerSelecting && !multiTouch) return true
             offsetX += distanceX
@@ -861,7 +875,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-            if (scaledThisGesture || (tools.fingerDraw && !multiTouch) || (fingerSelecting && !multiTouch)) return false
+            if (scaledThisGesture || (drawsWithFinger && !multiTouch) || (fingerSelecting && !multiTouch)) return false
             val (minX, maxX) = minMaxX()
             val (minY, maxY) = minMaxY()
             scroller.fling(
@@ -874,7 +888,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-            if (tools.fingerDraw || pageTops.isEmpty()) return false
+            if (drawsWithFinger || pageTops.isEmpty()) return false
             val page = pageAtScreen(e.x, e.y)
             val px = toPageX(page, e.x)
             val py = toPageY(page, e.y)
@@ -886,7 +900,7 @@ class PdfDocumentView(context: Context) : View(context) {
                 return true
             }
             // Kalem/fosforlu/silgideyken dokunulan bağlantıyı aç (yazı ve seçim araçları dokunmayı kendisi kullanır).
-            if (tools.tool == Tool.TEXT || tools.tool == Tool.LASSO) return false
+            if (!readOnly && (tools.tool == Tool.TEXT || tools.tool == Tool.LASSO)) return false
             val link = links[page]?.firstOrNull { l -> l.rects.any { it.contains(px, py) } } ?: return false
             link.page?.let { goToPage(it) }
             link.uri?.let { onOpenLink?.invoke(it) }
@@ -894,6 +908,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
+            if (readOnly) return false
             if (tools.tool == Tool.STAMP && !tools.fingerDraw) placeStamp(e.x, e.y)
             if (tools.tool == Tool.TEXT && !tools.fingerDraw) textTap(e.x, e.y)
             if (tools.tool == Tool.LASSO && !tools.fingerDraw) clearSelection()
@@ -901,7 +916,7 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         override fun onDoubleTap(e: MotionEvent): Boolean {
-            if (tools.fingerDraw || tools.tool == Tool.TEXT) return false
+            if (drawsWithFinger || (!readOnly && tools.tool == Tool.TEXT)) return false
             val target = if (zoom < 1.5f) DOUBLE_TAP_ZOOM else 1f
             animateZoom(target, e.x, e.y)
             return true
@@ -914,6 +929,10 @@ class PdfDocumentView(context: Context) : View(context) {
         // Parmak hareketleri ancak parmakla başlamış bir dokunuşta işlenir. Kalem dokunduysa o
         // dokunuş bitene kadar kalan parmak (avuç içi) olayları yok sayılır; yoksa kalem kalkınca
         // ekranda kalan avuç sayfayı kaydırırdı.
+        if (readOnly) {
+            panOnly(event)
+            return true
+        }
         if (event.actionMasked == MotionEvent.ACTION_DOWN) fingerStreamOpen = !isStylusTool(event.getToolType(0))
         if ((drawPointerId != -1 && inputFromStylus) || stylusIndex(event) >= 0) {
             fingerStreamOpen = false
@@ -1071,6 +1090,30 @@ class PdfDocumentView(context: Context) : View(context) {
         scaleDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
         when (action) {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                fingerGestureActive = false
+                if (scroller.isFinished) scheduleDetail()
+            }
+        }
+    }
+
+    /** Okuma modu: her dokunuş (kalem dahil) kaydırma/yakınlaştırma/dokunma olarak işlenir. */
+    private fun panOnly(event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                multiTouch = false
+                fingerGestureActive = true
+                scaledThisGesture = false
+                scroller.forceFinished(true)
+                zoomAnimator?.cancel()
+                stopDetail()
+                parent?.requestDisallowInterceptTouchEvent(true)
+            }
+            MotionEvent.ACTION_POINTER_DOWN -> multiTouch = true
+        }
+        scaleDetector.onTouchEvent(event)
+        gestureDetector.onTouchEvent(event)
+        when (event.actionMasked) {
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 fingerGestureActive = false
                 if (scroller.isFinished) scheduleDetail()
@@ -1695,6 +1738,15 @@ class PdfDocumentView(context: Context) : View(context) {
                 }
                 val sel = Selections.select(page, ink.content(page), poly, lassoCount)
                 selection = if (sel.isEmpty) null else sel
+                // Çizilen alan (notsuz olsa da): "Asistana sor" bu bölgenin PDF metnini kullanır.
+                val bounds = RectF(poly[0], poly[1], poly[0], poly[1])
+                for (i in 1 until lassoCount) {
+                    bounds.left = minOf(bounds.left, poly[i * 2])
+                    bounds.right = maxOf(bounds.right, poly[i * 2])
+                    bounds.top = minOf(bounds.top, poly[i * 2 + 1])
+                    bounds.bottom = maxOf(bounds.bottom, poly[i * 2 + 1])
+                }
+                if (lassoCount > 2 && bounds.width() > 8f && bounds.height() > 4f) onLassoRegion?.invoke(page, bounds)
                 notifySelection()
             }
             SelMode.MOVE, SelMode.SCALE, SelMode.PINCH, SelMode.ROTATE -> {
@@ -1809,6 +1861,9 @@ class PdfDocumentView(context: Context) : View(context) {
         selection = null
         notifySelection()
     }
+
+    /** Lasso ile çizilen son alan (sayfa, PDF noktası cinsinden dikdörtgen). */
+    var onLassoRegion: ((Int, RectF) -> Unit)? = null
 
     /** Seçimin bulunduğu sayfa ve alanı (bilgi kartı için). */
     fun selectionRegion(): Pair<Int, RectF>? {

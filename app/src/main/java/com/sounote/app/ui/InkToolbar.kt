@@ -77,6 +77,9 @@ class SelectionUi(
     val onDelete: () -> Unit,
     val onDone: () -> Unit,
     val onMakeCard: () -> Unit = {},
+    /** Lasso ile bir bölge çizildiyse (notsuz da olsa) o bölgenin metnini asistana sor. */
+    val canAsk: Boolean = false,
+    val onAsk: () -> Unit = {},
 )
 
 /**
@@ -531,6 +534,7 @@ private fun SelectionOptions(state: ToolState, sel: SelectionUi, onCustomColor: 
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (sel.canAsk) AssistChip(onClick = sel.onAsk, label = { Text("🤖 Bölgeyi asistana sor") })
         if (sel.hasClipboard) AssistChip(onClick = sel.onPaste, label = { Text("Yapıştır") })
         return
     }
@@ -538,6 +542,7 @@ private fun SelectionOptions(state: ToolState, sel: SelectionUi, onCustomColor: 
     Text("Renk:", style = MaterialTheme.typography.labelLarge)
     Palette(ToolState.PEN_COLORS, state.customColors, selected = 0, onSelect = sel.onRecolor, onCustom = onCustomColor)
     AssistChip(onClick = sel.onMakeCard, label = { Text("Karta çevir") })
+    if (sel.canAsk) AssistChip(onClick = sel.onAsk, label = { Text("🤖 Asistana sor") })
     AssistChip(onClick = sel.onCopy, label = { Text("Kopyala") })
     if (sel.hasClipboard) AssistChip(onClick = sel.onPaste, label = { Text("Yapıştır") })
     AssistChip(

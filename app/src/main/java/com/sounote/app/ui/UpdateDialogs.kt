@@ -24,14 +24,16 @@ import androidx.compose.ui.unit.sp
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.Updates
 
-/** 1.0 ile gelenler ("Yenilikler" penceresi). */
+/** 2.0 ile gelenler ("Yenilikler" penceresi; 1.0'dan güncelleyen bir kez görür). */
 private val WHATS_NEW = listOf(
-    "🔄" to "Yeni sürüm çıkınca uygulama haber verir; haftalık kaynaklar da kendiliğinden güncellenir.",
-    "📱" to "Ana ekran widget'ı: sıradaki sınav ve bugünkü çalışma süren.",
-    "✅" to "Haftalık liste: haftanın kaynaklarını işaretle, ilerlemeni gör.",
-    "🃏" to "Asistan bir sayfadan bilgi kartı hazırlar.",
-    "📦" to "Notlu belgeyi arkadaşına gönder; onun SouNote'unda notlarıyla birlikte açılır.",
-    "✨" to "Yeni görünüm, animasyonlar ve telefona uygun ekranlar.",
+    "🎨" to "Yeni görünüm: Obsidian Purple ve Midnight Blue koyu temalar, SouNote Light, istediğin vurgu rengi.",
+    "🏠" to "Kişiselleştirilebilir ana sayfa: modülleri sırala ya da gizle; çalışma serin ve hızlı erişim.",
+    "⭐" to "Favoriler ve sabitleme: belge, klasör, ders ve notlara tek dokunuşla ulaş.",
+    "🗓️" to "Planlayıcı: liste, hafta, ay ve zaman çizelgesi; ödevleri tamamlandı olarak işaretle, öncelik ver.",
+    "✍️" to "Yazı stüdyosu: essay şablonu, başlık/kalın/italik, kelime ve karakter sayacı, odak modu, yazma koçu.",
+    "📖" to "PDF'te okuma modu; lasso ile seçtiğin bölgeyi asistana açıklat ya da çevirt.",
+    "🔍" to "Evrensel arama: dersler, klasörler, belgeler, notlar, sınavlar; filtreler ve son aramalar.",
+    "⚙️" to "Kategorili ayarlar ve ayarlarda arama. Notların ve yedeklerin aynen korunur.",
 )
 
 /** Yeni sürüm ve "Yenilikler" pencereleri (ana ekranda). */
@@ -69,7 +71,7 @@ fun UpdateDialogs(vm: LibraryViewModel) {
     } else if (vm.showWhatsNew) {
         AlertDialog(
             onDismissRequest = { vm.dismissWhatsNew() },
-            title = { Text("SouNote 1.0 🎉") },
+            title = { Text("SouNote 2.0 🎉") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp),

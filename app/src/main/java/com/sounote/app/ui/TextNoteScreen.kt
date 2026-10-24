@@ -70,6 +70,21 @@ import androidx.core.content.FileProvider
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.ErrorLog
 import com.sounote.app.data.BodyPart
+import com.sounote.app.data.CoachSuggestion
+import com.sounote.app.data.Essay
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.em
 import com.sounote.app.data.Sketch
 import com.sounote.app.data.Sketches
 import com.sounote.app.data.TextNote
@@ -154,7 +169,59 @@ private fun insertAtCursor(v: TextFieldValue, t: String): TextFieldValue {
     return TextFieldValue(v.text.substring(0, s) + t + v.text.substring(e), TextRange(s + t.length))
 }
 
-private fun wordCount(text: String) = text.split(Regex("\\s+")).count { it.isNotBlank() && it !in setOf("☐", "☑", "•") }
+private fun wordCount(text: String) = Essay.countWords(text)
+
+/** Satır başına "# " / "## " başlık işareti koyar ya da kaldırır. */
+private fun toggleHeading(v: TextFieldValue, level: Int): TextFieldValue {
+    val text = v.text
+    val (start, _) = lineBounds(text, v.selection.start)
+    val current = Regex("^#{1,3} ").find(text.substring(start))?.value.orEmpty()
+    val wanted = "#".repeat(level) + " "
+    val replacement = if (current == wanted) "" else wanted
+    val newText = text.substring(0, start) + replacement + text.substring(start + current.length)
+    val cursor = (v.selection.start + replacement.length - current.length).coerceIn(start, newText.length)
+    return TextFieldValue(newText, TextRange(cursor))
+}
+
+/** Seçimi [marker] ile sarar (kalın: **, italik: _); seçim yoksa işaret çiftini koyup imleci arasına alır. */
+private fun wrapSelection(v: TextFieldValue, marker: String): TextFieldValue {
+    val s = v.selection.min.coerceIn(0, v.text.length)
+    val e = v.selection.max.coerceIn(s, v.text.length)
+    val inner = v.text.substring(s, e)
+    val t = v.text.substring(0, s) + marker + inner + marker + v.text.substring(e)
+    return if (s == e) TextFieldValue(t, TextRange(s + marker.length)) else TextFieldValue(t, TextRange(s, e + 2 * marker.length))
+}
+
+/** Yazarken Markdown işaretlerini biçimli gösterir; metin ve imleç konumları aynen kalır. */
+private class MarkdownVisual(private val accent: Color, private val dim: Color) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val s = text.text
+        val b = AnnotatedString.Builder(s)
+        var lineStart = 0
+        for (line in s.split('\n')) {
+            Regex("^(#{1,3}) ").find(line)?.let { m ->
+                val level = m.groupValues[1].length
+                b.addStyle(
+                    SpanStyle(fontWeight = FontWeight.Bold, fontSize = if (level == 1) 1.3.em else if (level == 2) 1.15.em else 1.05.em, color = accent),
+                    lineStart, lineStart + line.length,
+                )
+                b.addStyle(SpanStyle(color = dim), lineStart, lineStart + m.value.length)
+            }
+            lineStart += line.length + 1
+        }
+        Regex("\\*\\*(.+?)\\*\\*").findAll(s).forEach { m ->
+            b.addStyle(SpanStyle(fontWeight = FontWeight.Bold), m.range.first, m.range.last + 1)
+            b.addStyle(SpanStyle(color = dim), m.range.first, m.range.first + 2)
+            b.addStyle(SpanStyle(color = dim), m.range.last - 1, m.range.last + 1)
+        }
+        Regex("(?<![\\w_])_(?!\\s)(.+?)(?<!\\s)_(?![\\w_])").findAll(s).forEach { m ->
+            b.addStyle(SpanStyle(fontStyle = FontStyle.Italic), m.range.first, m.range.last + 1)
+            b.addStyle(SpanStyle(color = dim), m.range.first, m.range.first + 1)
+            b.addStyle(SpanStyle(color = dim), m.range.last, m.range.last + 1)
+        }
+        return TransformedText(b.toAnnotatedString(), OffsetMapping.Identity)
+    }
+}
 
 /** Klavyeyle yazılan not: başlık + metin, liste/yapılacaklar, otomatik kayıt. */
 @Composable
@@ -176,6 +243,12 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     var focusIdx by remember(note.id) { mutableStateOf(parts.indexOfLast { it is EditorPart.Text }) }
     var pad by remember { mutableStateOf(false) }
     var assistant by remember { mutableStateOf(false) }
+    // Odak modu: araç çubukları gizlenir, sadece metin kalır.
+    var focus by rememberSaveable { mutableStateOf(false) }
+    // Yan panel: 1 = yazma koçu, 2 = yapı (bölümler)
+    var panel by remember { mutableStateOf(0) }
+    // Koç önerisi uygulanmadan önceki hali (bir adım geri almak için)
+    var beforeCoach by remember { mutableStateOf<List<EditorPart>?>(null) }
     var editingSketch by remember { mutableStateOf<Sketch?>(null) }
     val sketchCache = remember(note.id) { mutableStateMapOf<String, Sketch>() }
     val scope = rememberCoroutineScope()
@@ -223,6 +296,18 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
         }
         focusIdx = maxOf(0, i - 1)
     }
+    /** Koçun önerisini metne uygular (kullanıcı "Uygula" deyince). Metinde bulunamazsa false. */
+    fun applySuggestion(sug: CoachSuggestion): Boolean {
+        val i = parts.indexOfFirst { it is EditorPart.Text && it.value.text.contains(sug.original) }
+        if (i < 0) return false
+        val v = (parts[i] as EditorPart.Text).value
+        val at = v.text.indexOf(sug.original)
+        val t = v.text.replaceRange(at, at + sug.original.length, sug.suggestion)
+        beforeCoach = parts
+        parts = parts.toMutableList().also { it[i] = EditorPart.Text(TextFieldValue(t, TextRange(at + sug.suggestion.length))) }
+        return true
+    }
+
     var menu by remember { mutableStateOf(false) }
     var shareMenu by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -280,16 +365,18 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Yazılı not", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                title = { Text(if (focus) "Odak modu" else "Yazı stüdyosu", maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = ::close) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri")
                     }
                 },
                 actions = {
-                    TextButton(onClick = { vm.updateTextFontSize(fontSize - 2f) }) { Text("A−", fontSize = 14.sp) }
-                    TextButton(onClick = { vm.updateTextFontSize(fontSize + 2f) }) { Text("A+", fontSize = 18.sp) }
-                    Box {
+                    TextButton(onClick = { focus = !focus; if (focus) panel = 0 }) { Text(if (focus) "Odaktan çık" else "🎯 Odak") }
+                    if (!focus) TextButton(onClick = { vm.updateTextFontSize(fontSize - 2f) }) { Text("A−", fontSize = 14.sp) }
+                    if (!focus) TextButton(onClick = { vm.updateTextFontSize(fontSize + 2f) }) { Text("A+", fontSize = 18.sp) }
+                    if (!focus) Box {
                         IconButton(onClick = { shareMenu = true }) {
                             Icon(Icons.Default.Share, contentDescription = "Paylaş")
                         }
@@ -298,7 +385,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                             DropdownMenuItem(text = { Text("PDF olarak paylaş") }, onClick = { shareMenu = false; sharePdf() })
                         }
                     }
-                    Box {
+                    if (!focus) Box {
                         IconButton(onClick = { menu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Diğer")
                         }
@@ -337,12 +424,27 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().imePadding()) {
             if (vm.busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-            // Liste düğmeleri
-            Row(
+            // Biçim ve araç düğmeleri (odak modunda gizli)
+            if (!focus) Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             ) {
+                AssistChip(onClick = { panel = if (panel == 1) 0 else 1 }, label = { Text("🎓 Yazma koçu") })
+                AssistChip(onClick = { panel = if (panel == 2) 0 else 2 }, label = { Text("📑 Yapı") })
+                AssistChip(onClick = { updateFocused { toggleHeading(it, 1) } }, label = { Text("H1", fontWeight = FontWeight.Bold) })
+                AssistChip(onClick = { updateFocused { toggleHeading(it, 2) } }, label = { Text("H2", fontWeight = FontWeight.SemiBold) })
+                AssistChip(onClick = { updateFocused { wrapSelection(it, "**") } }, label = { Text("B", fontWeight = FontWeight.Bold) })
+                AssistChip(onClick = { updateFocused { wrapSelection(it, "_") } }, label = { Text("I", fontStyle = FontStyle.Italic) })
+                AssistChip(
+                    onClick = {
+                        updateFocused { v ->
+                            val prefix = if (v.text.isBlank() || v.text.endsWith("\n\n")) "" else if (v.text.endsWith("\n")) "\n" else "\n\n"
+                            TextFieldValue(v.text + prefix + Essay.TEMPLATE, TextRange(v.text.length + prefix.length + "## Introduction\n".length))
+                        }
+                    },
+                    label = { Text("🏗️ Essay şablonu") },
+                )
                 AssistChip(onClick = { assistant = true }, label = { Text("🤖 Asistan") })
                 AssistChip(onClick = { pad = !pad }, label = { Text(if (pad) "✍️ Kalemle yaz (açık)" else "✍️ Kalemle yaz") })
                 AssistChip(onClick = { editingSketch = Sketch(Sketches.newId(), emptyList()) }, label = { Text("🎨 Çizim ekle") })
@@ -356,11 +458,14 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                     label = { Text("📅 Tarih") },
                 )
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.TopCenter) {
+            if (!focus) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+            val side = panel != 0 && maxWidth >= 900.dp
+            Row(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                 Column(
                     Modifier
-                        .widthIn(max = 860.dp)
+                        .widthIn(max = if (focus) 720.dp else 860.dp)
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 28.dp, vertical = 20.dp),
@@ -381,13 +486,15 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                             inner()
                         },
                     )
+                    val plain = note.copy(body = bodyText).plainBody
                     Text(
-                        "$edited · ${wordCount(note.copy(body = bodyText).plainBody)} kelime",
+                        "$edited · ${wordCount(plain)} kelime · ${plain.count { !it.isWhitespace() }} karakter · otomatik kaydedilir",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 6.dp, bottom = 18.dp),
                     )
                     val textStyle = TextStyle(fontSize = fontSize.sp, lineHeight = (fontSize * 1.5f).sp, color = textColor)
+                    val visual = MarkdownVisual(MaterialTheme.colorScheme.primary, textColor.copy(alpha = 0.35f))
                     val lastText = parts.indexOfLast { it is EditorPart.Text }
                     parts.forEachIndexed { i, part ->
                         when (part) {
@@ -398,6 +505,7 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                                     focusIdx = i
                                 },
                                 textStyle = textStyle,
+                                visualTransformation = visual,
                                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                                 modifier = Modifier
@@ -424,6 +532,34 @@ fun TextNoteScreen(note: TextNote, vm: LibraryViewModel) {
                         }
                     }
                 }
+            }
+            if (side) {
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Box(Modifier.width(380.dp).fillMaxHeight()) {
+                    WritingSidePanel(
+                        vm, panel, bodyText,
+                        onApply = ::applySuggestion,
+                        canUndo = beforeCoach != null,
+                        onUndo = { beforeCoach?.let { parts = it }; beforeCoach = null },
+                        onClose = { panel = 0 },
+                    )
+                }
+            }
+            }
+            if (panel != 0 && !side) {
+                ActionSheet(if (panel == 1) "🎓 Yazma koçu" else "📑 Yapı", onDismiss = { panel = 0 }) {
+                    Box(Modifier.fillMaxWidth().heightIn(max = 560.dp)) {
+                        WritingSidePanel(
+                            vm, panel, bodyText,
+                            onApply = ::applySuggestion,
+                            canUndo = beforeCoach != null,
+                            onUndo = { beforeCoach?.let { parts = it }; beforeCoach = null },
+                            onClose = { panel = 0 },
+                            showHeader = false,
+                        )
+                    }
+                }
+            }
             }
             if (pad) {
                 HandwritingPad(
@@ -534,11 +670,11 @@ internal fun TextNoteCard(
                 "Aa",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(Brand.Blue)
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             )
             if (menu != null) {
@@ -599,6 +735,11 @@ internal fun sharePackageFile(context: android.content.Context, file: java.io.Fi
 internal fun TextNoteMenuItems(note: TextNote, vm: LibraryViewModel, dismiss: () -> Unit, onDelete: () -> Unit) {
     val context = LocalContext.current
     DropdownMenuItem(text = { Text("Aç") }, onClick = { dismiss(); vm.openTextNote(note) })
+    val fav = vm.isFavorite(com.sounote.app.data.QuickItem.NOTE, note.id)
+    DropdownMenuItem(
+        text = { Text(if (fav) "Favorilerden çıkar" else "Favorilere ekle") },
+        onClick = { dismiss(); vm.toggleFavorite(com.sounote.app.data.QuickItem.NOTE, note.id) },
+    )
     DropdownMenuItem(
         text = { Text(if (note.pinned) "Sabitlemeyi kaldır" else "Başa sabitle") },
         onClick = { dismiss(); vm.togglePinText(note) },

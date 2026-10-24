@@ -1,7 +1,14 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.sounote.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,13 +65,32 @@ import com.sounote.app.LibraryViewModel.SearchHit
 import com.sounote.app.data.SearchIndex
 import kotlinx.coroutines.delay
 
-/** Her şeyde ara: belge adları, PDF metinleri (sayfa sayfa), yazılı notlar, bilgi kartları. */
+/** Arama sonucunun türü (filtre çipleri ve gruplar). */
+private enum class HitKind(val label: String) {
+    COURSE("Dersler"), FOLDER("Klasörler"), DOC("Belgeler"), NOTE("Notlar"), EXAM("Sınav ve ödevler"), PDF("PDF içeriği"), CARD("Kartlar"),
+}
+
+private fun kindOf(h: SearchHit) = when (h) {
+    is SearchHit.CourseHit, is SearchHit.TopicHit -> HitKind.COURSE
+    is SearchHit.FolderHit -> HitKind.FOLDER
+    is SearchHit.DocTitle -> HitKind.DOC
+    is SearchHit.Note -> HitKind.NOTE
+    is SearchHit.ExamHit -> HitKind.EXAM
+    is SearchHit.PdfPage -> HitKind.PDF
+    is SearchHit.FlashCard -> HitKind.CARD
+}
+
+/**
+ * Evrensel arama: dersler ve konular, klasörler, belge adları, yazılı notlar, sınav/ödevler,
+ * PDF içerikleri (sayfa sayfa) ve bilgi kartları. Hepsi cihazda aranır; hiçbir şey sunucuya gitmez.
+ */
 @Composable
 fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchHit>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var cardHit by remember { mutableStateOf<SearchHit.FlashCard?>(null) }
+    var filter by remember { mutableStateOf<HitKind?>(null) }
     val focus = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -78,9 +104,17 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
             return@LaunchedEffect
         }
         delay(250)
+        delay(250)
         searching = true
         results = vm.search(query)
         searching = false
+    }
+
+    /** Sonuca dokununca: aramayı hatırla, pencereyi kapat, içeriği aç. */
+    fun go(action: () -> Unit) {
+        vm.rememberSearch(query)
+        onDismiss()
+        action()
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
@@ -95,7 +129,7 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                         value = query,
                         onValueChange = { query = it },
                         singleLine = true,
-                        placeholder = { Text("Belgelerde, notlarda, kartlarda ara…") },
+                        placeholder = { Text("Ders, belge, not, sınav ara…") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
                             if (query.isNotEmpty()) {
@@ -112,6 +146,18 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                         modifier = Modifier.weight(1f).focusRequester(focus),
                     )
                 }
+                val counts = results.groupingBy(::kindOf).eachCount()
+                if (results.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.widthIn(max = 820.dp).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                    ) {
+                        FilterChip(selected = filter == null, onClick = { filter = null }, label = { Text("Tümü (${results.size})") })
+                        HitKind.entries.filter { (counts[it] ?: 0) > 0 }.forEach { k ->
+                            FilterChip(selected = filter == k, onClick = { filter = if (filter == k) null else k }, label = { Text("${k.label} (${counts[k]})") })
+                        }
+                    }
+                }
                 vm.indexing?.let { (i, n) ->
                     Column(Modifier.widthIn(max = 820.dp).fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)) {
                         Text(
@@ -124,45 +170,81 @@ fun SearchDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                 }
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
                     val q = SearchIndex.norm(query.trim())
+                    val shown = results.filter { filter == null || kindOf(it) == filter }
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         modifier = Modifier.widthIn(max = 820.dp).fillMaxSize(),
                     ) {
                         if (q.length < 2) {
+                            if (vm.recentSearches.isNotEmpty()) {
+                                item {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Son aramalar", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                                        TextButton(onClick = vm::clearRecentSearches) { Text("Temizle") }
+                                    }
+                                }
+                                item {
+                                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        vm.recentSearches.forEach { r ->
+                                            AssistChip(onClick = { query = r }, label = { Text("🕘 $r") })
+                                        }
+                                    }
+                                }
+                            }
                             item {
                                 Hint(
-                                    "Bir kelime yaz: belge adlarında, PDF'lerin içindeki yazılarda (sayfa sayfa), yazılı notlarında " +
-                                        "ve bilgi kartlarında aranır. Taranmış (fotoğraf) PDF'lerin içi aranamaz.",
+                                    "Bir kelime yaz: dersler ve konular, klasörler, belge adları, yazılı notlar, sınav ve ödevler, " +
+                                        "PDF'lerin içindeki yazılar (sayfa sayfa) ve bilgi kartları aranır. Arama cihazda yapılır. " +
+                                        "Taranmış (fotoğraf) PDF'lerin içi aranamaz.",
                                 )
                             }
                         } else if (!searching && results.isEmpty()) {
                             item { Hint("\"${query.trim()}\" bulunamadı") }
-                        } else if (results.isNotEmpty()) {
-                            item {
+                        }
+                        shown.groupBy(::kindOf).toSortedMap().forEach { (kind, hits) ->
+                            item(key = "h:" + kind.name) {
                                 Text(
-                                    "${results.size} sonuç",
+                                    "${kind.label} · ${hits.size}",
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 8.dp, start = 4.dp),
                                 )
                             }
-                        }
-                        items(results) { hit ->
-                            when (hit) {
-                                is SearchHit.DocTitle -> HitRow("📄", highlight(hit.doc.title, q), "Belge") {
-                                    onDismiss()
-                                    vm.open(hit.doc)
-                                }
-                                is SearchHit.PdfPage -> HitRow("🔎", highlight(hit.snippet, q), "${hit.doc.title} · sayfa ${hit.page + 1}") {
-                                    onDismiss()
-                                    vm.openAt(hit.doc, hit.page)
-                                }
-                                is SearchHit.Note -> HitRow("📝", highlight(hit.note.displayTitle, q), hit.snippet) {
-                                    onDismiss()
-                                    vm.openTextNote(hit.note)
-                                }
-                                is SearchHit.FlashCard -> HitRow("🃏", highlight(hit.card.frontText.ifBlank { "(resimli kart)" }, q), "${hit.doc.title} · kart") {
-                                    cardHit = hit
+                            items(hits) { hit ->
+                                when (hit) {
+                                    is SearchHit.CourseHit -> HitRow(hit.course.emoji.ifEmpty { "📘" }, highlight(hit.course.name, q), "Ders · ${hit.course.topics.size} konu") {
+                                        go {
+                                            vm.focusCourse = hit.course.id
+                                            vm.tab = LibraryViewModel.Tab.COURSES
+                                        }
+                                    }
+                                    is SearchHit.TopicHit -> HitRow("🧩", highlight(hit.topic.name, q), "${hit.course.name} · konu · ${hit.topic.resources.size} kaynak") {
+                                        go {
+                                            vm.focusTopic = hit.topic.id
+                                            vm.tab = LibraryViewModel.Tab.COURSES
+                                        }
+                                    }
+                                    is SearchHit.FolderHit -> HitRow(hit.folder.icon.ifEmpty { "📁" }, highlight(hit.folder.name, q), "Klasör") {
+                                        go {
+                                            vm.openUserFolder(hit.folder.id)
+                                            vm.tab = LibraryViewModel.Tab.LIBRARY
+                                        }
+                                    }
+                                    is SearchHit.ExamHit -> HitRow(
+                                        hit.exam.kindEmoji,
+                                        highlight(hit.exam.title.ifBlank { hit.exam.course }, q),
+                                        "${hit.exam.kindLabel} · ${hit.exam.course} · ${countdownText(hit.exam.time)}",
+                                    ) { go { vm.tab = LibraryViewModel.Tab.EXAMS } }
+                                    is SearchHit.DocTitle -> HitRow("📄", highlight(hit.doc.title, q), "Belge") { go { vm.open(hit.doc) } }
+                                    is SearchHit.PdfPage -> HitRow("🔎", highlight(hit.snippet, q), "${hit.doc.title} · sayfa ${hit.page + 1}") {
+                                        go { vm.openAt(hit.doc, hit.page) }
+                                    }
+                                    is SearchHit.Note -> HitRow("📝", highlight(hit.note.displayTitle, q), hit.snippet) { go { vm.openTextNote(hit.note) } }
+                                    is SearchHit.FlashCard -> HitRow("🃏", highlight(hit.card.frontText.ifBlank { "(resimli kart)" }, q), "${hit.doc.title} · kart") {
+                                        vm.rememberSearch(query)
+                                        cardHit = hit
+                                    }
                                 }
                             }
                         }

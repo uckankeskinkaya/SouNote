@@ -59,7 +59,17 @@ data class Exam(
     val kind: String = "exam",
     /** Saat yerine gösterilecek yazı (ör. "4. ders", "10. hafta"). */
     val slot: String = "",
+    /** Öncelik: 0 düşük, 1 normal, 2 yüksek (kendi eklediklerimde). */
+    val priority: Int = 1,
+    /** Tamamlandı mı (ödevler için; ortak katalogdakiler cihazda ayrıca tutulur). */
+    val done: Boolean = false,
 ) {
+    val kindLabel get() = when (kind) {
+        "task" -> "Ödev"
+        "presentation" -> "Sunum"
+        else -> "Sınav"
+    }
+
     val kindEmoji get() = when (kind) {
         "task" -> "📝"
         "presentation" -> "🎤"
@@ -241,6 +251,11 @@ class ExamStore(context: Context) {
                 time = o.getLong("time"),
                 place = o.optString("place"),
                 notes = o.optString("notes"),
+                // 2.0 ile eklenen alanlar: eski dosyalarda yok, varsayılanla okunur.
+                kind = o.optString("kind", "exam").ifBlank { "exam" },
+                slot = o.optString("slot"),
+                priority = o.optInt("priority", 1),
+                done = o.optBoolean("done", false),
             )
         }
     }.getOrDefault(emptyList())
@@ -250,7 +265,8 @@ class ExamStore(context: Context) {
         exams.filter { !it.global }.forEach {
             arr.put(
                 JSONObject().put("id", it.id).put("course", it.course).put("title", it.title)
-                    .put("time", it.time).put("place", it.place).put("notes", it.notes),
+                    .put("time", it.time).put("place", it.place).put("notes", it.notes)
+                    .put("kind", it.kind).put("slot", it.slot).put("priority", it.priority).put("done", it.done),
             )
         }
         val tmp = File(file.path + ".tmp")

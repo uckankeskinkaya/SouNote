@@ -57,5 +57,5 @@ Android 10 ve üstü, tablet ve telefon.
 - Kotlin + Jetpack Compose, `compileSdk 36`, `minSdk 29`. PDF: Android `PdfRenderer` + [PdfBox-Android](https://github.com/TomRoush/PdfBox-Android).
 - Her push'ta GitHub Actions APK'yı derler, emülatörde açıp ekranları gezerek **çökme testi** yapar; test geçerse [Releases](https://github.com/uckankeskinkaya/SouNote/releases)'a yükler.
 - Ders kataloğu `app/src/main/assets/catalog.json` (`tools/make_catalog.py` ile üretilir); her sürümle birlikte yayınlanır, uygulama açılışta en yenisini çeker.
-- İmza anahtarı `keystore/sounote.jks` sabittir; değişirse güncellemeler eski sürümün üstüne kurulmaz.
+- İmza anahtarları depoda tutulmaz, GitHub Secrets'tadır (`SOUNOTE_KEYSTORE_B64`, `SOUNOTE_OLD_KEYSTORE_B64`, `SOUNOTE_KEY_PASSWORD`). Anahtar v3 anahtar döndürmeyle değiştirildi; eski sürümlerin üstüne güncelleme kurulur.
 - Ayrıntılı teknik notlar: [`CLAUDE.md`](CLAUDE.md).

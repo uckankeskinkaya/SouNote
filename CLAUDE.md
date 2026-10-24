@@ -132,7 +132,7 @@ Word/PPT kaynakları (🧪, build-88+): satırda "Drive" + "Aç ↗" (vm.downloa
 ACTION_VIEW → WPS/Office). Kullanıcı oradan PDF olarak SouNote'a paylaşır (SEND pdf). PDF'e çevirme yok: GitHub'da kopya (kullanıcı: okul
 materyali, olmaz) ve Drive Apps Script yöntemi kullanıcı isteğiyle bırakıldı.
 
-## SouNote 2.0 (🧪, dal ccr-c4eded18-21kvrf)
+## SouNote 2.0 (✅ yayınlandı build-96, 24 Ekim; dal ccr-c4eded18-21kvrf → main)
 ccr-aefb7f13-i7jc0n dalı (1.2–1.4: anahtar değişimi, test kanalı + publish.yml, Word/PPT kaynakları, Writing puanlama, çalışma serisi,
 bugünkü tekrar) bu dala birleştirildi. Yayın akışı onlarınki: her push "Test 2.0.<run>" ön sürümü; herkese açmak için
 .github/publish/request.json (version/title/notes/build) itilir. Writing puanlama ekranı ui/EssayGraderScreen.kt (data/Essays.kt Essay),
@@ -142,13 +142,17 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
   LocalMotionLevel (prefs motionLevel; sistem animasyon ölçeği 0 ise OFF), LocalSouColors. Ortak bileşenler ui/Components.kt.
 - Gezinme (AppShell): <600dp alt çubuk (Ayarlar ana sayfadaki ⚙), 600–1000dp ray, ≥1000dp geniş menü; prefs navStyle. Sekmeler: HOME, LIBRARY, COURSES, EXAMS (Planlayıcı), WRITING, SETTINGS.
 - Ana sayfa modülleri: data/QuickAccess.kt HomeModule/HomeLayout (prefs homeOrder, homeHidden). Hızlı erişim QuickItem (prefs quickAccess JSON; doc/folder/course/note, pinned).
-  Çalışma serisi studyStreak() (studyday_ prefs, ≥1 dk).
 - Planlayıcı: Exam.priority/done (exams.json'a eklendi, eski dosya okunur); katalogdaki ödevlerin tamamı prefs examDone; tamamlananlara hatırlatma kurulmaz. prefs plannerView.
-- Yazı stüdyosu: WritingScreen + TextNoteScreen (Markdown işaretleri düz metinde: # başlık, **kalın**, _italik_; MarkdownVisual; PDF'te Essay.plain ile temizlenir),
-  data/Writing.kt Essay + WritingCoach (mevcut AssistantClient; öneri JSON; metin sadece "Uygula" ile değişir), WritingCoachPanel.
+- Yazı stüdyosu: WritingScreen + TextNoteScreen (Markdown işaretleri düz metinde: # başlık, **kalın**, _italik_; MarkdownVisual; PDF'te EssayText.plain ile temizlenir),
+  data/Writing.kt EssayText + WritingCoach (mevcut AssistantClient; öneri JSON; metin sadece "Uygula" ile değişir), WritingCoachPanel.
 - PDF: okuma modu (prefs readingMode, PdfDocumentView.readOnly → panOnly), lasso bölgesi onLassoRegion → PdfText.region (PDFTextStripperByArea) → AssistantSource.Document.selection.
 - Arama: SearchHit CourseHit/TopicHit/FolderHit/ExamHit + filtre çipleri, son aramalar (prefs recentSearches). Ayarlar: kategoriler + arama (SettingsScreen Entry).
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
+
+Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).
+3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),
+çizim ve bilgi kartı denemeleri, kalite katmanları, WebGL'siz statik görünüm. Logo: "A. Dengeli" (site/brand-src, make_logo.py).
+Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/README.md. build.yml site/** değişikliğinde APK derlemez.
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

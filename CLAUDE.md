@@ -166,6 +166,14 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Çıkartmalar (Art.kt STICKERS, sticker_*.png; vm.importSticker → resim olarak eklenir), paletin üstünde son kullanılan renkler (customColors).
 - Sınav öncesi plan (ui/StudyTools.kt ExamPlanDialog, AssistantClient.studyPlan → kendi sınavlara task, slot Exam.PLAN_SLOT, hatırlatma yok),
   deneme sınavı (PracticeSetupDialog/PracticeTestScreen, AssistantClient.practiceTest → Question; Dersler'de kart).
+- Konu haritası (ui/TopicMap.kt; vm.mastery = kaynak ilerlemesi + deneme puanı, prefs testScores JSON konu → %), ortak katalog
+  ön plana gelince 3 saatte bir yenilenir ve yeni kaynak sayısı bildirilir.
+- Speaking pratiği (ui/SpeakingScreen.kt; SpeechRecognizer en-US, duraklamada yeniden başlatılır; manifest <queries> RecognitionService;
+  AssistantClient.gradeSpeaking 4 ölçüt × 25, EssayFeedback; SpeakingStore filesDir/speaking yedeğe girer).
+- Katmanlar (ink/Layers.kt LayerSet, ink/<belge>/layers.json; Stroke.layer, InkStore v6; silgi/lasso sadece etkin katmanda,
+  gizli katman çizilmez/dışa aktarılmaz; sadece çizgiler, yazı/resim katmansız).
+- Sonsuz tuval: PaperSize.CANVAS 4800×4800 pt tek sayfa; PdfDocumentView canvasMode (genişlik ≥ CANVAS_MIN_PT): A4 ölçeğinde yerleşir,
+  minZoom tamamını gösterir, kaldığın yer prefs canvasView_<id>.
 - Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).

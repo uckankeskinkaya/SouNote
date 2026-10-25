@@ -175,6 +175,11 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Sonsuz tuval: PaperSize.CANVAS 4800×4800 pt tek sayfa; PdfDocumentView canvasMode (genişlik ≥ CANVAS_MIN_PT): A4 ölçeğinde yerleşir,
   minZoom tamamını gösterir, kaldığın yer prefs canvasView_<id>.
 - Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
+- 3.0.1 (🧪, build-127+): kalemler yeniden yazıldı. Kullanıcı (ekran görüntüsü): uçlarda kocaman damla, ortada ince, boncuklu çizgi.
+  Neden: basınç katsayısı 0.35–1.6 (çok geniş) + kalınlık 12 kademeye bölünüp her kademe ayrı yuvarlak uçlu yol. Şimdi ink/StrokeOutline.kt:
+  basınçlı dolma/jel, fırça, kaligrafi tek parça doldurulan dış hat (yakın noktalar atılır, basınç ileri-geri yumuşatılır, penFactor 0.62–1.38,
+  uçlarda smoothstep incelme, keskin dönüşte daire); PdfExporter aynı hattı doldurur; ön tampon taper=false. Tahmin noktaları da yumuşatılır.
+  Python + Chromium (Skia, nonzero) ile görsel denendi.
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).
 3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),

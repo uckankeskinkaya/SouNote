@@ -10,6 +10,7 @@ import com.sounote.app.data.LibraryRepository
 import com.sounote.app.ink.InkTool
 import com.sounote.app.ink.PageContent
 import com.sounote.app.ink.Stroke
+import com.sounote.app.ink.StrokeOutline
 import com.sounote.app.ink.StrokeRenderer
 import com.sounote.app.ink.TextBox
 import com.sounote.app.ink.TextBoxes
@@ -171,47 +172,46 @@ object PdfExporter {
         if (stroking) cs.setStrokingColor(r, g, b) else cs.setNonStrokingColor(r, g, b)
     }
 
-    /** Ekrandaki [StrokeRenderer] ile aynı: kalınlık kademelerine bölünmüş, yuvarlak uçlu yollar. */
+    /** Ekrandaki [StrokeRenderer] ile aynı: değişken kalınlıkta dış hat, sabitte yuvarlak uçlu yol. */
     private fun drawStroke(cs: PDPageContentStream, s: Stroke) {
         val pts = s.points
         val n = s.pointCount
         if (n == 0) return
         setColor(cs, s.color, stroking = true)
         setColor(cs, s.color, stroking = false)
-        val levels = StrokeRenderer.levels(s.tool, s.width, s.pressureSensitive, pts, n)
-        val l = StrokeRenderer.LEVELS
-
+        if (StrokeOutline.variable(s.tool, s.pressureSensitive)) {
+            // Ekrandaki gibi tek parça dış hat, doldurulur
+            val o = StrokeOutline.build(s.tool, s.width, s.pressureSensitive, pts, n)
+            if (o.count >= 3) {
+                cs.moveTo(o.poly[0], o.poly[1])
+                for (i in 1 until o.count) cs.lineTo(o.poly[i * 2], o.poly[i * 2 + 1])
+                cs.closePath()
+                cs.fill()
+            }
+            // Daireler ayrı doldurulur (yönleri farklı olunca çokgende delik açmasın)
+            for (i in 0 until o.dotCount) {
+                circle(cs, o.dots[i * 3], o.dots[i * 3 + 1], o.dots[i * 3 + 2])
+                cs.fill()
+            }
+            return
+        }
         if (n == 1) {
-            circle(cs, pts[0], pts[1], s.width * (levels?.get(0) ?: l) / l / 2f)
+            circle(cs, pts[0], pts[1], s.width / 2f)
             cs.fill()
             return
         }
-        if (levels == null) {
-            if (s.tool == InkTool.DASHED || s.tool == InkTool.DOTTED) {
-                val (on, off) = if (s.tool == InkTool.DOTTED) {
-                    StrokeRenderer.DOT_ON to StrokeRenderer.dotGap(s.width)
-                } else {
-                    StrokeRenderer.dashIntervals(s.width)
-                }
-                cs.saveGraphicsState()
-                cs.setLineDashPattern(floatArrayOf(on, off), 0f)
-                run(cs, pts, 0, n - 1, s.width)
-                cs.restoreGraphicsState()
+        if (s.tool == InkTool.DASHED || s.tool == InkTool.DOTTED) {
+            val (on, off) = if (s.tool == InkTool.DOTTED) {
+                StrokeRenderer.DOT_ON to StrokeRenderer.dotGap(s.width)
             } else {
-                run(cs, pts, 0, n - 1, s.width)
+                StrokeRenderer.dashIntervals(s.width)
             }
-            return
-        }
-        var runStart = 0
-        var runLevel = levels[0]
-        for (i in 1 until n) {
-            if (i == n - 1) {
-                run(cs, pts, runStart, i, s.width * runLevel / l)
-            } else if (levels[i] != runLevel) {
-                run(cs, pts, runStart, i, s.width * runLevel / l)
-                runStart = i
-                runLevel = levels[i]
-            }
+            cs.saveGraphicsState()
+            cs.setLineDashPattern(floatArrayOf(on, off), 0f)
+            run(cs, pts, 0, n - 1, s.width)
+            cs.restoreGraphicsState()
+        } else {
+            run(cs, pts, 0, n - 1, s.width)
         }
     }
 

@@ -227,6 +227,8 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     var testOpen by remember { mutableStateOf(false) }
     var mapOpen by remember { mutableStateOf(false) }
     var speakingOpen by remember { mutableStateOf(false) }
+    var exerciseOpen by remember { mutableStateOf(false) }
+    if (exerciseOpen) ExerciseScreen(vm, course = course) { exerciseOpen = false }
     if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
     if (testOpen) PracticeSetupDialog(vm, course) { testOpen = false }
     if (mapOpen) {
@@ -250,6 +252,15 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
     ) {
         item { CourseHeader(vm, course) }
+        if (course.id == com.sounote.app.data.DriveAuto.COURSE_ID) {
+            item {
+                Text(
+                    "Drive'daki ders klasörüne yeni eklenen dosyalar. Konularına ayrılınca buradan kendi derslerine geçer.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -277,6 +288,20 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
                     }
                     Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+            }
+        }
+        item {
+            // Asistan karışık türde alıştırma hazırlar; cevaplar gösterilir ya da asistan değerlendirir.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().card().clickable { exerciseOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                IconBadge(SouIcons.EditNote, MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Alıştırma", style = MaterialTheme.typography.titleSmall)
+                    Text("Boşluk doldurma, yeniden yazma, açık uçlu; asistan kontrol eder", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
@@ -564,8 +589,8 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
-                    // Gün gün: Pazartesi … Cuma, sonra kendi çalışman
-                    for (day in listOf(1, 2, 3, 4, 5, 0)) {
+                    // Gün gün: Pazartesi … Cuma, günü belli olmayanlar (6), sonra kendi çalışman
+                    for (day in listOf(1, 2, 3, 4, 5, 6, 0)) {
                         val rows = weekRes.filter { it.third.day == day }.map { it.third.order to it } +
                             weekMissing.filter { it.day == day }.map { it.order to it }
                         if (rows.isEmpty()) continue
@@ -626,7 +651,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
 }
 
 private val DAY_NAMES = mapOf(
-    1 to "Pazartesi", 2 to "Salı", 3 to "Çarşamba", 4 to "Perşembe", 5 to "Cuma", 0 to "Kendi çalışman (self-study)",
+    1 to "Pazartesi", 2 to "Salı", 3 to "Çarşamba", 4 to "Perşembe", 5 to "Cuma", 6 to "Bu hafta", 0 to "Kendi çalışman (self-study)",
 )
 
 private fun kindIcon(kind: String) = when (kind) {

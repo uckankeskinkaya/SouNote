@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-23d",
+ "updated": "2026-10-26c",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -274,6 +274,33 @@
        "order": 18
       }
      ]
+    },
+    {
+     "id": "preferences",
+     "name": "Expressing Preferences (prefer, would rather)",
+     "resources": [
+      {
+       "title": "PPT (Expressing Preferences)",
+       "url": "https://drive.google.com/file/d/1D_8VVG1tIzjuYWYlM7bjF5UH-ZEEe1p4/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Expressing Preferences) (PDF)",
+       "url": "https://drive.google.com/file/d/1Nn2kF4m9EIp4N2McKDeEAH8MHI3NvkY2/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 2,
+       "order": 5
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Expressing Preferences)",
+       "url": "https://drive.google.com/file/d/1Vk3XO0zRl85QRTRt4YrgPaGJCEMoh4cO/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 5,
+       "order": 14
+      }
+     ]
     }
    ]
   },
@@ -337,7 +364,7 @@
     },
     {
      "id": "vocab-u3",
-     "name": "Unit 3 (3A)",
+     "name": "Unit 3 (3A–3D)",
      "resources": [
       {
        "title": "HANDOUT (Vocabulary B1+ U3A)",
@@ -346,6 +373,22 @@
        "week": 5,
        "day": 1,
        "order": 0
+      },
+      {
+       "title": "HANDOUT (Vocabulary How To B1+ 3C)",
+       "url": "https://drive.google.com/file/d/1Pk8l-46OZ1YvQgfohMf65Qr-Nw7Yt-1s/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 1,
+       "order": 4
+      },
+      {
+       "title": "HANDOUT (Vocabulary and Grammar B1+ U3D)",
+       "url": "https://drive.google.com/file/d/11jmuk-sELqXbyPIuN36fuP3losypVWQI/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 5,
+       "order": 15
       }
      ]
     },
@@ -389,7 +432,7 @@
    "topics": [
     {
      "id": "reading-strategies",
-     "name": "Reading Strategies (I–III)",
+     "name": "Reading Strategies (I–IV)",
      "resources": [
       {
        "title": "PPT (Reading Strategies I - Introduction)",
@@ -414,6 +457,27 @@
        "week": 5,
        "day": 4,
        "order": 20
+      },
+      {
+       "title": "PPT Reading Strategies IV (Inferring Unknown Words)",
+       "url": "https://drive.google.com/file/d/1lEZ83bmImXFIsv3vx2SGovsN4D_qgmYc/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT Reading Strategies IV (Inferring Unknown Words) (PDF)",
+       "url": "https://drive.google.com/file/d/1yFHYG_LVGTwJ1Jp3omZaZ_WYZQW_spu-/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 1,
+       "order": 0
+      },
+      {
+       "title": "HANDOUT (Inferring Unknown Words)",
+       "url": "https://drive.google.com/file/d/1oGHm4_U_pq3mqkgrhPZsmwRV0jYjy2mU/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 1,
+       "order": 1
       }
      ]
     },
@@ -457,7 +521,7 @@
    "topics": [
     {
      "id": "listening-strategies",
-     "name": "Listening Strategies",
+     "name": "Listening Strategies (I–II)",
      "resources": [
       {
        "title": "PPT (Listening Strategies I - Introduction)",
@@ -466,6 +530,38 @@
        "week": 5,
        "day": 2,
        "order": 9
+      },
+      {
+       "title": "PPT (Listening Strategies II)",
+       "url": "https://drive.google.com/file/d/1ur5rNXi1noozH40uaWjrCB1BxabS534d/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 3,
+       "order": 8
+      },
+      {
+       "title": "HANDOUT (Listening Strategies II)",
+       "url": "https://drive.google.com/file/d/1IV4iH5figb3pxUhRK13hiw0HHHU4ihcC/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 3,
+       "order": 9
+      },
+      {
+       "title": "Listening 1 - Sounds for a Tiny Dragon",
+       "url": "https://drive.google.com/file/d/1nCgb4uvRBz43bFH9YQfgrArGDlm_GVJP/view",
+       "kind": "audio",
+       "week": 6,
+       "day": 3,
+       "order": 10
+      },
+      {
+       "title": "Listening 2 - Spoilers in the Group Chat",
+       "url": "https://drive.google.com/file/d/1V96DE_FYSk7Emzax3gPFBlhHSD92iVgK/view",
+       "kind": "audio",
+       "week": 6,
+       "day": 3,
+       "order": 11
       }
      ]
     }
@@ -510,6 +606,19 @@
        "url": "https://drive.google.com/file/d/11eGwGk0WCJa87pTNAv-TIR3DxRsloxku/view",
        "kind": "pdf",
        "week": 4,
+       "day": 5,
+       "order": 13
+      },
+      {
+       "title": "PPT (Opinion Essay)",
+       "url": "https://drive.google.com/file/d/1TWJ6miiyhAYiMHnzOSNCklz1Gou2hF0-/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Opinion Essay) (PDF)",
+       "url": "https://drive.google.com/file/d/13gACBrasXEtBJ-Z98w8R_8a2Ht9NTKl-/view",
+       "kind": "pdf",
+       "week": 6,
        "day": 5,
        "order": 13
       }
@@ -564,6 +673,14 @@
        "week": 5,
        "day": 2,
        "order": 11
+      },
+      {
+       "title": "WRITING HANDOUT (Opinion Essay) PRACTICE III",
+       "url": "https://drive.google.com/file/d/1gv8txxHdzxcrCuGGvuT-yHj-2I8C6qGQ/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 3,
+       "order": 12
       },
       {
        "title": "Opinion essay peer evaluation checklist",
@@ -642,6 +759,27 @@
        "title": "PPT SPEAKING (The Mic is Yours)",
        "url": "https://drive.google.com/file/d/17s_izwe8xz880uEz-C8agQ45pj2CJUGY/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Expressing Preferences)",
+       "url": "https://drive.google.com/file/d/1tgGpkvjBL22AA7kyOxdSbt1L6C1IASxW/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Expressing Preferences) (PDF)",
+       "url": "https://drive.google.com/file/d/1lHUTFnruClxDL7YlZtcsqGj0dhHpvKLL/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 2,
+       "order": 6
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Role Play Job Interview)",
+       "url": "https://drive.google.com/file/d/18KvlJWxo_2B6HSh1GHosJVYojqw9yC1X/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 2,
+       "order": 7
       }
      ]
     },
@@ -672,6 +810,19 @@
        "title": "PPT (Group Project: Our Class Our Story)",
        "url": "https://drive.google.com/file/d/1a6rxpbgYHlWfIyP8hOPNEfGz0cHZStqf/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT (Presentation Skills I)",
+       "url": "https://drive.google.com/file/d/1kfuX96jLbPRLR2Ns3Tf-i_cRIN_Bm8lG/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Presentation Skills I) (PDF)",
+       "url": "https://drive.google.com/file/d/1Oxdtz42M0rQx5aF8hLdzYblhkbHNdhjr/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 1,
+       "order": 2
       }
      ]
     }
@@ -790,6 +941,20 @@
      ]
     },
     {
+     "id": "unit-teamwork",
+     "name": "Teamwork (Unit 3C)",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (Teamwork)",
+       "url": "https://drive.google.com/file/d/1xbEcGw9vJ2PiF65Mo46mMVv_WD0-ACPu/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 1,
+       "order": 3
+      }
+     ]
+    },
+    {
      "id": "unit-video",
      "name": "Video etkinlikleri",
      "resources": [
@@ -856,6 +1021,14 @@
        "title": "REVISION HANDOUT (B1)",
        "url": "https://drive.google.com/file/d/12XEaPoG-DC7c3ToyWE9_7hC733RIp1QD/view",
        "kind": "pdf"
+      },
+      {
+       "title": "Self Study Handout Answer Key",
+       "url": "https://drive.google.com/file/d/1scYclhMO6zHiSFu2mLA6NbW-UBMwClyP/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 0,
+       "order": 19
       }
      ]
     },
@@ -867,6 +1040,14 @@
        "title": "PPT (Haftalık Ders Programı ve İçeriği)",
        "url": "https://drive.google.com/file/d/1GxsUITQQbwG84gLK3bYAdIN9cvzDEKNX/view",
        "kind": "pptx"
+      },
+      {
+       "title": "L4 Fall Week 6 Program",
+       "url": "https://drive.google.com/file/d/1n4a64sKTh7vHMbs5gX1bhJhb1XTvEPil/view",
+       "kind": "pdf",
+       "week": 6,
+       "day": 0,
+       "order": 17
       }
      ]
     }
@@ -1281,6 +1462,20 @@
    "title": "HANDOUT (Rewrite Necessity, Obligation, Permission)",
    "kind": "pdf",
    "order": 14
+  },
+  {
+   "week": 6,
+   "day": 5,
+   "title": "Quizlet SO B1+ Unit 3",
+   "kind": "link",
+   "order": 16
+  },
+  {
+   "week": 6,
+   "day": 0,
+   "title": "Workbook s. 22-23",
+   "kind": "pdf",
+   "order": 18
   }
  ]
 }

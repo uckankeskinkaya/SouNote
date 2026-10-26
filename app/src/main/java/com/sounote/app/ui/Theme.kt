@@ -34,140 +34,137 @@ import androidx.core.graphics.ColorUtils
  * PDF sayfaları ve notların renkleri temadan etkilenmez (sayfa her zaman kendi rengiyle çizilir).
  */
 
-// ---- Yüzey paletleri ----
+// ---- Temalar (logonun 6 hali) ----
 
-/** Koyu temanın yüzeyleri. Açık tema her zaman "SouNote Light". */
-enum class DarkPalette(val label: String, val description: String, val preview: Long) {
-    OBSIDIAN("Obsidyen", "Mor tonlu", 0xFF13121C),
-    MIDNIGHT("Lacivert", "Logodaki lacivert", 0xFF0A1029),
-    GRAPHITE("Grafit", "Nötr gri", 0xFF151619),
+/**
+ * Uygulamanın teması: her biri logonun bir hali (renkleri, ışığı ve uygulama içindeki logosu).
+ * Koyu temada logonun zemini ve parıltısı, açık temada logonun kâğıdı. Ad tercihlerde ("logoTheme") saklanır, değiştirme.
+ */
+enum class AppTheme(
+    val label: String,
+    val description: String,
+    val logo: Int,
+    /** Koyu zemin, iki ışık rengi, koyu temada vurgu / üstündeki yazı / kutu. */
+    val bg: Long, val glowA: Long, val glowB: Long,
+    val darkPrimary: Long, val darkOnPrimary: Long, val darkContainer: Long,
+    /** Açık temada kâğıt, vurgu ve mürekkep. */
+    val paper: Long, val lightPrimary: Long, val ink: Long,
+    /** Karşılama kartı degradesi. */
+    val heroA: Long, val heroB: Long,
+) {
+    ELECTRIC(
+        "Elektrik", "Lacivert, parlayan elektrik mavisi", com.sounote.app.R.drawable.logo_tile,
+        0xFF010518, 0xFF1F4FFF, 0xFF3D8BFF, 0xFF5482FF, 0xFFFFFFFF, 0xFF15329A,
+        0xFFEAF0FF, 0xFF1E4BF0, 0xFF081133, 0xFF2A5BFF, 0xFF0A1A6E,
+    ),
+    SAPPHIRE(
+        "Safir", "Gece mavisi cam, gümüş ışık", com.sounote.app.R.drawable.logo_sapphire,
+        0xFF040A1A, 0xFF2C5BA8, 0xFFA9C6F5, 0xFF86A8E8, 0xFF06173D, 0xFF1F3F7C,
+        0xFFEEF2F9, 0xFF2A52A0, 0xFF0B1630, 0xFF3A66B8, 0xFF0B1A3E,
+    ),
+    SILVER(
+        "Gümüş", "Antrasit, beyaz ışıltı", com.sounote.app.R.drawable.logo_silver,
+        0xFF0C0E12, 0xFF7F92B5, 0xFFF2F4F8, 0xFFB3C3DF, 0xFF16233D, 0xFF35435F,
+        0xFFF1F2F5, 0xFF4A5F86, 0xFF14171D, 0xFF5C6F93, 0xFF1B2130,
+    ),
+    MONO(
+        "Siyah beyaz", "Sade, tek renk", com.sounote.app.R.drawable.logo_mono,
+        0xFF040404, 0xFFBDBDBD, 0xFFFFFFFF, 0xFFE8E8E8, 0xFF111111, 0xFF3A3A3A,
+        0xFFF4F4F4, 0xFF1F1F1F, 0xFF0F0F0F, 0xFF4A4A4A, 0xFF0D0D0D,
+    ),
+    EMERALD(
+        "Zümrüt", "Koyu yeşil, krem kâğıt, altın uç", com.sounote.app.R.drawable.logo_emerald,
+        0xFF06120C, 0xFF2F7A52, 0xFFE0BC6A, 0xFF6CC497, 0xFF06301B, 0xFF1D5A3B,
+        0xFFF6F0DF, 0xFF256E48, 0xFF0E1F16, 0xFF2E7D55, 0xFF0B2416,
+    ),
+    ROSE(
+        "Gül", "Mürdüm, parlayan pembe", com.sounote.app.R.drawable.logo_rose,
+        0xFF150A10, 0xFFFF4F8B, 0xFFFF9EC0, 0xFFFF7FA8, 0xFF4A0A24, 0xFF7A1E45,
+        0xFFFFF0F5, 0xFFC2356F, 0xFF2A0E1A, 0xFFE04A85, 0xFF3A0F22,
+    ),
+    ;
+
+    companion object {
+        /** 3.0'daki koyu paletlerden geçiş. */
+        fun fromLegacy(name: String?): AppTheme? = when (name) {
+            "MIDNIGHT", "OBSIDIAN" -> ELECTRIC
+            "GRAPHITE" -> SILVER
+            else -> null
+        }
+    }
 }
 
-private val SouNoteLight = lightColorScheme(
-    // Logonun elektrik mavisi ile lavantası arası: mavi-mor vurgu
-    primary = Color(0xFF3A4BE0),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFDFE3FF),
-    onPrimaryContainer = Color(0xFF0A1563),
-    secondary = Color(0xFF5B5D78),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE4E5F5),
-    onSecondaryContainer = Color(0xFF1A1C33),
-    tertiary = Color(0xFF6E4FD8),
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFEAE2FF),
-    onTertiaryContainer = Color(0xFF250F66),
-    background = Color(0xFFF4F5FB),
-    onBackground = Color(0xFF14162B),
-    surface = Color(0xFFF8F9FE),
-    onSurface = Color(0xFF14162B),
-    surfaceVariant = Color(0xFFE3E5F2),
-    onSurfaceVariant = Color(0xFF555970),
-    surfaceTint = Color(0xFF3A4BE0),
-    outline = Color(0xFF7C8098),
-    outlineVariant = Color(0xFFD8DBEA),
-    surfaceBright = Color(0xFFF8F9FE),
-    surfaceDim = Color(0xFFD8DAE8),
-    surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFEFF0F9),
-    surfaceContainer = Color(0xFFE9EBF6),
-    surfaceContainerHigh = Color(0xFFE3E5F2),
-    surfaceContainerHighest = Color(0xFFDDE0EE),
-)
+private fun mix(a: Long, b: Long, t: Float) = Color(ColorUtils.blendARGB(a.toInt(), b.toInt(), t))
 
-private val Obsidian = darkColorScheme(
-    primary = Color(0xFFC3B5FF),
-    onPrimary = Color(0xFF2D1A73),
-    primaryContainer = Color(0xFF46339E),
-    onPrimaryContainer = Color(0xFFE8E0FF),
-    secondary = Color(0xFFC9C2E6),
-    onSecondary = Color(0xFF302A49),
-    secondaryContainer = Color(0xFF34304A),
-    onSecondaryContainer = Color(0xFFE4DEFA),
-    tertiary = Color(0xFF8FD4FF),
-    onTertiary = Color(0xFF003549),
-    tertiaryContainer = Color(0xFF1D3F55),
-    onTertiaryContainer = Color(0xFFCDEBFF),
-    background = Color(0xFF0E0D16),
-    onBackground = Color(0xFFECEAF5),
-    surface = Color(0xFF13121C),
-    onSurface = Color(0xFFECEAF5),
-    surfaceVariant = Color(0xFF2A2836),
-    onSurfaceVariant = Color(0xFFC6C2D7),
-    surfaceTint = Color(0xFFC3B5FF),
-    outline = Color(0xFF8E89A3),
-    outlineVariant = Color(0xFF3E3B4D),
-    surfaceBright = Color(0xFF393647),
-    surfaceDim = Color(0xFF0E0D16),
-    surfaceContainerLowest = Color(0xFF0A0910),
-    surfaceContainerLow = Color(0xFF16151F),
-    surfaceContainer = Color(0xFF1B1A26),
-    surfaceContainerHigh = Color(0xFF24222F),
-    surfaceContainerHighest = Color(0xFF2D2B3A),
-)
+/** Temanın koyu hali: zemin + ışık renginden kademeli yüzeyler. */
+private fun darkSchemeOf(t: AppTheme): ColorScheme {
+    val white = 0xFFFFFFFF
+    return darkColorScheme(
+        primary = Color(t.darkPrimary),
+        onPrimary = Color(t.darkOnPrimary),
+        primaryContainer = Color(t.darkContainer),
+        onPrimaryContainer = mix(white, t.darkPrimary, 0.15f),
+        secondary = mix(t.glowB, white, 0.25f),
+        onSecondary = Color(t.bg),
+        secondaryContainer = mix(t.bg, t.darkPrimary, 0.26f),
+        onSecondaryContainer = mix(white, t.glowB, 0.12f),
+        tertiary = mix(t.glowB, white, 0.15f),
+        onTertiary = Color(t.bg),
+        tertiaryContainer = mix(t.bg, t.glowB, 0.32f),
+        onTertiaryContainer = mix(white, t.glowB, 0.1f),
+        background = Color(t.bg),
+        onBackground = mix(white, t.glowB, 0.08f),
+        surface = mix(t.bg, t.glowA, 0.04f),
+        onSurface = mix(white, t.glowB, 0.08f),
+        surfaceVariant = mix(t.bg, t.glowA, 0.24f),
+        onSurfaceVariant = mix(white, t.glowA, 0.35f).copy(alpha = 0.92f),
+        surfaceTint = Color(t.darkPrimary),
+        outline = mix(t.bg, t.glowB, 0.45f),
+        outlineVariant = mix(t.bg, t.glowA, 0.26f),
+        surfaceBright = mix(t.bg, t.glowA, 0.3f),
+        surfaceDim = Color(t.bg),
+        surfaceContainerLowest = mix(t.bg, 0xFF000000, 0.35f),
+        surfaceContainerLow = mix(t.bg, t.glowA, 0.07f),
+        surfaceContainer = mix(t.bg, t.glowA, 0.11f),
+        surfaceContainerHigh = mix(t.bg, t.glowA, 0.16f),
+        surfaceContainerHighest = mix(t.bg, t.glowA, 0.22f),
+    )
+}
 
-private val Midnight = darkColorScheme(
-    // Logonun lacivert zemini ve mavi-lavanta ışıkları
-    primary = Color(0xFFA9B8FF),
-    onPrimary = Color(0xFF0A1A6B),
-    primaryContainer = Color(0xFF2638B8),
-    onPrimaryContainer = Color(0xFFDDE3FF),
-    secondary = Color(0xFFC3C8EA),
-    onSecondary = Color(0xFF232A4D),
-    secondaryContainer = Color(0xFF242C55),
-    onSecondaryContainer = Color(0xFFDDE1F8),
-    tertiary = Color(0xFFC9B8FF),
-    onTertiary = Color(0xFF2E1772),
-    tertiaryContainer = Color(0xFF41308E),
-    onTertiaryContainer = Color(0xFFE8DFFF),
-    background = Color(0xFF060B22),
-    onBackground = Color(0xFFE6E9F8),
-    surface = Color(0xFF0A1029),
-    onSurface = Color(0xFFE6E9F8),
-    surfaceVariant = Color(0xFF1F2850),
-    onSurfaceVariant = Color(0xFFB5BCDB),
-    surfaceTint = Color(0xFFA9B8FF),
-    outline = Color(0xFF7C86B0),
-    outlineVariant = Color(0xFF263161),
-    surfaceBright = Color(0xFF283466),
-    surfaceDim = Color(0xFF060B22),
-    surfaceContainerLowest = Color(0xFF040819),
-    surfaceContainerLow = Color(0xFF0C1330),
-    surfaceContainer = Color(0xFF101839),
-    surfaceContainerHigh = Color(0xFF162045),
-    surfaceContainerHighest = Color(0xFF1D2851),
-)
-
-private val Graphite = darkColorScheme(
-    primary = Color(0xFFB4B8FF),
-    onPrimary = Color(0xFF1F1F70),
-    primaryContainer = Color(0xFF34358A),
-    onPrimaryContainer = Color(0xFFE2E2FF),
-    secondary = Color(0xFFC3C6CF),
-    onSecondary = Color(0xFF2B2E35),
-    secondaryContainer = Color(0xFF2E3036),
-    onSecondaryContainer = Color(0xFFE0E2E8),
-    tertiary = Color(0xFF7FD3E3),
-    onTertiary = Color(0xFF00363F),
-    tertiaryContainer = Color(0xFF1C4048),
-    onTertiaryContainer = Color(0xFFCDEFF5),
-    background = Color(0xFF111214),
-    onBackground = Color(0xFFE8E9EC),
-    surface = Color(0xFF151619),
-    onSurface = Color(0xFFE8E9EC),
-    surfaceVariant = Color(0xFF2A2C31),
-    onSurfaceVariant = Color(0xFFB4B7BF),
-    surfaceTint = Color(0xFFB4B8FF),
-    outline = Color(0xFF8A8D96),
-    outlineVariant = Color(0xFF34363C),
-    surfaceBright = Color(0xFF37393F),
-    surfaceDim = Color(0xFF111214),
-    surfaceContainerLowest = Color(0xFF0C0D0F),
-    surfaceContainerLow = Color(0xFF17181B),
-    surfaceContainer = Color(0xFF1B1C20),
-    surfaceContainerHigh = Color(0xFF232529),
-    surfaceContainerHighest = Color(0xFF2C2E33),
-)
+/** Temanın açık hali: logonun kâğıdı üstünde mürekkep ve vurgu. */
+private fun lightSchemeOf(t: AppTheme): ColorScheme {
+    val white = 0xFFFFFFFF
+    return lightColorScheme(
+        primary = Color(t.lightPrimary),
+        onPrimary = Color.White,
+        primaryContainer = mix(t.paper, t.lightPrimary, 0.16f),
+        onPrimaryContainer = mix(t.ink, t.lightPrimary, 0.3f),
+        secondary = mix(t.lightPrimary, t.ink, 0.3f),
+        onSecondary = Color.White,
+        secondaryContainer = mix(t.paper, t.lightPrimary, 0.12f),
+        onSecondaryContainer = Color(t.ink),
+        tertiary = mix(t.glowB, t.ink, 0.45f),
+        onTertiary = Color.White,
+        tertiaryContainer = mix(t.paper, t.glowB, 0.25f),
+        onTertiaryContainer = Color(t.ink),
+        background = Color(t.paper),
+        onBackground = Color(t.ink),
+        surface = mix(t.paper, white, 0.5f),
+        onSurface = Color(t.ink),
+        surfaceVariant = mix(t.paper, t.lightPrimary, 0.1f),
+        onSurfaceVariant = mix(t.ink, t.paper, 0.32f),
+        surfaceTint = Color(t.lightPrimary),
+        outline = mix(t.ink, t.paper, 0.5f),
+        outlineVariant = mix(t.paper, t.lightPrimary, 0.18f),
+        surfaceBright = mix(t.paper, white, 0.5f),
+        surfaceDim = mix(t.paper, t.ink, 0.1f),
+        surfaceContainerLowest = Color.White,
+        surfaceContainerLow = mix(t.paper, white, 0.4f),
+        surfaceContainer = mix(t.paper, t.lightPrimary, 0.04f),
+        surfaceContainerHigh = mix(t.paper, t.lightPrimary, 0.08f),
+        surfaceContainerHighest = mix(t.paper, t.lightPrimary, 0.12f),
+    )
+}
 
 // ---- Vurgu rengi ----
 
@@ -211,7 +208,7 @@ enum class ColorTheme(
 
 /** Kullanıcının vurgu rengi seçimi. */
 sealed interface Accent {
-    /** Temanın kendi vurgusu (SouNote Light: indigo, Obsidian: mor, Midnight: elektrik mavisi). */
+    /** Temanın kendi vurgusu (logodaki renk). */
     data object Auto : Accent
     data class Preset(val theme: ColorTheme) : Accent
     data class Custom(val argb: Int) : Accent
@@ -255,13 +252,9 @@ private fun ColorScheme.withTones(t: AccentTones, dark: Boolean): ColorScheme =
         )
     }
 
-/** Paletin ve vurgu rengin birleşimi. */
-fun colorSchemeFor(dark: Boolean, palette: DarkPalette, accent: Accent): ColorScheme {
-    val base = if (!dark) SouNoteLight else when (palette) {
-        DarkPalette.OBSIDIAN -> Obsidian
-        DarkPalette.MIDNIGHT -> Midnight
-        DarkPalette.GRAPHITE -> Graphite
-    }
+/** Temanın ve vurgu renginin birleşimi. */
+fun colorSchemeFor(dark: Boolean, theme: AppTheme, accent: Accent): ColorScheme {
+    val base = if (dark) darkSchemeOf(theme) else lightSchemeOf(theme)
     return when (accent) {
         Accent.Auto -> base
         is Accent.Preset -> base.withTones(accent.theme.tones, dark)
@@ -284,34 +277,32 @@ data class SouColors(
     val danger: Color,
     val star: Color,
     val cardBorder: Color,
+    /** Temanın ışık renkleri (zemin parıltısı, kart kenarı) ve logosu. */
+    val glowA: Color = Color(0xFF1F4FFF),
+    val glowB: Color = Color(0xFF3D8BFF),
+    val logo: Int = com.sounote.app.R.drawable.logo_tile,
 )
 
 val LocalSouColors = staticCompositionLocalOf {
     SouColors(
-        false, listOf(Color(0xFF4F46E5), Color(0xFF17126B)), Color.Transparent,
+        false, listOf(Color(0xFF2A5BFF), Color(0xFF0A1A6E)), Color.Transparent,
         Color(0xFF2E7D32), Color(0xFFE0893A), Color(0xFFD64545), Color(0xFFF2B705), Color(0x33000000),
     )
 }
 
-private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette): SouColors {
-    val hero = if (dark) {
-        listOf(scheme.primaryContainer, scheme.surfaceContainerLowest)
-    } else {
-        listOf(scheme.primary, scheme.onPrimaryContainer)
-    }
-    // Sade görünüm: koyu temada da parıltı yok.
-    val aurora = Color.Transparent
-    return SouColors(
-        isDark = dark,
-        hero = hero,
-        aurora = aurora,
-        success = if (dark) Color(0xFF7FD69A) else Color(0xFF2E7D32),
-        warning = if (dark) Color(0xFFFFB86B) else Color(0xFFC2570C),
-        danger = if (dark) Color(0xFFFF8A80) else Color(0xFFD64545),
-        star = Color(0xFFF2B705),
-        cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.6f else 0.55f),
-    )
-}
+private fun souColors(scheme: ColorScheme, dark: Boolean, theme: AppTheme): SouColors = SouColors(
+    isDark = dark,
+    hero = listOf(Color(theme.heroA), Color(theme.heroB)),
+    aurora = Color.Transparent,
+    success = if (dark) Color(0xFF7FD69A) else Color(0xFF2E7D32),
+    warning = if (dark) Color(0xFFFFB86B) else Color(0xFFC2570C),
+    danger = if (dark) Color(0xFFFF8A80) else Color(0xFFD64545),
+    star = Color(0xFFF2B705),
+    cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.6f else 0.55f),
+    glowA = Color(theme.glowA),
+    glowB = Color(theme.glowB),
+    logo = theme.logo,
+)
 
 // ---- Tipografi ----
 
@@ -429,7 +420,7 @@ private fun animated(target: ColorScheme, motion: MotionLevel): ColorScheme {
 @Composable
 fun SouNoteTheme(
     dark: Boolean? = null,
-    palette: DarkPalette = DarkPalette.MIDNIGHT,
+    palette: AppTheme = AppTheme.ELECTRIC,
     accent: Accent = Accent.Auto,
     density: UiDensity = UiDensity.COMFORTABLE,
     motion: MotionLevel = MotionLevel.FULL,

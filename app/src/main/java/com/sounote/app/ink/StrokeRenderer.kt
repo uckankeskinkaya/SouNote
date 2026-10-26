@@ -5,21 +5,14 @@ import android.graphics.Canvas
 import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.atan2
-import kotlin.math.hypot
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /**
  * Çizgileri tuvale çizer. Tuval sayfa noktası koordinatında olmalı.
  *
- * Kalınlığı değişen kalemlerde (dolma, fırça, kaligrafi) her noktanın kalınlık katsayısı
- * [LEVELS] kademeye yuvarlanır; aynı kademedeki ardışık noktalar tek bir yuvarlak uçlu yol
- * olarak çizilir. Hızlıdır ve göze pürüzsüz görünür. PDF'e aktarma da aynı kademeleri kullanır.
+ * Kalınlığı değişen kalemler (basınçlı dolma/jel, fırça, kaligrafi) tek parça dış hat olarak doldurulur
+ * ([StrokeOutline]); PDF'e aktarma da aynı hattı kullanır. Sabit kalınlıklılar yuvarlak uçlu tek yol.
  *
  * Fosforlu: MULTIPLY karışımı; altındaki yazı koyu kalır. Kurşun kalem: yarı saydam.
  * Kesik çizgi: sabit kalınlık, kesik kesik. Noktalı: yuvarlak noktalar.
@@ -52,6 +45,8 @@ class StrokeRenderer {
         pressureSensitive: Boolean,
         pts: FloatArray,
         n: Int,
+        /** Uçlarda incelme (bitmiş çizgi); ön tamponda parça parça çizerken false. */
+        taper: Boolean = true,
     ) {
         if (n <= 0) return
         paint.color = color
@@ -72,29 +67,36 @@ class StrokeRenderer {
             drawNeon(canvas, color, width, pts, n)
             return
         }
-        val levels = levels(tool, width, pressureSensitive, pts, n)
-
+        if (StrokeOutline.variable(tool, pressureSensitive)) {
+            drawOutline(canvas, StrokeOutline.build(tool, width, pressureSensitive, pts, n, taper))
+            return
+        }
         if (n == 1) {
             paint.style = Paint.Style.FILL
-            canvas.drawCircle(pts[0], pts[1], width * (levels?.get(0) ?: LEVELS) / LEVELS / 2f, paint)
+            canvas.drawCircle(pts[0], pts[1], width / 2f, paint)
             return
         }
         paint.style = Paint.Style.STROKE
-        if (levels == null) {
-            drawRun(canvas, pts, 0, n - 1, width)
-            return
-        }
-        var runStart = 0
-        var runLevel = levels[0]
-        for (i in 1 until n) {
-            if (i == n - 1) {
-                drawRun(canvas, pts, runStart, i, width * runLevel / LEVELS)
-            } else if (levels[i] != runLevel) {
-                drawRun(canvas, pts, runStart, i, width * runLevel / LEVELS)
-                runStart = i
-                runLevel = levels[i]
+        drawRun(canvas, pts, 0, n - 1, width)
+    }
+
+    /** Dış hattı orta noktalı eğrilerle yumuşatıp doldurur. */
+    private fun drawOutline(canvas: Canvas, o: StrokeOutline.Outline) {
+        paint.style = Paint.Style.FILL
+        paint.pathEffect = null
+        val v = o.poly
+        val c = o.count
+        if (c >= 3) {
+            path.rewind()
+            path.moveTo((v[(c - 1) * 2] + v[0]) / 2f, (v[(c - 1) * 2 + 1] + v[1]) / 2f)
+            for (i in 0 until c) {
+                val j = (i + 1) % c
+                path.quadTo(v[i * 2], v[i * 2 + 1], (v[i * 2] + v[j * 2]) / 2f, (v[i * 2 + 1] + v[j * 2 + 1]) / 2f)
             }
+            path.close()
+            canvas.drawPath(path, paint)
         }
+        for (i in 0 until o.dotCount) canvas.drawCircle(o.dots[i * 3], o.dots[i * 3 + 1], o.dots[i * 3 + 2], paint)
     }
 
     /** Neon: üç kat (parıltı, renk, açık çekirdek). */
@@ -130,8 +132,7 @@ class StrokeRenderer {
     }
 
     companion object {
-        const val LEVELS = 12
-        const val MAX_PRESSURE_FACTOR = 1.6f
+        const val MAX_PRESSURE_FACTOR = 1.38f
         const val PENCIL_ALPHA = 0.78f
         const val TAPE_REVEALED_ALPHA = 0.16f
         const val NEON_GLOW = 2.6f
@@ -152,60 +153,16 @@ class StrokeRenderer {
             )
         }
 
-        /** Kaligrafi ucunun açısı: bu yönde giden çizgi en ince olur (sağ üste doğru). */
-        private val NIB_ANGLE = (-PI / 4).toFloat()
-
-        /** Dolma kalem: basınç 0.5 → seçilen kalınlık; hafif basınç incelir, sert basınç kalınlaşır. */
-        fun pressureFactor(p: Float) = (0.35f + 1.3f * p).coerceIn(0.35f, MAX_PRESSURE_FACTOR)
-
-        /** Fırça: basınca dolma kalemden çok daha duyarlı. */
-        private fun brushFactor(p: Float) = (0.15f + 1.9f * p).coerceIn(0.15f, 2f)
-
         /** Çizginin en kalın yeri / seçilen kalınlık (silgi ve sınır hesabı için). */
         fun maxFactor(tool: InkTool, pressureSensitive: Boolean) = when (tool) {
             InkTool.PEN -> if (pressureSensitive) MAX_PRESSURE_FACTOR else 1f
-            InkTool.BRUSH -> 2f
-            InkTool.CALLIGRAPHY -> 1.2f
+            InkTool.BRUSH -> 1.8f
+            InkTool.CALLIGRAPHY -> 1.18f
             InkTool.NEON -> NEON_GLOW
             else -> 1f
         }
 
         /** Kesik çizginin dolu/boş uzunlukları. */
         fun dashIntervals(width: Float) = max(width * 3f, 3f) to max(width * 2.5f, 2.5f)
-
-        /** Her noktanın kalınlık kademesi; kalınlığı sabit kalemlerde null. */
-        fun levels(tool: InkTool, width: Float, pressureSensitive: Boolean, pts: FloatArray, n: Int): IntArray? {
-            fun q(f: Float) = (f * LEVELS).roundToInt().coerceAtLeast(1)
-            return when (tool) {
-                InkTool.PEN -> if (pressureSensitive) IntArray(n) { q(pressureFactor(pts[it * 3 + 2])) } else null
-                InkTool.BRUSH -> {
-                    // Uçlara doğru incelir: başta ve sonda kalınlığın birkaç katı boyunca.
-                    val dist = FloatArray(n)
-                    for (i in 1 until n) {
-                        dist[i] = dist[i - 1] + hypot(pts[i * 3] - pts[i * 3 - 3], pts[i * 3 + 1] - pts[i * 3 - 2])
-                    }
-                    val total = dist[n - 1]
-                    val taper = max(width * 3f, 4f)
-                    IntArray(n) { i ->
-                        val base = if (pressureSensitive) brushFactor(pts[i * 3 + 2]) else 1f
-                        val t = min(1f, min(dist[i], total - dist[i]) / taper)
-                        q(base * (0.2f + 0.8f * t))
-                    }
-                }
-                InkTool.CALLIGRAPHY -> IntArray(n) { i ->
-                    // Yön: komşu noktalardan. Uç açısına paralel giderken ince, dik giderken kalın.
-                    val a = max(0, i - 1)
-                    val b = min(n - 1, i + 1)
-                    val dx = pts[b * 3] - pts[a * 3]
-                    val dy = pts[b * 3 + 1] - pts[a * 3 + 1]
-                    if (a == b || (abs(dx) < 1e-4f && abs(dy) < 1e-4f)) {
-                        q(0.7f)
-                    } else {
-                        q(0.15f + 1.05f * abs(sin(atan2(dy, dx) - NIB_ANGLE)))
-                    }
-                }
-                else -> null
-            }
-        }
     }
 }

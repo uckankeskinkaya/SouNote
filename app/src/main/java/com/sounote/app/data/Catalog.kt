@@ -17,7 +17,7 @@ data class Resource(
     val url: String,
     val kind: String,
     val week: Int = 0,
-    /** Haftanın günü: 1 = Pazartesi … 5 = Cuma, 0 = kendi çalışman (self-study). */
+    /** Haftanın günü: 1 = Pazartesi … 5 = Cuma, 6 = bu hafta (günü belli değil), 0 = kendi çalışman (self-study). */
     val day: Int = 0,
     val order: Int = 0,
 ) {
@@ -119,16 +119,25 @@ object CatalogRepo {
     private fun bundled(context: Context): Catalog =
         runCatching { parse(context.assets.open(FILE).bufferedReader().use { it.readText() }) }.getOrDefault(Catalog.EMPTY)
 
-    /** İndirilmiş kopya uygulamadakinden yeniyse o, değilse uygulamadaki. */
+    /**
+     * İndirilmiş kopya uygulamadakinden yeniyse o, değilse uygulamadaki; üstüne Drive'da yeni gelen
+     * (henüz sınıflandırılmamış) dosyalar eklenir (DriveAuto).
+     */
     fun cached(context: Context): Catalog {
         val inApp = bundled(context)
         val saved = runCatching { parse(File(context.filesDir, FILE).readText()) }.getOrNull()
-        return if (saved != null && saved.updated > inApp.updated) saved else inApp
+        val base = if (saved != null && saved.updated > inApp.updated) saved else inApp
+        return runCatching { DriveAuto.merge(base, DriveAuto.cached(context)) }.getOrDefault(base)
     }
 
     fun fetch(context: Context): Catalog {
+        // Drive klasörü: yeni hafta ve dosyalar kendiliğinden (olmazsa son liste kalır)
+        val drive = runCatching { DriveAuto.refresh(context, DriveAuto.DEFAULT_ROOT) }
         if (REMOTE_URL.isEmpty()) return cached(context)
-        val text = httpGet(REMOTE_URL)
+        val text = runCatching { httpGet(REMOTE_URL) }.getOrElse { e ->
+            // Katalog indirilemedi ama Drive listesi geldiyse yine de göster
+            if (drive.isSuccess) return cached(context) else throw e
+        }
         parse(text)
         File(context.filesDir, FILE).writeText(text)
         return cached(context)

@@ -285,15 +285,25 @@ private fun SetupOptions(
                 FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })
             }
         }
-        Text("Koyu tema rengi", style = MaterialTheme.typography.titleSmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-            DarkPalette.entries.forEach { p ->
-                FilterChip(
-                    selected = vm.darkPalette == p,
-                    onClick = { vm.updateDarkPalette(p) },
-                    label = { Text(p.label) },
-                    leadingIcon = { Box(Modifier.size(14.dp).clip(CircleShape).background(colorSchemeFor(true, p, Accent.Auto).primary)) },
-                )
+        Text("Tema", style = MaterialTheme.typography.titleSmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            AppTheme.entries.forEach { t ->
+                val sel = vm.appTheme == t
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(if (sel) 2.5.dp else 0.dp, if (sel) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(16.dp))
+                        .clickable { vm.updateAppTheme(t) }
+                        .padding(6.dp),
+                ) {
+                    androidx.compose.foundation.Image(
+                        androidx.compose.ui.res.painterResource(t.logo),
+                        contentDescription = t.label,
+                        modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)),
+                    )
+                    Text(t.label, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 4.dp))
+                }
             }
         }
         Text(

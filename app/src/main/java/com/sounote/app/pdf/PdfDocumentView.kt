@@ -1435,11 +1435,24 @@ class PdfDocumentView(context: Context) : View(context) {
         val prediction = p.predict(target) ?: return
         val n = minOf(prediction.historySize + 1, predicted.size / 3)
         var k = 0
+        // Tahmin de çizgi gibi yumuşatılır; yoksa uçta ham ve süzülmüş noktalar arasında titreme olur.
+        val smooth = tools.smoothing > 0f && !shapeMode
+        val f = 1f - tools.smoothing.coerceIn(0f, 1f) * 0.8f
+        var lx = b.lastX
+        var ly = b.lastY
         for (h in 0 until n) {
             val px = if (h < prediction.historySize) prediction.getHistoricalX(0, h) else prediction.getX(0)
             val py = if (h < prediction.historySize) prediction.getHistoricalY(0, h) else prediction.getY(0)
-            predicted[k * 3] = toPageX(inputPage, px)
-            predicted[k * 3 + 1] = toPageY(inputPage, py)
+            var x = toPageX(inputPage, px)
+            var y = toPageY(inputPage, py)
+            if (smooth) {
+                x = lx + (x - lx) * f
+                y = ly + (y - ly) * f
+            }
+            lx = x
+            ly = y
+            predicted[k * 3] = x
+            predicted[k * 3 + 1] = y
             predicted[k * 3 + 2] = b.lastPressure
             k++
         }

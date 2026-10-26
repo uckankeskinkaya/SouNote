@@ -704,7 +704,7 @@ internal fun TextNoteCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (note.pinned) Icon(SouIcons.KeepFilled, contentDescription = "Sabit", tint = Color(0xFF4F46E5), modifier = Modifier.align(Alignment.TopEnd).size(16.dp))
+            if (note.pinned) Icon(SouIcons.KeepFilled, contentDescription = "Sabit", tint = Color(0xFF1E4BF0), modifier = Modifier.align(Alignment.TopEnd).size(16.dp))
             Text(
                 "Aa",
                 style = MaterialTheme.typography.labelSmall,

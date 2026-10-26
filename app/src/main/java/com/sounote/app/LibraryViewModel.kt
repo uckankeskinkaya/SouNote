@@ -36,7 +36,7 @@ import com.sounote.app.data.Resource
 import com.sounote.app.data.Topic
 import com.sounote.app.ui.Accent
 import com.sounote.app.ui.ColorTheme
-import com.sounote.app.ui.DarkPalette
+import com.sounote.app.ui.AppTheme
 import com.sounote.app.ui.MotionLevel
 import com.sounote.app.ui.UiDensity
 import com.sounote.app.data.HomeLayout
@@ -117,7 +117,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     var searchQuery by mutableStateOf("")
     var sortMode by mutableStateOf(enumValueOrNull<SortMode>(prefs.getString("sort", null)) ?: SortMode.RECENT)
         private set
-    var themeMode by mutableStateOf(enumValueOrNull<ThemeMode>(prefs.getString("theme", null)) ?: ThemeMode.SYSTEM)
+    var themeMode by mutableStateOf(enumValueOrNull<ThemeMode>(prefs.getString("theme", null)) ?: ThemeMode.DARK) // Varsayılan: logodaki koyu görünüm
         private set
 
     fun updateSort(mode: SortMode) {
@@ -132,13 +132,19 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- 2.0 görünüm ve arayüz tercihleri (hepsi cihazda, güvenli varsayılanlarla) ----
 
-    /** Koyu temanın yüzeyleri. */
-    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.MIDNIGHT)
+    /** Tema (logonun 6 hali); 3.0'daki koyu palet seçimi ("darkPalette") karşılığına çevrilir. */
+    var appTheme by mutableStateOf(
+        enumValueOrNull<AppTheme>(prefs.getString("logoTheme", null))
+            ?: AppTheme.fromLegacy(prefs.getString("darkPalette", null)) ?: AppTheme.ELECTRIC,
+    )
         private set
 
-    fun updateDarkPalette(p: DarkPalette) {
-        darkPalette = p
-        prefs.edit().putString("darkPalette", p.name).apply()
+    fun updateAppTheme(t: AppTheme) {
+        appTheme = t
+        prefs.edit().putString("logoTheme", t.name).apply()
+        // Ana ekran simgesi ve widget'lar da temayı izler
+        AppIcon.apply(getApplication(), t)
+        Widgets.updateAll(getApplication())
     }
 
     /** Vurgu rengi. 1.0'da seçilen renk ("colorTheme") aynen korunur; seçilmemişse temanın kendi rengi. */
@@ -147,7 +153,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadAccent(): Accent = when (val n = prefs.getString("colorTheme", null)) {
         null, "AUTO" -> Accent.Auto
-        "CUSTOM" -> Accent.Custom(prefs.getInt("accentCustom", 0xFF4F46E5.toInt()))
+        "CUSTOM" -> Accent.Custom(prefs.getInt("accentCustom", 0xFF1E4BF0.toInt()))
         else -> enumValueOrNull<ColorTheme>(n)?.let { Accent.Preset(it) } ?: Accent.Auto
     }
 
@@ -544,6 +550,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (key !in doneItems) markActive()
         doneItems = if (key in doneItems) doneItems - key else doneItems + key
         prefs.edit().putStringSet("weekDone", doneItems).apply()
+        Widgets.updateAll(getApplication())
     }
 
     /** Haftanın yapılacakları: (anahtar, başlık, tür) — kaynaklar ve Drive'da olmayanlar, gün sırasıyla. */
@@ -612,7 +619,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString("userLevel", level).apply()
         viewModelScope.launch(Dispatchers.IO) {
             ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
-            ExamWidget.updateAll(getApplication())
+            Widgets.updateAll(getApplication())
         }
     }
 
@@ -633,7 +640,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             prefs.edit().putStringSet("examDone", examDoneGlobal).apply()
             viewModelScope.launch(Dispatchers.IO) {
                 ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
-                ExamWidget.updateAll(getApplication())
+                Widgets.updateAll(getApplication())
             }
         } else {
             saveExam(e.copy(done = !e.done))
@@ -729,7 +736,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 catalog = it
                 catalogError = null
                 withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) }) }
-                ExamWidget.updateAll(getApplication())
+                Widgets.updateAll(getApplication())
             }.onFailure {
                 catalogError = "İnternete bağlanılamadı; son indirilen liste gösteriliyor"
                 if (!quiet) message = catalogError
@@ -758,7 +765,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { examStore.save(list) }.onFailure { ErrorLog.record("Sınavlar kaydedilemedi", it) }
             ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
-            ExamWidget.updateAll(getApplication())
+            Widgets.updateAll(getApplication())
         }
     }
 
@@ -1015,7 +1022,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putLong("studyday_$day", prefs.getLong("studyday_$day", 0L) + ms)
             .apply()
         if (prefs.getLong("studyday_$day", 0L) >= STREAK_MIN_STUDY) markActive()
-        ExamWidget.updateAll(getApplication())
+        Widgets.updateAll(getApplication())
     }
 
     fun studyTime(docId: String) = prefs.getLong("study_$docId", 0L)
@@ -1061,6 +1068,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putInt("bestStreak", maxOf(prefs.getInt("bestStreak", 0), s))
             .apply()
         if (s in STREAK_MILESTONES) showMessage("$s günlük seri")
+        Widgets.updateAll(getApplication())
     }
 
     val activeToday: Boolean get() = dayKey(System.currentTimeMillis()) in activeDays
@@ -1330,7 +1338,12 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     fun refreshDue() {
-        viewModelScope.launch { dueCount = dueCards().size }
+        viewModelScope.launch {
+            dueCount = dueCards().size
+            // "Bugün" widget'ı okur
+            prefs.edit().putInt("dueCount", dueCount).apply()
+            Widgets.updateAll(getApplication())
+        }
     }
 
     /** Zamanı gelmiş kartlar, belgeleriyle (kutusu küçük olan önce). */
@@ -1716,7 +1729,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun formSaveTarget(doc: DocRef): File = repo.docFile(doc.id)
 
     fun open(doc: DocRef) {
-        prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis()).apply()
+        // "Hızlı işlemler" widget'ındaki son belge
+        prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis())
+            .putString("lastDocId", doc.id).putString("lastDocTitle", doc.title).apply()
+        Widgets.updateAll(getApplication())
         studyPause()
         viewModelScope.launch {
             // Başka belge açıkken (kısayol, hızlı not) önceki belgenin son notları kaybolmasın.
@@ -1877,9 +1893,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (!doc.imported) return
         runCatching {
             val app = getApplication<Application>()
-            val intent = Intent(app, MainActivity::class.java)
-                .setAction(MainActivity.ACTION_OPEN_DOC)
-                .putExtra(MainActivity.EXTRA_DOC_ID, doc.id)
+            val intent = Intent(app, SouNoteActivity::class.java)
+                .setAction(SouNoteActivity.ACTION_OPEN_DOC)
+                .putExtra(SouNoteActivity.EXTRA_DOC_ID, doc.id)
             val info = ShortcutInfoCompat.Builder(app, "doc_${doc.id}")
                 .setShortLabel(doc.title.take(24).ifEmpty { "Belge" })
                 .setLongLabel(doc.title.take(48).ifEmpty { "Belge" })

@@ -70,20 +70,33 @@ import androidx.compose.ui.unit.sp
  * Kart, bölüm başlığı, arama kutusu, boş/yükleniyor/hata durumları, ayar satırları, alt sayfa (bottom sheet).
  */
 
-/** Kartların zemini: açık temada beyaz, koyu temada biraz açık yüzey. */
+/** Kartların zemini (düz renk gereken yerler için): açık temada beyaz, koyu temada lacivert-mavi yüzey. */
 @Composable
 internal fun cardBackground(): Color =
     if (LocalSouColors.current.isDark) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
 
-/** Standart kart: yumuşak köşe; açık temada açık gri zemin üstünde beyaz, kenarlık sadece koyu temada. */
+/**
+ * Standart kart, logodaki cam kutucuk gibi: koyu temada yarı saydam lacivert-mavi, sol üstten ışıyan ince kenar;
+ * açık temada beyaz, mavi ışıltılı kenar.
+ */
 @Composable
 internal fun Modifier.card(radius: Dp = 18.dp): Modifier {
     val shape = RoundedCornerShape(radius)
-    val sou = LocalSouColors.current
+    val dark = LocalSouColors.current.isDark
+    val fill = if (dark) {
+        Brush.linearGradient(listOf(Color(0xCC0E2068), Color(0xB3071240)))
+    } else {
+        Brush.linearGradient(listOf(Color.White, Color(0xFFF4F7FF)))
+    }
+    val edge = if (dark) {
+        Brush.linearGradient(listOf(Color(0x995C86FF), Color(0x262A4BB0), Color(0x4D3D6BFF)))
+    } else {
+        Brush.linearGradient(listOf(Color(0x997F9CFF), Color(0x33B8C8F5), Color(0x664F7BFF)))
+    }
     return this
         .clip(shape)
-        .background(cardBackground())
-        .then(if (sou.isDark) Modifier.border(1.dp, sou.cardBorder, shape) else Modifier)
+        .background(fill)
+        .border(1.dp, edge, shape)
 }
 
 /** Bölüm başlığı: başlık ve sağda "Tümü" gibi bir eylem. */
@@ -468,16 +481,22 @@ internal fun ProgressBar(
 internal fun Modifier.souBackground(): Modifier {
     val scheme = MaterialTheme.colorScheme
     val dark = LocalSouColors.current.isDark
-    val base = scheme.background
-    val glow1 = if (dark) scheme.primaryContainer.copy(alpha = 0.55f) else scheme.primary.copy(alpha = 0.10f)
-    val glow2 = if (dark) scheme.tertiaryContainer.copy(alpha = 0.38f) else scheme.tertiary.copy(alpha = 0.07f)
+    // Logodaki gibi: lacivert zemin üstünde parlayan elektrik mavisi ışıklar
+    val top = if (dark) Color(0xFF041040) else Color(0xFFE2EAFF)
+    val bottom = if (dark) scheme.background else Color(0xFFF1F5FF)
+    val glow1 = if (dark) Color(0x8C1F4FFF) else Color(0x332A5BFF)
+    val glow2 = if (dark) Color(0x593D8BFF) else Color(0x3386B4FF)
+    val glow3 = if (dark) Color(0x266E8CFF) else Color(0x1A5482FF)
     return drawBehind {
-        drawRect(base)
-        val r1 = size.maxDimension * 0.75f
-        val c1 = Offset(size.width * 0.9f, size.height * 0.02f)
+        drawRect(Brush.verticalGradient(listOf(top, bottom)))
+        val r1 = size.maxDimension * 0.8f
+        val c1 = Offset(size.width * 0.92f, size.height * 0.0f)
         drawCircle(Brush.radialGradient(listOf(glow1, Color.Transparent), center = c1, radius = r1), r1, c1)
-        val r2 = size.maxDimension * 0.6f
-        val c2 = Offset(size.width * 0.05f, size.height * 0.95f)
+        val r2 = size.maxDimension * 0.65f
+        val c2 = Offset(size.width * 0.0f, size.height * 1.0f)
         drawCircle(Brush.radialGradient(listOf(glow2, Color.Transparent), center = c2, radius = r2), r2, c2)
+        val r3 = size.maxDimension * 0.45f
+        val c3 = Offset(size.width * 0.25f, size.height * 0.4f)
+        drawCircle(Brush.radialGradient(listOf(glow3, Color.Transparent), center = c3, radius = r3), r3, c3)
     }
 }

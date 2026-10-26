@@ -185,6 +185,9 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
   sonuç konu haritasına recordTestScore; Notlara kaydet). Girişler: Dersler kartı, konu haritası, asistan penceresi (belge bağlamı/not/ders).
 - Renkler logoya yaklaştırıldı (🧪, build-130+): açık primary #1E4BF0 (elektrik mavisi), zemin #F2F5FD, mürekkep #0A1233; koyu MIDNIGHT
   zemin #020820, primary #8DA6FF, primaryContainer #0B3BD6; mor tonlar kaldırıldı. Açılış/pencere/widget zemini #020820.
+- Logo teması (🧪, build-131+, kullanıcı: "tamamen logoya uygun, mavi tonlarda parlamalı"): MIDNIGHT = "Logo" (zemin #010518,
+  primary #5482FF, kart cam gibi: yarı saydam lacivert-mavi degrade + sol üstten ışıyan degrade kenar, Modifier.card); souBackground dikey
+  lacivert degrade + 3 elektrik mavisi ışık; hero #2A5BFF→#0A1A6E; açık tema lavanta-mavi kâğıt + mavi ışıltı. Varsayılan tema KOYU (prefs theme yoksa).
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

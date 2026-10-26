@@ -180,6 +180,9 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
   basınçlı dolma/jel, fırça, kaligrafi tek parça doldurulan dış hat (yakın noktalar atılır, basınç ileri-geri yumuşatılır, penFactor 0.62–1.38,
   uçlarda smoothstep incelme, keskin dönüşte daire); PdfExporter aynı hattı doldurur; ön tampon taper=false. Tahmin noktaları da yumuşatılır.
   Python + Chromium (Skia, nonzero) ile görsel denendi.
+- Alıştırma (🧪, build-129+): data/Exercises.kt (ExerciseType MCQ/GAP/REWRITE/OPEN; generate JSON, checkLocally: şık + birebir boşluk,
+  grade: kalanları asistan 0/0.5/1 puanlar), ui/ExerciseScreen.kt (kurulum: konu, türler, sayı, mod "Önce cevapla"/"Cevabı göster";
+  sonuç konu haritasına recordTestScore; Notlara kaydet). Girişler: Dersler kartı, konu haritası, asistan penceresi (belge bağlamı/not/ders).
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).
 3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),

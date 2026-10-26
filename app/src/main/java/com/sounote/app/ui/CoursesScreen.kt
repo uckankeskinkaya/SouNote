@@ -227,6 +227,8 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
     var testOpen by remember { mutableStateOf(false) }
     var mapOpen by remember { mutableStateOf(false) }
     var speakingOpen by remember { mutableStateOf(false) }
+    var exerciseOpen by remember { mutableStateOf(false) }
+    if (exerciseOpen) ExerciseScreen(vm, course = course) { exerciseOpen = false }
     if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
     if (testOpen) PracticeSetupDialog(vm, course) { testOpen = false }
     if (mapOpen) {
@@ -277,6 +279,20 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
                     }
                     Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+            }
+        }
+        item {
+            // Asistan karışık türde alıştırma hazırlar; cevaplar gösterilir ya da asistan değerlendirir.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().card().clickable { exerciseOpen = true }.padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                IconBadge(SouIcons.EditNote, MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Alıştırma", style = MaterialTheme.typography.titleSmall)
+                    Text("Boşluk doldurma, yeniden yazma, açık uçlu; asistan kontrol eder", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {

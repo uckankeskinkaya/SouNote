@@ -69,7 +69,9 @@ jobs:
         run: |
           which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends ffmpeg >/dev/null)
           ls /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf || sudo apt-get install -y -qq fonts-dejavu-core
-          pip install -q pillow
+          pip install -q pillow faster-whisper
+          # Seslendirmenin paragraf zamanları (Whisper; olmazsa align.py'deki sabit süreler)
+          python3 .github/video/align.py
           python3 .github/video/compose.py
 
       - name: Ham sahneler (inceleme için)
@@ -80,6 +82,7 @@ jobs:
           path: |
             scenes
             out/sounote.mp4
+            out/voice-times.json
 
       - name: Siteye koy (çalışma dalı + main)
         run: |

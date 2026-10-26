@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                     isAppearanceLightNavigationBars = !isDark
                 }
             }
-            SouNoteTheme(isDark, vm.darkPalette, vm.accent, vm.uiDensity, vm.motionLevel) {
+            SouNoteTheme(isDark, vm.appTheme, vm.accent, vm.uiDensity, vm.motionLevel) {
                 Box(Modifier.fillMaxSize()) {
                     SouNoteApp(vm)
                     // Kilit ekranı üstte durur; altındaki belge açık kalır, kilit açılınca kaldığı yerden devam.

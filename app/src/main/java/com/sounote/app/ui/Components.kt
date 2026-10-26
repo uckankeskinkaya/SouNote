@@ -51,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -82,17 +83,23 @@ internal fun cardBackground(): Color =
 @Composable
 internal fun Modifier.card(radius: Dp = 18.dp): Modifier {
     val shape = RoundedCornerShape(radius)
-    val dark = LocalSouColors.current.isDark
+    val sou = LocalSouColors.current
+    val scheme = MaterialTheme.colorScheme
+    val dark = sou.isDark
     val fill = if (dark) {
-        Brush.linearGradient(listOf(Color(0xCC0E2068), Color(0xB3071240)))
+        Brush.linearGradient(
+            listOf(
+                lerp(scheme.background, sou.glowA, 0.2f).copy(alpha = 0.8f),
+                lerp(scheme.background, sou.glowA, 0.08f).copy(alpha = 0.72f),
+            ),
+        )
     } else {
-        Brush.linearGradient(listOf(Color.White, Color(0xFFF4F7FF)))
+        Brush.linearGradient(listOf(Color.White, lerp(Color.White, scheme.background, 0.5f)))
     }
-    val edge = if (dark) {
-        Brush.linearGradient(listOf(Color(0x995C86FF), Color(0x262A4BB0), Color(0x4D3D6BFF)))
-    } else {
-        Brush.linearGradient(listOf(Color(0x997F9CFF), Color(0x33B8C8F5), Color(0x664F7BFF)))
-    }
+    val edge = Brush.linearGradient(
+        if (dark) listOf(sou.glowB.copy(alpha = 0.6f), sou.glowA.copy(alpha = 0.12f), sou.glowA.copy(alpha = 0.35f))
+        else listOf(sou.glowA.copy(alpha = 0.45f), sou.glowB.copy(alpha = 0.15f), sou.glowA.copy(alpha = 0.3f)),
+    )
     return this
         .clip(shape)
         .background(fill)
@@ -480,13 +487,14 @@ internal fun ProgressBar(
 @Composable
 internal fun Modifier.souBackground(): Modifier {
     val scheme = MaterialTheme.colorScheme
-    val dark = LocalSouColors.current.isDark
-    // Logodaki gibi: lacivert zemin üstünde parlayan elektrik mavisi ışıklar
-    val top = if (dark) Color(0xFF041040) else Color(0xFFE2EAFF)
-    val bottom = if (dark) scheme.background else Color(0xFFF1F5FF)
-    val glow1 = if (dark) Color(0x8C1F4FFF) else Color(0x332A5BFF)
-    val glow2 = if (dark) Color(0x593D8BFF) else Color(0x3386B4FF)
-    val glow3 = if (dark) Color(0x266E8CFF) else Color(0x1A5482FF)
+    val sou = LocalSouColors.current
+    val dark = sou.isDark
+    // Logodaki gibi: koyu zemin üstünde temanın ışıkları
+    val top = if (dark) lerp(scheme.background, sou.glowA, 0.12f) else lerp(scheme.background, sou.glowA, 0.06f)
+    val bottom = scheme.background
+    val glow1 = sou.glowA.copy(alpha = if (dark) 0.5f else 0.18f)
+    val glow2 = sou.glowB.copy(alpha = if (dark) 0.28f else 0.2f)
+    val glow3 = sou.glowA.copy(alpha = if (dark) 0.14f else 0.08f)
     return drawBehind {
         drawRect(Brush.verticalGradient(listOf(top, bottom)))
         val r1 = size.maxDimension * 0.8f

@@ -36,7 +36,7 @@ import com.sounote.app.data.Resource
 import com.sounote.app.data.Topic
 import com.sounote.app.ui.Accent
 import com.sounote.app.ui.ColorTheme
-import com.sounote.app.ui.DarkPalette
+import com.sounote.app.ui.AppTheme
 import com.sounote.app.ui.MotionLevel
 import com.sounote.app.ui.UiDensity
 import com.sounote.app.data.HomeLayout
@@ -132,13 +132,16 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- 2.0 görünüm ve arayüz tercihleri (hepsi cihazda, güvenli varsayılanlarla) ----
 
-    /** Koyu temanın yüzeyleri. */
-    var darkPalette by mutableStateOf(enumValueOrNull<DarkPalette>(prefs.getString("darkPalette", null)) ?: DarkPalette.MIDNIGHT)
+    /** Tema (logonun 6 hali); 3.0'daki koyu palet seçimi ("darkPalette") karşılığına çevrilir. */
+    var appTheme by mutableStateOf(
+        enumValueOrNull<AppTheme>(prefs.getString("logoTheme", null))
+            ?: AppTheme.fromLegacy(prefs.getString("darkPalette", null)) ?: AppTheme.ELECTRIC,
+    )
         private set
 
-    fun updateDarkPalette(p: DarkPalette) {
-        darkPalette = p
-        prefs.edit().putString("darkPalette", p.name).apply()
+    fun updateAppTheme(t: AppTheme) {
+        appTheme = t
+        prefs.edit().putString("logoTheme", t.name).apply()
     }
 
     /** Vurgu rengi. 1.0'da seçilen renk ("colorTheme") aynen korunur; seçilmemişse temanın kendi rengi. */

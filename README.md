@@ -29,7 +29,7 @@
 | | |
 |---|---|
 | 🎨 **Görünüm (3.0)** | Logonun 6 halinden 6 tema (Elektrik, Safir, Gümüş, Siyah beyaz, Zümrüt, Gül): parlayan zemin, cam kartlar; logo, uygulama simgesi ve widget'lar temaya göre değişir; emoji yerine simgeler, Canva çizimleri; telefonda alt çubuk, tablette yan menü ve yatayda iki sütunlu ana sayfa |
-| 🏠 **Ana sayfa** | Bölümleri sırala ya da gizle; favoriler ve sabitlenenlerle hızlı erişim |
+| 🏠 **Ana sayfa** | Bölümleri sırala ya da gizle; favoriler ve sabitlenenlerle hızlı erişim; son kullanılanları tek tek kaldır ya da temizle (dosyalar silinmez) |
 | ✍️ **Kalem** | 14 kalem (dolma, jel, ince uç, keçeli, pastel, neon, noktalı, fırça, kaligrafi…), her kalem ayarını hatırlar; yazma desteği (titreme süzme), cetvel ve açıölçer, çıkartmalar, son kullanılan renkler, katmanlar (gizle/göster, sıra), sonsuz tuval; fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
 | 📄 **PDF** | Okuma modu, lasso ile seçilen bölgeyi asistana sor, tablette yan yana not; içe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
 | 📚 **Dersler** | Drive'daki ders klasörüne eklenen yeni hafta ve dosyalar uygulamaya kendiliğinden gelir ("Yeni gelenler"); haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları WPS/Office'te açılır, PDF olarak SouNote'a paylaşılır; bitirdiklerini işaretle, haftanın ilerlemesini gör |

@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-23d",
+ "updated": "2026-10-26a",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -274,6 +274,17 @@
        "order": 18
       }
      ]
+    },
+    {
+     "id": "preferences",
+     "name": "Expressing Preferences (prefer, would rather)",
+     "resources": [
+      {
+       "title": "PPT (Expressing Preferences)",
+       "url": "https://drive.google.com/file/d/1D_8VVG1tIzjuYWYlM7bjF5UH-ZEEe1p4/view",
+       "kind": "pptx"
+      }
+     ]
     }
    ]
   },
@@ -389,7 +400,7 @@
    "topics": [
     {
      "id": "reading-strategies",
-     "name": "Reading Strategies (I–III)",
+     "name": "Reading Strategies (I–IV)",
      "resources": [
       {
        "title": "PPT (Reading Strategies I - Introduction)",
@@ -414,6 +425,11 @@
        "week": 5,
        "day": 4,
        "order": 20
+      },
+      {
+       "title": "PPT Reading Strategies IV (Inferring Unknown Words)",
+       "url": "https://drive.google.com/file/d/1lEZ83bmImXFIsv3vx2SGovsN4D_qgmYc/view",
+       "kind": "pptx"
       }
      ]
     },
@@ -512,6 +528,11 @@
        "week": 4,
        "day": 5,
        "order": 13
+      },
+      {
+       "title": "PPT (Opinion Essay)",
+       "url": "https://drive.google.com/file/d/1TWJ6miiyhAYiMHnzOSNCklz1Gou2hF0-/view",
+       "kind": "pptx"
       }
      ]
     },
@@ -642,6 +663,11 @@
        "title": "PPT SPEAKING (The Mic is Yours)",
        "url": "https://drive.google.com/file/d/17s_izwe8xz880uEz-C8agQ45pj2CJUGY/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Expressing Preferences)",
+       "url": "https://drive.google.com/file/d/1tgGpkvjBL22AA7kyOxdSbt1L6C1IASxW/view",
+       "kind": "pptx"
       }
      ]
     },
@@ -671,6 +697,11 @@
       {
        "title": "PPT (Group Project: Our Class Our Story)",
        "url": "https://drive.google.com/file/d/1a6rxpbgYHlWfIyP8hOPNEfGz0cHZStqf/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Presentation Skills I)",
+       "url": "https://drive.google.com/file/d/1kfuX96jLbPRLR2Ns3Tf-i_cRIN_Bm8lG/view",
        "kind": "pptx"
       }
      ]

@@ -127,6 +127,33 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
 
     LaunchedEffect(messages.size, busy) { if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1 + if (busy) 1 else 0) }
 
+    // Alıştırma ekranı (kaynak: belgede seçili bağlam, not ya da ders)
+    var exerciseOpen by remember { mutableStateOf(false) }
+    if (exerciseOpen) {
+        when (source) {
+            is AssistantSource.Document -> {
+                val sc = if (docScope >= 2) 0 else docScope
+                ExerciseScreen(
+                    vm,
+                    sourceTitle = source.doc.title + if (docScope == 3) " (seçim)" else if (sc == 0) " (sayfa ${source.page + 1})" else "",
+                    loadSource = {
+                        val text = (if (docScope == 3) selection else null) ?: docTexts[sc] ?: run {
+                            val (from, to) = if (sc == 0) source.page to source.page else 0 to source.pageCount - 1
+                            vm.documentText(source.doc, from, to).also { docTexts[sc] = it }
+                        }
+                        if (text.isBlank()) throw java.io.IOException("Bu sayfada okunabilir metin yok (taranmış görüntü olabilir)")
+                        text
+                    },
+                ) { exerciseOpen = false }
+            }
+            is AssistantSource.Note -> ExerciseScreen(vm, sourceTitle = source.title, loadSource = { source.text.take(14_000) }) { exerciseOpen = false }
+            is AssistantSource.Course -> ExerciseScreen(vm, course = vm.catalog.courses.find { it.name.equals(source.name, ignoreCase = true) }, sourceTitle = source.name) {
+                exerciseOpen = false
+            }
+            AssistantSource.General -> ExerciseScreen(vm) { exerciseOpen = false }
+        }
+    }
+
     // Kart üretme: önizlenen soru-cevaplar (null = pencere kapalı)
     var cardDraft by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
     var makingCards by remember { mutableStateOf(false) }
@@ -404,7 +431,23 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                                 AssistChip(
                                     onClick = { makeCards() },
                                     enabled = vm.assistantConfig.ready && !makingCards && !busy,
-                                    label = { Text(if (makingCards) "Kartlar hazırlanıyor…" else "🃏 Kart üret") },
+                                    leadingIcon = { Icon(SouIcons.Style, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                                    label = { Text(if (makingCards) "Kartlar hazırlanıyor…" else "Kart üret") },
+                                )
+                                AssistChip(
+                                    onClick = { exerciseOpen = true },
+                                    enabled = vm.assistantConfig.ready && !busy,
+                                    leadingIcon = { Icon(SouIcons.EditNote, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                                    label = { Text("Alıştırma") },
+                                )
+                            }
+                        } else if (source is AssistantSource.Note || source is AssistantSource.Course) {
+                            Row(Modifier.padding(bottom = 6.dp)) {
+                                AssistChip(
+                                    onClick = { exerciseOpen = true },
+                                    enabled = vm.assistantConfig.ready && !busy,
+                                    leadingIcon = { Icon(SouIcons.EditNote, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                                    label = { Text("Alıştırma hazırla") },
                                 )
                             }
                         }

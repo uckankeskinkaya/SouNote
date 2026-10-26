@@ -188,6 +188,11 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Logo teması (🧪, build-131+, kullanıcı: "tamamen logoya uygun, mavi tonlarda parlamalı"): MIDNIGHT = "Logo" (zemin #010518,
   primary #5482FF, kart cam gibi: yarı saydam lacivert-mavi degrade + sol üstten ışıyan degrade kenar, Modifier.card); souBackground dikey
   lacivert degrade + 3 elektrik mavisi ışık; hero #2A5BFF→#0A1A6E; açık tema lavanta-mavi kâğıt + mavi ışıltı. Varsayılan tema KOYU (prefs theme yoksa).
+- 6 tema (🧪, build-132+; kullanıcının verdiği logo varyantları): ui/Theme.kt AppTheme ELECTRIC/SAPPHIRE/SILVER/MONO/EMERALD/ROSE
+  (tohum renkler: bg, glowA, glowB, darkPrimary…, paper, lightPrimary, ink, hero; darkSchemeOf/lightSchemeOf karıştırarak üretir),
+  logolar res/drawable-nodpi/logo_<tema>.webp (Elektrik = logo_tile), AppLogo temanın logosunu çizer; SouColors.glowA/glowB/logo;
+  card() ve souBackground() temanın ışıklarını kullanır. prefs "logoTheme" (eski "darkPalette": MIDNIGHT/OBSIDIAN → ELECTRIC, GRAPHITE → SILVER).
+  Uygulama simgesi ve widget zeminleri Elektrik kalır.
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

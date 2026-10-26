@@ -26,12 +26,12 @@ object Brand {
     val gradient get() = Brush.linearGradient(listOf(Blue, Deep))
 }
 
-/** Uygulama logosu ("A. Dengeli"): gece mavisi kare içinde kâğıt ve dolma kalem (site ve simgeyle aynı). */
+/** Uygulama logosu: kare içinde kâğıt ve dolma kalem; seçili temanın logosu (Elektrik = simgedeki). */
 @Composable
 fun AppLogo(size: Dp, modifier: Modifier = Modifier, elevated: Boolean = true) {
     val shape = RoundedCornerShape(size * 0.22f)
     Image(
-        painterResource(R.drawable.logo_tile),
+        painterResource(LocalSouColors.current.logo),
         contentDescription = null,
         modifier = modifier
             .size(size)

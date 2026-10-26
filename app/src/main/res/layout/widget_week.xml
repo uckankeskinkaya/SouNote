@@ -30,6 +30,10 @@
         <ImageView
             android:layout_width="14dp"
             android:layout_height="14dp"
+            android:id="@+id/week_dot0"
+            android:id="@+id/week_dot1"
+            android:id="@+id/week_dot2"
+            android:id="@+id/week_dot3"
             android:src="@drawable/ic_w_dot"
             android:tint="#FF8DA6FF" />
 

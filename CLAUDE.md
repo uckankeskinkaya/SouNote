@@ -192,7 +192,11 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
   (tohum renkler: bg, glowA, glowB, darkPrimary…, paper, lightPrimary, ink, hero; darkSchemeOf/lightSchemeOf karıştırarak üretir),
   logolar res/drawable-nodpi/logo_<tema>.webp (Elektrik = logo_tile), AppLogo temanın logosunu çizer; SouColors.glowA/glowB/logo;
   card() ve souBackground() temanın ışıklarını kullanır. prefs "logoTheme" (eski "darkPalette": MIDNIGHT/OBSIDIAN → ELECTRIC, GRAPHITE → SILVER).
-  Uygulama simgesi ve widget zeminleri Elektrik kalır.
+  Simge ve widget'lar da temayı izler (🧪, build-134+): asıl ekran SouNoteActivity (eski MainActivity); manifestte 6 activity-alias
+  (".MainActivity" = Elektrik, eski sürümlerin ana ekran simgesi kaybolmasın diye adı korundu; ".Launcher<Tema>" kapalı başlar),
+  AppIcon.apply önce yenisini açar sonra ötekileri kapatır (DONT_KILL_APP). Simgeler mipmap-anydpi-v26/ic_launcher_<tema>.xml +
+  drawable-nodpi/ic_launcher_<tema>_bg.webp (logo ortada %64, zemin logonun kenar rengi). Widget: Widgets.style (widget_bg_<tema>.xml,
+  widget_logo, vurgu rengi). smoke.sh ".MainActivity" ile açar: tema değiştirmez, takma ad açık kalır.
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

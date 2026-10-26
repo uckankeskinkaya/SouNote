@@ -78,13 +78,14 @@ class ExamWidget : AppWidgetProvider() {
                 R.id.widget_study,
                 if (studyMin >= 60) "${studyMin / 60} sa ${studyMin % 60} dk" else "$studyMin dk",
             )
-            val open = Intent(context, MainActivity::class.java)
-                .setAction(MainActivity.ACTION_OPEN_EXAMS)
+            val open = Intent(context, SouNoteActivity::class.java)
+                .setAction(SouNoteActivity.ACTION_OPEN_EXAMS)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             views.setOnClickPendingIntent(
                 R.id.widget_root,
                 PendingIntent.getActivity(context, 7, open, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT),
             )
+            Widgets.style(context, views, intArrayOf(R.id.widget_days))
             return views
         }
     }

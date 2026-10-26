@@ -31,14 +31,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SouNote">
         <activity
-            android:name=".MainActivity"
+            android:name=".SouNoteActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density|uiMode">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             <!-- Dosya yöneticisinden "SouNote ile aç" -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -58,9 +54,6 @@
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/x-zip-compressed" />
             </intent-filter>
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
             <!-- Başka uygulamadan "Paylaş → SouNote" -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
@@ -70,6 +63,107 @@
                 <data android:mimeType="application/zip" />
             </intent-filter>
         </activity>
+
+        <!--
+            Ana ekran simgesi: seçili temanın simgesiyle bir takma ad (biri açık, ötekiler kapalı; AppIcon.apply).
+            ".MainActivity" adı korunur: eski sürümden güncelleyenlerin ana ekrandaki simgesi kaybolmasın.
+        -->
+        <activity-alias
+            android:name=".MainActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:targetActivity=".SouNoteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherSapphire"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_sapphire"
+            android:roundIcon="@mipmap/ic_launcher_sapphire"
+            android:label="@string/app_name"
+            android:targetActivity=".SouNoteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherSilver"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_silver"
+            android:roundIcon="@mipmap/ic_launcher_silver"
+            android:label="@string/app_name"
+            android:targetActivity=".SouNoteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherMono"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_mono"
+            android:roundIcon="@mipmap/ic_launcher_mono"
+            android:label="@string/app_name"
+            android:targetActivity=".SouNoteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherEmerald"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_emerald"
+            android:roundIcon="@mipmap/ic_launcher_emerald"
+            android:label="@string/app_name"
+            android:targetActivity=".SouNoteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
+        <activity-alias
+            android:name=".LauncherRose"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_rose"
+            android:roundIcon="@mipmap/ic_launcher_rose"
+            android:label="@string/app_name"
+            android:targetActivity=".SouNoteActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

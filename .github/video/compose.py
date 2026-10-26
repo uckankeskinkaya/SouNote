@@ -1,7 +1,10 @@
 """Tanıtım videosu: sahne kayıtlarını telefon çerçevesine oturtur, başlık kartları ekler, birleştirir.
 
 Girdi: scenes/NN-ad.mp4 (record.sh) + uygulama logosu (logo_tile.png). Çıktı: out/sounote.mp4 (1080x1920, dikey) ve out/poster.jpg.
+Seslendirme (.github/video/voice.mp3) varsa align.py'nin out/voice-times.json'una göre her parça kendi paragrafı kadar sürer
+(kayıt kısaysa son kare bekletilir) ve ses videoya eklenir.
 """
+import json
 import os
 import subprocess
 import sys
@@ -122,27 +125,58 @@ def duration(path):
     return float(out or 0)
 
 
+VOICE = ".github/video/voice.mp3"
+
+
+def voice_slots(n):
+    """Seslendirme varsa parça süreleri: açılış, n sahne, kapanış (sn); yoksa None."""
+    if not os.path.exists(VOICE) or not os.path.exists("out/voice-times.json"):
+        return None
+    starts = json.load(open("out/voice-times.json"))["starts"]
+    if len(starts) != n + 1:
+        print("seslendirme paragraf sayısı tutmuyor:", len(starts))
+        return None
+    # Sahne, konuşmadan biraz önce gelsin
+    cuts = [0.0] + [max(t - 0.25, 0.5) for t in starts] + [duration(VOICE) + 1.5]
+    return [b - a for a, b in zip(cuts, cuts[1:])]
+
+
 def main():
     os.makedirs("out/tmp", exist_ok=True)
+    slots = voice_slots(len(SCENES))
     frame_overlay().save("out/tmp/frame.png")
     parts = []
     # Açılış kartı
     card([("SouNote", 110, True, (255, 255, 255)), ("Kalemle ders notu uygulaması", 44, False, (190, 205, 255))], "out/tmp/intro.png")
-    run(["ffmpeg", "-y", "-loop", "1", "-t", "2.5", "-i", "out/tmp/intro.png", "-vf",
-         "fade=in:0:12,fade=out:st=2.1:d=0.4,format=yuv420p", "-r", "30", *ENC, "out/tmp/p00.mp4"])
+    t0 = slots[0] if slots else 2.5
+    run(["ffmpeg", "-y", "-loop", "1", "-t", f"{t0:.2f}", "-i", "out/tmp/intro.png", "-vf",
+         f"fade=in:0:12,fade=out:st={t0 - 0.4:.2f}:d=0.4,format=yuv420p", "-r", "30", *ENC, "out/tmp/p00.mp4"])
     parts.append("out/tmp/p00.mp4")
     for i, (name, title, sub) in enumerate(SCENES, 1):
         src = f"scenes/{name}.mp4"
-        if not os.path.exists(src) or duration(src) < 1:
+        ok = os.path.exists(src) and duration(src) >= 1
+        if not ok and not slots:
             print("atlandı:", src)
             continue
         scene_background(title, sub).save(f"out/tmp/bg{i}.png")
-        dur = min(duration(src), 13)
         out = f"out/tmp/p{i:02d}.mp4"
+        if not ok:
+            # Seslendirmeyle sıra kaymasın: kayıt yoksa sadece başlık
+            print("kayıt yok, başlık kartı:", src)
+            run(["ffmpeg", "-y", "-loop", "1", "-t", f"{slots[i]:.2f}", "-i", f"out/tmp/bg{i}.png", "-vf",
+                 "fade=in:0:9,format=yuv420p", "-r", "30", *ENC, out])
+            parts.append(out)
+            continue
+        if slots:
+            dur = slots[i]
+            # Kayıt paragraftan kısaysa son kare bekler
+            pad = f",tpad=stop_mode=clone:stop_duration={max(dur - duration(src), 0) + 0.5:.2f}"
+        else:
+            dur, pad = min(duration(src), 13), ""
         run([
             "ffmpeg", "-y", "-loop", "1", "-i", f"out/tmp/bg{i}.png", "-i", src, "-i", "out/tmp/frame.png",
             "-filter_complex",
-            f"[1:v]scale={PW}:{PH},fps=30[v];[0:v][v]overlay={PX}:{PY}:shortest=1[a];[a][2:v]overlay=0:0,"
+            f"[1:v]scale={PW}:{PH},fps=30{pad}[v];[0:v][v]overlay={PX}:{PY}:shortest=1[a];[a][2:v]overlay=0:0,"
             f"fade=in:0:9,fade=out:st={max(dur - 0.35, 0.5):.2f}:d=0.35,format=yuv420p",
             "-t", f"{dur:.2f}", "-r", "30", "-an", *ENC, out,
         ])
@@ -152,14 +186,18 @@ def main():
         ("Ücretsiz · Reklamsız", 54, True, (255, 255, 255)),
         ("uckankeskinkaya.github.io/SouNote", 40, False, (141, 166, 255)),
     ], "out/tmp/outro.png")
-    run(["ffmpeg", "-y", "-loop", "1", "-t", "3", "-i", "out/tmp/outro.png", "-vf",
+    run(["ffmpeg", "-y", "-loop", "1", "-t", f"{slots[-1] if slots else 3:.2f}", "-i", "out/tmp/outro.png", "-vf",
          "fade=in:0:12,format=yuv420p", "-r", "30", *ENC, "out/tmp/p99.mp4"])
     parts.append("out/tmp/p99.mp4")
     with open("out/tmp/list.txt", "w") as f:
         for p in parts:
             f.write(f"file '{os.path.abspath(p)}'\n")
     # Parçalar aynı ayarlarla kodlandı: yeniden kodlamadan birleştir
-    run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "out/tmp/list.txt", "-c", "copy", "-movflags", "+faststart", "out/sounote.mp4"])
+    if slots:
+        run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "out/tmp/list.txt", "-i", VOICE, "-map", "0:v", "-map", "1:a",
+             "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "out/sounote.mp4"])
+    else:
+        run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "out/tmp/list.txt", "-c", "copy", "-movflags", "+faststart", "out/sounote.mp4"])
     run(["ffmpeg", "-y", "-ss", "4", "-i", "out/sounote.mp4", "-frames:v", "1", "-q:v", "3", "out/poster.jpg"])
     print("Süre:", duration("out/sounote.mp4"), "sn, boyut:", os.path.getsize("out/sounote.mp4") // 1024, "KB")
 

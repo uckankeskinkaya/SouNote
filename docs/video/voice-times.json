@@ -1,0 +1,1 @@
+{"starts": [5.41, 14.93, 29.65, 37.25, 50.4, 60.4, 68.91, 77.63, 86.08, 93.96, 100.95], "whisper": false, "error": "TypeError: open() got an unexpected keyword argument 'metadata_errors'"}

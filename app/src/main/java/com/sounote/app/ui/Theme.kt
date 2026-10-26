@@ -39,40 +39,40 @@ import androidx.core.graphics.ColorUtils
 /** Koyu temanın yüzeyleri. Açık tema her zaman "SouNote Light". */
 enum class DarkPalette(val label: String, val description: String, val preview: Long) {
     OBSIDIAN("Obsidyen", "Mor tonlu", 0xFF13121C),
-    MIDNIGHT("Lacivert", "Logodaki lacivert", 0xFF050C28),
+    MIDNIGHT("Logo", "Lacivert zemin, parlayan mavi", 0xFF030A26),
     GRAPHITE("Grafit", "Nötr gri", 0xFF151619),
 }
 
 private val SouNoteLight = lightColorScheme(
-    // Logonun elektrik mavisi, kâğıdının açık lavanta-mavisi ve lacivert mürekkebi
+    // Logonun kâğıdı: açık lavanta-mavi zemin, elektrik mavisi vurgu, lacivert mürekkep
     primary = Color(0xFF1E4BF0),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCE3FF),
+    primaryContainer = Color(0xFFD9E2FF),
     onPrimaryContainer = Color(0xFF00125C),
-    secondary = Color(0xFF4A5888),
+    secondary = Color(0xFF3B55B8),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE0E6FA),
-    onSecondaryContainer = Color(0xFF0E1A45),
-    tertiary = Color(0xFF4F66DA),
+    secondaryContainer = Color(0xFFDDE5FF),
+    onSecondaryContainer = Color(0xFF0A1A55),
+    tertiary = Color(0xFF2F7BEA),
     onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFE2E7FF),
-    onTertiaryContainer = Color(0xFF0B1F6E),
-    background = Color(0xFFF2F5FD),
-    onBackground = Color(0xFF0A1233),
-    surface = Color(0xFFF8FAFF),
-    onSurface = Color(0xFF0A1233),
-    surfaceVariant = Color(0xFFE0E6F7),
-    onSurfaceVariant = Color(0xFF4E5878),
+    tertiaryContainer = Color(0xFFD6E8FF),
+    onTertiaryContainer = Color(0xFF00255C),
+    background = Color(0xFFEAF0FF),
+    onBackground = Color(0xFF081133),
+    surface = Color(0xFFF5F8FF),
+    onSurface = Color(0xFF081133),
+    surfaceVariant = Color(0xFFDCE4FA),
+    onSurfaceVariant = Color(0xFF465277),
     surfaceTint = Color(0xFF1E4BF0),
-    outline = Color(0xFF7480A6),
-    outlineVariant = Color(0xFFD4DBF0),
-    surfaceBright = Color(0xFFF8FAFF),
-    surfaceDim = Color(0xFFD5DBEE),
+    outline = Color(0xFF7082B8),
+    outlineVariant = Color(0xFFC9D5F5),
+    surfaceBright = Color(0xFFF5F8FF),
+    surfaceDim = Color(0xFFCFD9F3),
     surfaceContainerLowest = Color.White,
-    surfaceContainerLow = Color(0xFFEDF1FC),
-    surfaceContainer = Color(0xFFE7ECFA),
-    surfaceContainerHigh = Color(0xFFE0E6F7),
-    surfaceContainerHighest = Color(0xFFDAE1F4),
+    surfaceContainerLow = Color(0xFFF0F4FF),
+    surfaceContainer = Color(0xFFE6EDFF),
+    surfaceContainerHigh = Color(0xFFDDE6FF),
+    surfaceContainerHighest = Color(0xFFD5DFFB),
 )
 
 private val Obsidian = darkColorScheme(
@@ -107,35 +107,35 @@ private val Obsidian = darkColorScheme(
 )
 
 private val Midnight = darkColorScheme(
-    // Logonun neredeyse siyah lacivert zemini, elektrik mavisi ışığı ve lavanta-mavi kâğıdı
-    primary = Color(0xFF8DA6FF),
-    onPrimary = Color(0xFF00186E),
-    primaryContainer = Color(0xFF0B3BD6),
-    onPrimaryContainer = Color(0xFFDCE3FF),
-    secondary = Color(0xFFB8C4F0),
-    onSecondary = Color(0xFF16234F),
-    secondaryContainer = Color(0xFF142360),
-    onSecondaryContainer = Color(0xFFDCE2FA),
-    tertiary = Color(0xFFC6CFFF),
-    onTertiary = Color(0xFF13226B),
-    tertiaryContainer = Color(0xFF1A3BB0),
-    onTertiaryContainer = Color(0xFFE2E7FF),
-    background = Color(0xFF020820),
-    onBackground = Color(0xFFE4E9FA),
-    surface = Color(0xFF050C28),
-    onSurface = Color(0xFFE4E9FA),
-    surfaceVariant = Color(0xFF192860),
-    onSurfaceVariant = Color(0xFFB0BADD),
-    surfaceTint = Color(0xFF8DA6FF),
-    outline = Color(0xFF6E7DB3),
-    outlineVariant = Color(0xFF1E2D68),
-    surfaceBright = Color(0xFF233472),
-    surfaceDim = Color(0xFF020820),
-    surfaceContainerLowest = Color(0xFF010518),
-    surfaceContainerLow = Color(0xFF07102F),
-    surfaceContainer = Color(0xFF0A1538),
-    surfaceContainerHigh = Color(0xFF0F1C47),
-    surfaceContainerHighest = Color(0xFF152455),
+    // Logonun kendisi: neredeyse siyah lacivert, parlayan elektrik mavisi, ışıklı lavanta-mavi
+    primary = Color(0xFF5482FF),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF15329A),
+    onPrimaryContainer = Color(0xFFDDE4FF),
+    secondary = Color(0xFFA4B8FF),
+    onSecondary = Color(0xFF0C1A5A),
+    secondaryContainer = Color(0xFF132A7C),
+    onSecondaryContainer = Color(0xFFDCE3FF),
+    tertiary = Color(0xFF86B4FF),
+    onTertiary = Color(0xFF00225E),
+    tertiaryContainer = Color(0xFF0E3AA8),
+    onTertiaryContainer = Color(0xFFDCE9FF),
+    background = Color(0xFF010518),
+    onBackground = Color(0xFFE6ECFF),
+    surface = Color(0xFF030A26),
+    onSurface = Color(0xFFE6ECFF),
+    surfaceVariant = Color(0xFF16286E),
+    onSurfaceVariant = Color(0xFFAAB8E8),
+    surfaceTint = Color(0xFF5482FF),
+    outline = Color(0xFF5E74BC),
+    outlineVariant = Color(0xFF1C2E76),
+    surfaceBright = Color(0xFF213A8E),
+    surfaceDim = Color(0xFF010518),
+    surfaceContainerLowest = Color(0xFF010414),
+    surfaceContainerLow = Color(0xFF061036),
+    surfaceContainer = Color(0xFF0A1646),
+    surfaceContainerHigh = Color(0xFF0F1F5C),
+    surfaceContainerHighest = Color(0xFF15286E),
 )
 
 private val Graphite = darkColorScheme(
@@ -294,10 +294,13 @@ val LocalSouColors = staticCompositionLocalOf {
 }
 
 private fun souColors(scheme: ColorScheme, dark: Boolean, palette: DarkPalette): SouColors {
-    val hero = if (dark) {
+    // Logodaki gibi: parlak elektrik mavisinden lacivert'e
+    val hero = if (dark && palette == DarkPalette.MIDNIGHT) {
+        listOf(Color(0xFF2A5BFF), Color(0xFF0A1A6E))
+    } else if (dark) {
         listOf(scheme.primaryContainer, scheme.surfaceContainerLowest)
     } else {
-        listOf(scheme.primary, scheme.onPrimaryContainer)
+        listOf(Color(0xFF2A5BFF), Color(0xFF0A1A6E))
     }
     // Sade görünüm: koyu temada da parıltı yok.
     val aurora = Color.Transparent

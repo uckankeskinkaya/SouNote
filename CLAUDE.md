@@ -151,6 +151,8 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
 
 ## SouNote 3.0 (✅ yayınlandı build-124, 24 Ekim; PR #5 ile main)
+3.0.1 yayınlandı build-127; 3.1 yayınlandı build-138 (26 Ekim, PR #6 ile main). Otomatik yedek zip'i herkese açık ders klasöründeydi:
+Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörüne taşındı; uygulamadaki otomatik yedek klasörü de oraya çevrilmeli.
 - Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).
   Renkler logoya göre: açık tema mavi-mor (#3A4BE0), koyu varsayılan MIDNIGHT "Lacivert" (logodaki lacivert). Zemin Modifier.souBackground()
   (lacivert + mavi/mor ışık parıltısı); ekran Scaffold'ları saydam. Kart: Modifier.card() kenarlıksız (koyuda ince kenar).

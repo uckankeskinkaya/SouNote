@@ -315,7 +315,7 @@ fun StudyDialog(
                                 Text(
                                     card.back.ifBlank { "(Cevap yazılmamış)" },
                                     style = MaterialTheme.typography.headlineSmall,
-                                    color = Color(0xFF3A4BE0),
+                                    color = Color(0xFF1E4BF0),
                                     textAlign = TextAlign.Center,
                                 )
                                 if (card.page >= 0) {

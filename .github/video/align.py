@@ -22,7 +22,7 @@ def norm(w):
 
 def main():
     paras = [p.strip() for p in open(TEXT, encoding="utf-8") if p.strip()]
-    starts = None
+    starts, error = None, None
     try:
         from faster_whisper import WhisperModel
         model = WhisperModel("small", device="cpu", compute_type="int8")
@@ -47,10 +47,11 @@ def main():
         if any(y <= x for x, y in zip(starts, starts[1:])):
             raise RuntimeError(f"sıra bozuk: {starts}")
     except Exception as e:  # noqa: BLE001
-        print("Whisper kullanılamadı, sabit süreler:", e)
+        error = f"{type(e).__name__}: {e}"
+        print("Whisper kullanılamadı, sabit süreler:", error)
         starts = FALLBACK
     os.makedirs("out", exist_ok=True)
-    json.dump({"starts": starts}, open("out/voice-times.json", "w"))
+    json.dump({"starts": starts, "whisper": error is None, "error": error}, open("out/voice-times.json", "w"))
     print("başlangıçlar:", starts)
 
 

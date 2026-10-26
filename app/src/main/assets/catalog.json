@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-26a",
+ "updated": "2026-10-26b",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -282,7 +282,10 @@
       {
        "title": "PPT (Expressing Preferences)",
        "url": "https://drive.google.com/file/d/1D_8VVG1tIzjuYWYlM7bjF5UH-ZEEe1p4/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 6,
+       "day": 6,
+       "order": 0
       }
      ]
     }
@@ -429,7 +432,10 @@
       {
        "title": "PPT Reading Strategies IV (Inferring Unknown Words)",
        "url": "https://drive.google.com/file/d/1lEZ83bmImXFIsv3vx2SGovsN4D_qgmYc/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 6,
+       "day": 6,
+       "order": 2
       }
      ]
     },
@@ -532,7 +538,10 @@
       {
        "title": "PPT (Opinion Essay)",
        "url": "https://drive.google.com/file/d/1TWJ6miiyhAYiMHnzOSNCklz1Gou2hF0-/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 6,
+       "day": 6,
+       "order": 3
       }
      ]
     },
@@ -667,7 +676,10 @@
       {
        "title": "PPT SPEAKING (Expressing Preferences)",
        "url": "https://drive.google.com/file/d/1tgGpkvjBL22AA7kyOxdSbt1L6C1IASxW/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 6,
+       "day": 6,
+       "order": 1
       }
      ]
     },
@@ -702,7 +714,10 @@
       {
        "title": "PPT (Presentation Skills I)",
        "url": "https://drive.google.com/file/d/1kfuX96jLbPRLR2Ns3Tf-i_cRIN_Bm8lG/view",
-       "kind": "pptx"
+       "kind": "pptx",
+       "week": 6,
+       "day": 6,
+       "order": 4
       }
      ]
     }

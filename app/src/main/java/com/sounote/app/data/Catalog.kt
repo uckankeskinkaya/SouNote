@@ -17,7 +17,7 @@ data class Resource(
     val url: String,
     val kind: String,
     val week: Int = 0,
-    /** Haftanın günü: 1 = Pazartesi … 5 = Cuma, 0 = kendi çalışman (self-study). */
+    /** Haftanın günü: 1 = Pazartesi … 5 = Cuma, 6 = bu hafta (günü belli değil), 0 = kendi çalışman (self-study). */
     val day: Int = 0,
     val order: Int = 0,
 ) {

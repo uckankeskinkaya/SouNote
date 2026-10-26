@@ -580,8 +580,8 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                             fontWeight = FontWeight.SemiBold,
                         )
                     }
-                    // Gün gün: Pazartesi … Cuma, sonra kendi çalışman
-                    for (day in listOf(1, 2, 3, 4, 5, 0)) {
+                    // Gün gün: Pazartesi … Cuma, günü belli olmayanlar (6), sonra kendi çalışman
+                    for (day in listOf(1, 2, 3, 4, 5, 6, 0)) {
                         val rows = weekRes.filter { it.third.day == day }.map { it.third.order to it } +
                             weekMissing.filter { it.day == day }.map { it.order to it }
                         if (rows.isEmpty()) continue
@@ -642,7 +642,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
 }
 
 private val DAY_NAMES = mapOf(
-    1 to "Pazartesi", 2 to "Salı", 3 to "Çarşamba", 4 to "Perşembe", 5 to "Cuma", 0 to "Kendi çalışman (self-study)",
+    1 to "Pazartesi", 2 to "Salı", 3 to "Çarşamba", 4 to "Perşembe", 5 to "Cuma", 6 to "Bu hafta", 0 to "Kendi çalışman (self-study)",
 )
 
 private fun kindIcon(kind: String) = when (kind) {

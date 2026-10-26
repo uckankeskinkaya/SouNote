@@ -150,7 +150,7 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - 2.0.1 (✅ yayınlandı build-99): yeni logo (drawable-nodpi/logo_tile.png, ic_logo_fg.png; AppLogo, simge, açılış), sade ana sayfa (HomeLayout DEFAULT_HIDDEN TIP+NOTES, 6 hızlı işlem).
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
 
-## SouNote 3.0 (🧪, dal ccr-c4eded18-21kvrf; build-110+)
+## SouNote 3.0 (✅ yayınlandı build-124, 24 Ekim; PR #5 ile main)
 - Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).
   Renkler logoya göre: açık tema mavi-mor (#3A4BE0), koyu varsayılan MIDNIGHT "Lacivert" (logodaki lacivert). Zemin Modifier.souBackground()
   (lacivert + mavi/mor ışık parıltısı); ekran Scaffold'ları saydam. Kart: Modifier.card() kenarlıksız (koyuda ince kenar).
@@ -175,6 +175,31 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Sonsuz tuval: PaperSize.CANVAS 4800×4800 pt tek sayfa; PdfDocumentView canvasMode (genişlik ≥ CANVAS_MIN_PT): A4 ölçeğinde yerleşir,
   minZoom tamamını gösterir, kaldığın yer prefs canvasView_<id>.
 - Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
+- 3.0.1 (🧪, build-127+): kalemler yeniden yazıldı. Kullanıcı (ekran görüntüsü): uçlarda kocaman damla, ortada ince, boncuklu çizgi.
+  Neden: basınç katsayısı 0.35–1.6 (çok geniş) + kalınlık 12 kademeye bölünüp her kademe ayrı yuvarlak uçlu yol. Şimdi ink/StrokeOutline.kt:
+  basınçlı dolma/jel, fırça, kaligrafi tek parça doldurulan dış hat (yakın noktalar atılır, basınç ileri-geri yumuşatılır, penFactor 0.62–1.38,
+  uçlarda smoothstep incelme, keskin dönüşte daire); PdfExporter aynı hattı doldurur; ön tampon taper=false. Tahmin noktaları da yumuşatılır.
+  Python + Chromium (Skia, nonzero) ile görsel denendi.
+- Alıştırma (🧪, build-129+): data/Exercises.kt (ExerciseType MCQ/GAP/REWRITE/OPEN; generate JSON, checkLocally: şık + birebir boşluk,
+  grade: kalanları asistan 0/0.5/1 puanlar), ui/ExerciseScreen.kt (kurulum: konu, türler, sayı, mod "Önce cevapla"/"Cevabı göster";
+  sonuç konu haritasına recordTestScore; Notlara kaydet). Girişler: Dersler kartı, konu haritası, asistan penceresi (belge bağlamı/not/ders).
+- Renkler logoya yaklaştırıldı (🧪, build-130+): açık primary #1E4BF0 (elektrik mavisi), zemin #F2F5FD, mürekkep #0A1233; koyu MIDNIGHT
+  zemin #020820, primary #8DA6FF, primaryContainer #0B3BD6; mor tonlar kaldırıldı. Açılış/pencere/widget zemini #020820.
+- Logo teması (🧪, build-131+, kullanıcı: "tamamen logoya uygun, mavi tonlarda parlamalı"): MIDNIGHT = "Logo" (zemin #010518,
+  primary #5482FF, kart cam gibi: yarı saydam lacivert-mavi degrade + sol üstten ışıyan degrade kenar, Modifier.card); souBackground dikey
+  lacivert degrade + 3 elektrik mavisi ışık; hero #2A5BFF→#0A1A6E; açık tema lavanta-mavi kâğıt + mavi ışıltı. Varsayılan tema KOYU (prefs theme yoksa).
+- 6 tema (🧪, build-132+; kullanıcının verdiği logo varyantları): ui/Theme.kt AppTheme ELECTRIC/SAPPHIRE/SILVER/MONO/EMERALD/ROSE
+  (tohum renkler: bg, glowA, glowB, darkPrimary…, paper, lightPrimary, ink, hero; darkSchemeOf/lightSchemeOf karıştırarak üretir),
+  logolar res/drawable-nodpi/logo_<tema>.webp (Elektrik = logo_tile), AppLogo temanın logosunu çizer; SouColors.glowA/glowB/logo;
+  card() ve souBackground() temanın ışıklarını kullanır. prefs "logoTheme" (eski "darkPalette": MIDNIGHT/OBSIDIAN → ELECTRIC, GRAPHITE → SILVER).
+  Simge ve widget'lar da temayı izler (🧪, build-134+): asıl ekran SouNoteActivity (eski MainActivity); manifestte 6 activity-alias
+  (".MainActivity" = Elektrik, eski sürümlerin ana ekran simgesi kaybolmasın diye adı korundu; ".Launcher<Tema>" kapalı başlar),
+  AppIcon.apply önce yenisini açar sonra ötekileri kapatır (DONT_KILL_APP). Simgeler mipmap-anydpi-v26/ic_launcher_<tema>.xml +
+  drawable-nodpi/ic_launcher_<tema>_bg.webp (logo ortada %64, zemin logonun kenar rengi). Widget: Widgets.style (widget_bg_<tema>.xml,
+  widget_logo, vurgu rengi). smoke.sh ".MainActivity" ile açar: tema değiştirmez, takma ad açık kalır.
+- Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
+  QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
+  MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).
 3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),
@@ -184,8 +209,15 @@ Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/RE
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·
-  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM.
+  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · 06 1ojYUJlwP3PfdDgtm6yDwsao2bwvhi8E- ·
+  Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM. Hafta 6 (26 Ekim): 23 dosya program PDF'ine göre günlere ve konulara dağıtıldı.
   Yeni hafta: klasör aç ("Hafta 06 · 26 Ekim-1 Kasım"), dosyaları taşı (update_file parentId), WEEKS'e ekle.
+- OTOMASYON (🧪, build-137+): uygulama katalog yenilerken (açılış + ön plana gelince 3 saatte bir) Drive kök klasörünü
+  (DriveAuto.DEFAULT_ROOT) embeddedfolderview ile anahtarsız tarar ("Hafta NN" klasörleri → hafta, diğerleri 0); katalogda olmayan Drive
+  kimlikleri "Yeni gelenler" dersinde (Course id "auto", konu "Hafta N", gün 6 = "Bu hafta") görünür; aynı adlı "(1)" kopyaları ve
+  katalogdaki adın PPTX'i atlanır, PDF'i "(PDF)" olarak gelir. filesDir/drive-auto.json son liste. Sınıflandırma: klasörü listele
+  (search_files parentId), haftanın "L4 FALL WEEK N PROGRAM.pdf"ini read_file_content ile oku, raw + konular + WEEKS[N]'e ekle,
+  `python3 tools/make_catalog.py`, it. Sınıflanan kimlik katalogda olunca "Yeni gelenler"den düşer. Kullanıcı artık her hafta yazmak zorunda değil.
 - Kullanıcı her hafta Harmanlanmış Eğitim ekran görüntüsü atar (gün gün + self-study): WEEKS'e ekle, `python3 tools/make_catalog.py`, derle.
   Drive'da olmayanlar "!başlık|tür" olarak girer (uygulamada "Drive'da yok").
 - Katalog Drive'a da konabilir (SouNote-katalog.json, herkese açık) ve Catalog.kt REMOTE_URL ile uzaktan güncellenir; klasör herkese açık olmalı.

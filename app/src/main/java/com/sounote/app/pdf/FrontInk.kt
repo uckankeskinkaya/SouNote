@@ -46,7 +46,7 @@ class FrontInk(context: Context) {
             canvas.clipRect(param.clip)
             canvas.translate(param.left, param.top)
             canvas.scale(param.scale, param.scale)
-            strokeRenderer.draw(canvas, param.tool, param.color, param.width, param.pressureSensitive, param.points, param.count)
+            strokeRenderer.draw(canvas, param.tool, param.color, param.width, param.pressureSensitive, param.points, param.count, taper = false)
             canvas.restore()
         }
 

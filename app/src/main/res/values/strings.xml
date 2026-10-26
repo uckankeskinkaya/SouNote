@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">SouNote</string>
     <string name="shortcut_quick_note">Hızlı not</string>
+    <string name="widget_today_description">Çalışma serin, bugünkü süren ve tekrar bekleyen kartlar</string>
+    <string name="widget_week_description">Bu haftanın listesi ve sıradaki işler</string>
+    <string name="widget_quick_description">Hızlı not, son belge, tuval ve asistan</string>
     <string name="widget_description">Sıradaki sınav ve bugünkü çalışma süren</string>
 </resources>

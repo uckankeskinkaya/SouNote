@@ -187,9 +187,9 @@ fun SettingsScreen(vm: LibraryViewModel) {
         Entry(Category.PROFILE, "Adın", "ad isim profil kullanıcı") {
             SettingRow(SouIcons.Person, "Adın", subtitle = vm.userName.ifBlank { null }, onClick = { nameDialog = true })
         },
-        Entry(Category.APPEARANCE, "Tema", "tema açık koyu karanlık sistem gece") {
+        Entry(Category.APPEARANCE, "Açık / koyu", "tema açık koyu karanlık sistem gece") {
             Column {
-                SettingRow(SouIcons.Contrast, "Tema")
+                SettingRow(SouIcons.Contrast, "Açık / koyu")
                 ChipRow {
                     LibraryViewModel.ThemeMode.entries.forEach { m ->
                         FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })
@@ -197,34 +197,38 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 }
             }
         },
-        Entry(Category.APPEARANCE, "Koyu tema paleti", "palet obsidian midnight grafit mor mavi koyu") {
+        Entry(Category.APPEARANCE, "Tema", "tema logo elektrik safir gümüş siyah beyaz zümrüt gül renk palet koyu") {
             Column {
-                SettingRow(SouIcons.DarkMode, "Koyu tema rengi")
+                SettingRow(SouIcons.Palette, "Tema", subtitle = vm.appTheme.label)
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxWidth().padding(start = 56.dp, end = 16.dp, bottom = 14.dp),
                 ) {
-                    DarkPalette.entries.forEach { p ->
-                        val sel = vm.darkPalette == p
-                        val preview = colorSchemeFor(true, p, Accent.Auto)
+                    AppTheme.entries.forEach { t ->
+                        val sel = vm.appTheme == t
                         Column(
-                            Modifier
-                                .width(132.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(p.preview))
-                                .border(if (sel) 3.dp else 1.dp, if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                                .clickable { vm.updateDarkPalette(p) }
-                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .width(112.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(t.heroB), Color(t.bg))))
+                                .border(
+                                    if (sel) 2.5.dp else 1.dp,
+                                    if (sel) Color(t.glowB) else Color(t.glowA).copy(alpha = 0.4f),
+                                    RoundedCornerShape(18.dp),
+                                )
+                                .clickable { vm.updateAppTheme(t) }
+                                .padding(10.dp),
                         ) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                listOf(preview.primary, preview.tertiary, preview.surfaceContainerHigh).forEach {
-                                    Box(Modifier.size(16.dp).clip(CircleShape).background(it))
-                                }
-                            }
-                            Text(p.label, color = preview.onSurface, style = MaterialTheme.typography.labelLarge)
-                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = preview.primary, modifier = Modifier.size(18.dp))
+                            androidx.compose.foundation.Image(
+                                androidx.compose.ui.res.painterResource(t.logo),
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(14.dp)),
+                            )
+                            Text(t.label, color = Color.White, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = Color(t.darkPrimary), modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -564,7 +568,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
         val initial = when (val a = vm.accent) {
             is Accent.Custom -> a.argb
             is Accent.Preset -> a.theme.lightPrimary.toInt()
-            Accent.Auto -> 0xFF4F46E5.toInt()
+            Accent.Auto -> vm.appTheme.lightPrimary.toInt()
         }
         ColorPickerDialog(
             initial = initial,

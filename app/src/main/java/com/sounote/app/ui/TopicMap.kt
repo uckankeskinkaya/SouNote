@@ -59,7 +59,9 @@ fun TopicMapScreen(vm: LibraryViewModel, course: Course, onOpenTopic: (Topic) ->
     var selected by remember { mutableStateOf<Topic?>(null) }
     var practice by remember { mutableStateOf<Topic?>(null) }
     var practiceOpen by remember { mutableStateOf(false) }
+    var exerciseOpen by remember { mutableStateOf(false) }
     if (practiceOpen) PracticeSetupDialog(vm, course, practice) { practiceOpen = false }
+    if (exerciseOpen) ExerciseScreen(vm, course = course, initialTopic = practice) { exerciseOpen = false }
 
     val sou = LocalSouColors.current
     val idle = MaterialTheme.colorScheme.outline
@@ -203,6 +205,10 @@ fun TopicMapScreen(vm: LibraryViewModel, course: Course, onOpenTopic: (Topic) ->
                                 Icon(SouIcons.Quiz, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Text("Deneme sınavı", modifier = Modifier.padding(start = 6.dp))
                             }
+                            OutlinedButton(onClick = {
+                                practice = t
+                                exerciseOpen = true
+                            }) { Text("Alıştırma") }
                             OutlinedButton(onClick = { onOpenTopic(t) }) { Text("Kaynaklar") }
                         }
                     }

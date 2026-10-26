@@ -23,6 +23,7 @@
         <ImageView
             android:layout_width="26dp"
             android:layout_height="26dp"
+            android:id="@+id/quick_note_icon"
             android:src="@drawable/ic_w_note"
             android:tint="#FF8DA6FF" />
 
@@ -53,6 +54,7 @@
         <ImageView
             android:layout_width="26dp"
             android:layout_height="26dp"
+            android:id="@+id/quick_doc_icon"
             android:src="@drawable/ic_w_doc"
             android:tint="#FF8DA6FF" />
 
@@ -83,6 +85,7 @@
         <ImageView
             android:layout_width="26dp"
             android:layout_height="26dp"
+            android:id="@+id/quick_canvas_icon"
             android:src="@drawable/ic_w_canvas"
             android:tint="#FF8DA6FF" />
 
@@ -113,6 +116,7 @@
         <ImageView
             android:layout_width="26dp"
             android:layout_height="26dp"
+            android:id="@+id/quick_assistant_icon"
             android:src="@drawable/ic_w_assistant"
             android:tint="#FF8DA6FF" />
 

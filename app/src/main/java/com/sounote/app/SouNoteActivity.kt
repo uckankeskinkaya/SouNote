@@ -35,7 +35,7 @@ import com.sounote.app.ui.TextNoteScreen
 import com.sounote.app.ui.SouNoteTheme
 import com.sounote.app.ui.ViewerScreen
 
-class MainActivity : ComponentActivity() {
+class SouNoteActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_QUICK_NOTE = "com.sounote.app.QUICK_NOTE"

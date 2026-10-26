@@ -100,7 +100,7 @@ object ExamReminders {
         }
         val open = PendingIntent.getActivity(
             context, 0,
-            Intent(context, MainActivity::class.java).setAction(MainActivity.ACTION_OPEN_EXAMS)
+            Intent(context, SouNoteActivity::class.java).setAction(SouNoteActivity.ACTION_OPEN_EXAMS)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE,
         )

@@ -142,6 +142,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun updateAppTheme(t: AppTheme) {
         appTheme = t
         prefs.edit().putString("logoTheme", t.name).apply()
+        // Ana ekran simgesi ve widget'lar da temayı izler
+        AppIcon.apply(getApplication(), t)
+        Widgets.updateAll(getApplication())
     }
 
     /** Vurgu rengi. 1.0'da seçilen renk ("colorTheme") aynen korunur; seçilmemişse temanın kendi rengi. */
@@ -1890,9 +1893,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (!doc.imported) return
         runCatching {
             val app = getApplication<Application>()
-            val intent = Intent(app, MainActivity::class.java)
-                .setAction(MainActivity.ACTION_OPEN_DOC)
-                .putExtra(MainActivity.EXTRA_DOC_ID, doc.id)
+            val intent = Intent(app, SouNoteActivity::class.java)
+                .setAction(SouNoteActivity.ACTION_OPEN_DOC)
+                .putExtra(SouNoteActivity.EXTRA_DOC_ID, doc.id)
             val info = ShortcutInfoCompat.Builder(app, "doc_${doc.id}")
                 .setShortLabel(doc.title.take(24).ifEmpty { "Belge" })
                 .setLongLabel(doc.title.take(48).ifEmpty { "Belge" })

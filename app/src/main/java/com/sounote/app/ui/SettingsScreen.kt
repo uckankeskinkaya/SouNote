@@ -187,9 +187,9 @@ fun SettingsScreen(vm: LibraryViewModel) {
         Entry(Category.PROFILE, "Adın", "ad isim profil kullanıcı") {
             SettingRow(SouIcons.Person, "Adın", subtitle = vm.userName.ifBlank { null }, onClick = { nameDialog = true })
         },
-        Entry(Category.APPEARANCE, "Tema", "tema açık koyu karanlık sistem gece") {
+        Entry(Category.APPEARANCE, "Açık / koyu", "tema açık koyu karanlık sistem gece") {
             Column {
-                SettingRow(SouIcons.Contrast, "Tema")
+                SettingRow(SouIcons.Contrast, "Açık / koyu")
                 ChipRow {
                     LibraryViewModel.ThemeMode.entries.forEach { m ->
                         FilterChip(selected = vm.themeMode == m, onClick = { vm.updateTheme(m) }, label = { Text(m.label) })

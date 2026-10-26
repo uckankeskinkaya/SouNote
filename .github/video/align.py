@@ -43,7 +43,12 @@ def whisper_starts(paras):
     """voice.mp3'teki paragrafların (ilki hariç) başlangıçları; bulunamayan None."""
     from faster_whisper import WhisperModel
     model = WhisperModel("small", device="cpu", compute_type="int8")
-    segs, _ = model.transcribe(VOICE, language="tr", word_timestamps=True)
+    # Sesi ffmpeg ile çöz (faster-whisper'ın PyAV'ı runner'daki sürümle uyuşmuyordu)
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", VOICE, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"],
+                         capture_output=True, check=True).stdout
+    audio = np.frombuffer(raw, np.int16).astype(np.float32) / 32768.0
+    segs, _ = model.transcribe(audio, language="tr", word_timestamps=True)
     heard = [(norm(w.word), w.start) for s in segs for w in (s.words or [])]
     heard = [h for h in heard if h[0]]
     print("duyulan:", " ".join(h[0] for h in heard))

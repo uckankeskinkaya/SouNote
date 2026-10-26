@@ -32,14 +32,14 @@ class GuideOverlay(private val density: Float) {
 
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xD9FFFFFF.toInt(); style = Paint.Style.FILL }
     private val border = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF3A4BE0.toInt(); style = Paint.Style.STROKE; strokeWidth = 1.5f * density
+        color = 0xFF1E4BF0.toInt(); style = Paint.Style.STROKE; strokeWidth = 1.5f * density
     }
     private val tick = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xCC1A1C2E.toInt(); strokeWidth = 1f * density }
     private val label = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF1A1C2E.toInt(); textSize = 10f * density; textAlign = Paint.Align.CENTER
     }
     private val angleLabel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF3A4BE0.toInt(); textSize = 14f * density; textAlign = Paint.Align.CENTER; isFakeBoldText = true
+        color = 0xFF1E4BF0.toInt(); textSize = 14f * density; textAlign = Paint.Align.CENTER; isFakeBoldText = true
     }
 
     /** Ekranın ortasına, yatay olarak yerleştirir. */

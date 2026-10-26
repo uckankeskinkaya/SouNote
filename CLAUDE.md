@@ -183,6 +183,11 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Alıştırma (🧪, build-129+): data/Exercises.kt (ExerciseType MCQ/GAP/REWRITE/OPEN; generate JSON, checkLocally: şık + birebir boşluk,
   grade: kalanları asistan 0/0.5/1 puanlar), ui/ExerciseScreen.kt (kurulum: konu, türler, sayı, mod "Önce cevapla"/"Cevabı göster";
   sonuç konu haritasına recordTestScore; Notlara kaydet). Girişler: Dersler kartı, konu haritası, asistan penceresi (belge bağlamı/not/ders).
+- Renkler logoya yaklaştırıldı (🧪, build-130+): açık primary #1E4BF0 (elektrik mavisi), zemin #F2F5FD, mürekkep #0A1233; koyu MIDNIGHT
+  zemin #020820, primary #8DA6FF, primaryContainer #0B3BD6; mor tonlar kaldırıldı. Açılış/pencere/widget zemini #020820.
+- Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
+  QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
+  MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.
 
 Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd site && npm run build` → docs/ (docs/ elle düzenlenmez).
 3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),

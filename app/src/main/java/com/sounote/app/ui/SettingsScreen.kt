@@ -564,7 +564,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
         val initial = when (val a = vm.accent) {
             is Accent.Custom -> a.argb
             is Accent.Preset -> a.theme.lightPrimary.toInt()
-            Accent.Auto -> 0xFF4F46E5.toInt()
+            Accent.Auto -> 0xFF1E4BF0.toInt()
         }
         ColorPickerDialog(
             initial = initial,

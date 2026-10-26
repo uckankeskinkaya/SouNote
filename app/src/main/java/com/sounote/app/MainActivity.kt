@@ -41,6 +41,12 @@ class MainActivity : ComponentActivity() {
         const val ACTION_QUICK_NOTE = "com.sounote.app.QUICK_NOTE"
         const val ACTION_OPEN_DOC = "com.sounote.app.OPEN_DOC"
         const val ACTION_OPEN_EXAMS = "com.sounote.app.OPEN_EXAMS"
+        // Widget'lardan
+        const val ACTION_OPEN_HOME = "com.sounote.app.OPEN_HOME"
+        const val ACTION_OPEN_WEEK = "com.sounote.app.OPEN_WEEK"
+        const val ACTION_OPEN_LIBRARY = "com.sounote.app.OPEN_LIBRARY"
+        const val ACTION_NEW_CANVAS = "com.sounote.app.NEW_CANVAS"
+        const val ACTION_OPEN_ASSISTANT = "com.sounote.app.OPEN_ASSISTANT"
         const val EXTRA_DOC_ID = "docId"
     }
 
@@ -165,6 +171,26 @@ class MainActivity : ComponentActivity() {
             }
             ACTION_OPEN_DOC -> {
                 intent.getStringExtra(EXTRA_DOC_ID)?.let(vm::openById)
+                return
+            }
+            ACTION_OPEN_HOME, ACTION_OPEN_LIBRARY -> {
+                vm.closeDoc()
+                vm.tab = if (intent.action == ACTION_OPEN_HOME) LibraryViewModel.Tab.HOME else LibraryViewModel.Tab.LIBRARY
+                return
+            }
+            ACTION_OPEN_WEEK -> {
+                vm.closeDoc()
+                vm.coursesByWeek = true
+                vm.tab = LibraryViewModel.Tab.COURSES
+                return
+            }
+            ACTION_NEW_CANVAS -> {
+                vm.newCanvas()
+                return
+            }
+            ACTION_OPEN_ASSISTANT -> {
+                vm.closeDoc()
+                vm.openAssistant()
                 return
             }
         }

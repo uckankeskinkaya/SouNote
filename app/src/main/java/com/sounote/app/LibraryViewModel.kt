@@ -147,7 +147,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun loadAccent(): Accent = when (val n = prefs.getString("colorTheme", null)) {
         null, "AUTO" -> Accent.Auto
-        "CUSTOM" -> Accent.Custom(prefs.getInt("accentCustom", 0xFF4F46E5.toInt()))
+        "CUSTOM" -> Accent.Custom(prefs.getInt("accentCustom", 0xFF1E4BF0.toInt()))
         else -> enumValueOrNull<ColorTheme>(n)?.let { Accent.Preset(it) } ?: Accent.Auto
     }
 
@@ -544,6 +544,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (key !in doneItems) markActive()
         doneItems = if (key in doneItems) doneItems - key else doneItems + key
         prefs.edit().putStringSet("weekDone", doneItems).apply()
+        Widgets.updateAll(getApplication())
     }
 
     /** Haftanın yapılacakları: (anahtar, başlık, tür) — kaynaklar ve Drive'da olmayanlar, gün sırasıyla. */
@@ -612,7 +613,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString("userLevel", level).apply()
         viewModelScope.launch(Dispatchers.IO) {
             ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
-            ExamWidget.updateAll(getApplication())
+            Widgets.updateAll(getApplication())
         }
     }
 
@@ -633,7 +634,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             prefs.edit().putStringSet("examDone", examDoneGlobal).apply()
             viewModelScope.launch(Dispatchers.IO) {
                 ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
-                ExamWidget.updateAll(getApplication())
+                Widgets.updateAll(getApplication())
             }
         } else {
             saveExam(e.copy(done = !e.done))
@@ -729,7 +730,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 catalog = it
                 catalogError = null
                 withContext(Dispatchers.IO) { ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) }) }
-                ExamWidget.updateAll(getApplication())
+                Widgets.updateAll(getApplication())
             }.onFailure {
                 catalogError = "İnternete bağlanılamadı; son indirilen liste gösteriliyor"
                 if (!quiet) message = catalogError
@@ -758,7 +759,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching { examStore.save(list) }.onFailure { ErrorLog.record("Sınavlar kaydedilemedi", it) }
             ExamReminders.schedule(getApplication(), allExams.filter { !isDone(it) })
-            ExamWidget.updateAll(getApplication())
+            Widgets.updateAll(getApplication())
         }
     }
 
@@ -1015,7 +1016,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putLong("studyday_$day", prefs.getLong("studyday_$day", 0L) + ms)
             .apply()
         if (prefs.getLong("studyday_$day", 0L) >= STREAK_MIN_STUDY) markActive()
-        ExamWidget.updateAll(getApplication())
+        Widgets.updateAll(getApplication())
     }
 
     fun studyTime(docId: String) = prefs.getLong("study_$docId", 0L)
@@ -1061,6 +1062,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             .putInt("bestStreak", maxOf(prefs.getInt("bestStreak", 0), s))
             .apply()
         if (s in STREAK_MILESTONES) showMessage("$s günlük seri")
+        Widgets.updateAll(getApplication())
     }
 
     val activeToday: Boolean get() = dayKey(System.currentTimeMillis()) in activeDays
@@ -1330,7 +1332,12 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     fun refreshDue() {
-        viewModelScope.launch { dueCount = dueCards().size }
+        viewModelScope.launch {
+            dueCount = dueCards().size
+            // "Bugün" widget'ı okur
+            prefs.edit().putInt("dueCount", dueCount).apply()
+            Widgets.updateAll(getApplication())
+        }
     }
 
     /** Zamanı gelmiş kartlar, belgeleriyle (kutusu küçük olan önce). */
@@ -1716,7 +1723,10 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     fun formSaveTarget(doc: DocRef): File = repo.docFile(doc.id)
 
     fun open(doc: DocRef) {
-        prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis()).apply()
+        // "Hızlı işlemler" widget'ındaki son belge
+        prefs.edit().putLong("opened_${doc.id}", System.currentTimeMillis())
+            .putString("lastDocId", doc.id).putString("lastDocTitle", doc.title).apply()
+        Widgets.updateAll(getApplication())
         studyPause()
         viewModelScope.launch {
             // Başka belge açıkken (kısayol, hızlı not) önceki belgenin son notları kaybolmasın.

@@ -33,7 +33,8 @@ SCENES = [
     ("06-harita", "Konu haritası", "Hangi konuda ne kadar hazırsın"),
     ("07-planlayici", "Sınavlarını kaçırma", "Takvim, geri sayım, hatırlatıcı ve widget"),
     ("08-yazi", "Yazı stüdyosu", "Essay yaz; asistan puanlasın, alıştırma hazırlasın"),
-    ("09-arama", "Her şeyde ara", "PDF'lerin içinde, notlarında, derslerde"),
+    ("09-asistan", "Asistan", "PDF'ini özetler, sorularını cevaplar, kart hazırlar"),
+    ("10-arama", "Her şeyde ara", "PDF'lerin içinde, notlarında, derslerde"),
 ]
 
 

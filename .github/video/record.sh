@@ -76,6 +76,10 @@ adb shell "mkdir -p /data/data/$P/shared_prefs && cat > /data/data/$P/shared_pre
 <?xml version='1.0' encoding='utf-8' standalone='yes' ?>
 <map><boolean name=\"onboarded\" value=\"true\" /><string name=\"userName\">Ayşe</string><string name=\"theme\">DARK</string><int name=\"seenMajor\" value=\"9\" /><int name=\"seenBuild\" value=\"99999\" /><long name=\"backupNudgeUntil\" value=\"9999999999999\" /><long name=\"updateChecked\" value=\"9999999999999\" /></map>
 X
+cat > /data/data/$P/shared_prefs/assistant.xml <<'X'
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map><string name=\"baseUrl\">https://example.invalid/v1</string><string name=\"model\">demo</string><string name=\"apiKey\">demo</string></map>
+X
 chown -R $U:$U /data/data/$P/shared_prefs; restorecon -R /data/data/$P/shared_prefs"
 adb shell am start -W -n $A; sleep 5
 
@@ -142,10 +146,19 @@ sleep 3
 stop 08-yazi
 back; back; back
 
-# 9) Arama
+# 9) Asistan (sahte anahtarla: kurulum yerine sohbet ekranı ve öneriler; mesaj gönderilmez)
+adb shell am start -a $P.OPEN_ASSISTANT -n $A; sleep 3
+rec 09-asistan 10
+sleep 2; tap "Mesaj yaz…"; sleep 1
+adb shell input text "Present%sPerfect%sile%sPast%sSimple%sfarki%sne?"
+sleep 4
+stop 09-asistan
+back; back; back
+
+# 10) Arama
 home_top
-rec 09-arama 10
-tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 4
-stop 09-arama
+rec 10-arama 10
+tap "Ara"; sleep 2.5; tap "Ders, belge, not, sınav ara*"; adb shell input text "grammar"; sleep 4
+stop 10-arama
 
 ls -la scenes

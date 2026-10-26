@@ -86,7 +86,7 @@ jobs:
 
       - name: Siteye koy (çalışma dalı + main)
         run: |
-          mkdir -p /tmp/v && cp out/sounote.mp4 out/poster.jpg /tmp/v/
+          mkdir -p /tmp/v && cp out/sounote.mp4 out/poster.jpg out/voice-times.json /tmp/v/
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           for br in "$GITHUB_REF_NAME" main; do

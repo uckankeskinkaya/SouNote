@@ -47,6 +47,37 @@ learn_home() {
   for t in "Ortalama" "Writing" "Belgelerde*" "Yeni defter"; do POS[$t]=$(find_xy "$t"); echo "konum $t: ${POS[$t]}"; done
   anim 1
 }
+# Yazı alanı: uiautomator'daki EditText'ler (Compose TextField de EditText görünür); "big" = en büyüğü
+tap_edit() {
+  adb shell uiautomator dump /sdcard/u.xml >/dev/null 2>&1; adb pull /sdcard/u.xml /tmp/u.xml >/dev/null 2>&1
+  xy=$(python3 - "${1:-first}" <<'PY'
+import sys,re,xml.etree.ElementTree as ET
+try: nodes=[n for n in ET.parse('/tmp/u.xml').iter('node') if n.get('class')=='android.widget.EditText']
+except Exception: nodes=[]
+box=lambda n:list(map(int,re.findall(r'\d+',n.get('bounds'))))
+if nodes:
+    n=max(nodes,key=lambda n:(lambda a:(a[2]-a[0])*(a[3]-a[1]))(box(n))) if sys.argv[1]=='big' else nodes[0]
+    a=box(n); print((a[0]+a[2])//2,(a[1]+a[3])//2)
+PY
+)
+  echo "yazı alanı: $xy"; [ -n "$xy" ] && adb shell input tap $xy; sleep 1.2
+}
+# Metin yaz ve ekranda göründü mü bak; görünmezse tuş tuş dene (sadece küçük harf ve boşluk)
+type_text() {
+  adb shell input text "$(echo "$1" | sed 's/ /%s/g')"; sleep 1
+  adb shell uiautomator dump /sdcard/u.xml >/dev/null 2>&1; adb pull /sdcard/u.xml /tmp/u.xml >/dev/null 2>&1
+  w=$(echo "$1" | cut -d' ' -f1)
+  if grep -q "$w" /tmp/u.xml; then echo "yazıldı (input text)"; return; fi
+  echo "input text görünmedi, tuş tuş"
+  keys=""
+  for ((c=0; c<${#1}; c++)); do
+    ch="${1:c:1}"
+    case "$ch" in [a-z]) keys="$keys KEYCODE_$(echo "$ch" | tr a-z A-Z)";; " ") keys="$keys KEYCODE_SPACE";; esac
+  done
+  adb shell input keyevent $keys; sleep 1
+  adb shell uiautomator dump /sdcard/u.xml >/dev/null 2>&1; adb pull /sdcard/u.xml /tmp/u.xml >/dev/null 2>&1
+  grep -q "$w" /tmp/u.xml && echo "yazıldı (tuş)" || echo "YAZILAMADI: $1"
+}
 tap_home() { if [ -n "${POS[$1]}" ]; then adb shell input tap ${POS[$1]}; sleep 1; else tap "$1"; fi; }
 slow_scroll() { adb shell input swipe 540 1700 540 ${2:-900} ${1:-1200}; sleep 0.8; }
 # Parmakla çizim: noktalar listesi "x,y x,y ..." (motionevent ile eğri)
@@ -141,7 +172,7 @@ home_top
 tap "Yazı"; sleep 2
 rec 08-yazi 12
 sleep 1; tap "Yeni essay"; sleep 2.5
-adb shell input text "Nowadays%smany%syoung%speople%sspend%shours%son%ssocial%smedia.%sIn%smy%sopinion,%sit%sdoes%smore%sharm%sthan%sgood."
+tap_edit big; type_text "nowadays many young people spend hours on social media"
 sleep 3
 stop 08-yazi
 back; back; back
@@ -149,8 +180,7 @@ back; back; back
 # 9) Asistan (sahte anahtarla: kurulum yerine sohbet ekranı ve öneriler; mesaj gönderilmez)
 adb shell am start -a $P.OPEN_ASSISTANT -n $A; sleep 3
 rec 09-asistan 10
-sleep 2; tap "Mesaj yaz…"; sleep 1
-adb shell input text "Present%sPerfect%sile%sPast%sSimple%sfarki%sne?"
+sleep 2; tap_edit; type_text "present perfect ile past simple farki ne"
 sleep 4
 stop 09-asistan
 back; back; back
@@ -158,7 +188,7 @@ back; back; back
 # 10) Arama
 home_top
 rec 10-arama 10
-tap "Ara"; sleep 2.5; tap "Ders, belge, not, sınav ara*"; adb shell input text "grammar"; sleep 4
+tap "Ara"; sleep 2.5; tap_edit; type_text "grammar"; sleep 3
 stop 10-arama
 
 ls -la scenes

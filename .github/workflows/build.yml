@@ -11,8 +11,6 @@ on:
       - ".github/workflows/video.yml"
       - ".github/canva/**"
       - ".github/workflows/canva-fetch.yml"
-      - ".github/probe/**"
-      - ".github/workflows/drive-probe.yml"
       - ".github/workflows/publish.yml"
       - ".github/workflows/site.yml"
       - ".github/workflows/keygen.yml"

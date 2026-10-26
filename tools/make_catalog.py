@@ -90,7 +90,25 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1TWJ6miiyhAYiMHnzOSNCklz1Gou2hF0-|PPT (Opinion Essay)|pptx
 1lEZ83bmImXFIsv3vx2SGovsN4D_qgmYc|PPT Reading Strategies IV (Inferring Unknown Words)|pptx
 1tgGpkvjBL22AA7kyOxdSbt1L6C1IASxW|PPT SPEAKING (Expressing Preferences)|pptx
-1D_8VVG1tIzjuYWYlM7bjF5UH-ZEEe1p4|PPT (Expressing Preferences)|pptx"""
+1D_8VVG1tIzjuYWYlM7bjF5UH-ZEEe1p4|PPT (Expressing Preferences)|pptx
+1Nn2kF4m9EIp4N2McKDeEAH8MHI3NvkY2|PPT (Expressing Preferences) (PDF)|pdf
+13gACBrasXEtBJ-Z98w8R_8a2Ht9NTKl-|PPT (Opinion Essay) (PDF)|pdf
+1Oxdtz42M0rQx5aF8hLdzYblhkbHNdhjr|PPT (Presentation Skills I) (PDF)|pdf
+1yFHYG_LVGTwJ1Jp3omZaZ_WYZQW_spu-|PPT Reading Strategies IV (Inferring Unknown Words) (PDF)|pdf
+1lHUTFnruClxDL7YlZtcsqGj0dhHpvKLL|PPT SPEAKING (Expressing Preferences) (PDF)|pdf
+1Vk3XO0zRl85QRTRt4YrgPaGJCEMoh4cO|ACTIVITY HANDOUT (Expressing Preferences)|pdf
+18KvlJWxo_2B6HSh1GHosJVYojqw9yC1X|ACTIVITY HANDOUT (Role Play Job Interview)|pdf
+1oGHm4_U_pq3mqkgrhPZsmwRV0jYjy2mU|HANDOUT (Inferring Unknown Words)|pdf
+1IV4iH5figb3pxUhRK13hiw0HHHU4ihcC|HANDOUT (Listening Strategies II)|pdf
+1Pk8l-46OZ1YvQgfohMf65Qr-Nw7Yt-1s|HANDOUT (Vocabulary How To B1+ 3C)|pdf
+11jmuk-sELqXbyPIuN36fuP3losypVWQI|HANDOUT (Vocabulary and Grammar B1+ U3D)|pdf
+1xbEcGw9vJ2PiF65Mo46mMVv_WD0-ACPu|INTEGRATED HANDOUT (Teamwork)|pdf
+1n4a64sKTh7vHMbs5gX1bhJhb1XTvEPil|L4 Fall Week 6 Program|pdf
+1ur5rNXi1noozH40uaWjrCB1BxabS534d|PPT (Listening Strategies II)|pdf
+1nCgb4uvRBz43bFH9YQfgrArGDlm_GVJP|Listening 1 - Sounds for a Tiny Dragon|audio
+1V96DE_FYSk7Emzax3gPFBlhHSD92iVgK|Listening 2 - Spoilers in the Group Chat|audio
+1scYclhMO6zHiSFu2mLA6NbW-UBMwClyP|Self Study Handout Answer Key|pdf
+1gv8txxHdzxcrCuGGvuT-yHj-2I8C6qGQ|WRITING HANDOUT (Opinion Essay) PRACTICE III|pdf"""
 for line in raw.splitlines():
     i,t,k = line.split("|"); F[t]=(i,k)
 used=set()
@@ -110,43 +128,44 @@ courses = [
    {"id":"conditionals","name":"Conditional Structures","resources":R("PPT (Conditional Structures)","HANDOUT 1 (Conditional Structures)","HANDOUT 2 (Rewrite Conditional Structures)")},
    {"id":"modals","name":"Necessity, Obligation, Permission","resources":R("PPT (Necessity, Obligation, Permission)","ACTIVITY HANDOUT (Necessity, Obligation, Permission)")},
    {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)")},
-   {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)")},
+   {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)","PPT (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Expressing Preferences)")},
  ]},
  {"id":"vocabulary","name":"Vocabulary","emoji":"🔤","color":"#8E63CE","topics":[
    {"id":"vocab-u1","name":"Unit 1 (1A)","resources":R("HANDOUT (Vocabulary B1+ U1A)")},
    {"id":"vocab-u2","name":"Unit 2 (2A–2D)","resources":R("HANDOUT (Vocabulary 2A B)","HANDOUT (Vocabulary How to Activity B1+ U2C)","HANDOUT (Vocabulary B1+ U2D)","HANDOUT (Vocabulary and How to)")},
-   {"id":"vocab-u3","name":"Unit 3 (3A)","resources":R("HANDOUT (Vocabulary B1+ U3A)")},
+   {"id":"vocab-u3","name":"Unit 3 (3A–3D)","resources":R("HANDOUT (Vocabulary B1+ U3A)","HANDOUT (Vocabulary How To B1+ 3C)","HANDOUT (Vocabulary and Grammar B1+ U3D)")},
    {"id":"vocab-general","name":"Kelime öğrenme","resources":R("HANDOUT (Vocabulary)","PPT (Vocabulary - So What Do You Study)","Knowing a word")},
  ]},
  {"id":"reading","name":"Reading","emoji":"📖","color":"#3FA36B","topics":[
-   {"id":"reading-strategies","name":"Reading Strategies (I–IV)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies III- Pronoun Reference)","PPT Reading Strategies IV (Inferring Unknown Words)")},
+   {"id":"reading-strategies","name":"Reading Strategies (I–IV)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies III- Pronoun Reference)","PPT Reading Strategies IV (Inferring Unknown Words)","PPT Reading Strategies IV (Inferring Unknown Words) (PDF)","HANDOUT (Inferring Unknown Words)")},
    {"id":"reading-practice","name":"Reading alıştırmaları","resources":R("HANDOUT (Reading)","HANDOUT (Reading) 2","Reading practice")},
  ]},
  {"id":"listening","name":"Listening","emoji":"🎧","color":"#3AA6B9","topics":[
-   {"id":"listening-strategies","name":"Listening Strategies","resources":R("PPT (Listening Strategies I - Introduction)")},
+   {"id":"listening-strategies","name":"Listening Strategies (I–II)","resources":R("PPT (Listening Strategies I - Introduction)","PPT (Listening Strategies II)","HANDOUT (Listening Strategies II)","Listening 1 - Sounds for a Tiny Dragon","Listening 2 - Spoilers in the Group Chat")},
  ]},
  {"id":"writing","name":"Writing","emoji":"✍️","color":"#E0893A","topics":[
-   {"id":"essay-structure","name":"Opinion Essay: giriş, gelişme, sonuç","resources":R("WRITING HANDOUT (Introductory Paragraph)","WRITING HANDOUT (Body Paragraphs)","WRITING HANDOUT (Concluding Paragraph)","WRITING HANDOUT (Points to Notice)","PPT (Opinion Essay)")},
+   {"id":"essay-structure","name":"Opinion Essay: giriş, gelişme, sonuç","resources":R("WRITING HANDOUT (Introductory Paragraph)","WRITING HANDOUT (Body Paragraphs)","WRITING HANDOUT (Concluding Paragraph)","WRITING HANDOUT (Points to Notice)","PPT (Opinion Essay)","PPT (Opinion Essay) (PDF)")},
    {"id":"paragraph-to-essay","name":"Opinion Paragraph → Opinion Essay","resources":R("PPT (From Opinion Paragraph to Opinion Essay)","WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)")},
-   {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","WRITING HANDOUT (Opinion Essay) Practice I","Opinion essay peer evaluation checklist")},
+   {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","WRITING HANDOUT (Opinion Essay) Practice I","WRITING HANDOUT (Opinion Essay) PRACTICE III","Opinion essay peer evaluation checklist")},
    {"id":"linkers","name":"Linkers (bağlaçlar)","resources":R("WRITING HANDOUT (Opinion Essay Linkers)")},
  ]},
  {"id":"speaking","name":"Speaking","emoji":"🗣️","color":"#D65B7F","topics":[
-   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Habits)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Learning)","PPT SPEAKING (Work Life)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (Expressing Preferences)")},
+   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Habits)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Learning)","PPT SPEAKING (Work Life)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)")},
    {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)")},
-   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Presentation Skills I)")},
+   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)")},
  ]},
  {"id":"units","name":"Ünite materyalleri","emoji":"🧭","color":"#5B7FD6","topics":[
    {"id":"unit-habits","name":"Habits / The Hoarding Habit","resources":R("INTEGRATED HANDOUT (Habits)","INTEGRATED HANDOUT (The Hoarding Habit)","Video 1 - The Hoarding Habit","Video 2 - Hoarder Denise's House Tour")},
    {"id":"unit-work","name":"Work Life","resources":R("INTEGRATED HANDOUT (Work Life)","PPT (From University to the Office)","Why does Japan work so hard (video)")},
    {"id":"unit-change","name":"Big Changes / The New Normal","resources":R("INTEGRATED HANDOUT (Big Changes in History)","INTEGRATED HANDOUT (The New Normal)")},
    {"id":"unit-future","name":"University of the Future / Algorithm","resources":R("ACTIVITY HANDOUT (The University of the Future)","INTEGRATED HANDOUT (The Algorithm Knows You)")},
+   {"id":"unit-teamwork","name":"Teamwork (Unit 3C)","resources":R("INTEGRATED HANDOUT (Teamwork)")},
    {"id":"unit-video","name":"Video etkinlikleri","resources":R("ACTIVITY HANDOUT (Video)","Video (Activity)","Activity handout video")},
  ]},
  {"id":"exam-prep","name":"Sınav hazırlık","emoji":"🎯","color":"#C62828","topics":[
    {"id":"quiz1-l4","name":"L4 Quiz 1 hazırlık","resources":R("L4 Quiz 1 özet kağıdı","L4 Quiz 1 Grammar çalışma kağıdı","L4 Quiz 1 deneme testi")},
-   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)")},
-   {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)")},
+   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key")},
+   {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)","L4 Fall Week 6 Program")},
  ]},
 ]
 # ---- Haftalık program (Harmanlanmış Eğitim, L4 Fall). gün: 1=Pzt … 5=Cuma, 6=bu hafta (günü belli değil), 0=kendi çalışman (self-study) ----
@@ -180,9 +199,14 @@ WEEKS = {
      (4,"INTEGRATED HANDOUT (Work Life)"),(4,"Why does Japan work so hard (video)"),(4,"HANDOUT (Reading) 2"),(4,"PPT (Reading Strategies III- Pronoun Reference)"),
      (5,"PPT (From University to the Office)"),(5,"PPT (Vocabulary - So What Do You Study)"),
      (0,"Reading practice"),(0,"Opinion essay peer evaluation checklist")],
- # Hafta 6: Harmanlanmış Eğitim ekran görüntüsü gelince günlere dağıtılacak
- 6: [(6,"PPT (Expressing Preferences)"),(6,"PPT SPEAKING (Expressing Preferences)"),(6,"PPT Reading Strategies IV (Inferring Unknown Words)"),
-     (6,"PPT (Opinion Essay)"),(6,"PPT (Presentation Skills I)")],
+ # Hafta 6 (L4 FALL WEEK 6 PROGRAM.pdf): Pzt 3C, Salı 3D, Çarş. listening/writing, Perş. Cumhuriyet Bayramı, Cuma 3D devam
+ 6: [(1,"PPT Reading Strategies IV (Inferring Unknown Words) (PDF)"),(1,"HANDOUT (Inferring Unknown Words)"),(1,"PPT (Presentation Skills I) (PDF)"),
+     (1,"INTEGRATED HANDOUT (Teamwork)"),(1,"HANDOUT (Vocabulary How To B1+ 3C)"),
+     (2,"PPT (Expressing Preferences) (PDF)"),(2,"PPT SPEAKING (Expressing Preferences) (PDF)"),(2,"ACTIVITY HANDOUT (Role Play Job Interview)"),
+     (3,"PPT (Listening Strategies II)"),(3,"HANDOUT (Listening Strategies II)"),(3,"Listening 1 - Sounds for a Tiny Dragon"),
+     (3,"Listening 2 - Spoilers in the Group Chat"),(3,"WRITING HANDOUT (Opinion Essay) PRACTICE III"),
+     (5,"PPT (Opinion Essay) (PDF)"),(5,"ACTIVITY HANDOUT (Expressing Preferences)"),(5,"HANDOUT (Vocabulary and Grammar B1+ U3D)"),(5,"!Quizlet SO B1+ Unit 3|link"),
+     (0,"L4 Fall Week 6 Program"),(0,"!Workbook s. 22-23|pdf"),(0,"Self Study Handout Answer Key")],
 }
 byTitle={}
 for c in courses:
@@ -242,7 +266,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-26b","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-10-26c","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

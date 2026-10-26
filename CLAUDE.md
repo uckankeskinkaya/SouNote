@@ -210,8 +210,14 @@ Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/RE
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·
   04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · 06 1ojYUJlwP3PfdDgtm6yDwsao2bwvhi8E- ·
-  Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM. Hafta 6 (26 Ekim): 5 PPT konulara ve WEEKS[6]'ya gün 6 ("Bu hafta", günü belli değil) olarak eklendi; ekran görüntüsü gelince günlere dağıt.
+  Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM. Hafta 6 (26 Ekim): 23 dosya program PDF'ine göre günlere ve konulara dağıtıldı.
   Yeni hafta: klasör aç ("Hafta 06 · 26 Ekim-1 Kasım"), dosyaları taşı (update_file parentId), WEEKS'e ekle.
+- OTOMASYON (🧪, build-137+): uygulama katalog yenilerken (açılış + ön plana gelince 3 saatte bir) Drive kök klasörünü
+  (DriveAuto.DEFAULT_ROOT) embeddedfolderview ile anahtarsız tarar ("Hafta NN" klasörleri → hafta, diğerleri 0); katalogda olmayan Drive
+  kimlikleri "Yeni gelenler" dersinde (Course id "auto", konu "Hafta N", gün 6 = "Bu hafta") görünür; aynı adlı "(1)" kopyaları ve
+  katalogdaki adın PPTX'i atlanır, PDF'i "(PDF)" olarak gelir. filesDir/drive-auto.json son liste. Sınıflandırma: klasörü listele
+  (search_files parentId), haftanın "L4 FALL WEEK N PROGRAM.pdf"ini read_file_content ile oku, raw + konular + WEEKS[N]'e ekle,
+  `python3 tools/make_catalog.py`, it. Sınıflanan kimlik katalogda olunca "Yeni gelenler"den düşer. Kullanıcı artık her hafta yazmak zorunda değil.
 - Kullanıcı her hafta Harmanlanmış Eğitim ekran görüntüsü atar (gün gün + self-study): WEEKS'e ekle, `python3 tools/make_catalog.py`, derle.
   Drive'da olmayanlar "!başlık|tür" olarak girer (uygulamada "Drive'da yok").
 - Katalog Drive'a da konabilir (SouNote-katalog.json, herkese açık) ve Catalog.kt REMOTE_URL ile uzaktan güncellenir; klasör herkese açık olmalı.

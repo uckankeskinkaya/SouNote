@@ -32,7 +32,7 @@
 | 🏠 **Ana sayfa** | Bölümleri sırala ya da gizle; favoriler ve sabitlenenlerle hızlı erişim |
 | ✍️ **Kalem** | 14 kalem (dolma, jel, ince uç, keçeli, pastel, neon, noktalı, fırça, kaligrafi…), her kalem ayarını hatırlar; yazma desteği (titreme süzme), cetvel ve açıölçer, çıkartmalar, son kullanılan renkler, katmanlar (gizle/göster, sıra), sonsuz tuval; fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
 | 📄 **PDF** | Okuma modu, lasso ile seçilen bölgeyi asistana sor, tablette yan yana not; içe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
-| 📚 **Dersler** | Haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları WPS/Office'te açılır, PDF olarak SouNote'a paylaşılır; bitirdiklerini işaretle, haftanın ilerlemesini gör |
+| 📚 **Dersler** | Drive'daki ders klasörüne eklenen yeni hafta ve dosyalar uygulamaya kendiliğinden gelir ("Yeni gelenler"); haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları WPS/Office'te açılır, PDF olarak SouNote'a paylaşılır; bitirdiklerini işaretle, haftanın ilerlemesini gör |
 | 📅 **Planlayıcı** | Liste, hafta, ay ve zaman çizelgesi; ödev tamamlama, öncelik, filtreler, hatırlatıcılar, ana ekran widget'ları (sıradaki sınav, bugün, hafta listesi, hızlı işlemler); asistanla sınav öncesi gün gün çalışma planı |
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; dokun çevir, kaydırarak bildim/bilemedim; aralıklı tekrar (Leitner) |
 | 🤖 **Asistan** | Açık belgeyi ya da bir dersin bütün PDF'lerini okur (ders özeti); özet, kelime listesi, soru, essay değerlendirmesi. Evren (e-Devlet) anahtarı için uygulama içinde adım adım kurulum |

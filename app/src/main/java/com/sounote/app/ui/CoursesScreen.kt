@@ -252,6 +252,15 @@ private fun CourseDetail(vm: LibraryViewModel, course: Course, expanded: Set<Str
         modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
     ) {
         item { CourseHeader(vm, course) }
+        if (course.id == com.sounote.app.data.DriveAuto.COURSE_ID) {
+            item {
+                Text(
+                    "Drive'daki ders klasörüne yeni eklenen dosyalar. Konularına ayrılınca buradan kendi derslerine geçer.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         item {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

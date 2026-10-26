@@ -1,7 +1,7 @@
 """Tanıtım videosu: sahne kayıtlarını telefon çerçevesine oturtur, başlık kartları ekler, birleştirir.
 
 Girdi: scenes/NN-ad.mp4 (record.sh) + uygulama logosu (logo_tile.png). Çıktı: out/sounote.mp4 (1080x1920, dikey) ve out/poster.jpg.
-Seslendirme (.github/video/voice.mp3) varsa align.py'nin out/voice-times.json'una göre her parça kendi paragrafı kadar sürer
+Seslendirme varsa (align.py: out/voice.wav + out/voice-times.json) her parça kendi paragrafı kadar sürer
 (kayıt kısaysa son kare bekletilir) ve ses videoya eklenir.
 """
 import json
@@ -126,7 +126,7 @@ def duration(path):
     return float(out or 0)
 
 
-VOICE = ".github/video/voice.mp3"
+VOICE = "out/voice.wav"  # align.py: seslendirme + eklenen parçalar
 
 
 def voice_slots(n):

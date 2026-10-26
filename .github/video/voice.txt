@@ -7,5 +7,6 @@ Ders kaynakların konu konu ve hafta hafta düzenli. Drive'a eklenen yeni hafta 
 Konu haritası, hangi konuda ne kadar hazır olduğunu tek bakışta gösteriyor. Eksik kalan yerden alıştırma ya da deneme sınavı başlatabilirsin.
 Sınavlarını ve ödevlerini kaçırma. Takvim, geri sayım ve hatırlatıcılar seni sınavdan üç gün, bir gün ve iki saat önce uyarıyor.
 Yazı stüdyosunda essay'ini yaz. Asistan yazını değerlendirir, puanlar, hatalarını gösterir; istersen sana alıştırma da hazırlar.
+Takıldığın yerde asistana sor. Açtığın PDF'i özetler, sorularını cevaplar, bilgi kartı ve deneme sınavı hazırlar.
 Aradığın her şey bir dokunuş uzağında: PDF'lerin içinde, notlarında ve derslerinde.
 SouNote: ücretsiz, reklamsız. Hemen indir: uckankeskinkaya.github.io/SouNote

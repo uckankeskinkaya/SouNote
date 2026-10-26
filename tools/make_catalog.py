@@ -149,7 +149,7 @@ courses = [
    {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)")},
  ]},
 ]
-# ---- Haftalık program (Harmanlanmış Eğitim, L4 Fall). gün: 1=Pzt … 5=Cuma, 0=kendi çalışman (self-study) ----
+# ---- Haftalık program (Harmanlanmış Eğitim, L4 Fall). gün: 1=Pzt … 5=Cuma, 6=bu hafta (günü belli değil), 0=kendi çalışman (self-study) ----
 # Drive'da olan dosyalar başlığıyla, olmayanlar ("!" ile) sadece listede görünür.
 WEEKS = {
  1: [(0,"Stative verbs"),(0,"Simple vs progressive chart"),(0,"Knowing a word"),
@@ -180,6 +180,9 @@ WEEKS = {
      (4,"INTEGRATED HANDOUT (Work Life)"),(4,"Why does Japan work so hard (video)"),(4,"HANDOUT (Reading) 2"),(4,"PPT (Reading Strategies III- Pronoun Reference)"),
      (5,"PPT (From University to the Office)"),(5,"PPT (Vocabulary - So What Do You Study)"),
      (0,"Reading practice"),(0,"Opinion essay peer evaluation checklist")],
+ # Hafta 6: Harmanlanmış Eğitim ekran görüntüsü gelince günlere dağıtılacak
+ 6: [(6,"PPT (Expressing Preferences)"),(6,"PPT SPEAKING (Expressing Preferences)"),(6,"PPT Reading Strategies IV (Inferring Unknown Words)"),
+     (6,"PPT (Opinion Essay)"),(6,"PPT (Presentation Skills I)")],
 }
 byTitle={}
 for c in courses:
@@ -239,7 +242,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-26a","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-10-26b","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

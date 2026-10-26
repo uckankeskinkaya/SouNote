@@ -381,14 +381,17 @@ fun LibraryScreen(vm: LibraryViewModel) {
                     }
                     // Son açılanlar: kaldığın belgeye hızlı dönüş
                     val recent = if (folder == null && tag == null && !favOnly && !list) {
-                        vm.imported.filter { vm.lastOpened(it) > 0 }.sortedByDescending { vm.lastOpened(it) }.take(10)
+                        vm.imported.filter { vm.recentVisible("d" + it.id, vm.lastOpened(it)) }.sortedByDescending { vm.lastOpened(it) }.take(10)
                     } else {
                         emptyList()
                     }
                     if (recent.size >= 2) {
                         fullWidth {
                             Column {
-                                SectionTitle("Son açılanlar")
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier.weight(1f)) { SectionTitle("Son açılanlar") }
+                                    TextButton(onClick = { vm.clearRecents() }) { Text("Temizle") }
+                                }
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                                     contentPadding = PaddingValues(top = 12.dp),
@@ -396,7 +399,9 @@ fun LibraryScreen(vm: LibraryViewModel) {
                                     items(recent, key = { "recent" + it.id }) { doc ->
                                         Box(Modifier.animateItem(), propagateMinConstraints = true) {
                                             Box(Modifier.width(130.dp)) {
-                                                DocCard(doc, onClick = { vm.open(doc) })
+                                                DocCard(doc, onClick = { vm.open(doc) }, menu = { d ->
+                                                    DropdownMenuItem(text = { Text("Listeden kaldır") }, onClick = { d(); vm.hideRecent("d" + doc.id) })
+                                                })
                                             }
                                         }
                                     }

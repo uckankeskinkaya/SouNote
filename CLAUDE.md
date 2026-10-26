@@ -199,6 +199,8 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   AppIcon.apply önce yenisini açar sonra ötekileri kapatır (DONT_KILL_APP). Simgeler mipmap-anydpi-v26/ic_launcher_<tema>.xml +
   drawable-nodpi/ic_launcher_<tema>_bg.webp (logo ortada %64, zemin logonun kenar rengi). Widget: Widgets.style (widget_bg_<tema>.xml,
   widget_logo, vurgu rengi). smoke.sh ".MainActivity" ile açar: tema değiştirmez, takma ad açık kalır.
+- Son kullanılanlar temizleme (🧪, build-139+): VM recentsClearedAt + recentHidden (prefs JSON anahtar "d"/"n"/"c"+kimlik → an);
+  recentVisible(key, time); ana sayfa "Temizle" (onaylı) + kartta "Listeden kaldır", kütüphane "Son açılanlar"da da; dinamik kısayollar silinir.
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

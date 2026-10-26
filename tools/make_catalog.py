@@ -85,7 +85,12 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1l-jweFW3QchWIkE9jIqrzGW1ErpEpCC2|PPT SPEAKING (Work Life)|pptx
 1ofKtAlr9IWtDtIMln3O7PksihHQmgKXL|PPT (Listening Strategies I - Introduction)|pptx
 1v1QyueMgQW6cbB3j4jMu18mSmbfpott8|L4 Quiz 1 Grammar çalışma kağıdı|docx
-1pX5oJG6QAipxCETROpZ_-PM95qoVIBjg|L4 Quiz 1 deneme testi|html"""
+1pX5oJG6QAipxCETROpZ_-PM95qoVIBjg|L4 Quiz 1 deneme testi|html
+1kfuX96jLbPRLR2Ns3Tf-i_cRIN_Bm8lG|PPT (Presentation Skills I)|pptx
+1TWJ6miiyhAYiMHnzOSNCklz1Gou2hF0-|PPT (Opinion Essay)|pptx
+1lEZ83bmImXFIsv3vx2SGovsN4D_qgmYc|PPT Reading Strategies IV (Inferring Unknown Words)|pptx
+1tgGpkvjBL22AA7kyOxdSbt1L6C1IASxW|PPT SPEAKING (Expressing Preferences)|pptx
+1D_8VVG1tIzjuYWYlM7bjF5UH-ZEEe1p4|PPT (Expressing Preferences)|pptx"""
 for line in raw.splitlines():
     i,t,k = line.split("|"); F[t]=(i,k)
 used=set()
@@ -105,6 +110,7 @@ courses = [
    {"id":"conditionals","name":"Conditional Structures","resources":R("PPT (Conditional Structures)","HANDOUT 1 (Conditional Structures)","HANDOUT 2 (Rewrite Conditional Structures)")},
    {"id":"modals","name":"Necessity, Obligation, Permission","resources":R("PPT (Necessity, Obligation, Permission)","ACTIVITY HANDOUT (Necessity, Obligation, Permission)")},
    {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)")},
+   {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)")},
  ]},
  {"id":"vocabulary","name":"Vocabulary","emoji":"🔤","color":"#8E63CE","topics":[
    {"id":"vocab-u1","name":"Unit 1 (1A)","resources":R("HANDOUT (Vocabulary B1+ U1A)")},
@@ -113,22 +119,22 @@ courses = [
    {"id":"vocab-general","name":"Kelime öğrenme","resources":R("HANDOUT (Vocabulary)","PPT (Vocabulary - So What Do You Study)","Knowing a word")},
  ]},
  {"id":"reading","name":"Reading","emoji":"📖","color":"#3FA36B","topics":[
-   {"id":"reading-strategies","name":"Reading Strategies (I–III)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies III- Pronoun Reference)")},
+   {"id":"reading-strategies","name":"Reading Strategies (I–IV)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies III- Pronoun Reference)","PPT Reading Strategies IV (Inferring Unknown Words)")},
    {"id":"reading-practice","name":"Reading alıştırmaları","resources":R("HANDOUT (Reading)","HANDOUT (Reading) 2","Reading practice")},
  ]},
  {"id":"listening","name":"Listening","emoji":"🎧","color":"#3AA6B9","topics":[
    {"id":"listening-strategies","name":"Listening Strategies","resources":R("PPT (Listening Strategies I - Introduction)")},
  ]},
  {"id":"writing","name":"Writing","emoji":"✍️","color":"#E0893A","topics":[
-   {"id":"essay-structure","name":"Opinion Essay: giriş, gelişme, sonuç","resources":R("WRITING HANDOUT (Introductory Paragraph)","WRITING HANDOUT (Body Paragraphs)","WRITING HANDOUT (Concluding Paragraph)","WRITING HANDOUT (Points to Notice)")},
+   {"id":"essay-structure","name":"Opinion Essay: giriş, gelişme, sonuç","resources":R("WRITING HANDOUT (Introductory Paragraph)","WRITING HANDOUT (Body Paragraphs)","WRITING HANDOUT (Concluding Paragraph)","WRITING HANDOUT (Points to Notice)","PPT (Opinion Essay)")},
    {"id":"paragraph-to-essay","name":"Opinion Paragraph → Opinion Essay","resources":R("PPT (From Opinion Paragraph to Opinion Essay)","WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)")},
    {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","WRITING HANDOUT (Opinion Essay) Practice I","Opinion essay peer evaluation checklist")},
    {"id":"linkers","name":"Linkers (bağlaçlar)","resources":R("WRITING HANDOUT (Opinion Essay Linkers)")},
  ]},
  {"id":"speaking","name":"Speaking","emoji":"🗣️","color":"#D65B7F","topics":[
-   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Habits)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Learning)","PPT SPEAKING (Work Life)","PPT SPEAKING (The Mic is Yours)")},
+   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Habits)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Learning)","PPT SPEAKING (Work Life)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (Expressing Preferences)")},
    {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)")},
-   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)")},
+   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Presentation Skills I)")},
  ]},
  {"id":"units","name":"Ünite materyalleri","emoji":"🧭","color":"#5B7FD6","topics":[
    {"id":"unit-habits","name":"Habits / The Hoarding Habit","resources":R("INTEGRATED HANDOUT (Habits)","INTEGRATED HANDOUT (The Hoarding Habit)","Video 1 - The Hoarding Habit","Video 2 - Hoarder Denise's House Tour")},
@@ -233,7 +239,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-23d","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-10-26a","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

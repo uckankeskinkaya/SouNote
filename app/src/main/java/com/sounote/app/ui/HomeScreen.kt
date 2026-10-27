@@ -214,14 +214,26 @@ fun HomeScreen(vm: LibraryViewModel) {
     val importPdf = { pickPdfs.launch(arrayOf("application/pdf")) }
     val space = LocalSpacing.current
 
-    val recentDocs = remember(vm.imported) {
-        vm.imported.filter { vm.lastOpened(it) > 0 }.sortedByDescending { vm.lastOpened(it) }.take(12)
+    val recentDocs = remember(vm.imported, vm.recentsClearedAt, vm.recentHidden) {
+        vm.imported.filter { vm.recentVisible("d" + it.id, vm.lastOpened(it)) }.sortedByDescending { vm.lastOpened(it) }.take(12)
     }
-    val recentAll = remember(vm.imported, vm.textNotes, vm.catalog) {
+    val recentAll = remember(vm.imported, vm.textNotes, vm.catalog, vm.recentsClearedAt, vm.recentHidden) {
         val docs = recentDocs.map { RecentEntry.Doc(it, vm.lastOpened(it)) }
-        val notes = vm.textNotes.take(8).map { RecentEntry.Note(it) }
-        val courses = vm.catalog.courses.mapNotNull { c -> vm.lastCourseOpen(c.id).takeIf { it > 0 }?.let { RecentEntry.Lesson(c, it) } }
+        val notes = vm.textNotes.filter { vm.recentVisible("n" + it.id, it.updated) }.take(8).map { RecentEntry.Note(it) }
+        val courses = vm.catalog.courses.mapNotNull { c ->
+            vm.lastCourseOpen(c.id).takeIf { vm.recentVisible("c" + c.id, it) }?.let { RecentEntry.Lesson(c, it) }
+        }
         (docs + notes + courses).sortedByDescending { it.time }.take(14)
+    }
+    var clearRecents by remember { mutableStateOf(false) }
+    if (clearRecents) {
+        AlertDialog(
+            onDismissRequest = { clearRecents = false },
+            title = { Text("Son kullanılanlar temizlensin mi?") },
+            text = { Text("Liste boşalır; belgelerin, notların ve derslerin silinmez.") },
+            confirmButton = { TextButton(onClick = { vm.clearRecents(); clearRecents = false }) { Text("Temizle") } },
+            dismissButton = { TextButton(onClick = { clearRecents = false }) { Text("Vazgeç") } },
+        )
     }
     val days = remember(vm.imported) { vm.studyDays(7) }
     val empty = vm.loaded && vm.imported.isEmpty() && vm.rootFolders.isEmpty()
@@ -305,7 +317,7 @@ fun HomeScreen(vm: LibraryViewModel) {
             }
             HomeModule.RECENT -> if (recentAll.size > 1) {
                 Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
-                    SectionHeader("Son kullanılanlar", action = "Kütüphane") { vm.tab = LibraryViewModel.Tab.LIBRARY }
+                    SectionHeader("Son kullanılanlar", action = "Temizle") { clearRecents = true }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(space.lg), contentPadding = PaddingValues(end = 8.dp)) {
                         items(recentAll, key = {
                             when (it) {
@@ -319,13 +331,19 @@ fun HomeScreen(vm: LibraryViewModel) {
                                     is RecentEntry.Doc -> DocCard(
                                         r.doc,
                                         onClick = { vm.open(r.doc) },
-                                        menu = { d -> docMenu(r.doc, d) },
+                                        menu = { d ->
+                                            DropdownMenuItem(text = { Text("Listeden kaldır") }, onClick = { d(); vm.hideRecent("d" + r.doc.id) })
+                                            docMenu(r.doc, d)
+                                        },
                                         favorite = vm.isFavorite(QuickItem.DOC, r.doc.id),
                                     )
                                     is RecentEntry.Note -> TextNoteCard(
                                         r.note,
                                         onClick = { vm.openTextNote(r.note) },
-                                        menu = { d -> TextNoteMenuItems(r.note, vm, d) { deletingText = r.note } },
+                                        menu = { d ->
+                                            DropdownMenuItem(text = { Text("Listeden kaldır") }, onClick = { d(); vm.hideRecent("n" + r.note.id) })
+                                            TextNoteMenuItems(r.note, vm, d) { deletingText = r.note }
+                                        },
                                     )
                                     is RecentEntry.Lesson -> CourseMiniCard(r.course) {
                                         vm.focusCourse = r.course.id

@@ -35,7 +35,7 @@ rec() { adb shell screenrecord --size 720x1600 --bit-rate 8000000 --time-limit "
 stop() { wait $RECPID; sleep 1; adb pull "/sdcard/$1.mp4" "scenes/$1.mp4"; }
 # Ana sayfanın en üstüne dön (her sahneden önce)
 home_top() {
-  adb shell am start -n $P/.MainActivity >/dev/null; sleep 1.5
+  adb shell am start -n $P/.SouNoteActivity >/dev/null; sleep 1.5
   tap "Ana sayfa"
   adb shell input swipe 540 700 540 2000 150; adb shell input swipe 540 700 540 2000 150; sleep 1.5
 }
@@ -46,6 +46,37 @@ learn_home() {
   anim 0; home_top; sleep 1
   for t in "Ortalama" "Writing" "Belgelerde*" "Yeni defter"; do POS[$t]=$(find_xy "$t"); echo "konum $t: ${POS[$t]}"; done
   anim 1
+}
+# Yazı alanı: uiautomator'daki EditText'ler (Compose TextField de EditText görünür); "big" = en büyüğü
+tap_edit() {
+  adb shell uiautomator dump /sdcard/u.xml >/dev/null 2>&1; adb pull /sdcard/u.xml /tmp/u.xml >/dev/null 2>&1
+  xy=$(python3 - "${1:-first}" <<'PY'
+import sys,re,xml.etree.ElementTree as ET
+try: nodes=[n for n in ET.parse('/tmp/u.xml').iter('node') if n.get('class')=='android.widget.EditText']
+except Exception: nodes=[]
+box=lambda n:list(map(int,re.findall(r'\d+',n.get('bounds'))))
+if nodes:
+    n=max(nodes,key=lambda n:(lambda a:(a[2]-a[0])*(a[3]-a[1]))(box(n))) if sys.argv[1]=='big' else nodes[0]
+    a=box(n); print((a[0]+a[2])//2,(a[1]+a[3])//2)
+PY
+)
+  echo "yazı alanı: $xy"; [ -n "$xy" ] && adb shell input tap $xy; sleep 1.2
+}
+# Metin yaz ve ekranda göründü mü bak; görünmezse tuş tuş dene (sadece küçük harf ve boşluk)
+type_text() {
+  adb shell input text "$(echo "$1" | sed 's/ /%s/g')"; sleep 1
+  adb shell uiautomator dump /sdcard/u.xml >/dev/null 2>&1; adb pull /sdcard/u.xml /tmp/u.xml >/dev/null 2>&1
+  w=$(echo "$1" | cut -d' ' -f1)
+  if grep -q "$w" /tmp/u.xml; then echo "yazıldı (input text)"; return; fi
+  echo "input text görünmedi, tuş tuş"
+  keys=""
+  for ((c=0; c<${#1}; c++)); do
+    ch="${1:c:1}"
+    case "$ch" in [a-z]) keys="$keys KEYCODE_$(echo "$ch" | tr a-z A-Z)";; " ") keys="$keys KEYCODE_SPACE";; esac
+  done
+  adb shell input keyevent $keys; sleep 1
+  adb shell uiautomator dump /sdcard/u.xml >/dev/null 2>&1; adb pull /sdcard/u.xml /tmp/u.xml >/dev/null 2>&1
+  grep -q "$w" /tmp/u.xml && echo "yazıldı (tuş)" || echo "YAZILAMADI: $1"
 }
 tap_home() { if [ -n "${POS[$1]}" ]; then adb shell input tap ${POS[$1]}; sleep 1; else tap "$1"; fi; }
 slow_scroll() { adb shell input swipe 540 1700 540 ${2:-900} ${1:-1200}; sleep 0.8; }
@@ -58,48 +89,36 @@ draw() {
   last=${!#}; adb shell input motionevent UP ${last%,*} ${last#*,}
 }
 
-# 1) Tanıtım (ilk açılış)
-adb shell am start -W -n $P/.MainActivity; sleep 3
-rec 01-tanitim 9
-sleep 2; tap "İleri"; sleep 2; tap "İleri"; sleep 2
+# Not: tema değişince ana ekran simgesi başka takma ada geçer (.MainActivity kapanabilir); hep asıl ekranla aç.
+A=$P/.SouNoteActivity
+back() { adb shell input keyevent KEYCODE_BACK; sleep 0.8; }
+
+# 1) Tanıtım (ilk açılış; tema seçimi dahil)
+adb shell am start -W -n $A; sleep 3
+rec 01-tanitim 11
+sleep 1.5; tap "İleri"; sleep 2; tap "İleri"; sleep 2; tap "İleri"; sleep 2.5
 stop 01-tanitim
 
-# Adı olan bir kullanıcıyla devam (tanıtım atlanır)
+# Adı olan bir kullanıcıyla devam (tanıtım atlanır), koyu tema
 adb shell am force-stop $P
 adb root; sleep 3
 U=$(adb shell stat -c %u /data/data/$P | tr -d '\r')
 adb shell "mkdir -p /data/data/$P/shared_prefs && cat > /data/data/$P/shared_prefs/viewer.xml <<'X'
 <?xml version='1.0' encoding='utf-8' standalone='yes' ?>
-<map><boolean name=\"onboarded\" value=\"true\" /><string name=\"userName\">Ayşe</string><int name=\"seenMajor\" value=\"9\" /><int name=\"seenBuild\" value=\"99999\" /><long name=\"backupNudgeUntil\" value=\"9999999999999\" /><long name=\"updateChecked\" value=\"9999999999999\" /></map>
+<map><boolean name=\"onboarded\" value=\"true\" /><string name=\"userName\">Ayşe</string><string name=\"theme\">DARK</string><int name=\"seenMajor\" value=\"9\" /><int name=\"seenBuild\" value=\"99999\" /><long name=\"backupNudgeUntil\" value=\"9999999999999\" /><long name=\"updateChecked\" value=\"9999999999999\" /></map>
+X
+cat > /data/data/$P/shared_prefs/assistant.xml <<'X'
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map><string name=\"baseUrl\">https://example.invalid/v1</string><string name=\"model\">demo</string><string name=\"apiKey\">demo</string></map>
 X
 chown -R $U:$U /data/data/$P/shared_prefs; restorecon -R /data/data/$P/shared_prefs"
-adb shell am start -W -n $P/.MainActivity; sleep 4
+adb shell am start -W -n $A; sleep 5
 
-# 2) Ana sayfa
-rec 02-ana 12
-sleep 2; slow_scroll 1500 1000; sleep 1.5; slow_scroll 1500 1000; sleep 1.5; slow_scroll 1500 1000; sleep 1
-stop 02-ana
-adb shell input swipe 540 600 540 2000 200; adb shell input swipe 540 600 540 2000 200; sleep 1
-
-# 3) Dersler → Haftalar
-tap "Dersler"; sleep 2
-rec 03-dersler 11
-sleep 2; slow_scroll 1500 1100; sleep 1.5; tap "🗓️ Haftalar"; sleep 3
-stop 03-dersler
-
-# 4) Sınavlar
-tap "Sınavlar"; sleep 2
-rec 04-sinavlar 8
-sleep 2; slow_scroll 1500 1000; sleep 2
-stop 04-sinavlar
-
-# 5) Defter: parmakla yaz + çizim
-home_top
-adb shell am start -a $P.QUICK_NOTE -n $P/.MainActivity; sleep 4
+# 2) Defter: parmakla yaz + çizim (yeni kalemler, pürüzsüz çizgi)
+adb shell am start -a $P.QUICK_NOTE -n $A; sleep 4
 tap "Parmakla yaz kapalı"; sleep 1
-rec 05-defter 14
+rec 02-defter 13
 sleep 1
-# "Hi" + dalga + kalp + onay işareti
 draw "200,700 200,760 200,820 200,880 200,940"
 draw "200,820 240,820 280,820"
 draw "280,700 280,760 280,820 280,880 280,940"
@@ -109,34 +128,67 @@ draw "160,1040 220,1010 280,1040 340,1070 400,1040 460,1010 520,1040 580,1070 64
 draw "780,800 740,750 690,760 680,820 720,880 780,940 840,880 880,820 870,760 820,750 780,800"
 draw "560,760 600,820 700,690"
 sleep 1.5
-stop 05-defter
-adb shell input keyevent KEYCODE_BACK; sleep 2
+stop 02-defter
+back; sleep 1
 
-# 6) Writing
-learn_home
+# 3) Ana sayfa (kaldığın yer, yaklaşanlar, son kullanılanlar)
 home_top
-rec 06-writing 16
-tap_home "Writing"; sleep 2.5; anim 0; tap "Opinion Essay"; sleep 2.5
-tap "Social media does more*"; sleep 2.5
-anim 1
-# Yazı alanına dokun (klavye açılsın), sonra yaz
-adb shell input tap 540 1500; sleep 1.5
-adb shell input text "Nowadays%smany%syoung%speople%sspend%shours%son%ssocial%smedia.%sIn%smy%sopinion,%sit%sdoes%smore%sharm%sthan%sgood."
+rec 03-ana 11
+sleep 2; slow_scroll 1500 1000; sleep 1.5; slow_scroll 1500 1000; sleep 1.5; slow_scroll 1500 1000; sleep 1
+stop 03-ana
+
+# 4) Temalar: Ayarlar → Görünüm → 6 tema
+home_top
+tap "Ayarlar"; sleep 1.5; tap "Görünüm"; sleep 2
+rec 04-temalar 13
+sleep 1.5; tap "Safir"; sleep 1.8; tap "Zümrüt"; sleep 1.8; tap "Gül"; sleep 1.8; tap "Gümüş"; sleep 1.8; tap "Elektrik"; sleep 2
+stop 04-temalar
+adb shell am start -n $A >/dev/null; sleep 2; back; back
+
+# 5) Dersler → Haftalar
+home_top
+tap "Dersler"; sleep 2.5
+rec 05-dersler 11
+sleep 1.5; slow_scroll 1500 1100; sleep 1.5; tap "Haftalar"; sleep 2.5; slow_scroll 1500 900; sleep 2
+stop 05-dersler
+
+# 6) Konu haritası
+tap "Konular"; sleep 1.5; adb shell input swipe 540 700 540 1900 150; sleep 1
+tap "Grammar"; sleep 2
+rec 06-harita 9
+sleep 1.5; tap "Konu haritası"; sleep 4
+stop 06-harita
+back; back
+
+# 7) Planlayıcı (hafta görünümü)
+home_top
+tap "Planlayıcı"; sleep 2
+rec 07-planlayici 9
+sleep 1.5; tap "Hafta"; sleep 2.5; tap "Liste"; sleep 2
+stop 07-planlayici
+
+# 8) Yazı stüdyosu
+home_top
+tap "Yazı"; sleep 2
+rec 08-yazi 12
+sleep 1; tap "Yeni essay"; sleep 2.5
+tap_edit big; type_text "nowadays many young people spend hours on social media"
 sleep 3
-stop 06-writing
-adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1
+stop 08-yazi
+back; back; back
 
-# 7) Ortalama
-home_top
-rec 07-ortalama 12
-tap_home "Ortalama"; sleep 3.5; anim 0; tap "Bu hesabı kur"; anim 1; sleep 2; slow_scroll 1500 1000; sleep 2
-stop 07-ortalama
-adb shell input keyevent KEYCODE_BACK; sleep 1
+# 9) Asistan (sahte anahtarla: kurulum yerine sohbet ekranı ve öneriler; mesaj gönderilmez)
+adb shell am start -a $P.OPEN_ASSISTANT -n $A; sleep 3
+rec 09-asistan 10
+sleep 2; tap_edit; type_text "present perfect ile past simple farki ne"
+sleep 4
+stop 09-asistan
+back; back; back
 
-# 8) Arama
+# 10) Arama
 home_top
-rec 08-arama 10
-tap_home "Belgelerde*"; sleep 3.5; adb shell input text "not"; sleep 4
-stop 08-arama
+rec 10-arama 10
+tap "Ara"; sleep 2.5; tap_edit; type_text "grammar"; sleep 3
+stop 10-arama
 
 ls -la scenes

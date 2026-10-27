@@ -1,0 +1,12 @@
+Ders notların, kalemin ve sınavların… tek bir yerde. Bu, SouNote.
+SouNote, ders PDF'lerinin üstüne kalemle yazabildiğin, ücretsiz ve reklamsız bir not uygulaması. Hesap açman gerekmiyor; notların sadece kendi cihazında kalıyor.
+Bir defter aç ve yazmaya başla. On dört farklı kalem var: dolma kalem, jel, fosforlu, fırça, kaligrafi… Çizgiler pürüzsüz ve doğal. Kalemin yoksa "Parmakla yaz"ı açman yeterli. Cetvel, açıölçer ve katmanlar da elinin altında.
+Ana sayfa seni kaldığın yerden karşılıyor. Yaklaşan sınavlar, bu haftanın listesi ve son açtıkların hemen burada.
+SouNote'u kendine göre ayarla. Altı tema var: Elektrik, Safir, Gümüş, Siyah beyaz, Zümrüt ve Gül. Tema değişince uygulamanın simgesi ve ana ekran widget'ların da onunla birlikte değişiyor.
+Ders kaynakların konu konu ve hafta hafta düzenli. Drive'a eklenen yeni hafta uygulamaya kendiliğinden geliyor; bitirdiklerini işaretleyip ilerlemeni görebilirsin.
+Konu haritası, hangi konuda ne kadar hazır olduğunu tek bakışta gösteriyor. Eksik kalan yerden alıştırma ya da deneme sınavı başlatabilirsin.
+Sınavlarını ve ödevlerini kaçırma. Takvim, geri sayım ve hatırlatıcılar seni sınavdan üç gün, bir gün ve iki saat önce uyarıyor.
+Yazı stüdyosunda essay'ini yaz. Asistan yazını değerlendirir, puanlar, hatalarını gösterir; istersen sana alıştırma da hazırlar.
+Takıldığın yerde asistana sor. Açtığın PDF'i özetler, sorularını cevaplar, bilgi kartı ve deneme sınavı hazırlar.
+Aradığın her şey bir dokunuş uzağında: PDF'lerin içinde, notlarında ve derslerinde.
+SouNote: ücretsiz, reklamsız. Hemen indir: uckankeskinkaya.github.io/SouNote

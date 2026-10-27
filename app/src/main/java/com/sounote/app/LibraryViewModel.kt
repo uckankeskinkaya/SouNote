@@ -250,6 +250,37 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     fun lastCourseOpen(id: String) = prefs.getLong("courseOpened_$id", 0L)
 
+    // ---- Son kullanılanlar: listeden kaldır / temizle (dosyalara dokunulmaz, sadece listede gizlenir) ----
+
+    /** Bu andan önce açılanlar listede görünmez (prefs recentsClearedAt). */
+    var recentsClearedAt by mutableStateOf(prefs.getLong("recentsClearedAt", 0L))
+        private set
+
+    /** Tek tek kaldırılanlar: anahtar ("d"/"n"/"c" + kimlik) → kaldırıldığı an; sonra yeniden açılırsa döner. */
+    var recentHidden by mutableStateOf(
+        runCatching {
+            val o = org.json.JSONObject(prefs.getString("recentHidden", "{}")!!)
+            o.keys().asSequence().associateWith { o.getLong(it) }
+        }.getOrDefault(emptyMap()),
+    )
+        private set
+
+    fun recentVisible(key: String, time: Long) = time > 0 && time > recentsClearedAt && time > (recentHidden[key] ?: 0L)
+
+    fun hideRecent(key: String) {
+        recentHidden = recentHidden + (key to System.currentTimeMillis())
+        prefs.edit().putString("recentHidden", org.json.JSONObject(recentHidden).toString()).apply()
+    }
+
+    fun clearRecents() {
+        recentsClearedAt = System.currentTimeMillis()
+        recentHidden = emptyMap()
+        prefs.edit().putLong("recentsClearedAt", recentsClearedAt).remove("recentHidden").apply()
+        // Uygulama simgesine basılı tutunca çıkan son belgeler de
+        runCatching { ShortcutManagerCompat.removeAllDynamicShortcuts(getApplication()) }
+        message = "Son kullanılanlar temizlendi; dosyaların yerinde duruyor"
+    }
+
     /** Arama sonucundan ya da hızlı erişimden açılacak ders. */
     var focusCourse by mutableStateOf<String?>(null)
 

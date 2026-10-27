@@ -151,6 +151,10 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 - Tanıtım 4 sayfa; "Yenilikler" MAJOR = 2 (1.0'dan gelen bir kez görür, onboarding'e zorlanmaz).
 
 ## SouNote 3.0 (✅ yayınlandı build-124, 24 Ekim; PR #5 ile main)
+3.0.1 yayınlandı build-127; 3.1 yayınlandı build-138 (26 Ekim, PR #6 ile main). 3.2 yayınlandı build-145 (27 Ekim): RenderNode kaydı sistemce silinirse
+(hasDisplayList false) yeniden kaydedilir + pencere görünür olunca inkNodes atılır (notlar kalem değene kadar görünmüyordu).
+Tanıtım videosu sesli: .github/video/voice.mp3 + voice-asistan.mp3 (INSERTS), voice.txt paragrafları, align.py Whisper (ses ffmpeg ile çözülür). Otomatik yedek zip'i herkese açık ders klasöründeydi:
+Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörüne taşındı; uygulamadaki otomatik yedek klasörü de oraya çevrilmeli.
 - Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).
   Renkler logoya göre: açık tema mavi-mor (#3A4BE0), koyu varsayılan MIDNIGHT "Lacivert" (logodaki lacivert). Zemin Modifier.souBackground()
   (lacivert + mavi/mor ışık parıltısı); ekran Scaffold'ları saydam. Kart: Modifier.card() kenarlıksız (koyuda ince kenar).
@@ -197,6 +201,8 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
   AppIcon.apply önce yenisini açar sonra ötekileri kapatır (DONT_KILL_APP). Simgeler mipmap-anydpi-v26/ic_launcher_<tema>.xml +
   drawable-nodpi/ic_launcher_<tema>_bg.webp (logo ortada %64, zemin logonun kenar rengi). Widget: Widgets.style (widget_bg_<tema>.xml,
   widget_logo, vurgu rengi). smoke.sh ".MainActivity" ile açar: tema değiştirmez, takma ad açık kalır.
+- Son kullanılanlar temizleme (🧪, build-139+): VM recentsClearedAt + recentHidden (prefs JSON anahtar "d"/"n"/"c"+kimlik → an);
+  recentVisible(key, time); ana sayfa "Temizle" (onaylı) + kartta "Listeden kaldır", kütüphane "Son açılanlar"da da; dinamik kısayollar silinir.
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

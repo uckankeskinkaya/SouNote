@@ -432,6 +432,15 @@ private fun TopicCard(
                     color = if (total > 0 && done == total) LocalSouColors.current.success else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (total > 0 && done > 0) ProgressBar(done / total.toFloat(), Modifier.fillMaxWidth(0.6f).padding(top = 2.dp), height = 4.dp)
+                val pdfs = topic.resources.filter { it.isPdf }
+                val have = pdfs.count { vm.downloadedDoc(course, it) != null }
+                if (have > 0) {
+                    Text(
+                        if (have == pdfs.size) "PDF'lerin hepsi kütüphanende" else "$have/${pdfs.size} PDF kütüphanede",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (have == pdfs.size) LocalSouColors.current.success else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 exams.forEach { e ->
                     Text(
                         "Sınavda: $e",
@@ -466,14 +475,20 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-        Text(
-            res.title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+        Icon(
+            if (local != null) SouIcons.CheckCircle else icon,
+            contentDescription = if (local != null) "Kütüphanede" else null,
+            tint = if (local != null) LocalSouColors.current.success else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
         )
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(res.title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (local != null) {
+                Text("Kütüphanede", style = MaterialTheme.typography.labelSmall, color = LocalSouColors.current.success)
+            } else if (res.kind == "audio" && vm.listeningStore.downloaded(res)) {
+                Text("İndirildi", style = MaterialTheme.typography.labelSmall, color = LocalSouColors.current.success)
+            }
+        }
         when {
             vm.downloading == res.url -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.5.dp)
             local != null -> TextButton(onClick = { vm.open(local) }) { Text("Aç") }
@@ -582,6 +597,31 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
                             )
+                        }
+                    }
+                    // PDF'ler: kaçı kütüphanede, hepsini indir (internetsiz açılsın)
+                    val pdfs = weekRes.filter { it.third.isPdf }.distinctBy { it.third.url }
+                    if (pdfs.isNotEmpty()) {
+                        val have = pdfs.count { vm.downloadedDoc(it.first, it.third) != null }
+                        val bulk = vm.weekDownload
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(SouIcons.Download, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                            Text(
+                                if (have == pdfs.size) "  ${pdfs.size} PDF'in hepsi kütüphanende" else "  $have/${pdfs.size} PDF kütüphanende",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (have == pdfs.size) LocalSouColors.current.success else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
+                            )
+                            when {
+                                bulk != null && bulk.first == week -> {
+                                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                    Text("  ${bulk.second + 1}/${bulk.third}", style = MaterialTheme.typography.labelLarge)
+                                }
+                                have < pdfs.size -> TextButton(
+                                    onClick = { vm.downloadWeek(week, pdfs) },
+                                    enabled = bulk == null && vm.downloading == null,
+                                ) { Text("Hepsini indir") }
+                            }
                         }
                     }
                     weekExams.forEach { e ->

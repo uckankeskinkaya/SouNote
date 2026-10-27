@@ -806,19 +806,52 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Katalogdaki PDF'i indirip dersin klasörüne koyar ve açar. */
+    /** Kaynağı indirip kütüphanede dersin adlı klasöre ekler (IO iş parçacığında). */
+    private fun importResource(course: Course, topic: Topic, res: Resource): DocRef {
+        val folder = repo.userFolders().find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) }
+            ?: repo.createFolder(course.name, null, course.color, course.emoji)
+        val doc = repo.createDocument(res.title.ifBlank { topic.name }, folder.id) { CatalogRepo.download(res, it) }
+        repo.setTags(doc.id, listOf(course.name, topic.name).map { it.lowercase(java.util.Locale.forLanguageTag("tr")) })
+        return doc
+    }
+
+    /** Toplu indirme sürüyorsa: hafta, inen, toplam. */
+    var weekDownload by mutableStateOf<Triple<Int, Int, Int>?>(null)
+        private set
+
+    /** Haftanın kütüphanede olmayan bütün PDF'lerini sırayla indirir (internetsiz de açılsın diye). */
+    fun downloadWeek(week: Int, items: List<Triple<Course, Topic, Resource>>) {
+        if (weekDownload != null || downloading != null) return
+        val todo = items.filter { it.third.isPdf && downloadedDoc(it.first, it.third) == null }.distinctBy { it.third.url }
+        if (todo.isEmpty()) {
+            message = "Bu haftanın PDF'lerinin hepsi zaten kütüphanende"
+            return
+        }
+        viewModelScope.launch {
+            var ok = 0
+            var failed = 0
+            todo.forEachIndexed { i, (c, t, r) ->
+                weekDownload = Triple(week, i, todo.size)
+                withContext(Dispatchers.IO) { runCatching { importResource(c, t, r) } }
+                    .onSuccess { ok++ }
+                    .onFailure {
+                        failed++
+                        ErrorLog.record("Kaynak indirilemedi: ${r.title}", it)
+                    }
+                // Her dosyadan sonra listeyi tazele: satırlarda "Kütüphanede" hemen görünsün
+                imported = withContext(Dispatchers.IO) { repo.importedDocs() }
+                userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
+            }
+            weekDownload = null
+            message = if (failed == 0) "Hafta $week: $ok PDF kütüphanene indi" else "Hafta $week: $ok PDF indi, $failed tanesi indirilemedi"
+        }
+    }
+
     fun downloadResource(course: Course, topic: Topic, res: Resource) {
         if (downloading != null) return
         viewModelScope.launch {
             downloading = res.url
-            val result = withContext(Dispatchers.IO) {
-                runCatching {
-                    val folder = repo.userFolders().find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) }
-                        ?: repo.createFolder(course.name, null, course.color, course.emoji)
-                    val doc = repo.createDocument(res.title.ifBlank { topic.name }, folder.id) { CatalogRepo.download(res, it) }
-                    repo.setTags(doc.id, listOf(course.name, topic.name).map { it.lowercase(java.util.Locale.forLanguageTag("tr")) })
-                    doc
-                }
-            }
+            val result = withContext(Dispatchers.IO) { runCatching { importResource(course, topic, res) } }
             downloading = null
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
             userFolders = withContext(Dispatchers.IO) { repo.userFolders() }

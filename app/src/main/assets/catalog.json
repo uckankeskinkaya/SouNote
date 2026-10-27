@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-27",
+ "updated": "2026-10-27b",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -35,7 +35,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 0,
-       "order": 23
+       "order": 27
       },
       {
        "title": "Past perfect vs past simple exercises",
@@ -43,7 +43,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 0,
-       "order": 24
+       "order": 28
       }
      ]
     },
@@ -58,6 +58,14 @@
        "week": 3,
        "day": 1,
        "order": 2
+      },
+      {
+       "title": "PPT (Present Perfect Continuous) (PDF)",
+       "url": "https://drive.google.com/file/d/1c4G-UDrjDc89ngnAHNPl7BaMWzigWaYl/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 1,
+       "order": 3
       },
       {
        "title": "HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)",
@@ -81,7 +89,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 0,
-       "order": 16
+       "order": 21
       },
       {
        "title": "Present Perfect Simple vs Present Perfect Progressive",
@@ -89,7 +97,15 @@
        "kind": "docx",
        "week": 3,
        "day": 0,
-       "order": 17
+       "order": 22
+      },
+      {
+       "title": "Present Perfect Simple vs Present Perfect Progressive (PDF)",
+       "url": "https://drive.google.com/file/d/147bFr7hPuJXsliOAv2iwNe6xprHE6Qx_/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 0,
+       "order": 23
       },
       {
        "title": "Simple vs progressive chart",
@@ -97,7 +113,15 @@
        "kind": "docx",
        "week": 1,
        "day": 0,
-       "order": 1
+       "order": 2
+      },
+      {
+       "title": "Simple vs progressive chart (PDF)",
+       "url": "https://drive.google.com/file/d/1TIb3rCGuSNO1ZDqtppV3MP9m4N4weKp4/view",
+       "kind": "pdf",
+       "week": 1,
+       "day": 0,
+       "order": 3
       },
       {
        "title": "Stative verbs",
@@ -106,6 +130,14 @@
        "week": 1,
        "day": 0,
        "order": 0
+      },
+      {
+       "title": "Stative verbs (PDF)",
+       "url": "https://drive.google.com/file/d/1DOXnFV5i8A1YlaUrhYLf2XCKWRFayXeU/view",
+       "kind": "pdf",
+       "week": 1,
+       "day": 0,
+       "order": 1
       }
      ]
     },
@@ -119,7 +151,15 @@
        "kind": "pptx",
        "week": 2,
        "day": 3,
-       "order": 15
+       "order": 17
+      },
+      {
+       "title": "PPT (Verb Patterns) (PDF)",
+       "url": "https://drive.google.com/file/d/1SrDEM9KBQmVvlZc6yrglyScS5c3-24al/view",
+       "kind": "pdf",
+       "week": 2,
+       "day": 3,
+       "order": 18
       },
       {
        "title": "HANDOUT (Verb Patterns)",
@@ -127,7 +167,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 3,
-       "order": 14
+       "order": 16
       },
       {
        "title": "ACTIVITY HANDOUT 1 (Verb Patterns)",
@@ -135,7 +175,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 3,
-       "order": 12
+       "order": 14
       },
       {
        "title": "ACTIVITY HANDOUT 2 (Verb Patterns)",
@@ -143,7 +183,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 3,
-       "order": 13
+       "order": 15
       },
       {
        "title": "Gerund / infinitive verbs list",
@@ -151,7 +191,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 0,
-       "order": 27
+       "order": 31
       }
      ]
     },
@@ -165,7 +205,15 @@
        "kind": "pptx",
        "week": 3,
        "day": 4,
-       "order": 10
+       "order": 12
+      },
+      {
+       "title": "PPT (Relative Clauses) (PDF)",
+       "url": "https://drive.google.com/file/d/1L2-7bWMFw7RYQVF8EacLcSarCLZbQv0v/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 4,
+       "order": 13
       },
       {
        "title": "PPT (V-ing / to infinitive with Relative Clauses)",
@@ -173,7 +221,15 @@
        "kind": "pptx",
        "week": 3,
        "day": 4,
-       "order": 11
+       "order": 14
+      },
+      {
+       "title": "PPT (V-ing / to infinitive with Relative Clauses) (PDF)",
+       "url": "https://drive.google.com/file/d/1dbl-xdqVWK-9MVafLExFU7LzAdyfTrqn/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 4,
+       "order": 15
       },
       {
        "title": "HANDOUT (Relative Clauses - Rewrite)",
@@ -181,7 +237,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 4,
-       "order": 9
+       "order": 11
       },
       {
        "title": "ACTIVITY HANDOUT (Relative Clauses board game)",
@@ -189,7 +245,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 4,
-       "order": 8
+       "order": 10
       },
       {
        "title": "Relative clauses context",
@@ -197,7 +253,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 0,
-       "order": 20
+       "order": 27
       },
       {
        "title": "Relative clauses context (Word)",
@@ -205,7 +261,15 @@
        "kind": "docx",
        "week": 3,
        "day": 0,
-       "order": 19
+       "order": 25
+      },
+      {
+       "title": "Relative clauses context (Word) (PDF)",
+       "url": "https://drive.google.com/file/d/1oeX4-tvImTs3zrp0gUXBK3CxRYsFQ7BT/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 0,
+       "order": 26
       }
      ]
     },
@@ -220,6 +284,14 @@
        "week": 5,
        "day": 1,
        "order": 3
+      },
+      {
+       "title": "PPT (Conditional Structures) (PDF)",
+       "url": "https://drive.google.com/file/d/1hsO9mk8RFsPp9-ac_grvhC-1oXwBK-BV/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 1,
+       "order": 4
       },
       {
        "title": "HANDOUT 1 (Conditional Structures)",
@@ -249,7 +321,15 @@
        "kind": "pptx",
        "week": 5,
        "day": 3,
-       "order": 16
+       "order": 20
+      },
+      {
+       "title": "PPT (Necessity, Obligation, Permission) (PDF)",
+       "url": "https://drive.google.com/file/d/1FZrGiFfTN2355eG_ccvK75V4XtPgMX1X/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 3,
+       "order": 21
       },
       {
        "title": "ACTIVITY HANDOUT (Necessity, Obligation, Permission)",
@@ -257,7 +337,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 3,
-       "order": 13
+       "order": 17
       }
      ]
     },
@@ -271,7 +351,15 @@
        "kind": "pptx",
        "week": 2,
        "day": 4,
-       "order": 18
+       "order": 21
+      },
+      {
+       "title": "PPT (except for, apart from, not even) (PDF)",
+       "url": "https://drive.google.com/file/d/1iNLtWxPzjNfoLdve0CRUOPMJluPvcDIR/view",
+       "kind": "pdf",
+       "week": 2,
+       "day": 4,
+       "order": 22
       }
      ]
     },
@@ -342,7 +430,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 5,
-       "order": 13
+       "order": 17
       },
       {
        "title": "HANDOUT (Vocabulary How to Activity B1+ U2C)",
@@ -358,7 +446,7 @@
        "kind": "pdf",
        "week": 4,
        "day": 2,
-       "order": 4
+       "order": 6
       },
       {
        "title": "HANDOUT (Vocabulary and How to)",
@@ -366,7 +454,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 4,
-       "order": 17
+       "order": 20
       }
      ]
     },
@@ -410,7 +498,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 3,
-       "order": 15
+       "order": 19
       },
       {
        "title": "PPT (Vocabulary - So What Do You Study)",
@@ -418,7 +506,15 @@
        "kind": "pptx",
        "week": 5,
        "day": 5,
-       "order": 22
+       "order": 29
+      },
+      {
+       "title": "PPT (Vocabulary - So What Do You Study) (PDF)",
+       "url": "https://drive.google.com/file/d/1BOuGnAQpQvIOzU9txVCt03H03pOf0LII/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 5,
+       "order": 30
       },
       {
        "title": "Knowing a word",
@@ -426,7 +522,15 @@
        "kind": "pptx",
        "week": 1,
        "day": 0,
-       "order": 2
+       "order": 4
+      },
+      {
+       "title": "Knowing a word (PDF)",
+       "url": "https://drive.google.com/file/d/1aSfxz0PcRxhYGrun_h3w608zVNvdBrhN/view",
+       "kind": "pdf",
+       "week": 1,
+       "day": 0,
+       "order": 5
       }
      ]
     }
@@ -448,7 +552,15 @@
        "kind": "pptx",
        "week": 3,
        "day": 5,
-       "order": 15
+       "order": 19
+      },
+      {
+       "title": "PPT (Reading Strategies I - Introduction) (PDF)",
+       "url": "https://drive.google.com/file/d/1oBekd85vAr3YISnA4sKiZt5R3f44ppqF/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 5,
+       "order": 20
       },
       {
        "title": "PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)",
@@ -459,12 +571,28 @@
        "order": 2
       },
       {
+       "title": "PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details) (PDF)",
+       "url": "https://drive.google.com/file/d/1miOUWg-BfFz7dc8U1ICfomPYjyRrD4oR/view",
+       "kind": "pdf",
+       "week": 4,
+       "day": 1,
+       "order": 3
+      },
+      {
        "title": "PPT (Reading Strategies III- Pronoun Reference)",
        "url": "https://drive.google.com/file/d/1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t/view",
        "kind": "pptx",
        "week": 5,
        "day": 4,
-       "order": 20
+       "order": 25
+      },
+      {
+       "title": "PPT (Reading Strategies III- Pronoun Reference) (PDF)",
+       "url": "https://drive.google.com/file/d/1lQ8gdMMW9CckUoBhpY1HHVdd9Un57Q7P/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 4,
+       "order": 26
       },
       {
        "title": "PPT Reading Strategies IV (Inferring Unknown Words)",
@@ -499,7 +627,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 2,
-       "order": 8
+       "order": 9
       },
       {
        "title": "HANDOUT (Reading) 2",
@@ -507,7 +635,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 4,
-       "order": 19
+       "order": 24
       },
       {
        "title": "Reading practice",
@@ -515,7 +643,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 0,
-       "order": 23
+       "order": 31
       }
      ]
     }
@@ -537,7 +665,15 @@
        "kind": "pptx",
        "week": 5,
        "day": 2,
-       "order": 9
+       "order": 11
+      },
+      {
+       "title": "PPT (Listening Strategies I - Introduction) (PDF)",
+       "url": "https://drive.google.com/file/d/1ZI56KFHzZRzPwldpYP1hE310_GNAea8s/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 2,
+       "order": 12
       },
       {
        "title": "PPT (Listening Strategies II)",
@@ -591,7 +727,7 @@
        "kind": "pdf",
        "week": 4,
        "day": 3,
-       "order": 8
+       "order": 10
       },
       {
        "title": "WRITING HANDOUT (Body Paragraphs)",
@@ -599,7 +735,7 @@
        "kind": "pdf",
        "week": 4,
        "day": 4,
-       "order": 10
+       "order": 12
       },
       {
        "title": "WRITING HANDOUT (Concluding Paragraph)",
@@ -607,7 +743,7 @@
        "kind": "pdf",
        "week": 4,
        "day": 5,
-       "order": 12
+       "order": 14
       },
       {
        "title": "WRITING HANDOUT (Points to Notice)",
@@ -615,7 +751,7 @@
        "kind": "pdf",
        "week": 4,
        "day": 5,
-       "order": 13
+       "order": 15
       },
       {
        "title": "PPT (Opinion Essay)",
@@ -642,7 +778,15 @@
        "kind": "pptx",
        "week": 2,
        "day": 2,
-       "order": 10
+       "order": 11
+      },
+      {
+       "title": "PPT (From Opinion Paragraph to Opinion Essay) (PDF)",
+       "url": "https://drive.google.com/file/d/1nvsqDLaSBy4ZOAPsln4phr2pJnfGCwDC/view",
+       "kind": "pdf",
+       "week": 2,
+       "day": 2,
+       "order": 12
       },
       {
        "title": "WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)",
@@ -650,7 +794,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 2,
-       "order": 11
+       "order": 13
       }
      ]
     },
@@ -664,7 +808,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 2,
-       "order": 12
+       "order": 16
       },
       {
        "title": "PPT WRITING (Sample Opinion Essays)",
@@ -672,7 +816,15 @@
        "kind": "pptx",
        "week": 5,
        "day": 2,
-       "order": 10
+       "order": 13
+      },
+      {
+       "title": "PPT WRITING (Sample Opinion Essays) (PDF)",
+       "url": "https://drive.google.com/file/d/1Z9dx4cSYAG8IF_kz73JZ-SwtbBN-00Eo/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 2,
+       "order": 14
       },
       {
        "title": "WRITING HANDOUT (Opinion Essay) Practice I",
@@ -680,7 +832,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 2,
-       "order": 11
+       "order": 15
       },
       {
        "title": "WRITING HANDOUT (Opinion Essay) PRACTICE III",
@@ -696,7 +848,15 @@
        "kind": "docx",
        "week": 5,
        "day": 0,
-       "order": 24
+       "order": 32
+      },
+      {
+       "title": "Opinion essay peer evaluation checklist (PDF)",
+       "url": "https://drive.google.com/file/d/1aPw4RJygucrK3h1btfxIveofp8D69fft/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 0,
+       "order": 33
       }
      ]
     },
@@ -710,7 +870,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 3,
-       "order": 7
+       "order": 9
       }
      ]
     }
@@ -735,12 +895,28 @@
        "order": 7
       },
       {
+       "title": "PPT SPEAKING (Talking about Yourself) (PDF)",
+       "url": "https://drive.google.com/file/d/14CCc7DYsOUuWbDNYsEgVlWL7Bldeh8pN/view",
+       "kind": "pdf",
+       "week": 2,
+       "day": 1,
+       "order": 8
+      },
+      {
        "title": "PPT SPEAKING (Habits)",
        "url": "https://drive.google.com/file/d/1x6WomYu8ZQEZnMB2z93cv3WHAyBW129m/view",
        "kind": "pptx",
        "week": 3,
        "day": 3,
-       "order": 6
+       "order": 7
+      },
+      {
+       "title": "PPT SPEAKING (Habits) (PDF)",
+       "url": "https://drive.google.com/file/d/1ucBjkP06OXVau2js-so8h5JGLHkGT11B/view",
+       "kind": "pdf",
+       "week": 3,
+       "day": 3,
+       "order": 8
       },
       {
        "title": "PPT SPEAKING (Pet Hates)",
@@ -748,7 +924,15 @@
        "kind": "pptx",
        "week": 4,
        "day": 1,
-       "order": 3
+       "order": 4
+      },
+      {
+       "title": "PPT SPEAKING (Pet Hates) (PDF)",
+       "url": "https://drive.google.com/file/d/1L1DcTlt4n11Ilbh1zPFF5wcQWSttsdVx/view",
+       "kind": "pdf",
+       "week": 4,
+       "day": 1,
+       "order": 5
       },
       {
        "title": "PPT SPEAKING (Learning)",
@@ -756,17 +940,35 @@
        "kind": "pptx"
       },
       {
+       "title": "PPT SPEAKING (Learning) (PDF)",
+       "url": "https://drive.google.com/file/d/1L8GqsQFXTx8KLz32Izws62bP4-4ARkpf/view",
+       "kind": "pdf"
+      },
+      {
        "title": "PPT SPEAKING (Work Life)",
        "url": "https://drive.google.com/file/d/1l-jweFW3QchWIkE9jIqrzGW1ErpEpCC2/view",
        "kind": "pptx",
        "week": 5,
        "day": 1,
-       "order": 4
+       "order": 5
+      },
+      {
+       "title": "PPT SPEAKING (Work Life) (PDF)",
+       "url": "https://drive.google.com/file/d/1LOFWX7CIH-Vn_4pfEo-7Af4bfO2kCDrZ/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 1,
+       "order": 6
       },
       {
        "title": "PPT SPEAKING (The Mic is Yours)",
        "url": "https://drive.google.com/file/d/17s_izwe8xz880uEz-C8agQ45pj2CJUGY/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (The Mic is Yours) (PDF)",
+       "url": "https://drive.google.com/file/d/1nyVAt_AN6A46nSRLfHD6iVnGNydPOgxC/view",
+       "kind": "pdf"
       },
       {
        "title": "PPT SPEAKING (Expressing Preferences)",
@@ -801,12 +1003,17 @@
        "kind": "pdf",
        "week": 3,
        "day": 0,
-       "order": 18
+       "order": 24
       },
       {
        "title": "PPT (Using AI to Learn English)",
        "url": "https://drive.google.com/file/d/1gP6ozCIo1QBWGNl9rcgbdnTIra9anRRT/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT (Using AI to Learn English) (PDF)",
+       "url": "https://drive.google.com/file/d/1ts8XVUjvN0P1cS4Vq2v45kbFO7sxnWko/view",
+       "kind": "pdf"
       }
      ]
     },
@@ -818,6 +1025,11 @@
        "title": "PPT (Group Project: Our Class Our Story)",
        "url": "https://drive.google.com/file/d/1a6rxpbgYHlWfIyP8hOPNEfGz0cHZStqf/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT (Group Project: Our Class Our Story) (PDF)",
+       "url": "https://drive.google.com/file/d/1UHtmGBilovAd2A4DhC9GM9i8LXORtMnG/view",
+       "kind": "pdf"
       },
       {
        "title": "PPT (Presentation Skills I)",
@@ -852,7 +1064,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 3,
-       "order": 5
+       "order": 6
       },
       {
        "title": "INTEGRATED HANDOUT (The Hoarding Habit)",
@@ -860,7 +1072,7 @@
        "kind": "pdf",
        "week": 2,
        "day": 5,
-       "order": 19
+       "order": 23
       },
       {
        "title": "Video 1 - The Hoarding Habit",
@@ -868,7 +1080,7 @@
        "kind": "video",
        "week": 2,
        "day": 5,
-       "order": 21
+       "order": 25
       },
       {
        "title": "Video 2 - Hoarder Denise's House Tour",
@@ -876,7 +1088,7 @@
        "kind": "video",
        "week": 2,
        "day": 5,
-       "order": 22
+       "order": 26
       }
      ]
     },
@@ -890,7 +1102,7 @@
        "kind": "pdf",
        "week": 5,
        "day": 4,
-       "order": 17
+       "order": 22
       },
       {
        "title": "PPT (From University to the Office)",
@@ -898,7 +1110,15 @@
        "kind": "pptx",
        "week": 5,
        "day": 5,
-       "order": 21
+       "order": 27
+      },
+      {
+       "title": "PPT (From University to the Office) (PDF)",
+       "url": "https://drive.google.com/file/d/1zjCVMCz595AJOSPP3Nzwam6aFbm52vPl/view",
+       "kind": "pdf",
+       "week": 5,
+       "day": 5,
+       "order": 28
       },
       {
        "title": "Why does Japan work so hard (video)",
@@ -906,7 +1126,7 @@
        "kind": "video",
        "week": 5,
        "day": 4,
-       "order": 18
+       "order": 23
       }
      ]
     },
@@ -920,7 +1140,7 @@
        "kind": "pdf",
        "week": 4,
        "day": 2,
-       "order": 5
+       "order": 7
       },
       {
        "title": "INTEGRATED HANDOUT (The New Normal)",
@@ -928,7 +1148,7 @@
        "kind": "pdf",
        "week": 3,
        "day": 2,
-       "order": 3
+       "order": 4
       }
      ]
     },
@@ -980,7 +1200,7 @@
        "kind": "video",
        "week": 3,
        "day": 2,
-       "order": 4
+       "order": 5
       },
       {
        "title": "Activity handout video",
@@ -1013,6 +1233,11 @@
        "title": "L4 Quiz 1 Grammar çalışma kağıdı",
        "url": "https://drive.google.com/file/d/1v1QyueMgQW6cbB3j4jMu18mSmbfpott8/view",
        "kind": "docx"
+      },
+      {
+       "title": "L4 Quiz 1 Grammar çalışma kağıdı (PDF)",
+       "url": "https://drive.google.com/file/d/1FjBID3N5v8JRexeJPx9AAbHBXngw7pvi/view",
+       "kind": "pdf"
       },
       {
        "title": "L4 Quiz 1 deneme testi",
@@ -1048,6 +1273,11 @@
        "title": "PPT (Haftalık Ders Programı ve İçeriği)",
        "url": "https://drive.google.com/file/d/1GxsUITQQbwG84gLK3bYAdIN9cvzDEKNX/view",
        "kind": "pptx"
+      },
+      {
+       "title": "PPT (Haftalık Ders Programı ve İçeriği) (PDF)",
+       "url": "https://drive.google.com/file/d/1zPlpa2yJxssRc-kcNZ89-3UkfEimFdH2/view",
+       "kind": "pdf"
       },
       {
        "title": "L4 Fall Week 6 Program",
@@ -1315,21 +1545,21 @@
    "day": 0,
    "title": "tense-review-1",
    "kind": "pdf",
-   "order": 3
+   "order": 6
   },
   {
    "week": 1,
    "day": 0,
    "title": "common mistakes in writing",
    "kind": "pdf",
-   "order": 4
+   "order": 7
   },
   {
    "week": 1,
    "day": 0,
    "title": "Knowing a word worksheet",
    "kind": "docx",
-   "order": 5
+   "order": 8
   },
   {
    "week": 2,
@@ -1350,56 +1580,56 @@
    "day": 2,
    "title": "Introduction to Academic Writing",
    "kind": "pptx",
-   "order": 9
+   "order": 10
   },
   {
    "week": 2,
    "day": 3,
    "title": "Video - Verb Patterns",
    "kind": "video",
-   "order": 16
+   "order": 19
   },
   {
    "week": 2,
    "day": 5,
    "title": "Listening Track",
    "kind": "audio",
-   "order": 20
+   "order": 24
   },
   {
    "week": 2,
    "day": 0,
    "title": "Past perfect tense - explanation",
    "kind": "link",
-   "order": 25
+   "order": 29
   },
   {
    "week": 2,
    "day": 0,
    "title": "GERUNDS and INFINITIVES (7 verbs)",
    "kind": "pdf",
-   "order": 26
+   "order": 30
   },
   {
    "week": 3,
    "day": 5,
    "title": "ARE YOU A PEOPLE PLEASER - QUIZ",
    "kind": "pdf",
-   "order": 12
+   "order": 16
   },
   {
    "week": 3,
    "day": 5,
    "title": "people_pleaser_quiz",
    "kind": "html",
-   "order": 14
+   "order": 18
   },
   {
    "week": 3,
    "day": 0,
    "title": "Reading comprehension",
    "kind": "pdf",
-   "order": 21
+   "order": 28
   },
   {
    "week": 4,
@@ -1413,63 +1643,63 @@
    "day": 2,
    "title": "Top 10 Historical Events That Changed the World",
    "kind": "video",
-   "order": 6
+   "order": 8
   },
   {
    "week": 4,
    "day": 3,
    "title": "Reading Speaking Activity (Stereotypes)",
    "kind": "pdf",
-   "order": 7
+   "order": 9
   },
   {
    "week": 4,
    "day": 4,
    "title": "Reading Speaking Activity",
    "kind": "pdf",
-   "order": 9
+   "order": 11
   },
   {
    "week": 4,
    "day": 5,
    "title": "Opinion Essay Rating Scale Scoring Guideline",
    "kind": "pdf",
-   "order": 11
+   "order": 13
   },
   {
    "week": 5,
    "day": 2,
    "title": "HANDOUT (Listening) Track 1",
    "kind": "audio",
-   "order": 5
+   "order": 7
   },
   {
    "week": 5,
    "day": 2,
    "title": "HANDOUT (Listening) Track 2",
    "kind": "audio",
-   "order": 6
+   "order": 8
   },
   {
    "week": 5,
    "day": 2,
    "title": "HANDOUT (Listening) Track 3",
    "kind": "audio",
-   "order": 7
+   "order": 9
   },
   {
    "week": 5,
    "day": 2,
    "title": "HANDOUT (Listening)",
    "kind": "pdf",
-   "order": 8
+   "order": 10
   },
   {
    "week": 5,
    "day": 3,
    "title": "HANDOUT (Rewrite Necessity, Obligation, Permission)",
    "kind": "pdf",
-   "order": 14
+   "order": 18
   },
   {
    "week": 6,

@@ -1,0 +1,57 @@
+name: PDF çevir
+
+# .github/pdf/list.txt'deki Word/PPT dosyalarını (id|başlık|tür) Drive'dan indirir, LibreOffice ile PDF'e çevirir ve
+# "başlık.pdf" adıyla artifact olarak saklar. Drive'a yüklemeyi klasör sahibi elle yapar (GitHub'da Google izni yok);
+# sonra PDF'ler tools/make_catalog.py'ye "başlık (PDF)" olarak eklenir.
+on:
+  push:
+    branches-ignore: [main, screenshots]
+    paths: [".github/pdf/**", ".github/workflows/pdf.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: LibreOffice ve yazı tipleri
+        run: |
+          sudo apt-get update -qq
+          # Carlito/Caladea: Calibri/Cambria ile aynı ölçülerde (sunumlar kaymasın)
+          sudo apt-get install -y -qq --no-install-recommends libreoffice-impress libreoffice-writer \
+            fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu-core fonts-noto-core poppler-utils >/dev/null
+      - name: İndir ve çevir
+        run: |
+          mkdir -p in out thumbs
+          while IFS='|' read -r id title kind; do
+            [ -z "$id" ] && continue
+            f="in/$id.$kind"
+            curl -sSL --fail -o "$f" "https://drive.usercontent.google.com/download?id=$id&export=download&confirm=t" || { echo "İNMEDİ: $title"; continue; }
+            head -c 2 "$f" | grep -q PK || { echo "OFFICE DEĞİL: $title"; continue; }
+            start=$(date +%s)
+            timeout 300 soffice --headless --convert-to pdf --outdir out "$f" >/dev/null 2>&1 || echo "ÇEVRİLEMEDİ: $title"
+            p="out/$id.pdf"
+            if [ -f "$p" ]; then
+              pages=$(pdfinfo "$p" | awk '/^Pages/{print $2}')
+              pdftoppm -f 1 -l 1 -r 30 -png "$p" "thumbs/$id"
+              # Drive'daki adı: başlık.pdf (/ : gibi karakterler dosya adında olamaz)
+              name="$(echo "$title" | tr '/:*?<>\\|"' '--------').pdf"
+              mv "$p" "out/$name"
+              echo "OK: $title | $(du -h "$f" | cut -f1) → $(du -h "out/$name" | cut -f1) | $pages sayfa | $(( $(date +%s) - start )) sn"
+            fi
+          done < .github/pdf/list.txt
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SouNote-PDF
+          path: out
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kapaklar
+          path: thumbs
+          retention-days: 14

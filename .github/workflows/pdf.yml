@@ -38,8 +38,8 @@ jobs:
             if [ -f "$p" ]; then
               pages=$(pdfinfo "$p" | awk '/^Pages/{print $2}')
               pdftoppm -f 1 -l 1 -r 30 -png "$p" "thumbs/$id"
-              # Drive'daki adı: başlık.pdf ("/" dosya adında olamaz)
-              name="$(echo "$title" | tr '/' '-').pdf"
+              # Drive'daki adı: başlık.pdf (/ : gibi karakterler dosya adında olamaz)
+              name="$(echo "$title" | tr '/:*?<>\\|"' '--------').pdf"
               mv "$p" "out/$name"
               echo "OK: $title | $(du -h "$f" | cut -f1) → $(du -h "out/$name" | cut -f1) | $pages sayfa | $(( $(date +%s) - start )) sn"
             fi

@@ -211,6 +211,12 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
 - Haftayı toplu indir (🧪, build-151+): Haftalar kartında "x/y PDF kütüphanende" + "Hepsini indir" (vm.downloadWeek, sırayla importResource,
   weekDownload ilerleme); satırda ✓ "Kütüphanede" (vm.downloadedDoc), konu kartında x/y PDF. Uygulama içi APK güncellemesi YOK
   (kullanıcı: indirdikleri yeri görsünler, GitHub'dan tarayıcıyla insin).
+- (🧪, build-153+) Listening oynatıcısı VM'de (data/ListeningPlayer.kt, vm.listeningPlayer); "Dinlerken aç" → vm.listenAlongside: PDF açılır,
+  ses belge ekranında ListeningMiniBar'da sürer (vm.listeningMini; closeDoc kapatır). Not birleştirme: .sounote manifest pdfSha256 + sender;
+  SouNotePackage.extract/finish; aynı PDF (boyut + SHA-256, yoksa aynı ad) varsa MergeNotesDialog (SouNoteActivity kökünde) →
+  vm.mergePackageInk: çizgiler yeni katman "Gelen: <ad>" (MAX dolu ise etkin katman), yazı/resim sayfaya eklenir. Sınav günü kartı:
+  ui/ExamDayCard.kt (examDayTarget: sınav/sunum 36 saat kala → başladıktan 2 saat sonrasına; HERO modülünde), konular, PDF'ler
+  (downloadWeek(EXAM_DOWNLOAD=-1)), deneme sınavı (konuların çoğunun dersi), kart tekrarı.
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

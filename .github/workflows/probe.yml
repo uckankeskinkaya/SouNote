@@ -14,7 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 33]
+        include:
+          - {api: 33, target: google_apis_playstore}
+          - {api: 33, target: default}
     steps:
       - name: APK
         env:
@@ -38,7 +40,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: ${{ matrix.api }}
-          target: google_apis
+          target: ${{ matrix.target }}
           arch: x86_64
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
@@ -51,3 +53,12 @@ jobs:
             adb shell am start -W -n com.sounote.app/.SouNoteActivity 2>&1 | tail -3 || true
             sleep 5; adb shell pidof com.sounote.app && echo "ÇALIŞIYOR" || echo "ÇALIŞMIYOR"
             adb logcat -d | grep -iE "PackageManager.*(fail|error)|INSTALL_FAILED|FATAL" | tail -10 || true
+      - name: İmza (Android 13)
+        if: always()
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          for f in latest test; do
+            echo "== $f"; sha256sum $f/SouNote.apk
+            "$BT/apksigner" verify -v --min-sdk-version 33 --max-sdk-version 33 $f/SouNote.apk 2>&1 | head -14 || true
+            "$BT/apksigner" verify -v --min-sdk-version 29 $f/SouNote.apk 2>&1 | head -8 || true
+          done

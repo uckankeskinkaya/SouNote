@@ -1,0 +1,48 @@
+name: PDF çevirme denemesi
+
+# Deneme: .github/pdf/trial.txt'deki Word/PPT dosyalarını Drive'dan indirir, LibreOffice ile PDF'e çevirir,
+# sayfa sayısı ve ilk sayfa görüntüsüyle birlikte sadece artifact olarak saklar (Drive'a bir şey yüklenmez).
+on:
+  push:
+    branches-ignore: [main, screenshots]
+    paths: [".github/pdf/**", ".github/workflows/pdf-trial.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: LibreOffice ve yazı tipleri
+        run: |
+          sudo apt-get update -qq
+          # Carlito/Caladea: Calibri/Cambria ile aynı ölçülerde (sunumlar kaymasın)
+          sudo apt-get install -y -qq --no-install-recommends libreoffice-impress libreoffice-writer \
+            fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu-core fonts-noto-core poppler-utils >/dev/null
+      - name: İndir ve çevir
+        run: |
+          mkdir -p in out
+          while IFS='|' read -r id title kind; do
+            [ -z "$id" ] && continue
+            f="in/$id.$kind"
+            curl -sSL --fail -o "$f" "https://drive.usercontent.google.com/download?id=$id&export=download&confirm=t" || { echo "İNMEDİ: $title"; continue; }
+            head -c 2 "$f" | grep -q PK || { echo "OFFICE DEĞİL: $title"; continue; }
+            start=$(date +%s)
+            timeout 300 soffice --headless --convert-to pdf --outdir out "$f" >/dev/null 2>&1 || echo "ÇEVRİLEMEDİ: $title"
+            p="out/$id.pdf"
+            if [ -f "$p" ]; then
+              pages=$(pdfinfo "$p" | awk '/^Pages/{print $2}')
+              pdftoppm -f 1 -l 1 -r 50 -png "$p" "out/$id-s1"
+              echo "OK: $title | $(du -h "$f" | cut -f1) → $(du -h "$p" | cut -f1) | $pages sayfa | $(( $(date +%s) - start )) sn"
+            fi
+          done < .github/pdf/trial.txt
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdf-deneme
+          path: out
+          retention-days: 7

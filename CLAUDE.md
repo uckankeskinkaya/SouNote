@@ -203,6 +203,11 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   widget_logo, vurgu rengi). smoke.sh ".MainActivity" ile açar: tema değiştirmez, takma ad açık kalır.
 - Son kullanılanlar temizleme (🧪, build-139+): VM recentsClearedAt + recentHidden (prefs JSON anahtar "d"/"n"/"c"+kimlik → an);
   recentVisible(key, time); ana sayfa "Temizle" (onaylı) + kartta "Listeden kaldır", kütüphane "Son açılanlar"da da; dinamik kısayollar silinir.
+- Listening pratiği (🧪, build-147+): ui/ListeningScreen.kt (MediaPlayer; hız 0.75–1.5, ±5 sn, tekrarla, kaldığın yer) + data/Listening.kt
+  ListeningStore (filesDir/listening/<driveId>.audio, prefs "listening" pos_/note_); Dersler'de ses satırında "Dinle" → vm.openListening;
+  ilgili kaynaklar = aynı hafta+gün ya da konu; asistanla alıştırma = ExerciseScreen(konu). CatalogRepo.download ses için HTML değil mi diye bakar.
+- Yan yana belge (🧪, build-147+): ui/SideDocPane.kt, belge ⋮ menüsü "Yan yana belge aç" (≥840dp); ikinci PdfContainer readOnly,
+  notlar vm.inkForSide (kaydedilmez), son sayfa hatırlanır.
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

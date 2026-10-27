@@ -73,7 +73,10 @@ class ListeningPlayer(private val store: ListeningStore) {
         }
     }
 
-    fun seekBy(ms: Int) = seekTo((mp?.currentPosition ?: return) + ms)
+    fun seekBy(ms: Int) {
+        val p = mp ?: return
+        seekTo(p.currentPosition + ms)
+    }
 
     fun seekTo(ms: Int) {
         val p = mp ?: return

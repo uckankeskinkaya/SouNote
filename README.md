@@ -43,6 +43,7 @@
 | 🗺️ **Konu haritası** | Dersin konuları tek ekranda; kaynak ilerlemesi ve deneme puanına göre başlanmadı / çalışılıyor / hazır |
 | 🎤 **Speaking pratiği** | Konu seç, hazırlan, konuş; cihaz konuşmanı yazıya döker, asistan L4 ölçütleriyle puanlar, örnek cevap verir |
 | 🎧 **Listening pratiği** | Ders kayıtları uygulamada çalar: 0,75×–1,5× hız, 5 sn geri/ileri, tekrarla, kaldığın yer; dinlerken zaman damgalı not, aynı günün çalışma kâğıtları, asistanla alıştırma |
+| 📥 **Haftayı toplu indir** | Dersler → Haftalar'da "Hepsini indir": haftanın bütün PDF'leri kütüphanene iner, internetsiz açılır; kütüphanedeki kaynaklar listede işaretli |
 | 🪟 **Yan yana belge** | Tablette ikinci bir belgeyi yanda aç: solda defterine yaz, sağda ders PDF'ini oku |
 | 📝 **Alıştırma** | Asistan konudan, açık belgeden ya da nottan alıştırma hazırlar (çoktan seçmeli, boşluk doldurma, yeniden yazma, açık uçlu); cevabı dokununca göster ya da önce cevapla, asistan değerlendirsin |
 | 🧪 **Deneme sınavı** | Dersin konularından asistan çoktan seçmeli test hazırlar (5/10/20 soru); sonuç ve yanlışların açıklaması |

@@ -100,6 +100,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
         vm.focusCourse = null
     }
     LaunchedEffect(selected) { selected?.let(vm::courseOpened) }
+    vm.listening?.let { (c, t, r) -> ListeningScreen(vm, c, t, r) { vm.listening = null } }
 
     Scaffold(
         topBar = {
@@ -486,6 +487,8 @@ private fun ResourceRow(vm: LibraryViewModel, course: Course, topic: Topic, res:
                     Text("Aç", maxLines = 1)
                 }
             }
+            // Ses: uygulamada çalar (indirilir, hız, geri sarma, not)
+            res.kind == "audio" -> TextButton(onClick = { vm.openListening(course, topic, res) }) { Text("Dinle") }
             else -> TextButton(onClick = { onOpenLink(res) }) { Text("Drive'da aç") }
         }
     }

@@ -852,6 +852,31 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---- Listening pratiği ----
+
+    val listeningStore = com.sounote.app.data.ListeningStore(app)
+
+    /** Açık Listening oynatıcısı (ders, konu, ses kaynağı). */
+    var listening by mutableStateOf<Triple<com.sounote.app.data.Course, com.sounote.app.data.Topic, Resource>?>(null)
+
+    /** Ses kaynağını indirir (zaten inmişse hemen) ve oynatıcıyı açar. */
+    fun openListening(course: com.sounote.app.data.Course, topic: com.sounote.app.data.Topic, res: Resource) {
+        if (listeningStore.downloaded(res)) {
+            listening = Triple(course, topic, res)
+            return
+        }
+        if (downloading != null) return
+        viewModelScope.launch {
+            downloading = res.url
+            val result = withContext(Dispatchers.IO) { runCatching { listeningStore.download(res) } }
+            downloading = null
+            result.onSuccess { listening = Triple(course, topic, res) }.onFailure {
+                ErrorLog.record("Ses indirilemedi", it)
+                message = "İndirilemedi: ${it.message ?: "bağlantı hatası"}"
+            }
+        }
+    }
+
     /** Bu kaynak daha önce indirildi mi (aynı adla dersin klasöründe). */
     fun downloadedDoc(course: Course, res: Resource): DocRef? {
         val folder = userFolders.find { it.parentId == null && it.name.equals(course.name, ignoreCase = true) } ?: return null
@@ -1710,6 +1735,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
+    }
+
+    /** Yan yana açılan ikinci belgenin notları (sadece gösterilir, değiştirilmez/kaydedilmez). */
+    suspend fun inkForSide(doc: DocRef): InkDocument = withContext(Dispatchers.IO) {
+        InkDocument().apply { load(store.load(doc.id)) }
     }
 
     /** Belgeye eklenen resimlerin klasörü. */

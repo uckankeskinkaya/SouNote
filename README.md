@@ -42,6 +42,8 @@
 | 🔥 **Çalışma serisi** | Art arda çalıştığın günler; belgede 5 dk, kart tekrarı, Writing, haftalık liste ya da yazılı not o günü sayar |
 | 🗺️ **Konu haritası** | Dersin konuları tek ekranda; kaynak ilerlemesi ve deneme puanına göre başlanmadı / çalışılıyor / hazır |
 | 🎤 **Speaking pratiği** | Konu seç, hazırlan, konuş; cihaz konuşmanı yazıya döker, asistan L4 ölçütleriyle puanlar, örnek cevap verir |
+| 🎧 **Listening pratiği** | Ders kayıtları uygulamada çalar: 0,75×–1,5× hız, 5 sn geri/ileri, tekrarla, kaldığın yer; dinlerken zaman damgalı not, aynı günün çalışma kâğıtları, asistanla alıştırma |
+| 🪟 **Yan yana belge** | Tablette ikinci bir belgeyi yanda aç: solda defterine yaz, sağda ders PDF'ini oku |
 | 📝 **Alıştırma** | Asistan konudan, açık belgeden ya da nottan alıştırma hazırlar (çoktan seçmeli, boşluk doldurma, yeniden yazma, açık uçlu); cevabı dokununca göster ya da önce cevapla, asistan değerlendirsin |
 | 🧪 **Deneme sınavı** | Dersin konularından asistan çoktan seçmeli test hazırlar (5/10/20 soru); sonuç ve yanlışların açıklaması |
 | 🔁 **Bugünkü tekrar** | Bütün belgelerde zamanı gelen bilgi kartları tek oturumda |

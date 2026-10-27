@@ -16,7 +16,7 @@ on:
       - ".github/workflows/keygen.yml"
       - ".github/keygen/**"
       - ".github/pdf/**"
-      - ".github/workflows/pdf-trial.yml"
+      - ".github/workflows/pdf.yml"
       - "site/**"
   workflow_dispatch:
 

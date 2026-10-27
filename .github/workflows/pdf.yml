@@ -1,11 +1,12 @@
-name: PDF çevirme denemesi
+name: PDF çevir
 
-# Deneme: .github/pdf/trial.txt'deki Word/PPT dosyalarını Drive'dan indirir, LibreOffice ile PDF'e çevirir,
-# sayfa sayısı ve ilk sayfa görüntüsüyle birlikte sadece artifact olarak saklar (Drive'a bir şey yüklenmez).
+# .github/pdf/list.txt'deki Word/PPT dosyalarını (id|başlık|tür) Drive'dan indirir, LibreOffice ile PDF'e çevirir ve
+# "başlık.pdf" adıyla artifact olarak saklar. Drive'a yüklemeyi klasör sahibi elle yapar (GitHub'da Google izni yok);
+# sonra PDF'ler tools/make_catalog.py'ye "başlık (PDF)" olarak eklenir.
 on:
   push:
     branches-ignore: [main, screenshots]
-    paths: [".github/pdf/**", ".github/workflows/pdf-trial.yml"]
+    paths: [".github/pdf/**", ".github/workflows/pdf.yml"]
   workflow_dispatch:
 
 permissions:
@@ -25,7 +26,7 @@ jobs:
             fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu-core fonts-noto-core poppler-utils >/dev/null
       - name: İndir ve çevir
         run: |
-          mkdir -p in out
+          mkdir -p in out thumbs
           while IFS='|' read -r id title kind; do
             [ -z "$id" ] && continue
             f="in/$id.$kind"
@@ -36,13 +37,21 @@ jobs:
             p="out/$id.pdf"
             if [ -f "$p" ]; then
               pages=$(pdfinfo "$p" | awk '/^Pages/{print $2}')
-              pdftoppm -f 1 -l 6 -r 45 -png "$p" "out/$id-s"
-              echo "OK: $title | $(du -h "$f" | cut -f1) → $(du -h "$p" | cut -f1) | $pages sayfa | $(( $(date +%s) - start )) sn"
+              pdftoppm -f 1 -l 1 -r 30 -png "$p" "thumbs/$id"
+              # Drive'daki adı: başlık.pdf ("/" dosya adında olamaz)
+              name="$(echo "$title" | tr '/' '-').pdf"
+              mv "$p" "out/$name"
+              echo "OK: $title | $(du -h "$f" | cut -f1) → $(du -h "out/$name" | cut -f1) | $pages sayfa | $(( $(date +%s) - start )) sn"
             fi
-          done < .github/pdf/trial.txt
+          done < .github/pdf/list.txt
           ls -la out
       - uses: actions/upload-artifact@v4
         with:
-          name: pdf-deneme
+          name: SouNote-PDF
           path: out
-          retention-days: 7
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kapaklar
+          path: thumbs
+          retention-days: 14

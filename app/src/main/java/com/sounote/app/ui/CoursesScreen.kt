@@ -100,7 +100,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
         vm.focusCourse = null
     }
     LaunchedEffect(selected) { selected?.let(vm::courseOpened) }
-    vm.listening?.let { (c, t, r) -> ListeningScreen(vm, c, t, r) { vm.listening = null } }
+    vm.listening?.let { (c, t, r) -> ListeningScreen(vm, c, t, r) { vm.closeListening() } }
 
     Scaffold(
         topBar = {

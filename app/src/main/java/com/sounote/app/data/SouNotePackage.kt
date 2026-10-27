@@ -22,16 +22,23 @@ object SouNotePackage {
     private const val MAX_ENTRY = 200L * 1024 * 1024
     private const val MAX_TOTAL = 500L * 1024 * 1024
 
-    fun write(pdf: InputStream, inkDir: File, title: String, target: File) {
+    fun write(pdf: InputStream, inkDir: File, title: String, target: File, sender: String = "") {
+        // PDF'in özeti: alan kişide aynı belge varsa notlar onunkine birleştirilebilsin
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val pdfBytes = java.io.ByteArrayOutputStream()
+        pdf.use { it.copyTo(pdfBytes) }
+        val bytes = pdfBytes.toByteArray()
+        digest.update(bytes)
         ZipOutputStream(target.outputStream().buffered()).use { zip ->
             zip.putNextEntry(ZipEntry("manifest.json"))
             zip.write(
                 JSONObject().put("format", FORMAT).put("app", "SouNote").put("title", title)
-                    .put("created", System.currentTimeMillis()).toString().toByteArray(),
+                    .put("created", System.currentTimeMillis()).put("pdfSha256", hex(digest.digest()))
+                    .put("sender", sender).toString().toByteArray(),
             )
             zip.closeEntry()
             zip.putNextEntry(ZipEntry("document.pdf"))
-            pdf.use { it.copyTo(zip) }
+            zip.write(bytes)
             zip.closeEntry()
             if (inkDir.isDirectory) {
                 inkDir.walkTopDown().filter { it.isFile }.forEach { f ->
@@ -52,19 +59,21 @@ object SouNotePackage {
         return head != null && head[0] == 'P'.code.toByte() && head[1] == 'K'.code.toByte()
     }
 
-    /**
-     * Paketi açar: PDF'i [createDoc] ile kütüphaneye ekletir (yeni kimlik), notları ink/<yeni kimlik>/ altına çıkarır.
-     * Zip içindeki yollar denetlenir; ink klasörünün dışına yazılamaz.
-     */
-    fun <T> read(
-        context: Context,
-        uri: Uri,
-        createDoc: (title: String, write: (File) -> Unit) -> T,
-        docId: (T) -> String,
-    ): T {
-        val work = File(context.cacheDir, "package-in").apply { deleteRecursively(); mkdirs() }
+    /** Açılmış (geçici klasöre çıkarılmış) paket; [finish] ya da [discard] ile kapanır. */
+    class Extracted(val title: String, val sha256: String, val sender: String, val work: File) {
+        val pdf get() = File(work, "document.pdf")
+        val ink get() = File(work, "ink")
+        fun discard() {
+            work.deleteRecursively()
+        }
+    }
+
+    /** Paketi geçici klasöre çıkarır ve denetler (yollar, boyut, PDF). */
+    fun extract(context: Context, uri: Uri): Extracted {
+        val work = File(context.cacheDir, "package-in-${System.currentTimeMillis()}").apply { mkdirs() }
         try {
             var title = "Paylaşılan belge"
+            var sender = ""
             var hasManifest = false
             var total = 0L
             val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Dosya açılamadı")
@@ -100,20 +109,42 @@ object SouNotePackage {
                 val o = JSONObject(m.readText())
                 if (o.optInt("format", 0) > FORMAT) throw IOException("Bu paket daha yeni bir SouNote sürümüyle hazırlanmış; uygulamayı güncelle")
                 title = o.optString("title").ifBlank { title }
+                sender = o.optString("sender").trim()
                 hasManifest = true
             }
             val pdf = File(work, "document.pdf")
             if (!hasManifest || !pdf.exists()) throw IOException("Bu bir SouNote paketi değil")
             PdfFiles.validate(pdf)
-            val doc = createDoc(title) { target -> pdf.copyTo(target, overwrite = true) }
-            val ink = File(work, "ink")
-            if (ink.isDirectory) {
-                val dest = File(File(context.filesDir, "ink"), docId(doc))
-                ink.copyRecursively(dest, overwrite = true)
-            }
-            return doc
-        } finally {
+            return Extracted(title, sha256(pdf), sender, work)
+        } catch (e: Exception) {
             work.deleteRecursively()
+            throw e
         }
     }
+
+    /** Paketi yeni belge olarak ekler: PDF [createDoc] ile kütüphaneye (yeni kimlik), notlar ink/<yeni kimlik>/ altına. */
+    fun <T> finish(context: Context, ext: Extracted, createDoc: (title: String, write: (File) -> Unit) -> T, docId: (T) -> String): T {
+        try {
+            val doc = createDoc(ext.title) { target -> ext.pdf.copyTo(target, overwrite = true) }
+            if (ext.ink.isDirectory) ext.ink.copyRecursively(File(File(context.filesDir, "ink"), docId(doc)), overwrite = true)
+            return doc
+        } finally {
+            ext.discard()
+        }
+    }
+
+    fun sha256(file: File): String {
+        val d = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                d.update(buf, 0, n)
+            }
+        }
+        return hex(d.digest())
+    }
+
+    private fun hex(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
 }

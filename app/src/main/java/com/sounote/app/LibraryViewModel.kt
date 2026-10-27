@@ -824,7 +824,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (weekDownload != null || downloading != null) return
         val todo = items.filter { it.third.isPdf && downloadedDoc(it.first, it.third) == null }.distinctBy { it.third.url }
         if (todo.isEmpty()) {
-            message = "Bu haftanın PDF'lerinin hepsi zaten kütüphanende"
+            message = "PDF'lerin hepsi zaten kütüphanende"
             return
         }
         viewModelScope.launch {
@@ -843,7 +843,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 userFolders = withContext(Dispatchers.IO) { repo.userFolders() }
             }
             weekDownload = null
-            message = if (failed == 0) "Hafta $week: $ok PDF kütüphanene indi" else "Hafta $week: $ok PDF indi, $failed tanesi indirilemedi"
+            val label = if (week > 0) "Hafta $week" else "Sınav kaynakları"
+            message = if (failed == 0) "$label: $ok PDF kütüphanene indi" else "$label: $ok PDF indi, $failed tanesi indirilemedi"
         }
     }
 
@@ -858,6 +859,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
             result.onSuccess { open(it) }.onFailure {
                 ErrorLog.record("Kaynak indirilemedi", it)
                 message = "İndirilemedi: ${it.message ?: "bağlantı hatası"}"
+                // Dinlerken açılacak kâğıt inmediyse ses görünmeden çalmaya devam etmesin
+                if (listeningMini && openDoc == null) closeListeningMini()
             }
         }
     }
@@ -891,6 +894,33 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Açık Listening oynatıcısı (ders, konu, ses kaynağı). */
     var listening by mutableStateOf<Triple<com.sounote.app.data.Course, com.sounote.app.data.Topic, Resource>?>(null)
+
+    /** Dinleme sesi (ekranlardan bağımsız: çalışma kâğıdına geçince sürer). */
+    val listeningPlayer = com.sounote.app.data.ListeningPlayer(listeningStore).also { it.onCompleted = { markActive() } }
+
+    /** Belge ekranındaki küçük oynatıcı çubuğu açık mı (dinlerken çalışma kâğıdı açıldı). */
+    var listeningMini by mutableStateOf(false)
+        private set
+
+    /** Listening ekranını kapatır; ses sadece belge ekranında sürmüyorsa durur. */
+    fun closeListening() {
+        listening = null
+        if (!listeningMini) listeningPlayer.release()
+    }
+
+    /** Dinleme sürerken ilgili PDF'i açar (inmemişse indirip açar); ses belge ekranındaki çubukta sürer. */
+    fun listenAlongside(course: com.sounote.app.data.Course, topic: com.sounote.app.data.Topic, res: Resource) {
+        val local = downloadedDoc(course, res)
+        if (local == null && downloading != null) return
+        listeningMini = true
+        listening = null
+        if (local != null) open(local) else downloadResource(course, topic, res)
+    }
+
+    fun closeListeningMini() {
+        listeningMini = false
+        listeningPlayer.release()
+    }
 
     /** Ses kaynağını indirir (zaten inmişse hemen) ve oynatıcıyı açar. */
     fun openListening(course: com.sounote.app.data.Course, topic: com.sounote.app.data.Topic, res: Resource) {
@@ -2040,6 +2070,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeDoc() {
+        if (listeningMini) closeListeningMini()
         refreshDue()
         studyPause()
         fullScreen = false
@@ -2075,7 +2106,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                     val name = doc.title.replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80)
                     val target = File(dir, "$name.${com.sounote.app.data.SouNotePackage.EXTENSION}")
                     val pdf = app.contentResolver.openInputStream(source) ?: throw java.io.IOException("PDF açılamadı")
-                    com.sounote.app.data.SouNotePackage.write(pdf, File(app.filesDir, "ink/${doc.id}"), doc.title, target)
+                    com.sounote.app.data.SouNotePackage.write(pdf, File(app.filesDir, "ink/${doc.id}"), doc.title, target, prefs.getString("userName", "").orEmpty())
                     target
                 }
             }
@@ -2101,11 +2132,47 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         }
         viewModelScope.launch {
             busy = true
-            val folder = currentFolder
             val r = withContext(Dispatchers.IO) {
                 runCatching {
-                    com.sounote.app.data.SouNotePackage.read(app, uri, { title, write -> repo.createDocument(title, folder, write) }, { it.id })
+                    val ext = com.sounote.app.data.SouNotePackage.extract(app, uri)
+                    ext to findSameDocument(ext)
                 }
+            }
+            busy = false
+            r.onSuccess { (ext, same) ->
+                if (same != null) pendingMerge = PendingMerge(ext, same) else finishPackage(ext)
+            }.onFailure {
+                ErrorLog.record("Paket açılamadı", it)
+                message = it.message ?: "Paket açılamadı"
+            }
+        }
+    }
+
+    /** Gelen paketle aynı PDF kütüphanede varsa: notları birleştirmeyi sormak için. */
+    class PendingMerge(val ext: com.sounote.app.data.SouNotePackage.Extracted, val target: DocRef)
+
+    var pendingMerge by mutableStateOf<PendingMerge?>(null)
+        private set
+
+    /** Aynı PDF (özet aynı; boyut önce bakılır), yoksa aynı adlı belge. */
+    private fun findSameDocument(ext: com.sounote.app.data.SouNotePackage.Extracted): DocRef? {
+        val size = ext.pdf.length()
+        val docs = repo.importedDocs()
+        docs.firstOrNull { d ->
+            val f = repo.docFile(d.id)
+            f.exists() && f.length() == size && com.sounote.app.data.SouNotePackage.sha256(f) == ext.sha256
+        }?.let { return it }
+        return docs.firstOrNull { it.title.equals(ext.title, ignoreCase = true) }
+    }
+
+    /** Paketi ayrı bir belge olarak ekler. */
+    private fun finishPackage(ext: com.sounote.app.data.SouNotePackage.Extracted) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            busy = true
+            val folder = currentFolder
+            val r = withContext(Dispatchers.IO) {
+                runCatching { com.sounote.app.data.SouNotePackage.finish(app, ext, { title, write -> repo.createDocument(title, folder, write) }, { it.id }) }
             }
             busy = false
             imported = withContext(Dispatchers.IO) { repo.importedDocs() }
@@ -2118,6 +2185,72 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
                 message = it.message ?: "Paket açılamadı"
             }
         }
+    }
+
+    /** Birleştirme penceresinin cevabı: true = notları kendi belgene ekle, false = ayrı kopya, null = vazgeç. */
+    fun answerMerge(merge: Boolean?) {
+        val p = pendingMerge ?: return
+        pendingMerge = null
+        when (merge) {
+            null -> p.ext.discard()
+            false -> finishPackage(p.ext)
+            true -> viewModelScope.launch {
+                busy = true
+                saveJob?.cancel()
+                flushInk()
+                val r = withContext(Dispatchers.IO) { runCatching { mergePackageInk(p.target, p.ext) }.also { p.ext.discard() } }
+                busy = false
+                r.onSuccess { n ->
+                    // Belge açıksa görüntüleyici yeni katmanla baştan kurulsun
+                    if (openDoc?.id == p.target.id) docVersion++
+                    message = if (n == 0) "Pakette not yoktu" else "Gelen notlar $n sayfaya eklendi (katman: ${mergeLayerName(p.ext.sender)})"
+                    open(p.target)
+                }.onFailure {
+                    ErrorLog.record("Notlar birleştirilemedi", it)
+                    message = "Notlar birleştirilemedi: ${it.message ?: ""}"
+                }
+            }
+        }
+    }
+
+    /**
+     * Paketteki notları belgeye ekler: çizgiler yeni bir katmana ("<ad> notları"; katman sınırı doluysa etkin katmana),
+     * yazı kutuları ve resimler sayfanın üstüne. Kendi notlarına dokunulmaz. Eklenen sayfa sayısını döndürür.
+     */
+    private fun mergePackageInk(target: DocRef, ext: com.sounote.app.data.SouNotePackage.Extracted): Int {
+        val pages = store.loadDir(ext.ink).filterValues { !it.isEmpty }
+        if (pages.isEmpty()) return 0
+        val dir = store.imagesDir(target.id).parentFile!!
+        var layers = com.sounote.app.ink.LayerSet.load(dir)
+        val layerId = if (layers.layers.size < com.sounote.app.ink.LayerSet.MAX) {
+            val id = layers.layers.maxOf { it.id } + 1
+            val name = mergeLayerName(ext.sender)
+            layers = layers.copy(layers = layers.layers + com.sounote.app.ink.InkLayer(id, name))
+            layers.save(dir)
+            id
+        } else {
+            layers.active
+        }
+        File(ext.ink, "img").listFiles()?.forEach { f ->
+            val t = File(store.imagesDir(target.id), f.name)
+            if (!t.exists()) {
+                t.parentFile?.mkdirs()
+                f.copyTo(t)
+            }
+        }
+        pages.forEach { (page, c) ->
+            val mine = store.loadPage(target.id, page)
+            store.save(
+                target.id,
+                page,
+                com.sounote.app.ink.PageContent(
+                    mine.strokes + c.strokes.map { it.copy(layer = layerId) },
+                    mine.texts + c.texts,
+                    mine.images + c.images,
+                ),
+            )
+        }
+        return pages.size
     }
 
     fun export(doc: DocRef, pages: Set<Int>? = null, label: String = "", onReady: (File) -> Unit) {
@@ -2359,6 +2492,9 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
+        /** Paylaşılan paketten birleştirilen notların katman adı. */
+        fun mergeLayerName(sender: String) = (if (sender.isBlank()) "Gelen notlar" else "Gelen: $sender").take(30)
+
         private inline fun <reified T : Enum<T>> enumValueOrNull(name: String?): T? =
             name?.let { n -> enumValues<T>().firstOrNull { it.name == n } }
 

@@ -674,6 +674,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 onLayers = { layersOpen = true },
                 layered = !layers.single,
             )
+            // Listening'den çalışma kâğıdı açıldı: dinleme burada sürer
+            if (vm.listeningMini) ListeningMiniBar(vm)
             audioPlay?.let { (name, ms, tapCount) ->
                 val f = vm.recordingFileFor(doc, name)
                 if (f.exists()) {

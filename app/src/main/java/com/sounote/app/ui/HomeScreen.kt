@@ -242,8 +242,16 @@ fun HomeScreen(vm: LibraryViewModel) {
     @Composable
     fun module(m: HomeModule, index: Int, modifier: Modifier) {
         when (m) {
-            HomeModule.HERO -> Appear(index, modifier) {
-                Greeting(greeting(vm.userName), days.first().second, vm.streak, vm.activeToday)
+            HomeModule.HERO -> Column(modifier, verticalArrangement = Arrangement.spacedBy(space.md)) {
+                Appear(index, Modifier.fillMaxWidth()) {
+                    Greeting(greeting(vm.userName), days.first().second, vm.streak, vm.activeToday)
+                }
+                // Sınavdan önceki gün ve sınav günü: konular, PDF'ler, deneme sınavı
+                examDayTarget(vm)?.let { e ->
+                    Appear(index, Modifier.fillMaxWidth()) {
+                        ExamDayCard(vm, e, onReview = { scope.launch { review = vm.dueCards().ifEmpty { null } } })
+                    }
+                }
             }
             HomeModule.QUICK_ACCESS -> if (quick.isNotEmpty()) {
                 Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {

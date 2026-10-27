@@ -273,4 +273,5 @@ private fun SouNoteApp(vm: LibraryViewModel) {
             }
         }
     }
+    vm.pendingMerge?.let { com.sounote.app.ui.MergeNotesDialog(vm, it) }
 }

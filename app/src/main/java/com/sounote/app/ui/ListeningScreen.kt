@@ -3,8 +3,8 @@
 package com.sounote.app.ui
 
 import android.content.Intent
-import android.media.MediaPlayer
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -34,8 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,7 +46,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.sounote.app.ErrorLog
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.Course
 import com.sounote.app.data.Resource
@@ -64,98 +62,23 @@ private val SPEEDS = listOf(0.75f, 1f, 1.25f, 1.5f)
 fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Resource, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val store = vm.listeningStore
-    var player by remember { mutableStateOf<MediaPlayer?>(null) }
-    var playing by remember { mutableStateOf(false) }
-    var position by remember { mutableIntStateOf(0) }
-    var duration by remember { mutableIntStateOf(0) }
+    val player = vm.listeningPlayer
     var dragging by remember { mutableStateOf<Float?>(null) }
-    var speed by remember { mutableFloatStateOf(1f) }
-    var loop by remember { mutableStateOf(false) }
     var note by remember { mutableStateOf(store.note(res)) }
     var exerciseOpen by remember { mutableStateOf(false) }
-    var counted by remember { mutableStateOf(false) }
 
-    DisposableEffect(res.url) {
-        val mp = MediaPlayer()
-        try {
-            mp.setDataSource(store.file(res).absolutePath)
-            mp.prepare()
-            duration = mp.duration.coerceAtLeast(0)
-            val saved = store.position(res)
-            // Sona çok yakınsa baştan başla
-            if (saved in 1 until duration - 3_000) mp.seekTo(saved)
-            position = mp.currentPosition
-            mp.setOnCompletionListener {
-                playing = false
-                position = duration
-                store.savePosition(res, 0)
-                vm.markActive()
-            }
-            player = mp
-        } catch (e: Exception) {
-            ErrorLog.record("Ses açılamadı", e)
-            vm.showMessage("Ses açılamadı; dosya bozuk olabilir")
-            store.file(res).delete()
-            mp.release()
+    LaunchedEffect(res.url) {
+        if (!player.load(res)) {
+            vm.showMessage("Ses açılamadı; dosya bozuk olabilir, yeniden indir")
             onDismiss()
         }
-        onDispose {
-            player?.let { p ->
-                runCatching { store.savePosition(res, p.currentPosition) }
-                p.release()
-            }
-            player = null
-            store.saveNote(res, note)
-        }
     }
-
-    // Çalarken konumu güncelle
-    LaunchedEffect(playing) {
-        while (playing) {
-            player?.let { p ->
-                position = p.currentPosition
-                if (!counted && position > 120_000) {
-                    counted = true
-                    vm.markActive()
-                }
-            }
-            delay(200)
-        }
-    }
+    DisposableEffect(res.url) { onDispose { store.saveNote(res, note) } }
+    PlayerTicker(vm)
     // Not yazılırken kısa aralıkla kaydet
     LaunchedEffect(note) {
         delay(800)
         store.saveNote(res, note)
-    }
-
-    fun toggle() {
-        val p = player ?: return
-        if (p.isPlaying) {
-            p.pause()
-            playing = false
-            store.savePosition(res, p.currentPosition)
-        } else {
-            if (p.currentPosition >= duration - 200) p.seekTo(0)
-            p.start()
-            playing = true
-        }
-    }
-
-    fun seekBy(ms: Int) {
-        val p = player ?: return
-        val to = (p.currentPosition + ms).coerceIn(0, duration)
-        p.seekTo(to)
-        position = to
-    }
-
-    fun setSpeed(s: Float) {
-        val p = player ?: return
-        val wasPlaying = p.isPlaying
-        runCatching { p.playbackParams = p.playbackParams.setSpeed(s) }
-            .onSuccess { speed = s }
-            .onFailure { vm.showMessage("Bu cihazda hız değiştirilemiyor") }
-        // Hız ayarı duraklamışken çalmayı başlatabiliyor
-        if (!wasPlaying && p.isPlaying) p.pause()
     }
 
     if (exerciseOpen) ExerciseScreen(vm, course = course, initialTopic = topic) { exerciseOpen = false }
@@ -186,16 +109,13 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Icon(SouIcons.Headphones, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(44.dp))
-                    val shown = dragging?.toInt() ?: position
+                    val shown = dragging?.toInt() ?: player.position
                     Slider(
                         value = shown.toFloat(),
-                        valueRange = 0f..duration.coerceAtLeast(1).toFloat(),
+                        valueRange = 0f..player.duration.coerceAtLeast(1).toFloat(),
                         onValueChange = { dragging = it },
                         onValueChangeFinished = {
-                            dragging?.let { v ->
-                                player?.seekTo(v.toInt())
-                                position = v.toInt()
-                            }
+                            dragging?.let { v -> player.seekTo(v.toInt()) }
                             dragging = null
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -203,29 +123,30 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                     Row(Modifier.fillMaxWidth()) {
                         Text(clock(shown), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Box(Modifier.weight(1f))
-                        Text(clock(duration), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(clock(player.duration), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        OutlinedButton(onClick = { seekBy(-5_000) }) { Text("−5 sn") }
-                        FilledIconButton(onClick = { toggle() }, shape = CircleShape, modifier = Modifier.size(68.dp)) {
+                        OutlinedButton(onClick = { player.seekBy(-5_000) }) { Text("−5 sn") }
+                        FilledIconButton(onClick = { player.toggle() }, shape = CircleShape, modifier = Modifier.size(68.dp)) {
                             Icon(
-                                if (playing) SouIcons.Pause else SouIcons.PlayArrow,
-                                contentDescription = if (playing) "Duraklat" else "Çal",
+                                if (player.playing) SouIcons.Pause else SouIcons.PlayArrow,
+                                contentDescription = if (player.playing) "Duraklat" else "Çal",
                                 modifier = Modifier.size(36.dp),
                             )
                         }
-                        OutlinedButton(onClick = { seekBy(5_000) }) { Text("+5 sn") }
+                        OutlinedButton(onClick = { player.seekBy(5_000) }) { Text("+5 sn") }
                     }
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         SPEEDS.forEach { s ->
-                            FilterChip(selected = speed == s, onClick = { setSpeed(s) }, label = { Text(speedText(s)) })
+                            FilterChip(
+                                selected = player.speed == s,
+                                onClick = { if (!player.changeSpeed(s)) vm.showMessage("Bu cihazda hız değiştirilemiyor") },
+                                label = { Text(speedText(s)) },
+                            )
                         }
                         FilterChip(
-                            selected = loop,
-                            onClick = {
-                                loop = !loop
-                                player?.isLooping = loop
-                            },
+                            selected = player.loop,
+                            onClick = { player.toggleLoop() },
                             label = { Text("Tekrarla") },
                             leadingIcon = { Icon(SouIcons.Replay, contentDescription = null, modifier = Modifier.size(18.dp)) },
                         )
@@ -243,13 +164,13 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                     )
                     TextButton(
                         onClick = {
-                            val t = clock(position)
+                            val t = clock(player.position)
                             note = if (note.isBlank()) "[$t] " else note.trimEnd() + "\n[$t] "
                         },
-                    ) { Text("Zamanı ekle (${clock(position)})") }
+                    ) { Text("Zamanı ekle (${clock(player.position)})") }
                 }
 
-                // Aynı günün ve konunun çalışma kâğıtları
+                // Aynı günün ve konunun çalışma kâğıtları: dinlerken açılır, ses belge ekranında küçük çubukta sürer
                 val related = remember(res.url, vm.catalog) { relatedMaterials(vm, topic, res) }
                 if (related.isNotEmpty()) {
                     Column(Modifier.fillMaxWidth().card().padding(vertical = 8.dp)) {
@@ -258,6 +179,12 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                        Text(
+                            "PDF'i açınca dinleme sürer; kâğıdın üstüne yazarken üstteki çubuktan durdurup geri sarabilirsin.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 4.dp),
                         )
                         related.forEach { (c, t, r) ->
                             val local = vm.downloadedDoc(c, r)
@@ -270,11 +197,11 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                                 )
                                 Text(r.title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
                                 when {
-                                    local != null -> TextButton(onClick = {
-                                        onDismiss()
-                                        vm.open(local)
-                                    }) { Text("Aç") }
-                                    r.isPdf -> TextButton(onClick = { vm.downloadResource(c, t, r) }) { Text("İndir") }
+                                    vm.downloading == r.url -> CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+                                    local != null || r.isPdf -> TextButton(onClick = {
+                                        store.saveNote(res, note)
+                                        vm.listenAlongside(c, t, r)
+                                    }) { Text(if (local != null) "Dinlerken aç" else "İndir ve aç") }
                                     else -> TextButton(onClick = {
                                         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.url))) }
                                     }) { Text("Drive") }
@@ -294,6 +221,50 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                 }
             }
         }
+    }
+}
+
+/** Çalarken oynatıcının konumunu ekrana yansıtır; iki dakikadan uzun dinleme çalışma serisine sayılır. */
+@Composable
+private fun PlayerTicker(vm: LibraryViewModel) {
+    val player = vm.listeningPlayer
+    LaunchedEffect(player.playing) {
+        while (player.playing) {
+            player.tick()
+            if (player.position > 120_000) vm.markActive()
+            delay(200)
+        }
+    }
+}
+
+/** Belge ekranında, çalışma kâğıdının üstünde: dinleme sürerken küçük oynatıcı çubuğu. */
+@Composable
+fun ListeningMiniBar(vm: LibraryViewModel) {
+    val player = vm.listeningPlayer
+    val res = player.res ?: return
+    PlayerTicker(vm)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Icon(SouIcons.Headphones, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp).size(20.dp))
+        Text(res.title, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        Text(
+            "${clock(player.position)} / ${clock(player.duration)}",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        TextButton(onClick = { player.seekBy(-5_000) }) { Text("−5") }
+        IconButton(onClick = { player.toggle() }) {
+            Icon(if (player.playing) SouIcons.Pause else SouIcons.PlayArrow, contentDescription = if (player.playing) "Duraklat" else "Çal")
+        }
+        TextButton(onClick = { player.seekBy(5_000) }) { Text("+5") }
+        TextButton(onClick = {
+            val i = SPEEDS.indexOf(player.speed).let { if (it < 0) 1 else it }
+            if (!player.changeSpeed(SPEEDS[(i + 1) % SPEEDS.size])) vm.showMessage("Bu cihazda hız değiştirilemiyor")
+        }) { Text(speedText(player.speed)) }
+        IconButton(onClick = { vm.closeListeningMini() }) { Icon(SouIcons.Close, contentDescription = "Dinlemeyi kapat") }
     }
 }
 

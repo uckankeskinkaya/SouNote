@@ -97,6 +97,7 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1yFHYG_LVGTwJ1Jp3omZaZ_WYZQW_spu-|PPT Reading Strategies IV (Inferring Unknown Words) (PDF)|pdf
 1lHUTFnruClxDL7YlZtcsqGj0dhHpvKLL|PPT SPEAKING (Expressing Preferences) (PDF)|pdf
 1Vk3XO0zRl85QRTRt4YrgPaGJCEMoh4cO|ACTIVITY HANDOUT (Expressing Preferences)|pdf
+1AmJG1ULq4_6CGGYxiBDJ1YjydljzngxT|WORKSHEET (Prefer, Would Prefer, Would Rather)|pdf
 18KvlJWxo_2B6HSh1GHosJVYojqw9yC1X|ACTIVITY HANDOUT (Role Play Job Interview)|pdf
 1oGHm4_U_pq3mqkgrhPZsmwRV0jYjy2mU|HANDOUT (Inferring Unknown Words)|pdf
 1IV4iH5figb3pxUhRK13hiw0HHHU4ihcC|HANDOUT (Listening Strategies II)|pdf
@@ -128,7 +129,7 @@ courses = [
    {"id":"conditionals","name":"Conditional Structures","resources":R("PPT (Conditional Structures)","HANDOUT 1 (Conditional Structures)","HANDOUT 2 (Rewrite Conditional Structures)")},
    {"id":"modals","name":"Necessity, Obligation, Permission","resources":R("PPT (Necessity, Obligation, Permission)","ACTIVITY HANDOUT (Necessity, Obligation, Permission)")},
    {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)")},
-   {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)","PPT (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Expressing Preferences)")},
+   {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)","PPT (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Expressing Preferences)","WORKSHEET (Prefer, Would Prefer, Would Rather)")},
  ]},
  {"id":"vocabulary","name":"Vocabulary","emoji":"🔤","color":"#8E63CE","topics":[
    {"id":"vocab-u1","name":"Unit 1 (1A)","resources":R("HANDOUT (Vocabulary B1+ U1A)")},
@@ -203,6 +204,7 @@ WEEKS = {
  6: [(1,"PPT Reading Strategies IV (Inferring Unknown Words) (PDF)"),(1,"HANDOUT (Inferring Unknown Words)"),(1,"PPT (Presentation Skills I) (PDF)"),
      (1,"INTEGRATED HANDOUT (Teamwork)"),(1,"HANDOUT (Vocabulary How To B1+ 3C)"),
      (2,"PPT (Expressing Preferences) (PDF)"),(2,"PPT SPEAKING (Expressing Preferences) (PDF)"),(2,"ACTIVITY HANDOUT (Role Play Job Interview)"),
+     (2,"WORKSHEET (Prefer, Would Prefer, Would Rather)"),
      (3,"PPT (Listening Strategies II)"),(3,"HANDOUT (Listening Strategies II)"),(3,"Listening 1 - Sounds for a Tiny Dragon"),
      (3,"Listening 2 - Spoilers in the Group Chat"),(3,"WRITING HANDOUT (Opinion Essay) PRACTICE III"),
      (5,"PPT (Opinion Essay) (PDF)"),(5,"ACTIVITY HANDOUT (Expressing Preferences)"),(5,"HANDOUT (Vocabulary and Grammar B1+ U3D)"),(5,"!Quizlet SO B1+ Unit 3|link"),
@@ -266,7 +268,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-26c","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-10-27","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

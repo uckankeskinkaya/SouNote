@@ -208,6 +208,9 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   ilgili kaynaklar = aynı hafta+gün ya da konu; asistanla alıştırma = ExerciseScreen(konu). CatalogRepo.download ses için HTML değil mi diye bakar.
 - Yan yana belge (🧪, build-147+): ui/SideDocPane.kt, belge ⋮ menüsü "Yan yana belge aç" (≥840dp); ikinci PdfContainer readOnly,
   notlar vm.inkForSide (kaydedilmez), son sayfa hatırlanır.
+- Haftayı toplu indir (🧪, build-151+): Haftalar kartında "x/y PDF kütüphanende" + "Hepsini indir" (vm.downloadWeek, sırayla importResource,
+  weekDownload ilerleme); satırda ✓ "Kütüphanede" (vm.downloadedDoc), konu kartında x/y PDF. Uygulama içi APK güncellemesi YOK
+  (kullanıcı: indirdikleri yeri görsünler, GitHub'dan tarayıcıyla insin).
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.

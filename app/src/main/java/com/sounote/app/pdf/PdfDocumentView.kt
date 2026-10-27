@@ -803,10 +803,15 @@ class PdfDocumentView(context: Context) : View(context) {
         canvas.restore()
     }
 
-    /** Sayfanın kayıtlı çizgileri bir kez kaydedilir, her karede sadece tekrar oynatılır. */
-    private fun inkNode(page: Int): RenderNode = inkNodes.getOrPut(page) {
+    /**
+     * Sayfanın kayıtlı çizgileri bir kez kaydedilir, her karede sadece tekrar oynatılır. Sistem (arka plana geçince,
+     * bellek azalınca) kaydı silebilir: o zaman yeniden kaydedilir, yoksa notlar kalem değene kadar görünmüyordu.
+     */
+    private fun inkNode(page: Int): RenderNode {
+        inkNodes[page]?.let { if (it.hasDisplayList()) return it }
         val size = pageSizes[page]
-        RenderNode("ink$page").apply {
+        val node = inkNodes.getOrPut(page) { RenderNode("ink$page") }
+        return node.apply {
             setPosition(0, 0, size.width, size.height)
             val c = beginRecording()
             val strokes = layers.arrange(ink.strokes(page))
@@ -822,6 +827,15 @@ class PdfDocumentView(context: Context) : View(context) {
     private fun pageChanged(page: Int) {
         inkNodes.remove(page)?.discardDisplayList()
         invalidate()
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        // Uygulamaya geri dönünce notları baştan kaydet (sistem kayıtları silmiş olabilir)
+        if (visibility == VISIBLE) {
+            discardInkNodes()
+            invalidate()
+        }
     }
 
     // ---- Dokunma ----

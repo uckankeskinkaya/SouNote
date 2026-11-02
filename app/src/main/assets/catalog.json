@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-27b",
+ "updated": "2026-11-02",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -364,6 +364,76 @@
      ]
     },
     {
+     "id": "past-plans",
+     "name": "Past Plans and Intentions (was going to, meant to)",
+     "resources": [
+      {
+       "title": "PPT (Past Plans and Intentions)",
+       "url": "https://drive.google.com/file/d/1lHOceQ9f4BPoLfd5nZGyd0YAI0NF_hao/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Past Plans and Intentions) (PDF)",
+       "url": "https://drive.google.com/file/d/10UqfJ1-dv060bNiPiLrbh52qxe2DLuN0/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 1,
+       "order": 0
+      },
+      {
+       "title": "HANDOUT (Past Plans Intentions)",
+       "url": "https://drive.google.com/file/d/1qU30BHQ--bilcGRbaetPCVuMbo_U__PB/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 1,
+       "order": 1
+      },
+      {
+       "title": "WORKSHEET (Past Plans and Intentions)",
+       "url": "https://drive.google.com/file/d/1xh2IvuhhBP4cateLuodbay2zBmys_TsX/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 1,
+       "order": 2
+      }
+     ]
+    },
+    {
+     "id": "indirect-questions",
+     "name": "Indirect and Negative Questions",
+     "resources": [
+      {
+       "title": "PPT (Indirect and Negative Questions)",
+       "url": "https://drive.google.com/file/d/1jGisUzqY-6SBQSlxkuMaxhmvyJa4jj-P/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Indirect and Negative Questions) (PDF)",
+       "url": "https://drive.google.com/file/d/1yx90AwhXuNp2nIx3pbtQuuKy9ZDZs6rF/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 3,
+       "order": 11
+      },
+      {
+       "title": "HANDOUT 1 (Indirect and Negative Questions)",
+       "url": "https://drive.google.com/file/d/1GQumDKGu-dlOVS6y5rsq_o9Yf-rLAXj7/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 3,
+       "order": 12
+      },
+      {
+       "title": "HANDOUT 2 (Rewrite Indirect Negative Questions)",
+       "url": "https://drive.google.com/file/d/1zXaJ4IW0juD3EF1TQVHHXAVUWZBvuXWW/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 3,
+       "order": 13
+      }
+     ]
+    },
+    {
      "id": "preferences",
      "name": "Expressing Preferences (prefer, would rather)",
      "resources": [
@@ -485,6 +555,44 @@
        "week": 6,
        "day": 5,
        "order": 16
+      }
+     ]
+    },
+    {
+     "id": "vocab-u4",
+     "name": "Unit 4 (4A–4D)",
+     "resources": [
+      {
+       "title": "HANDOUT (Vocabulary B1+ U4A)",
+       "url": "https://drive.google.com/file/d/1L9ZuiMrHIRUHiPbgFye2-YRcdsRWRgAU/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 1,
+       "order": 5
+      },
+      {
+       "title": "HANDOUT (Vocabulary B1+ U4B)",
+       "url": "https://drive.google.com/file/d/1csurgYEiOpUqVeqGdaNE1XWTd-pUh6ms/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 3,
+       "order": 14
+      },
+      {
+       "title": "HANDOUT (Vocabulary How To B1+ U4C)",
+       "url": "https://drive.google.com/file/d/1S3tp9fz-vbr79ZZkTudns-BKZwOdP7LT/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 4,
+       "order": 17
+      },
+      {
+       "title": "HANDOUT (Vocabulary B1+ U4D)",
+       "url": "https://drive.google.com/file/d/1csHuu6-gGUF8Gad8NwRZ1HHDy9AL-KQL/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 5,
+       "order": 19
       }
      ]
     },
@@ -644,6 +752,22 @@
        "week": 5,
        "day": 0,
        "order": 31
+      },
+      {
+       "title": "HANDOUT (Reading - Making a Movie)",
+       "url": "https://drive.google.com/file/d/1dDyifrwC2pko9z-y_BREi5XK1B6ZyF0v/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 4,
+       "order": 16
+      },
+      {
+       "title": "GREAT HIP HOP HOAX (Reading)",
+       "url": "https://drive.google.com/file/d/1QmmzuclubrfcAhBvDNIj7xIBMJSp-uiY/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 0,
+       "order": 23
       }
      ]
     }
@@ -657,7 +781,7 @@
    "topics": [
     {
      "id": "listening-strategies",
-     "name": "Listening Strategies (I–II)",
+     "name": "Listening Strategies (I–III)",
      "resources": [
       {
        "title": "PPT (Listening Strategies I - Introduction)",
@@ -706,6 +830,51 @@
        "week": 6,
        "day": 3,
        "order": 12
+      },
+      {
+       "title": "PPT (Listening Strategies III)",
+       "url": "https://drive.google.com/file/d/1hfARBcldVOFV6AucE-lhdJqvHkaSqDrF/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Listening Strategies III) (PDF)",
+       "url": "https://drive.google.com/file/d/1C0m7-WPFr21tLkH_q_p_eklYXhOsRwjB/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 2,
+       "order": 6
+      },
+      {
+       "title": "Listening Strategies III - Track 1",
+       "url": "https://drive.google.com/file/d/1wZikz07OXqFpprwT9cFggKFE1EdPtVN1/view",
+       "kind": "video",
+       "week": 7,
+       "day": 2,
+       "order": 7
+      },
+      {
+       "title": "Listening Strategies III - Track 2",
+       "url": "https://drive.google.com/file/d/1vthK7ds_iw56wCKJLEdQHIF0J8XIeQDP/view",
+       "kind": "audio",
+       "week": 7,
+       "day": 2,
+       "order": 8
+      },
+      {
+       "title": "Listening Strategies III - Track 3",
+       "url": "https://drive.google.com/file/d/1_EBM8Hu3ufe2msrFwuRd6_ue1JqdG8Gk/view",
+       "kind": "audio",
+       "week": 7,
+       "day": 2,
+       "order": 9
+      },
+      {
+       "title": "Self Study Handout Listening Track (Hafta 7)",
+       "url": "https://drive.google.com/file/d/1VI-BhNMX9plizyv4k2MnRy8Cr9cahAJg/view",
+       "kind": "audio",
+       "week": 7,
+       "day": 0,
+       "order": 21
       }
      ]
     }
@@ -990,6 +1159,40 @@
        "week": 6,
        "day": 2,
        "order": 7
+      },
+      {
+       "title": "PPT SPEAKING (A Truth A Lie)",
+       "url": "https://drive.google.com/file/d/1z0PKuhYhPS0qgQFKG3RQr5RbHB7YmrpB/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (A Truth A Lie) (PDF)",
+       "url": "https://drive.google.com/file/d/1ICJt867hXqaCgx1T9IT65wTKOQ2z4GI4/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 1,
+       "order": 4
+      },
+      {
+       "title": "Follow up Questions",
+       "url": "https://drive.google.com/file/d/1dtLBCJBvV8z_mbKRw-lc1qlmzjIkD6QV/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 1,
+       "order": 3
+      },
+      {
+       "title": "PPT SPEAKING (Film Making)",
+       "url": "https://drive.google.com/file/d/1yriYrl6S__T2A8mJOAA-WhcN3hOd0BZz/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Film Making) (PDF)",
+       "url": "https://drive.google.com/file/d/1MV4KoYKuSAR_yt9agY0kAYSlfxbDKVN6/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 4,
+       "order": 18
       }
      ]
     },
@@ -1043,6 +1246,19 @@
        "week": 6,
        "day": 1,
        "order": 2
+      },
+      {
+       "title": "PPT (Presentation Skills II - Organizing Content, Presentation Tools)",
+       "url": "https://drive.google.com/file/d/1a-m3f_2A3Fn2_iRSRaiHWcHJm7O2DfQh/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)",
+       "url": "https://drive.google.com/file/d/169LUQR0FdERKASZCDXbk8PkY1mSGhs6H/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 3,
+       "order": 15
       }
      ]
     }
@@ -1183,6 +1399,20 @@
      ]
     },
     {
+     "id": "unit-strange",
+     "name": "Strange Stories (Unit 4)",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (Strange Stories and the Facts Behind Them)",
+       "url": "https://drive.google.com/file/d/1a3GWGYeXVKqPd8sZm7AJvsmGepgdrm0t/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 2,
+       "order": 10
+      }
+     ]
+    },
+    {
      "id": "unit-video",
      "name": "Video etkinlikleri",
      "resources": [
@@ -1262,6 +1492,22 @@
        "week": 6,
        "day": 0,
        "order": 20
+      },
+      {
+       "title": "Self Study Handout (Hafta 7)",
+       "url": "https://drive.google.com/file/d/1C9-qUNmfCoLW8da1A6cq3mmFxRc_vSXK/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 0,
+       "order": 20
+      },
+      {
+       "title": "Self Study Handout Answer Key (Hafta 7)",
+       "url": "https://drive.google.com/file/d/19nJwe9Ouhh2v-kwmaY8Sq5mlKVpa6Cwa/view",
+       "kind": "pdf",
+       "week": 7,
+       "day": 0,
+       "order": 22
       }
      ]
     },

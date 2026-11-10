@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-02",
+ "updated": "2026-11-10",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -434,6 +434,92 @@
      ]
     },
     {
+     "id": "comparatives",
+     "name": "Comparative and Superlative Structures",
+     "resources": [
+      {
+       "title": "PPT (Comparative and Superlative Structures)",
+       "url": "https://drive.google.com/file/d/1I2nGrxP9G8BMKGydtO3niiBV5wFvhe1C/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Comparative and Superlative Structures) (PDF)",
+       "url": "https://drive.google.com/file/d/1IOB34WSw6z7c22og6n8B7Y0HO9u5-M9o/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 0
+      },
+      {
+       "title": "HANDOUT 1 (Comparative and Superlative Structures)",
+       "url": "https://drive.google.com/file/d/1xmEHrmJ8Huse3EIeqVBmqFNHIRK9uwp3/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 1
+      },
+      {
+       "title": "HANDOUT 2 (Grammar B1+ U5A U5B)",
+       "url": "https://drive.google.com/file/d/1viMn_Fscu0IWeYQUCivVaFiv3fxvrsuW/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 2
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Comparative Structures)",
+       "url": "https://drive.google.com/file/d/1jHAm5TII3gJyNv1Z1V7s-RuBgv1FHxQ9/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 3
+      }
+     ]
+    },
+    {
+     "id": "purpose",
+     "name": "Clauses of Purpose (to, so that, in order to)",
+     "resources": [
+      {
+       "title": "PPT (Clauses of Purpose)",
+       "url": "https://drive.google.com/file/d/12vPTvKdwl_5czsY032z3lbo8EcPaEGBm/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Clauses of Purpose) (PDF)",
+       "url": "https://drive.google.com/file/d/1oxI50_bqU8uBWx7qYIGTZ0oxyYDg10HZ/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 4
+      },
+      {
+       "title": "HANDOUT 1 (Clauses of Purpose)",
+       "url": "https://drive.google.com/file/d/1S7C0iXsDMU-0aky3XyUPkDDNBX2OMIBN/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 5
+      },
+      {
+       "title": "HANDOUT 2 (Rewrite Clauses of Purpose)",
+       "url": "https://drive.google.com/file/d/16gLG2456890hnNoDNpUBxxD2fXPmKMpA/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 6
+      },
+      {
+       "title": "WORKSHEET (Clauses of Purpose)",
+       "url": "https://drive.google.com/file/d/1EORJZlzqus5tIpQUYHYg-eOXkMg-ZtqY/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 7
+      }
+     ]
+    },
+    {
      "id": "preferences",
      "name": "Expressing Preferences (prefer, would rather)",
      "resources": [
@@ -593,6 +679,28 @@
        "week": 7,
        "day": 5,
        "order": 19
+      }
+     ]
+    },
+    {
+     "id": "vocab-u5",
+     "name": "Unit 5 (5A–5B)",
+     "resources": [
+      {
+       "title": "HANDOUT (Vocabulary B1+ U5A U5B)",
+       "url": "https://drive.google.com/file/d/1sFXLVARL1QfN5qsyQGCK5-A8JPSXIPfV/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 8
+      },
+      {
+       "title": "HANDOUT (Vocabulary Review Units 1-5)",
+       "url": "https://drive.google.com/file/d/1hI5hMly2u89hC6Gh5m7niTum6eMpU6-j/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 21
       }
      ]
     },
@@ -1193,6 +1301,27 @@
        "week": 7,
        "day": 4,
        "order": 18
+      },
+      {
+       "title": "PPT SPEAKING (Consumption Habits)",
+       "url": "https://drive.google.com/file/d/1hNBs99_5GNPdp3hIFfx_tHCV5hlDlbZV/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Consumption Habits) (PDF)",
+       "url": "https://drive.google.com/file/d/1QXGuUl-sz732Cgg7kBXEjI930n7zYCqm/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 15
+      },
+      {
+       "title": "SPEAKING - Follow-up questions",
+       "url": "https://drive.google.com/file/d/1DLiDLTN2kem41nVM7HhB-B3q1yNRW8uB/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 16
       }
      ]
     },
@@ -1259,6 +1388,35 @@
        "week": 7,
        "day": 3,
        "order": 15
+      },
+      {
+       "title": "Citing Sources in a Presentation (Instruction)",
+       "url": "https://drive.google.com/file/d/1unT8OrBtrv0phOAbGVcHR9VtWJXAbFAB/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "Citing Sources in a Presentation (Instruction) (PDF)",
+       "url": "https://drive.google.com/file/d/1K7cfgqA8gXiV9P5cVh8gVU5jSm04ynqz/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 17
+      },
+      {
+       "title": "Citing Sources in a Presentation (Practice)",
+       "url": "https://drive.google.com/file/d/1Zx8wXCKUBH0Znrpe2oqwTLZNO7IncZeM/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 18
+      },
+      {
+       "title": "Citing Sources Listening",
+       "url": "https://drive.google.com/file/d/1KIKRb_H08sm_JAOhMxZiTHssOSkBGpvk/view",
+       "kind": "audio",
+       "week": 8,
+       "day": 6,
+       "order": 19
       }
      ]
     }
@@ -1413,6 +1571,60 @@
      ]
     },
     {
+     "id": "unit-consumption",
+     "name": "Consumption (Unit 5)",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (Consumption)",
+       "url": "https://drive.google.com/file/d/1Vj9nMeUDp1INYbrSiz1rIzxAaJW0HWA0/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 9
+      },
+      {
+       "title": "Inside the Mind of a Gen Z Consumer (video)",
+       "url": "https://drive.google.com/file/d/1h2Pfzc0r-ox2LLiSOuEYshJ_NUDIlBoR/view",
+       "kind": "video",
+       "week": 8,
+       "day": 6,
+       "order": 10
+      },
+      {
+       "title": "Consumption - Listening Track 1",
+       "url": "https://drive.google.com/file/d/1srE0nWdTyY4CmV-NEfqbRYnKsA6sDHcp/view",
+       "kind": "audio",
+       "week": 8,
+       "day": 6,
+       "order": 11
+      },
+      {
+       "title": "Consumption - Listening Track 2",
+       "url": "https://drive.google.com/file/d/1XChX52xy5tTwWvVQATZQPsvFRXa1GStB/view",
+       "kind": "audio",
+       "week": 8,
+       "day": 6,
+       "order": 12
+      },
+      {
+       "title": "Consumption - Listening Track 3",
+       "url": "https://drive.google.com/file/d/1MyKfCy3TitGf_Q0EMvGkTC5gKF6EtOhf/view",
+       "kind": "audio",
+       "week": 8,
+       "day": 6,
+       "order": 13
+      },
+      {
+       "title": "Consumption - Listening Track 4",
+       "url": "https://drive.google.com/file/d/1BpTrs0YOkQoLufo6J6uhfRiyP5P96nh2/view",
+       "kind": "audio",
+       "week": 8,
+       "day": 6,
+       "order": 14
+      }
+     ]
+    },
+    {
      "id": "unit-video",
      "name": "Video etkinlikleri",
      "resources": [
@@ -1508,6 +1720,38 @@
        "week": 7,
        "day": 0,
        "order": 22
+      },
+      {
+       "title": "REVISION HANDOUT FOR PROGRESS TEST",
+       "url": "https://drive.google.com/file/d/1ttQceVzBEoU0s8m81MW-awBBDKELTU_-/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 6,
+       "order": 20
+      },
+      {
+       "title": "Self Study Handout (Hafta 8)",
+       "url": "https://drive.google.com/file/d/1g7aGIl5_TPJbIJpTSaeVpJq4n8v2LREF/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 0,
+       "order": 22
+      },
+      {
+       "title": "Self Study Handout Answer Key (Hafta 8)",
+       "url": "https://drive.google.com/file/d/1s2qLWvscU8ar7haq78uBjc8LTz8Ps8ws/view",
+       "kind": "pdf",
+       "week": 8,
+       "day": 0,
+       "order": 24
+      },
+      {
+       "title": "Self Study Handout Listening Track (Hafta 8)",
+       "url": "https://drive.google.com/file/d/1-BlCg5ar6kjYMfJt_B86nVh0mDD-uAbu/view",
+       "kind": "audio",
+       "week": 8,
+       "day": 0,
+       "order": 23
       }
      ]
     },
@@ -1616,7 +1860,15 @@
    "kind": "exam",
    "place": "",
    "notes": "Saat duyurulacak",
-   "topics": []
+   "topics": [
+    "revision",
+    "comparatives",
+    "purpose",
+    "past-plans",
+    "indirect-questions",
+    "vocab-u4",
+    "vocab-u5"
+   ]
   },
   {
    "id": "p2-topic",

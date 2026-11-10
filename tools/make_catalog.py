@@ -170,7 +170,36 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1QmmzuclubrfcAhBvDNIj7xIBMJSp-uiY|GREAT HIP HOP HOAX (Reading)|pdf
 1C9-qUNmfCoLW8da1A6cq3mmFxRc_vSXK|Self Study Handout (Hafta 7)|pdf
 19nJwe9Ouhh2v-kwmaY8Sq5mlKVpa6Cwa|Self Study Handout Answer Key (Hafta 7)|pdf
-1VI-BhNMX9plizyv4k2MnRy8Cr9cahAJg|Self Study Handout Listening Track (Hafta 7)|audio"""
+1VI-BhNMX9plizyv4k2MnRy8Cr9cahAJg|Self Study Handout Listening Track (Hafta 7)|audio
+1I2nGrxP9G8BMKGydtO3niiBV5wFvhe1C|PPT (Comparative and Superlative Structures)|pptx
+1IOB34WSw6z7c22og6n8B7Y0HO9u5-M9o|PPT (Comparative and Superlative Structures) (PDF)|pdf
+1xmEHrmJ8Huse3EIeqVBmqFNHIRK9uwp3|HANDOUT 1 (Comparative and Superlative Structures)|pdf
+1viMn_Fscu0IWeYQUCivVaFiv3fxvrsuW|HANDOUT 2 (Grammar B1+ U5A U5B)|pdf
+1jHAm5TII3gJyNv1Z1V7s-RuBgv1FHxQ9|ACTIVITY HANDOUT (Comparative Structures)|pdf
+12vPTvKdwl_5czsY032z3lbo8EcPaEGBm|PPT (Clauses of Purpose)|pptx
+1oxI50_bqU8uBWx7qYIGTZ0oxyYDg10HZ|PPT (Clauses of Purpose) (PDF)|pdf
+1S7C0iXsDMU-0aky3XyUPkDDNBX2OMIBN|HANDOUT 1 (Clauses of Purpose)|pdf
+16gLG2456890hnNoDNpUBxxD2fXPmKMpA|HANDOUT 2 (Rewrite Clauses of Purpose)|pdf
+1EORJZlzqus5tIpQUYHYg-eOXkMg-ZtqY|WORKSHEET (Clauses of Purpose)|pdf
+1sFXLVARL1QfN5qsyQGCK5-A8JPSXIPfV|HANDOUT (Vocabulary B1+ U5A U5B)|pdf
+1hI5hMly2u89hC6Gh5m7niTum6eMpU6-j|HANDOUT (Vocabulary Review Units 1-5)|pdf
+1Vj9nMeUDp1INYbrSiz1rIzxAaJW0HWA0|INTEGRATED HANDOUT (Consumption)|pdf
+1h2Pfzc0r-ox2LLiSOuEYshJ_NUDIlBoR|Inside the Mind of a Gen Z Consumer (video)|video
+1srE0nWdTyY4CmV-NEfqbRYnKsA6sDHcp|Consumption - Listening Track 1|audio
+1XChX52xy5tTwWvVQATZQPsvFRXa1GStB|Consumption - Listening Track 2|audio
+1MyKfCy3TitGf_Q0EMvGkTC5gKF6EtOhf|Consumption - Listening Track 3|audio
+1BpTrs0YOkQoLufo6J6uhfRiyP5P96nh2|Consumption - Listening Track 4|audio
+1hNBs99_5GNPdp3hIFfx_tHCV5hlDlbZV|PPT SPEAKING (Consumption Habits)|pptx
+1QXGuUl-sz732Cgg7kBXEjI930n7zYCqm|PPT SPEAKING (Consumption Habits) (PDF)|pdf
+1DLiDLTN2kem41nVM7HhB-B3q1yNRW8uB|SPEAKING - Follow-up questions|pdf
+1unT8OrBtrv0phOAbGVcHR9VtWJXAbFAB|Citing Sources in a Presentation (Instruction)|pptx
+1K7cfgqA8gXiV9P5cVh8gVU5jSm04ynqz|Citing Sources in a Presentation (Instruction) (PDF)|pdf
+1Zx8wXCKUBH0Znrpe2oqwTLZNO7IncZeM|Citing Sources in a Presentation (Practice)|pdf
+1KIKRb_H08sm_JAOhMxZiTHssOSkBGpvk|Citing Sources Listening|audio
+1ttQceVzBEoU0s8m81MW-awBBDKELTU_-|REVISION HANDOUT FOR PROGRESS TEST|pdf
+1g7aGIl5_TPJbIJpTSaeVpJq4n8v2LREF|Self Study Handout (Hafta 8)|pdf
+1s2qLWvscU8ar7haq78uBjc8LTz8Ps8ws|Self Study Handout Answer Key (Hafta 8)|pdf
+1-BlCg5ar6kjYMfJt_B86nVh0mDD-uAbu|Self Study Handout Listening Track (Hafta 8)|audio"""
 for line in raw.splitlines():
     i,t,k = line.split("|"); F[t]=(i,k)
 used=set()
@@ -192,6 +221,8 @@ courses = [
    {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)","PPT (except for, apart from, not even) (PDF)")},
    {"id":"past-plans","name":"Past Plans and Intentions (was going to, meant to)","resources":R("PPT (Past Plans and Intentions)","PPT (Past Plans and Intentions) (PDF)","HANDOUT (Past Plans Intentions)","WORKSHEET (Past Plans and Intentions)")},
    {"id":"indirect-questions","name":"Indirect and Negative Questions","resources":R("PPT (Indirect and Negative Questions)","PPT (Indirect and Negative Questions) (PDF)","HANDOUT 1 (Indirect and Negative Questions)","HANDOUT 2 (Rewrite Indirect Negative Questions)")},
+   {"id":"comparatives","name":"Comparative and Superlative Structures","resources":R("PPT (Comparative and Superlative Structures)","PPT (Comparative and Superlative Structures) (PDF)","HANDOUT 1 (Comparative and Superlative Structures)","HANDOUT 2 (Grammar B1+ U5A U5B)","ACTIVITY HANDOUT (Comparative Structures)")},
+   {"id":"purpose","name":"Clauses of Purpose (to, so that, in order to)","resources":R("PPT (Clauses of Purpose)","PPT (Clauses of Purpose) (PDF)","HANDOUT 1 (Clauses of Purpose)","HANDOUT 2 (Rewrite Clauses of Purpose)","WORKSHEET (Clauses of Purpose)")},
    {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)","PPT (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Expressing Preferences)","WORKSHEET (Prefer, Would Prefer, Would Rather)")},
  ]},
  {"id":"vocabulary","name":"Vocabulary","emoji":"🔤","color":"#8E63CE","topics":[
@@ -199,6 +230,7 @@ courses = [
    {"id":"vocab-u2","name":"Unit 2 (2A–2D)","resources":R("HANDOUT (Vocabulary 2A B)","HANDOUT (Vocabulary How to Activity B1+ U2C)","HANDOUT (Vocabulary B1+ U2D)","HANDOUT (Vocabulary and How to)")},
    {"id":"vocab-u3","name":"Unit 3 (3A–3D)","resources":R("HANDOUT (Vocabulary B1+ U3A)","HANDOUT (Vocabulary How To B1+ 3C)","HANDOUT (Vocabulary and Grammar B1+ U3D)")},
    {"id":"vocab-u4","name":"Unit 4 (4A–4D)","resources":R("HANDOUT (Vocabulary B1+ U4A)","HANDOUT (Vocabulary B1+ U4B)","HANDOUT (Vocabulary How To B1+ U4C)","HANDOUT (Vocabulary B1+ U4D)")},
+   {"id":"vocab-u5","name":"Unit 5 (5A–5B)","resources":R("HANDOUT (Vocabulary B1+ U5A U5B)","HANDOUT (Vocabulary Review Units 1-5)")},
    {"id":"vocab-general","name":"Kelime öğrenme","resources":R("HANDOUT (Vocabulary)","PPT (Vocabulary - So What Do You Study)","PPT (Vocabulary - So What Do You Study) (PDF)","Knowing a word","Knowing a word (PDF)")},
  ]},
  {"id":"reading","name":"Reading","emoji":"📖","color":"#3FA36B","topics":[
@@ -215,9 +247,9 @@ courses = [
    {"id":"linkers","name":"Linkers (bağlaçlar)","resources":R("WRITING HANDOUT (Opinion Essay Linkers)")},
  ]},
  {"id":"speaking","name":"Speaking","emoji":"🗣️","color":"#D65B7F","topics":[
-   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Talking about Yourself) (PDF)","PPT SPEAKING (Habits)","PPT SPEAKING (Habits) (PDF)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Pet Hates) (PDF)","PPT SPEAKING (Learning)","PPT SPEAKING (Learning) (PDF)","PPT SPEAKING (Work Life)","PPT SPEAKING (Work Life) (PDF)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (The Mic is Yours) (PDF)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)","PPT SPEAKING (A Truth A Lie)","PPT SPEAKING (A Truth A Lie) (PDF)","Follow up Questions","PPT SPEAKING (Film Making)","PPT SPEAKING (Film Making) (PDF)")},
+   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Talking about Yourself) (PDF)","PPT SPEAKING (Habits)","PPT SPEAKING (Habits) (PDF)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Pet Hates) (PDF)","PPT SPEAKING (Learning)","PPT SPEAKING (Learning) (PDF)","PPT SPEAKING (Work Life)","PPT SPEAKING (Work Life) (PDF)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (The Mic is Yours) (PDF)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)","PPT SPEAKING (A Truth A Lie)","PPT SPEAKING (A Truth A Lie) (PDF)","Follow up Questions","PPT SPEAKING (Film Making)","PPT SPEAKING (Film Making) (PDF)","PPT SPEAKING (Consumption Habits)","PPT SPEAKING (Consumption Habits) (PDF)","SPEAKING - Follow-up questions")},
    {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)","PPT (Using AI to Learn English) (PDF)")},
-   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)")},
+   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)","Citing Sources in a Presentation (Instruction)","Citing Sources in a Presentation (Instruction) (PDF)","Citing Sources in a Presentation (Practice)","Citing Sources Listening")},
  ]},
  {"id":"units","name":"Ünite materyalleri","emoji":"🧭","color":"#5B7FD6","topics":[
    {"id":"unit-habits","name":"Habits / The Hoarding Habit","resources":R("INTEGRATED HANDOUT (Habits)","INTEGRATED HANDOUT (The Hoarding Habit)","Video 1 - The Hoarding Habit","Video 2 - Hoarder Denise's House Tour")},
@@ -226,11 +258,12 @@ courses = [
    {"id":"unit-future","name":"University of the Future / Algorithm","resources":R("ACTIVITY HANDOUT (The University of the Future)","INTEGRATED HANDOUT (The Algorithm Knows You)")},
    {"id":"unit-teamwork","name":"Teamwork (Unit 3C)","resources":R("INTEGRATED HANDOUT (Teamwork)")},
    {"id":"unit-strange","name":"Strange Stories (Unit 4)","resources":R("INTEGRATED HANDOUT (Strange Stories and the Facts Behind Them)")},
+   {"id":"unit-consumption","name":"Consumption (Unit 5)","resources":R("INTEGRATED HANDOUT (Consumption)","Inside the Mind of a Gen Z Consumer (video)","Consumption - Listening Track 1","Consumption - Listening Track 2","Consumption - Listening Track 3","Consumption - Listening Track 4")},
    {"id":"unit-video","name":"Video etkinlikleri","resources":R("ACTIVITY HANDOUT (Video)","Video (Activity)","Activity handout video")},
  ]},
  {"id":"exam-prep","name":"Sınav hazırlık","emoji":"🎯","color":"#C62828","topics":[
    {"id":"quiz1-l4","name":"L4 Quiz 1 hazırlık","resources":R("L4 Quiz 1 özet kağıdı","L4 Quiz 1 Grammar çalışma kağıdı","L4 Quiz 1 Grammar çalışma kağıdı (PDF)","L4 Quiz 1 deneme testi")},
-   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key","Self Study Handout (Hafta 7)","Self Study Handout Answer Key (Hafta 7)")},
+   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key","Self Study Handout (Hafta 7)","Self Study Handout Answer Key (Hafta 7)","REVISION HANDOUT FOR PROGRESS TEST","Self Study Handout (Hafta 8)","Self Study Handout Answer Key (Hafta 8)","Self Study Handout Listening Track (Hafta 8)")},
    {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)","PPT (Haftalık Ders Programı ve İçeriği) (PDF)","L4 Fall Week 6 Program")},
  ]},
 ]
@@ -284,6 +317,14 @@ WEEKS = {
      (4,"HANDOUT (Reading - Making a Movie)"),(4,"HANDOUT (Vocabulary How To B1+ U4C)"),(4,"PPT SPEAKING (Film Making) (PDF)"),
      (5,"HANDOUT (Vocabulary B1+ U4D)"),
      (0,"Self Study Handout (Hafta 7)"),(0,"Self Study Handout Listening Track (Hafta 7)"),(0,"Self Study Handout Answer Key (Hafta 7)"),(0,"GREAT HIP HOP HOAX (Reading)")],
+ # Hafta 8 (9-15 Kasım): gün gün program gelmedi; günü belli olmayanlar "Bu hafta" (6). Cuma 13 Kasım Progress Test 1.
+ 8: [(6,"PPT (Comparative and Superlative Structures) (PDF)"),(6,"HANDOUT 1 (Comparative and Superlative Structures)"),(6,"HANDOUT 2 (Grammar B1+ U5A U5B)"),
+     (6,"ACTIVITY HANDOUT (Comparative Structures)"),(6,"PPT (Clauses of Purpose) (PDF)"),(6,"HANDOUT 1 (Clauses of Purpose)"),(6,"HANDOUT 2 (Rewrite Clauses of Purpose)"),
+     (6,"WORKSHEET (Clauses of Purpose)"),(6,"HANDOUT (Vocabulary B1+ U5A U5B)"),(6,"INTEGRATED HANDOUT (Consumption)"),(6,"Inside the Mind of a Gen Z Consumer (video)"),
+     (6,"Consumption - Listening Track 1"),(6,"Consumption - Listening Track 2"),(6,"Consumption - Listening Track 3"),(6,"Consumption - Listening Track 4"),
+     (6,"PPT SPEAKING (Consumption Habits) (PDF)"),(6,"SPEAKING - Follow-up questions"),(6,"Citing Sources in a Presentation (Instruction) (PDF)"),
+     (6,"Citing Sources in a Presentation (Practice)"),(6,"Citing Sources Listening"),(6,"REVISION HANDOUT FOR PROGRESS TEST"),(6,"HANDOUT (Vocabulary Review Units 1-5)"),
+     (0,"Self Study Handout (Hafta 8)"),(0,"Self Study Handout Listening Track (Hafta 8)"),(0,"Self Study Handout Answer Key (Hafta 8)")],
 }
 byTitle={}
 for c in courses:
@@ -316,7 +357,7 @@ exams=[
  E("we1-l4","Writing Exam 1 · Opinion Essay","2026-11-06","11:45",["L4"],"exam","4. ders",topics=["essay-structure","paragraph-to-essay","essay-samples","linkers"]),
  E("mp1-topic","Mini Presentation konu ataması · Grup 1","2026-11-09","09:00",["L3"],"task",topics=["presentation"]),
  E("p1-topic","Presentation konu ataması · Grup 1","2026-11-09","09:00",["L4"],"task",topics=["presentation"]),
- E("pt1","Progress Test 1","2026-11-13","09:00",ALL,"exam",notes="Saat duyurulacak"),
+ E("pt1","Progress Test 1","2026-11-13","09:00",ALL,"exam",notes="Saat duyurulacak",topics=["revision","comparatives","purpose","past-plans","indirect-questions","vocab-u4","vocab-u5"]),
  E("mp2-topic","Mini Presentation konu ataması · Grup 2","2026-11-16","09:00",["L3"],"task",topics=["presentation"]),
  E("p2-topic","Presentation konu ataması · Grup 2","2026-11-16","09:00",["L4"],"task",topics=["presentation"]),
  E("st1-sub-l34","Speaking Task 1 teslim","2026-11-16","17:00",["L3","L4"],"task","17:00'ye kadar",topics=["speaking-topics","speaking-tips"]),
@@ -343,7 +384,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-11-02","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-11-10","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

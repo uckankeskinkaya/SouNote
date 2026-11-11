@@ -249,7 +249,7 @@ courses = [
  {"id":"speaking","name":"Speaking","emoji":"🗣️","color":"#D65B7F","topics":[
    {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Talking about Yourself) (PDF)","PPT SPEAKING (Habits)","PPT SPEAKING (Habits) (PDF)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Pet Hates) (PDF)","PPT SPEAKING (Learning)","PPT SPEAKING (Learning) (PDF)","PPT SPEAKING (Work Life)","PPT SPEAKING (Work Life) (PDF)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (The Mic is Yours) (PDF)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)","PPT SPEAKING (A Truth A Lie)","PPT SPEAKING (A Truth A Lie) (PDF)","Follow up Questions","PPT SPEAKING (Film Making)","PPT SPEAKING (Film Making) (PDF)","PPT SPEAKING (Consumption Habits)","PPT SPEAKING (Consumption Habits) (PDF)","SPEAKING - Follow-up questions")},
    {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)","PPT (Using AI to Learn English) (PDF)")},
-   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)","Citing Sources in a Presentation (Instruction)","Citing Sources in a Presentation (Instruction) (PDF)","Citing Sources in a Presentation (Practice)","Citing Sources Listening")},
+   {"id":"presentation","name":"Sunum (Presentation Skills I–III) ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)","Citing Sources in a Presentation (Instruction)","Citing Sources in a Presentation (Instruction) (PDF)","Citing Sources in a Presentation (Practice)","Citing Sources Listening")},
  ]},
  {"id":"units","name":"Ünite materyalleri","emoji":"🧭","color":"#5B7FD6","topics":[
    {"id":"unit-habits","name":"Habits / The Hoarding Habit","resources":R("INTEGRATED HANDOUT (Habits)","INTEGRATED HANDOUT (The Hoarding Habit)","Video 1 - The Hoarding Habit","Video 2 - Hoarder Denise's House Tour")},
@@ -317,13 +317,16 @@ WEEKS = {
      (4,"HANDOUT (Reading - Making a Movie)"),(4,"HANDOUT (Vocabulary How To B1+ U4C)"),(4,"PPT SPEAKING (Film Making) (PDF)"),
      (5,"HANDOUT (Vocabulary B1+ U4D)"),
      (0,"Self Study Handout (Hafta 7)"),(0,"Self Study Handout Listening Track (Hafta 7)"),(0,"Self Study Handout Answer Key (Hafta 7)"),(0,"GREAT HIP HOP HOAX (Reading)")],
- # Hafta 8 (9-15 Kasım): gün gün program gelmedi; günü belli olmayanlar "Bu hafta" (6). Cuma 13 Kasım Progress Test 1.
- 8: [(6,"PPT (Comparative and Superlative Structures) (PDF)"),(6,"HANDOUT 1 (Comparative and Superlative Structures)"),(6,"HANDOUT 2 (Grammar B1+ U5A U5B)"),
-     (6,"ACTIVITY HANDOUT (Comparative Structures)"),(6,"PPT (Clauses of Purpose) (PDF)"),(6,"HANDOUT 1 (Clauses of Purpose)"),(6,"HANDOUT 2 (Rewrite Clauses of Purpose)"),
-     (6,"WORKSHEET (Clauses of Purpose)"),(6,"HANDOUT (Vocabulary B1+ U5A U5B)"),(6,"INTEGRATED HANDOUT (Consumption)"),(6,"Inside the Mind of a Gen Z Consumer (video)"),
-     (6,"Consumption - Listening Track 1"),(6,"Consumption - Listening Track 2"),(6,"Consumption - Listening Track 3"),(6,"Consumption - Listening Track 4"),
-     (6,"PPT SPEAKING (Consumption Habits) (PDF)"),(6,"SPEAKING - Follow-up questions"),(6,"Citing Sources in a Presentation (Instruction) (PDF)"),
-     (6,"Citing Sources in a Presentation (Practice)"),(6,"Citing Sources Listening"),(6,"REVISION HANDOUT FOR PROGRESS TEST"),(6,"HANDOUT (Vocabulary Review Units 1-5)"),
+ # Hafta 8 (L4 FALL WEEK 8 PROGRAM.pdf): Pzt 5A + Clauses of Purpose, Salı Presentation Skills III + Consumption, Çarş. 5B Comparatives,
+ # Perş. Progress Test tekrarı, Cuma 13 Kasım Progress Test I.
+ 8: [(1,"PPT SPEAKING (Consumption Habits) (PDF)"),(1,"SPEAKING - Follow-up questions"),(1,"PPT (Clauses of Purpose) (PDF)"),(1,"HANDOUT 1 (Clauses of Purpose)"),
+     (1,"HANDOUT 2 (Rewrite Clauses of Purpose)"),(1,"WORKSHEET (Clauses of Purpose)"),(1,"!Workbook s. 32-33|pdf"),
+     (2,"Citing Sources in a Presentation (Instruction) (PDF)"),(2,"Citing Sources in a Presentation (Practice)"),(2,"Citing Sources Listening"),
+     (2,"INTEGRATED HANDOUT (Consumption)"),(2,"Inside the Mind of a Gen Z Consumer (video)"),(2,"Consumption - Listening Track 1"),(2,"Consumption - Listening Track 2"),
+     (2,"Consumption - Listening Track 3"),(2,"Consumption - Listening Track 4"),
+     (3,"HANDOUT 1 (Comparative and Superlative Structures)"),(3,"HANDOUT (Vocabulary B1+ U5A U5B)"),(3,"HANDOUT 2 (Grammar B1+ U5A U5B)"),
+     (3,"PPT (Comparative and Superlative Structures) (PDF)"),(3,"ACTIVITY HANDOUT (Comparative Structures)"),(3,"!Workbook s. 34-35|pdf"),
+     (4,"REVISION HANDOUT FOR PROGRESS TEST"),(4,"HANDOUT (Vocabulary Review Units 1-5)"),
      (0,"Self Study Handout (Hafta 8)"),(0,"Self Study Handout Listening Track (Hafta 8)"),(0,"Self Study Handout Answer Key (Hafta 8)")],
 }
 byTitle={}
@@ -384,7 +387,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-11-10","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-11-11","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

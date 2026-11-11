@@ -1009,14 +1009,15 @@ class PdfDocumentView(context: Context) : View(context) {
     }
 
     /** Kalemin yan düğmesine basıldı (true = birinci düğme): kalem ↔ silgi. Klavye tuşu olarak da gelebilir: ViewerScreen. */
-    /** Kalem düğmesi (kâğıda değmeden): MotionEvent.actionButton değeri. */
-    var onStylusButton: ((button: Int) -> Unit)? = null
+    var onStylusButton: ((primary: Boolean) -> Unit)? = null
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_BUTTON_PRESS && isStylusTool(event.getToolType(0)) && drawPointerId == -1) {
             val b = event.actionButton
-            if (b != 0) {
-                onStylusButton?.invoke(b)
+            val primary = (b and (MotionEvent.BUTTON_STYLUS_PRIMARY or MotionEvent.BUTTON_SECONDARY)) != 0
+            val secondary = (b and (MotionEvent.BUTTON_STYLUS_SECONDARY or MotionEvent.BUTTON_TERTIARY)) != 0
+            if (primary || secondary) {
+                onStylusButton?.invoke(primary)
                 return true
             }
         }

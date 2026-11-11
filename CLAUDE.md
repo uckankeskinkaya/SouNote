@@ -124,7 +124,7 @@ Eklendi (🧪, build-62+): Bugünkü tekrar (vm.dueCards/reviewAny, ana sayfa ka
 AssistantClient.gradeEssay JSON 5 ölçüt × 20, WritingScreen: liste → konu → süreli editör → değerlendirme).
 
 Eklendi (🧪, build-84+): asistan kurulum rehberi (ui/AssistantSetup.kt: Evren'i aç → evren.ssyz.org.tr/api-keys, e-Devlet, anahtar yapıştır,
-"Kaydet ve dene"; Evren 1 Kasım 2026'ya kadar ücretsiz, günlük kota; 429'da 5 sn bekleyip bir kez yeniden dener), çalışma serisi
+"Kaydet ve dene"; Evren ücretsiz kalıyor: kredi e-Devlet hesabına kendiliğinden tanımlanır, satın alınamaz (kullanıcı, 11 Kasım); 429'da 5 sn bekleyip bir kez yeniden dener), çalışma serisi
 (prefs activeDays StringSet + bestStreak; belgede 5 dk, kart tekrarı, Writing, haftalık liste işareti, yazılı not günü sayar; ana sayfa Hero + WeekCard),
 sitede Play Protect uyarısı + VirusTotal (APK digest'iyle rapor bağlantısı), arkadaşla paylaş metninde aynı uyarı.
 

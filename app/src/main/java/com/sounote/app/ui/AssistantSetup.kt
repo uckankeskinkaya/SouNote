@@ -47,12 +47,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 
 private const val EVREN_KEYS_PAGE = "https://evren.ssyz.org.tr/api-keys"
-
-/** Evren'in ücretsiz dönemi (kullanım şartlarına göre 1 Kasım 2026'ya kadar). */
-private val EVREN_FREE_UNTIL: LocalDate = LocalDate.of(2026, 11, 1)
 
 private sealed interface TestState {
     data object Idle : TestState
@@ -214,13 +210,9 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .padding(12.dp),
         ) {
-            val free = LocalDate.now().isBefore(EVREN_FREE_UNTIL)
-            InfoLine(
-                SouIcons.Info,
-                if (free) "Evren 1 Kasım 2026'ya kadar ücretsiz. Sonrası için Evren'in duyurularına bak."
-                else "Ücret ve kota bilgisi için Evren sitesine bak; ücretsiz dönem 1 Kasım 2026'da bitti.",
-            )
-            InfoLine(SouIcons.BarChart, "Günlük kullanım sınırı var.")
+            // Evren ücretsiz: kullanım kredisi e-Devlet hesabına kendiliğinden tanımlanır, satın alınmaz
+            InfoLine(SouIcons.Info, "Evren ücretsiz. Kullanım kredin e-Devlet hesabına kendiliğinden tanımlanır; bir şey satın alman gerekmez.")
+            InfoLine(SouIcons.BarChart, "Kredin bitince yenilenmesini beklemen gerekir.")
             InfoLine(SouIcons.Lock, "Anahtarın sadece bu cihazda saklanır. Kimseyle paylaşma.")
             InfoLine(SouIcons.Person, "e-Devlet şifren yoksa asistan dışında her şey çalışır.")
         }

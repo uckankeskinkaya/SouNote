@@ -46,7 +46,7 @@
 | 📥 **Haftayı toplu indir** | Dersler → Haftalar'da "Hepsini indir": haftanın bütün PDF'leri kütüphanene iner, internetsiz açılır; kütüphanedeki kaynaklar listede işaretli |
 | 🎯 **Sınav günü kartı** | Sınavdan önceki gün ana sayfada: sınava giren konular, PDF'leri (hepsini indir), deneme sınavı ve kart tekrarı |
 | 🤝 **Not birleştirme** | Arkadaşından gelen .sounote paketindeki belge sende de varsa notları kendi notlarına ayrı bir katman olarak eklenir; seninkilere dokunulmaz |
-| 🖊️ **Kalem düğmesi** | Kalemin yan düğmesine bas: kalem ile silgi arasında hızlı geçiş (Xiaomi Focus Pen, S Pen, USI kalemler) |
+| 🖊️ **Kalem hareketleri** | Çift dokunma, sıkıştırma, kaydırma ya da yan düğmeyi tanıt; her birine işlem seç: kalem ↔ silgi/fosforlu/seçim/lazer, geri al, sayfa çevir (Xiaomi Focus Pen, S Pen, USI) |
 | 📝 **Hafta ve konu özeti** | Haftalar'da ve konu kartında "Özet": asistan o hafta ya da konunun PDF'lerinden tek sayfalık özet çıkarır, notlara kaydedilir |
 | 🧠 **Model seçimi** | Asistan Gelişmiş ayarlarında Evren modelleri: Otomatik, Önerilen, DeepSeek, GLM, Qwen… düğmeleri |
 | 🪟 **Yan yana belge** | Tablette ikinci bir belgeyi yanda aç: solda defterine yaz, sağda ders PDF'ini oku |

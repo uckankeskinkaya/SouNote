@@ -220,7 +220,9 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
 - (🧪, build-160/161+) Asistan model seçici (Gelişmiş; AssistantSetup ModelPicker: GET /models anahtarla, MODEL_FAMILIES düğmeleri,
   AssistantClient.recommendedModel/modelScore; Evren /v1/models anahtarsız açılmıyor). Kalem düğmesi (kullanıcı: geçici silgi istemedi, sadece kalem ↔ silgi): ToolState.stylusClick (SWITCH_ERASER/NONE;
   PdfDocumentView.onGenericMotionEvent ACTION_BUTTON_PRESS ya da tuş 308–311 → ViewerScreen.stylusClick, 300 ms tekrar süzgeci).
-  Xiaomi Focus Pen düğmeleri önce sistem kısayollarına atalı; tablette denenmedi. Hafta/konu özeti: CoursesScreen SummaryButton →
+  Xiaomi Focus Pen düğmeleri önce sistem kısayollarına atalı; tablette denenmedi.
+  Focus Pen Pro'da düğme yok (çift dokunma/sıkıştırma/kaydırma): bu hareketler uygulamalara gelmiyor (build-164 tanıtma ekranıyla denendi,
+  kullanıcı vazgeçti, kod geri alındı). Kalem düğmesi desteği sadece yan düğmeli kalemler için kalır. Hafta/konu özeti: CoursesScreen SummaryButton →
   AssistantDialog(AssistantSource.Course(başlık, indirilmiş PDF'ler), prefill özet isteği).
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.

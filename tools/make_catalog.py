@@ -109,7 +109,97 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1nCgb4uvRBz43bFH9YQfgrArGDlm_GVJP|Listening 1 - Sounds for a Tiny Dragon|audio
 1V96DE_FYSk7Emzax3gPFBlhHSD92iVgK|Listening 2 - Spoilers in the Group Chat|audio
 1scYclhMO6zHiSFu2mLA6NbW-UBMwClyP|Self Study Handout Answer Key|pdf
-1gv8txxHdzxcrCuGGvuT-yHj-2I8C6qGQ|WRITING HANDOUT (Opinion Essay) PRACTICE III|pdf"""
+1gv8txxHdzxcrCuGGvuT-yHj-2I8C6qGQ|WRITING HANDOUT (Opinion Essay) PRACTICE III|pdf
+1aSfxz0PcRxhYGrun_h3w608zVNvdBrhN|Knowing a word (PDF)|pdf
+1FjBID3N5v8JRexeJPx9AAbHBXngw7pvi|L4 Quiz 1 Grammar çalışma kağıdı (PDF)|pdf
+1aPw4RJygucrK3h1btfxIveofp8D69fft|Opinion essay peer evaluation checklist (PDF)|pdf
+1hsO9mk8RFsPp9-ac_grvhC-1oXwBK-BV|PPT (Conditional Structures) (PDF)|pdf
+1iNLtWxPzjNfoLdve0CRUOPMJluPvcDIR|PPT (except for, apart from, not even) (PDF)|pdf
+1nvsqDLaSBy4ZOAPsln4phr2pJnfGCwDC|PPT (From Opinion Paragraph to Opinion Essay) (PDF)|pdf
+1zjCVMCz595AJOSPP3Nzwam6aFbm52vPl|PPT (From University to the Office) (PDF)|pdf
+1UHtmGBilovAd2A4DhC9GM9i8LXORtMnG|PPT (Group Project: Our Class Our Story) (PDF)|pdf
+1zPlpa2yJxssRc-kcNZ89-3UkfEimFdH2|PPT (Haftalık Ders Programı ve İçeriği) (PDF)|pdf
+1ZI56KFHzZRzPwldpYP1hE310_GNAea8s|PPT (Listening Strategies I - Introduction) (PDF)|pdf
+1FZrGiFfTN2355eG_ccvK75V4XtPgMX1X|PPT (Necessity, Obligation, Permission) (PDF)|pdf
+1c4G-UDrjDc89ngnAHNPl7BaMWzigWaYl|PPT (Present Perfect Continuous) (PDF)|pdf
+1lQ8gdMMW9CckUoBhpY1HHVdd9Un57Q7P|PPT (Reading Strategies III- Pronoun Reference) (PDF)|pdf
+1oBekd85vAr3YISnA4sKiZt5R3f44ppqF|PPT (Reading Strategies I - Introduction) (PDF)|pdf
+1miOUWg-BfFz7dc8U1ICfomPYjyRrD4oR|PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details) (PDF)|pdf
+1L2-7bWMFw7RYQVF8EacLcSarCLZbQv0v|PPT (Relative Clauses) (PDF)|pdf
+1ucBjkP06OXVau2js-so8h5JGLHkGT11B|PPT SPEAKING (Habits) (PDF)|pdf
+1L8GqsQFXTx8KLz32Izws62bP4-4ARkpf|PPT SPEAKING (Learning) (PDF)|pdf
+1L1DcTlt4n11Ilbh1zPFF5wcQWSttsdVx|PPT SPEAKING (Pet Hates) (PDF)|pdf
+14CCc7DYsOUuWbDNYsEgVlWL7Bldeh8pN|PPT SPEAKING (Talking about Yourself) (PDF)|pdf
+1nyVAt_AN6A46nSRLfHD6iVnGNydPOgxC|PPT SPEAKING (The Mic is Yours) (PDF)|pdf
+1LOFWX7CIH-Vn_4pfEo-7Af4bfO2kCDrZ|PPT SPEAKING (Work Life) (PDF)|pdf
+1ts8XVUjvN0P1cS4Vq2v45kbFO7sxnWko|PPT (Using AI to Learn English) (PDF)|pdf
+1SrDEM9KBQmVvlZc6yrglyScS5c3-24al|PPT (Verb Patterns) (PDF)|pdf
+1dbl-xdqVWK-9MVafLExFU7LzAdyfTrqn|PPT (V-ing / to infinitive with Relative Clauses) (PDF)|pdf
+1BOuGnAQpQvIOzU9txVCt03H03pOf0LII|PPT (Vocabulary - So What Do You Study) (PDF)|pdf
+1Z9dx4cSYAG8IF_kz73JZ-SwtbBN-00Eo|PPT WRITING (Sample Opinion Essays) (PDF)|pdf
+147bFr7hPuJXsliOAv2iwNe6xprHE6Qx_|Present Perfect Simple vs Present Perfect Progressive (PDF)|pdf
+1oeX4-tvImTs3zrp0gUXBK3CxRYsFQ7BT|Relative clauses context (Word) (PDF)|pdf
+1TIb3rCGuSNO1ZDqtppV3MP9m4N4weKp4|Simple vs progressive chart (PDF)|pdf
+1DOXnFV5i8A1YlaUrhYLf2XCKWRFayXeU|Stative verbs (PDF)|pdf
+1lHOceQ9f4BPoLfd5nZGyd0YAI0NF_hao|PPT (Past Plans and Intentions)|pptx
+10UqfJ1-dv060bNiPiLrbh52qxe2DLuN0|PPT (Past Plans and Intentions) (PDF)|pdf
+1qU30BHQ--bilcGRbaetPCVuMbo_U__PB|HANDOUT (Past Plans Intentions)|pdf
+1xh2IvuhhBP4cateLuodbay2zBmys_TsX|WORKSHEET (Past Plans and Intentions)|pdf
+1dtLBCJBvV8z_mbKRw-lc1qlmzjIkD6QV|Follow up Questions|pdf
+1z0PKuhYhPS0qgQFKG3RQr5RbHB7YmrpB|PPT SPEAKING (A Truth A Lie)|pptx
+1ICJt867hXqaCgx1T9IT65wTKOQ2z4GI4|PPT SPEAKING (A Truth A Lie) (PDF)|pdf
+1L9ZuiMrHIRUHiPbgFye2-YRcdsRWRgAU|HANDOUT (Vocabulary B1+ U4A)|pdf
+1hfARBcldVOFV6AucE-lhdJqvHkaSqDrF|PPT (Listening Strategies III)|pptx
+1C0m7-WPFr21tLkH_q_p_eklYXhOsRwjB|PPT (Listening Strategies III) (PDF)|pdf
+1wZikz07OXqFpprwT9cFggKFE1EdPtVN1|Listening Strategies III - Track 1|video
+1vthK7ds_iw56wCKJLEdQHIF0J8XIeQDP|Listening Strategies III - Track 2|audio
+1_EBM8Hu3ufe2msrFwuRd6_ue1JqdG8Gk|Listening Strategies III - Track 3|audio
+1a3GWGYeXVKqPd8sZm7AJvsmGepgdrm0t|INTEGRATED HANDOUT (Strange Stories and the Facts Behind Them)|pdf
+1jGisUzqY-6SBQSlxkuMaxhmvyJa4jj-P|PPT (Indirect and Negative Questions)|pptx
+1yx90AwhXuNp2nIx3pbtQuuKy9ZDZs6rF|PPT (Indirect and Negative Questions) (PDF)|pdf
+1GQumDKGu-dlOVS6y5rsq_o9Yf-rLAXj7|HANDOUT 1 (Indirect and Negative Questions)|pdf
+1zXaJ4IW0juD3EF1TQVHHXAVUWZBvuXWW|HANDOUT 2 (Rewrite Indirect Negative Questions)|pdf
+1csurgYEiOpUqVeqGdaNE1XWTd-pUh6ms|HANDOUT (Vocabulary B1+ U4B)|pdf
+1a-m3f_2A3Fn2_iRSRaiHWcHJm7O2DfQh|PPT (Presentation Skills II - Organizing Content, Presentation Tools)|pptx
+169LUQR0FdERKASZCDXbk8PkY1mSGhs6H|PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)|pdf
+1dDyifrwC2pko9z-y_BREi5XK1B6ZyF0v|HANDOUT (Reading - Making a Movie)|pdf
+1S3tp9fz-vbr79ZZkTudns-BKZwOdP7LT|HANDOUT (Vocabulary How To B1+ U4C)|pdf
+1yriYrl6S__T2A8mJOAA-WhcN3hOd0BZz|PPT SPEAKING (Film Making)|pptx
+1MV4KoYKuSAR_yt9agY0kAYSlfxbDKVN6|PPT SPEAKING (Film Making) (PDF)|pdf
+1csHuu6-gGUF8Gad8NwRZ1HHDy9AL-KQL|HANDOUT (Vocabulary B1+ U4D)|pdf
+1QmmzuclubrfcAhBvDNIj7xIBMJSp-uiY|GREAT HIP HOP HOAX (Reading)|pdf
+1C9-qUNmfCoLW8da1A6cq3mmFxRc_vSXK|Self Study Handout (Hafta 7)|pdf
+19nJwe9Ouhh2v-kwmaY8Sq5mlKVpa6Cwa|Self Study Handout Answer Key (Hafta 7)|pdf
+1VI-BhNMX9plizyv4k2MnRy8Cr9cahAJg|Self Study Handout Listening Track (Hafta 7)|audio
+1I2nGrxP9G8BMKGydtO3niiBV5wFvhe1C|PPT (Comparative and Superlative Structures)|pptx
+1IOB34WSw6z7c22og6n8B7Y0HO9u5-M9o|PPT (Comparative and Superlative Structures) (PDF)|pdf
+1xmEHrmJ8Huse3EIeqVBmqFNHIRK9uwp3|HANDOUT 1 (Comparative and Superlative Structures)|pdf
+1viMn_Fscu0IWeYQUCivVaFiv3fxvrsuW|HANDOUT 2 (Grammar B1+ U5A U5B)|pdf
+1jHAm5TII3gJyNv1Z1V7s-RuBgv1FHxQ9|ACTIVITY HANDOUT (Comparative Structures)|pdf
+12vPTvKdwl_5czsY032z3lbo8EcPaEGBm|PPT (Clauses of Purpose)|pptx
+1oxI50_bqU8uBWx7qYIGTZ0oxyYDg10HZ|PPT (Clauses of Purpose) (PDF)|pdf
+1S7C0iXsDMU-0aky3XyUPkDDNBX2OMIBN|HANDOUT 1 (Clauses of Purpose)|pdf
+16gLG2456890hnNoDNpUBxxD2fXPmKMpA|HANDOUT 2 (Rewrite Clauses of Purpose)|pdf
+1EORJZlzqus5tIpQUYHYg-eOXkMg-ZtqY|WORKSHEET (Clauses of Purpose)|pdf
+1sFXLVARL1QfN5qsyQGCK5-A8JPSXIPfV|HANDOUT (Vocabulary B1+ U5A U5B)|pdf
+1hI5hMly2u89hC6Gh5m7niTum6eMpU6-j|HANDOUT (Vocabulary Review Units 1-5)|pdf
+1Vj9nMeUDp1INYbrSiz1rIzxAaJW0HWA0|INTEGRATED HANDOUT (Consumption)|pdf
+1h2Pfzc0r-ox2LLiSOuEYshJ_NUDIlBoR|Inside the Mind of a Gen Z Consumer (video)|video
+1srE0nWdTyY4CmV-NEfqbRYnKsA6sDHcp|Consumption - Listening Track 1|audio
+1XChX52xy5tTwWvVQATZQPsvFRXa1GStB|Consumption - Listening Track 2|audio
+1MyKfCy3TitGf_Q0EMvGkTC5gKF6EtOhf|Consumption - Listening Track 3|audio
+1BpTrs0YOkQoLufo6J6uhfRiyP5P96nh2|Consumption - Listening Track 4|audio
+1hNBs99_5GNPdp3hIFfx_tHCV5hlDlbZV|PPT SPEAKING (Consumption Habits)|pptx
+1QXGuUl-sz732Cgg7kBXEjI930n7zYCqm|PPT SPEAKING (Consumption Habits) (PDF)|pdf
+1DLiDLTN2kem41nVM7HhB-B3q1yNRW8uB|SPEAKING - Follow-up questions|pdf
+1unT8OrBtrv0phOAbGVcHR9VtWJXAbFAB|Citing Sources in a Presentation (Instruction)|pptx
+1K7cfgqA8gXiV9P5cVh8gVU5jSm04ynqz|Citing Sources in a Presentation (Instruction) (PDF)|pdf
+1Zx8wXCKUBH0Znrpe2oqwTLZNO7IncZeM|Citing Sources in a Presentation (Practice)|pdf
+1KIKRb_H08sm_JAOhMxZiTHssOSkBGpvk|Citing Sources Listening|audio
+1ttQceVzBEoU0s8m81MW-awBBDKELTU_-|REVISION HANDOUT FOR PROGRESS TEST|pdf
+1g7aGIl5_TPJbIJpTSaeVpJq4n8v2LREF|Self Study Handout (Hafta 8)|pdf
+1s2qLWvscU8ar7haq78uBjc8LTz8Ps8ws|Self Study Handout Answer Key (Hafta 8)|pdf
+1-BlCg5ar6kjYMfJt_B86nVh0mDD-uAbu|Self Study Handout Listening Track (Hafta 8)|audio"""
 for line in raw.splitlines():
     i,t,k = line.split("|"); F[t]=(i,k)
 used=set()
@@ -123,83 +213,91 @@ def R(*titles):
 courses = [
  {"id":"grammar","name":"Grammar","emoji":"🧩","color":"#2F5BD3","topics":[
    {"id":"narrative","name":"Narrative Tenses","resources":R("HANDOUT 1 (Narrative Tenses)","HANDOUT 2 (Narrative Tenses - Rewrite)","Narrative tenses","Past perfect vs past simple exercises")},
-   {"id":"perfect","name":"Present Perfect & Continuous / Past Simple","resources":R("PPT (Present Perfect Continuous)","HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)","ACTIVITY HANDOUT (Present Perfect Continuous board game)","Past simple vs present perfect","Present Perfect Simple vs Present Perfect Progressive","Simple vs progressive chart","Stative verbs")},
-   {"id":"verbpatterns","name":"Verb Patterns","resources":R("PPT (Verb Patterns)","HANDOUT (Verb Patterns)","ACTIVITY HANDOUT 1 (Verb Patterns)","ACTIVITY HANDOUT 2 (Verb Patterns)","Gerund / infinitive verbs list")},
-   {"id":"relative","name":"Relative Clauses","resources":R("PPT (Relative Clauses)","PPT (V-ing / to infinitive with Relative Clauses)","HANDOUT (Relative Clauses - Rewrite)","ACTIVITY HANDOUT (Relative Clauses board game)","Relative clauses context","Relative clauses context (Word)")},
-   {"id":"conditionals","name":"Conditional Structures","resources":R("PPT (Conditional Structures)","HANDOUT 1 (Conditional Structures)","HANDOUT 2 (Rewrite Conditional Structures)")},
-   {"id":"modals","name":"Necessity, Obligation, Permission","resources":R("PPT (Necessity, Obligation, Permission)","ACTIVITY HANDOUT (Necessity, Obligation, Permission)")},
-   {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)")},
+   {"id":"perfect","name":"Present Perfect & Continuous / Past Simple","resources":R("PPT (Present Perfect Continuous)","PPT (Present Perfect Continuous) (PDF)","HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)","ACTIVITY HANDOUT (Present Perfect Continuous board game)","Past simple vs present perfect","Present Perfect Simple vs Present Perfect Progressive","Present Perfect Simple vs Present Perfect Progressive (PDF)","Simple vs progressive chart","Simple vs progressive chart (PDF)","Stative verbs","Stative verbs (PDF)")},
+   {"id":"verbpatterns","name":"Verb Patterns","resources":R("PPT (Verb Patterns)","PPT (Verb Patterns) (PDF)","HANDOUT (Verb Patterns)","ACTIVITY HANDOUT 1 (Verb Patterns)","ACTIVITY HANDOUT 2 (Verb Patterns)","Gerund / infinitive verbs list")},
+   {"id":"relative","name":"Relative Clauses","resources":R("PPT (Relative Clauses)","PPT (Relative Clauses) (PDF)","PPT (V-ing / to infinitive with Relative Clauses)","PPT (V-ing / to infinitive with Relative Clauses) (PDF)","HANDOUT (Relative Clauses - Rewrite)","ACTIVITY HANDOUT (Relative Clauses board game)","Relative clauses context","Relative clauses context (Word)","Relative clauses context (Word) (PDF)")},
+   {"id":"conditionals","name":"Conditional Structures","resources":R("PPT (Conditional Structures)","PPT (Conditional Structures) (PDF)","HANDOUT 1 (Conditional Structures)","HANDOUT 2 (Rewrite Conditional Structures)")},
+   {"id":"modals","name":"Necessity, Obligation, Permission","resources":R("PPT (Necessity, Obligation, Permission)","PPT (Necessity, Obligation, Permission) (PDF)","ACTIVITY HANDOUT (Necessity, Obligation, Permission)")},
+   {"id":"except","name":"except for / apart from / not even","resources":R("PPT (except for, apart from, not even)","PPT (except for, apart from, not even) (PDF)")},
+   {"id":"past-plans","name":"Past Plans and Intentions (was going to, meant to)","resources":R("PPT (Past Plans and Intentions)","PPT (Past Plans and Intentions) (PDF)","HANDOUT (Past Plans Intentions)","WORKSHEET (Past Plans and Intentions)")},
+   {"id":"indirect-questions","name":"Indirect and Negative Questions","resources":R("PPT (Indirect and Negative Questions)","PPT (Indirect and Negative Questions) (PDF)","HANDOUT 1 (Indirect and Negative Questions)","HANDOUT 2 (Rewrite Indirect Negative Questions)")},
+   {"id":"comparatives","name":"Comparative and Superlative Structures","resources":R("PPT (Comparative and Superlative Structures)","PPT (Comparative and Superlative Structures) (PDF)","HANDOUT 1 (Comparative and Superlative Structures)","HANDOUT 2 (Grammar B1+ U5A U5B)","ACTIVITY HANDOUT (Comparative Structures)")},
+   {"id":"purpose","name":"Clauses of Purpose (to, so that, in order to)","resources":R("PPT (Clauses of Purpose)","PPT (Clauses of Purpose) (PDF)","HANDOUT 1 (Clauses of Purpose)","HANDOUT 2 (Rewrite Clauses of Purpose)","WORKSHEET (Clauses of Purpose)")},
    {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)","PPT (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Expressing Preferences)","WORKSHEET (Prefer, Would Prefer, Would Rather)")},
  ]},
  {"id":"vocabulary","name":"Vocabulary","emoji":"🔤","color":"#8E63CE","topics":[
    {"id":"vocab-u1","name":"Unit 1 (1A)","resources":R("HANDOUT (Vocabulary B1+ U1A)")},
    {"id":"vocab-u2","name":"Unit 2 (2A–2D)","resources":R("HANDOUT (Vocabulary 2A B)","HANDOUT (Vocabulary How to Activity B1+ U2C)","HANDOUT (Vocabulary B1+ U2D)","HANDOUT (Vocabulary and How to)")},
    {"id":"vocab-u3","name":"Unit 3 (3A–3D)","resources":R("HANDOUT (Vocabulary B1+ U3A)","HANDOUT (Vocabulary How To B1+ 3C)","HANDOUT (Vocabulary and Grammar B1+ U3D)")},
-   {"id":"vocab-general","name":"Kelime öğrenme","resources":R("HANDOUT (Vocabulary)","PPT (Vocabulary - So What Do You Study)","Knowing a word")},
+   {"id":"vocab-u4","name":"Unit 4 (4A–4D)","resources":R("HANDOUT (Vocabulary B1+ U4A)","HANDOUT (Vocabulary B1+ U4B)","HANDOUT (Vocabulary How To B1+ U4C)","HANDOUT (Vocabulary B1+ U4D)")},
+   {"id":"vocab-u5","name":"Unit 5 (5A–5B)","resources":R("HANDOUT (Vocabulary B1+ U5A U5B)","HANDOUT (Vocabulary Review Units 1-5)")},
+   {"id":"vocab-general","name":"Kelime öğrenme","resources":R("HANDOUT (Vocabulary)","PPT (Vocabulary - So What Do You Study)","PPT (Vocabulary - So What Do You Study) (PDF)","Knowing a word","Knowing a word (PDF)")},
  ]},
  {"id":"reading","name":"Reading","emoji":"📖","color":"#3FA36B","topics":[
-   {"id":"reading-strategies","name":"Reading Strategies (I–IV)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies III- Pronoun Reference)","PPT Reading Strategies IV (Inferring Unknown Words)","PPT Reading Strategies IV (Inferring Unknown Words) (PDF)","HANDOUT (Inferring Unknown Words)")},
-   {"id":"reading-practice","name":"Reading alıştırmaları","resources":R("HANDOUT (Reading)","HANDOUT (Reading) 2","Reading practice")},
+   {"id":"reading-strategies","name":"Reading Strategies (I–IV)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies I - Introduction) (PDF)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details) (PDF)","PPT (Reading Strategies III- Pronoun Reference)","PPT (Reading Strategies III- Pronoun Reference) (PDF)","PPT Reading Strategies IV (Inferring Unknown Words)","PPT Reading Strategies IV (Inferring Unknown Words) (PDF)","HANDOUT (Inferring Unknown Words)")},
+   {"id":"reading-practice","name":"Reading alıştırmaları","resources":R("HANDOUT (Reading)","HANDOUT (Reading) 2","Reading practice","HANDOUT (Reading - Making a Movie)","GREAT HIP HOP HOAX (Reading)")},
  ]},
  {"id":"listening","name":"Listening","emoji":"🎧","color":"#3AA6B9","topics":[
-   {"id":"listening-strategies","name":"Listening Strategies (I–II)","resources":R("PPT (Listening Strategies I - Introduction)","PPT (Listening Strategies II)","HANDOUT (Listening Strategies II)","Listening 1 - Sounds for a Tiny Dragon","Listening 2 - Spoilers in the Group Chat")},
+   {"id":"listening-strategies","name":"Listening Strategies (I–III)","resources":R("PPT (Listening Strategies I - Introduction)","PPT (Listening Strategies I - Introduction) (PDF)","PPT (Listening Strategies II)","HANDOUT (Listening Strategies II)","Listening 1 - Sounds for a Tiny Dragon","Listening 2 - Spoilers in the Group Chat","PPT (Listening Strategies III)","PPT (Listening Strategies III) (PDF)","Listening Strategies III - Track 1","Listening Strategies III - Track 2","Listening Strategies III - Track 3","Self Study Handout Listening Track (Hafta 7)")},
  ]},
  {"id":"writing","name":"Writing","emoji":"✍️","color":"#E0893A","topics":[
    {"id":"essay-structure","name":"Opinion Essay: giriş, gelişme, sonuç","resources":R("WRITING HANDOUT (Introductory Paragraph)","WRITING HANDOUT (Body Paragraphs)","WRITING HANDOUT (Concluding Paragraph)","WRITING HANDOUT (Points to Notice)","PPT (Opinion Essay)","PPT (Opinion Essay) (PDF)")},
-   {"id":"paragraph-to-essay","name":"Opinion Paragraph → Opinion Essay","resources":R("PPT (From Opinion Paragraph to Opinion Essay)","WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)")},
-   {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","WRITING HANDOUT (Opinion Essay) Practice I","WRITING HANDOUT (Opinion Essay) PRACTICE III","Opinion essay peer evaluation checklist")},
+   {"id":"paragraph-to-essay","name":"Opinion Paragraph → Opinion Essay","resources":R("PPT (From Opinion Paragraph to Opinion Essay)","PPT (From Opinion Paragraph to Opinion Essay) (PDF)","WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)")},
+   {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays) (PDF)","WRITING HANDOUT (Opinion Essay) Practice I","WRITING HANDOUT (Opinion Essay) PRACTICE III","Opinion essay peer evaluation checklist","Opinion essay peer evaluation checklist (PDF)")},
    {"id":"linkers","name":"Linkers (bağlaçlar)","resources":R("WRITING HANDOUT (Opinion Essay Linkers)")},
  ]},
  {"id":"speaking","name":"Speaking","emoji":"🗣️","color":"#D65B7F","topics":[
-   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Habits)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Learning)","PPT SPEAKING (Work Life)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)")},
-   {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)")},
-   {"id":"presentation","name":"Sunum ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)")},
+   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Talking about Yourself) (PDF)","PPT SPEAKING (Habits)","PPT SPEAKING (Habits) (PDF)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Pet Hates) (PDF)","PPT SPEAKING (Learning)","PPT SPEAKING (Learning) (PDF)","PPT SPEAKING (Work Life)","PPT SPEAKING (Work Life) (PDF)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (The Mic is Yours) (PDF)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)","PPT SPEAKING (A Truth A Lie)","PPT SPEAKING (A Truth A Lie) (PDF)","Follow up Questions","PPT SPEAKING (Film Making)","PPT SPEAKING (Film Making) (PDF)","PPT SPEAKING (Consumption Habits)","PPT SPEAKING (Consumption Habits) (PDF)","SPEAKING - Follow-up questions")},
+   {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)","PPT (Using AI to Learn English) (PDF)")},
+   {"id":"presentation","name":"Sunum (Presentation Skills I–III) ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)","Citing Sources in a Presentation (Instruction)","Citing Sources in a Presentation (Instruction) (PDF)","Citing Sources in a Presentation (Practice)","Citing Sources Listening")},
  ]},
  {"id":"units","name":"Ünite materyalleri","emoji":"🧭","color":"#5B7FD6","topics":[
    {"id":"unit-habits","name":"Habits / The Hoarding Habit","resources":R("INTEGRATED HANDOUT (Habits)","INTEGRATED HANDOUT (The Hoarding Habit)","Video 1 - The Hoarding Habit","Video 2 - Hoarder Denise's House Tour")},
-   {"id":"unit-work","name":"Work Life","resources":R("INTEGRATED HANDOUT (Work Life)","PPT (From University to the Office)","Why does Japan work so hard (video)")},
+   {"id":"unit-work","name":"Work Life","resources":R("INTEGRATED HANDOUT (Work Life)","PPT (From University to the Office)","PPT (From University to the Office) (PDF)","Why does Japan work so hard (video)")},
    {"id":"unit-change","name":"Big Changes / The New Normal","resources":R("INTEGRATED HANDOUT (Big Changes in History)","INTEGRATED HANDOUT (The New Normal)")},
    {"id":"unit-future","name":"University of the Future / Algorithm","resources":R("ACTIVITY HANDOUT (The University of the Future)","INTEGRATED HANDOUT (The Algorithm Knows You)")},
    {"id":"unit-teamwork","name":"Teamwork (Unit 3C)","resources":R("INTEGRATED HANDOUT (Teamwork)")},
+   {"id":"unit-strange","name":"Strange Stories (Unit 4)","resources":R("INTEGRATED HANDOUT (Strange Stories and the Facts Behind Them)")},
+   {"id":"unit-consumption","name":"Consumption (Unit 5)","resources":R("INTEGRATED HANDOUT (Consumption)","Inside the Mind of a Gen Z Consumer (video)","Consumption - Listening Track 1","Consumption - Listening Track 2","Consumption - Listening Track 3","Consumption - Listening Track 4")},
    {"id":"unit-video","name":"Video etkinlikleri","resources":R("ACTIVITY HANDOUT (Video)","Video (Activity)","Activity handout video")},
  ]},
  {"id":"exam-prep","name":"Sınav hazırlık","emoji":"🎯","color":"#C62828","topics":[
-   {"id":"quiz1-l4","name":"L4 Quiz 1 hazırlık","resources":R("L4 Quiz 1 özet kağıdı","L4 Quiz 1 Grammar çalışma kağıdı","L4 Quiz 1 deneme testi")},
-   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key")},
-   {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)","L4 Fall Week 6 Program")},
+   {"id":"quiz1-l4","name":"L4 Quiz 1 hazırlık","resources":R("L4 Quiz 1 özet kağıdı","L4 Quiz 1 Grammar çalışma kağıdı","L4 Quiz 1 Grammar çalışma kağıdı (PDF)","L4 Quiz 1 deneme testi")},
+   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key","Self Study Handout (Hafta 7)","Self Study Handout Answer Key (Hafta 7)","REVISION HANDOUT FOR PROGRESS TEST","Self Study Handout (Hafta 8)","Self Study Handout Answer Key (Hafta 8)","Self Study Handout Listening Track (Hafta 8)")},
+   {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)","PPT (Haftalık Ders Programı ve İçeriği) (PDF)","L4 Fall Week 6 Program")},
  ]},
 ]
 # ---- Haftalık program (Harmanlanmış Eğitim, L4 Fall). gün: 1=Pzt … 5=Cuma, 6=bu hafta (günü belli değil), 0=kendi çalışman (self-study) ----
 # Drive'da olan dosyalar başlığıyla, olmayanlar ("!" ile) sadece listede görünür.
 WEEKS = {
- 1: [(0,"Stative verbs"),(0,"Simple vs progressive chart"),(0,"Knowing a word"),
+ 1: [(0,"Stative verbs"),(0,"Stative verbs (PDF)"),(0,"Simple vs progressive chart"),(0,"Simple vs progressive chart (PDF)"),(0,"Knowing a word"),(0,"Knowing a word (PDF)"),
      (0,"!tense-review-1|pdf"),(0,"!common mistakes in writing|pdf"),(0,"!Knowing a word worksheet|docx")],
  2: [(1,"Activity handout video"),(1,"ACTIVITY HANDOUT (Video)"),(1,"HANDOUT (Vocabulary B1+ U1A)"),(1,"!HANDOUT 1 (Narrative Tenses) Listening PART I|audio"),
-     (1,"HANDOUT 1 (Narrative Tenses)"),(1,"HANDOUT 2 (Narrative Tenses - Rewrite)"),(1,"!Narrative Tenses|pptx"),(1,"PPT SPEAKING (Talking about Yourself)"),
-     (2,"HANDOUT (Reading)"),(2,"!Introduction to Academic Writing|pptx"),(2,"PPT (From Opinion Paragraph to Opinion Essay)"),(2,"WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)"),
-     (3,"ACTIVITY HANDOUT 1 (Verb Patterns)"),(3,"ACTIVITY HANDOUT 2 (Verb Patterns)"),(3,"HANDOUT (Verb Patterns)"),(3,"PPT (Verb Patterns)"),(3,"!Video - Verb Patterns|video"),
-     (4,"HANDOUT (Vocabulary and How to)"),(4,"PPT (except for, apart from, not even)"),
+     (1,"HANDOUT 1 (Narrative Tenses)"),(1,"HANDOUT 2 (Narrative Tenses - Rewrite)"),(1,"!Narrative Tenses|pptx"),(1,"PPT SPEAKING (Talking about Yourself)"),(1,"PPT SPEAKING (Talking about Yourself) (PDF)"),
+     (2,"HANDOUT (Reading)"),(2,"!Introduction to Academic Writing|pptx"),(2,"PPT (From Opinion Paragraph to Opinion Essay)"),(2,"PPT (From Opinion Paragraph to Opinion Essay) (PDF)"),(2,"WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)"),
+     (3,"ACTIVITY HANDOUT 1 (Verb Patterns)"),(3,"ACTIVITY HANDOUT 2 (Verb Patterns)"),(3,"HANDOUT (Verb Patterns)"),(3,"PPT (Verb Patterns)"),(3,"PPT (Verb Patterns) (PDF)"),(3,"!Video - Verb Patterns|video"),
+     (4,"HANDOUT (Vocabulary and How to)"),(4,"PPT (except for, apart from, not even)"),(4,"PPT (except for, apart from, not even) (PDF)"),
      (5,"INTEGRATED HANDOUT (The Hoarding Habit)"),(5,"!Listening Track|audio"),(5,"Video 1 - The Hoarding Habit"),(5,"Video 2 - Hoarder Denise's House Tour"),
      (0,"Narrative tenses"),(0,"Past perfect vs past simple exercises"),(0,"!Past perfect tense - explanation|link"),(0,"!GERUNDS and INFINITIVES (7 verbs)|pdf"),(0,"Gerund / infinitive verbs list")],
- 3: [(1,"ACTIVITY HANDOUT (Present Perfect Continuous board game)"),(1,"HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)"),(1,"PPT (Present Perfect Continuous)"),
+ 3: [(1,"ACTIVITY HANDOUT (Present Perfect Continuous board game)"),(1,"HANDOUT (Present Perfect, Present Perfect Continuous, Past Simple)"),(1,"PPT (Present Perfect Continuous)"),(1,"PPT (Present Perfect Continuous) (PDF)"),
      (2,"INTEGRATED HANDOUT (The New Normal)"),(2,"Video (Activity)"),
-     (3,"INTEGRATED HANDOUT (Habits)"),(3,"PPT SPEAKING (Habits)"),(3,"WRITING HANDOUT (Opinion Essay Linkers)"),
-     (4,"ACTIVITY HANDOUT (Relative Clauses board game)"),(4,"HANDOUT (Relative Clauses - Rewrite)"),(4,"PPT (Relative Clauses)"),(4,"PPT (V-ing / to infinitive with Relative Clauses)"),
-     (5,"!ARE YOU A PEOPLE PLEASER - QUIZ|pdf"),(5,"HANDOUT (Vocabulary 2A B)"),(5,"!people_pleaser_quiz|html"),(5,"PPT (Reading Strategies I - Introduction)"),
-     (0,"Past simple vs present perfect"),(0,"Present Perfect Simple vs Present Perfect Progressive"),(0,"TELL ME MORE (Perfect speaking)"),
-     (0,"Relative clauses context (Word)"),(0,"Relative clauses context"),(0,"!Reading comprehension|pdf")],
- 4: [(1,"HANDOUT (Vocabulary How to Activity B1+ U2C)"),(1,"!PET HATES - QUIZ|pdf"),(1,"PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)"),(1,"PPT SPEAKING (Pet Hates)"),
+     (3,"INTEGRATED HANDOUT (Habits)"),(3,"PPT SPEAKING (Habits)"),(3,"PPT SPEAKING (Habits) (PDF)"),(3,"WRITING HANDOUT (Opinion Essay Linkers)"),
+     (4,"ACTIVITY HANDOUT (Relative Clauses board game)"),(4,"HANDOUT (Relative Clauses - Rewrite)"),(4,"PPT (Relative Clauses)"),(4,"PPT (Relative Clauses) (PDF)"),(4,"PPT (V-ing / to infinitive with Relative Clauses)"),(4,"PPT (V-ing / to infinitive with Relative Clauses) (PDF)"),
+     (5,"!ARE YOU A PEOPLE PLEASER - QUIZ|pdf"),(5,"HANDOUT (Vocabulary 2A B)"),(5,"!people_pleaser_quiz|html"),(5,"PPT (Reading Strategies I - Introduction)"),(5,"PPT (Reading Strategies I - Introduction) (PDF)"),
+     (0,"Past simple vs present perfect"),(0,"Present Perfect Simple vs Present Perfect Progressive"),(0,"Present Perfect Simple vs Present Perfect Progressive (PDF)"),(0,"TELL ME MORE (Perfect speaking)"),
+     (0,"Relative clauses context (Word)"),(0,"Relative clauses context (Word) (PDF)"),(0,"Relative clauses context"),(0,"!Reading comprehension|pdf")],
+ 4: [(1,"HANDOUT (Vocabulary How to Activity B1+ U2C)"),(1,"!PET HATES - QUIZ|pdf"),(1,"PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)"),(1,"PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details) (PDF)"),(1,"PPT SPEAKING (Pet Hates)"),(1,"PPT SPEAKING (Pet Hates) (PDF)"),
      (2,"HANDOUT (Vocabulary B1+ U2D)"),(2,"INTEGRATED HANDOUT (Big Changes in History)"),(2,"!Top 10 Historical Events That Changed the World|video"),
      (3,"!Reading Speaking Activity (Stereotypes)|pdf"),(3,"WRITING HANDOUT (Introductory Paragraph)"),
      (4,"!Reading Speaking Activity|pdf"),(4,"WRITING HANDOUT (Body Paragraphs)"),
      (5,"!Opinion Essay Rating Scale Scoring Guideline|pdf"),(5,"WRITING HANDOUT (Concluding Paragraph)"),(5,"WRITING HANDOUT (Points to Notice)")],
- 5: [(1,"HANDOUT (Vocabulary B1+ U3A)"),(1,"HANDOUT 1 (Conditional Structures)"),(1,"HANDOUT 2 (Rewrite Conditional Structures)"),(1,"PPT (Conditional Structures)"),(1,"PPT SPEAKING (Work Life)"),
-     (2,"!HANDOUT (Listening) Track 1|audio"),(2,"!HANDOUT (Listening) Track 2|audio"),(2,"!HANDOUT (Listening) Track 3|audio"),(2,"!HANDOUT (Listening)|pdf"),(2,"PPT (Listening Strategies I - Introduction)"),
-     (2,"PPT WRITING (Sample Opinion Essays)"),(2,"WRITING HANDOUT (Opinion Essay) Practice I"),(2,"WRITING HANDOUT (Sample Opinion Essays)"),
-     (3,"ACTIVITY HANDOUT (Necessity, Obligation, Permission)"),(3,"!HANDOUT (Rewrite Necessity, Obligation, Permission)|pdf"),(3,"HANDOUT (Vocabulary)"),(3,"PPT (Necessity, Obligation, Permission)"),
-     (4,"INTEGRATED HANDOUT (Work Life)"),(4,"Why does Japan work so hard (video)"),(4,"HANDOUT (Reading) 2"),(4,"PPT (Reading Strategies III- Pronoun Reference)"),
-     (5,"PPT (From University to the Office)"),(5,"PPT (Vocabulary - So What Do You Study)"),
-     (0,"Reading practice"),(0,"Opinion essay peer evaluation checklist")],
+ 5: [(1,"HANDOUT (Vocabulary B1+ U3A)"),(1,"HANDOUT 1 (Conditional Structures)"),(1,"HANDOUT 2 (Rewrite Conditional Structures)"),(1,"PPT (Conditional Structures)"),(1,"PPT (Conditional Structures) (PDF)"),(1,"PPT SPEAKING (Work Life)"),(1,"PPT SPEAKING (Work Life) (PDF)"),
+     (2,"!HANDOUT (Listening) Track 1|audio"),(2,"!HANDOUT (Listening) Track 2|audio"),(2,"!HANDOUT (Listening) Track 3|audio"),(2,"!HANDOUT (Listening)|pdf"),(2,"PPT (Listening Strategies I - Introduction)"),(2,"PPT (Listening Strategies I - Introduction) (PDF)"),
+     (2,"PPT WRITING (Sample Opinion Essays)"),(2,"PPT WRITING (Sample Opinion Essays) (PDF)"),(2,"WRITING HANDOUT (Opinion Essay) Practice I"),(2,"WRITING HANDOUT (Sample Opinion Essays)"),
+     (3,"ACTIVITY HANDOUT (Necessity, Obligation, Permission)"),(3,"!HANDOUT (Rewrite Necessity, Obligation, Permission)|pdf"),(3,"HANDOUT (Vocabulary)"),(3,"PPT (Necessity, Obligation, Permission)"),(3,"PPT (Necessity, Obligation, Permission) (PDF)"),
+     (4,"INTEGRATED HANDOUT (Work Life)"),(4,"Why does Japan work so hard (video)"),(4,"HANDOUT (Reading) 2"),(4,"PPT (Reading Strategies III- Pronoun Reference)"),(4,"PPT (Reading Strategies III- Pronoun Reference) (PDF)"),
+     (5,"PPT (From University to the Office)"),(5,"PPT (From University to the Office) (PDF)"),(5,"PPT (Vocabulary - So What Do You Study)"),(5,"PPT (Vocabulary - So What Do You Study) (PDF)"),
+     (0,"Reading practice"),(0,"Opinion essay peer evaluation checklist"),(0,"Opinion essay peer evaluation checklist (PDF)")],
  # Hafta 6 (L4 FALL WEEK 6 PROGRAM.pdf): Pzt 3C, Salı 3D, Çarş. listening/writing, Perş. Cumhuriyet Bayramı, Cuma 3D devam
  6: [(1,"PPT Reading Strategies IV (Inferring Unknown Words) (PDF)"),(1,"HANDOUT (Inferring Unknown Words)"),(1,"PPT (Presentation Skills I) (PDF)"),
      (1,"INTEGRATED HANDOUT (Teamwork)"),(1,"HANDOUT (Vocabulary How To B1+ 3C)"),
@@ -209,6 +307,27 @@ WEEKS = {
      (3,"Listening 2 - Spoilers in the Group Chat"),(3,"WRITING HANDOUT (Opinion Essay) PRACTICE III"),
      (5,"PPT (Opinion Essay) (PDF)"),(5,"ACTIVITY HANDOUT (Expressing Preferences)"),(5,"HANDOUT (Vocabulary and Grammar B1+ U3D)"),(5,"!Quizlet SO B1+ Unit 3|link"),
      (0,"L4 Fall Week 6 Program"),(0,"!Workbook s. 22-23|pdf"),(0,"Self Study Handout Answer Key")],
+ # Hafta 7 (Harmanlanmış Eğitim ekran görüntüsü, 2 Kasım): Pzt 4A, Salı listening + 4A integrated, Çarş. 4B, Perş. 4C, Cuma 4D
+ 7: [(1,"PPT (Past Plans and Intentions) (PDF)"),(1,"HANDOUT (Past Plans Intentions)"),(1,"WORKSHEET (Past Plans and Intentions)"),
+     (1,"Follow up Questions"),(1,"PPT SPEAKING (A Truth A Lie) (PDF)"),(1,"HANDOUT (Vocabulary B1+ U4A)"),
+     (2,"PPT (Listening Strategies III) (PDF)"),(2,"Listening Strategies III - Track 1"),(2,"Listening Strategies III - Track 2"),(2,"Listening Strategies III - Track 3"),
+     (2,"INTEGRATED HANDOUT (Strange Stories and the Facts Behind Them)"),
+     (3,"PPT (Indirect and Negative Questions) (PDF)"),(3,"HANDOUT 1 (Indirect and Negative Questions)"),(3,"HANDOUT 2 (Rewrite Indirect Negative Questions)"),
+     (3,"HANDOUT (Vocabulary B1+ U4B)"),(3,"PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)"),
+     (4,"HANDOUT (Reading - Making a Movie)"),(4,"HANDOUT (Vocabulary How To B1+ U4C)"),(4,"PPT SPEAKING (Film Making) (PDF)"),
+     (5,"HANDOUT (Vocabulary B1+ U4D)"),
+     (0,"Self Study Handout (Hafta 7)"),(0,"Self Study Handout Listening Track (Hafta 7)"),(0,"Self Study Handout Answer Key (Hafta 7)"),(0,"GREAT HIP HOP HOAX (Reading)")],
+ # Hafta 8 (L4 FALL WEEK 8 PROGRAM.pdf): Pzt 5A + Clauses of Purpose, Salı Presentation Skills III + Consumption, Çarş. 5B Comparatives,
+ # Perş. Progress Test tekrarı, Cuma 13 Kasım Progress Test I.
+ 8: [(1,"PPT SPEAKING (Consumption Habits) (PDF)"),(1,"SPEAKING - Follow-up questions"),(1,"PPT (Clauses of Purpose) (PDF)"),(1,"HANDOUT 1 (Clauses of Purpose)"),
+     (1,"HANDOUT 2 (Rewrite Clauses of Purpose)"),(1,"WORKSHEET (Clauses of Purpose)"),(1,"!Workbook s. 32-33|pdf"),
+     (2,"Citing Sources in a Presentation (Instruction) (PDF)"),(2,"Citing Sources in a Presentation (Practice)"),(2,"Citing Sources Listening"),
+     (2,"INTEGRATED HANDOUT (Consumption)"),(2,"Inside the Mind of a Gen Z Consumer (video)"),(2,"Consumption - Listening Track 1"),(2,"Consumption - Listening Track 2"),
+     (2,"Consumption - Listening Track 3"),(2,"Consumption - Listening Track 4"),
+     (3,"HANDOUT 1 (Comparative and Superlative Structures)"),(3,"HANDOUT (Vocabulary B1+ U5A U5B)"),(3,"HANDOUT 2 (Grammar B1+ U5A U5B)"),
+     (3,"PPT (Comparative and Superlative Structures) (PDF)"),(3,"ACTIVITY HANDOUT (Comparative Structures)"),(3,"!Workbook s. 34-35|pdf"),
+     (4,"REVISION HANDOUT FOR PROGRESS TEST"),(4,"HANDOUT (Vocabulary Review Units 1-5)"),
+     (0,"Self Study Handout (Hafta 8)"),(0,"Self Study Handout Listening Track (Hafta 8)"),(0,"Self Study Handout Answer Key (Hafta 8)")],
 }
 byTitle={}
 for c in courses:
@@ -241,7 +360,7 @@ exams=[
  E("we1-l4","Writing Exam 1 · Opinion Essay","2026-11-06","11:45",["L4"],"exam","4. ders",topics=["essay-structure","paragraph-to-essay","essay-samples","linkers"]),
  E("mp1-topic","Mini Presentation konu ataması · Grup 1","2026-11-09","09:00",["L3"],"task",topics=["presentation"]),
  E("p1-topic","Presentation konu ataması · Grup 1","2026-11-09","09:00",["L4"],"task",topics=["presentation"]),
- E("pt1","Progress Test 1","2026-11-13","09:00",ALL,"exam",notes="Saat duyurulacak"),
+ E("pt1","Progress Test 1","2026-11-13","09:00",ALL,"exam",notes="Saat duyurulacak",topics=["revision","comparatives","purpose","past-plans","indirect-questions","vocab-u4","vocab-u5"]),
  E("mp2-topic","Mini Presentation konu ataması · Grup 2","2026-11-16","09:00",["L3"],"task",topics=["presentation"]),
  E("p2-topic","Presentation konu ataması · Grup 2","2026-11-16","09:00",["L4"],"task",topics=["presentation"]),
  E("st1-sub-l34","Speaking Task 1 teslim","2026-11-16","17:00",["L3","L4"],"task","17:00'ye kadar",topics=["speaking-topics","speaking-tips"]),
@@ -268,7 +387,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-10-27","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-11-11","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

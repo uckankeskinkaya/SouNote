@@ -21,8 +21,11 @@ class InkStore(context: Context) {
     /** Belgeye eklenen resimlerin klasörü (notlarla birlikte silinir). */
     fun imagesDir(docId: String) = File(dir(docId), "img")
 
-    fun load(docId: String): Map<Int, PageContent> {
-        val files = dir(docId).listFiles { f -> f.name.endsWith(".bin") } ?: return emptyMap()
+    fun load(docId: String): Map<Int, PageContent> = loadDir(dir(docId))
+
+    /** Bir klasördeki sayfa notları (paylaşılan paketi birleştirirken de kullanılır). */
+    fun loadDir(d: File): Map<Int, PageContent> {
+        val files = d.listFiles { f -> f.name.endsWith(".bin") } ?: return emptyMap()
         val result = HashMap<Int, PageContent>()
         for (f in files) {
             val page = f.name.removeSuffix(".bin").toIntOrNull() ?: continue

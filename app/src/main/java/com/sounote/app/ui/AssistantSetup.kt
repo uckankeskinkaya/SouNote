@@ -5,6 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.RadioButton
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,12 +52,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 
 private const val EVREN_KEYS_PAGE = "https://evren.ssyz.org.tr/api-keys"
-
-/** Evren'in ücretsiz dönemi (kullanım şartlarına göre 1 Kasım 2026'ya kadar). */
-private val EVREN_FREE_UNTIL: LocalDate = LocalDate.of(2026, 11, 1)
 
 private sealed interface TestState {
     data object Idle : TestState
@@ -170,9 +171,14 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Servis:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = { url = AssistantConfig.EVREN_URL; model = AssistantConfig.EVREN_MODEL }) { Text("Evren") }
-                TextButton(onClick = { url = AssistantConfig.DEEPSEEK_URL; model = AssistantConfig.DEEPSEEK_MODEL }) { Text("DeepSeek") }
+                TextButton(onClick = { url = AssistantConfig.DEEPSEEK_URL; model = AssistantConfig.DEEPSEEK_MODEL }) { Text("DeepSeek API") }
+            }
+            // Model seçimi: anahtar girilince servisin modelleri gelir, aileye basınca o ailenin en uygun modeli seçilir
+            if (trimmed.isNotBlank() && url.isNotBlank()) {
+                ModelPicker(current = model, url = url, key = trimmed, config = { current() }, onPick = { model = it; test = TestState.Idle })
             }
         }
 
@@ -214,13 +220,9 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .padding(12.dp),
         ) {
-            val free = LocalDate.now().isBefore(EVREN_FREE_UNTIL)
-            InfoLine(
-                SouIcons.Info,
-                if (free) "Evren 1 Kasım 2026'ya kadar ücretsiz. Sonrası için Evren'in duyurularına bak."
-                else "Ücret ve kota bilgisi için Evren sitesine bak; ücretsiz dönem 1 Kasım 2026'da bitti.",
-            )
-            InfoLine(SouIcons.BarChart, "Günlük kullanım sınırı var.")
+            // Evren ücretsiz: kullanım kredisi e-Devlet hesabına kendiliğinden tanımlanır, satın alınmaz
+            InfoLine(SouIcons.Info, "Evren ücretsiz. Kullanım kredin e-Devlet hesabına kendiliğinden tanımlanır; bir şey satın alman gerekmez.")
+            InfoLine(SouIcons.BarChart, "Kredin bitince yenilenmesini beklemen gerekir.")
             InfoLine(SouIcons.Lock, "Anahtarın sadece bu cihazda saklanır. Kimseyle paylaşma.")
             InfoLine(SouIcons.Person, "e-Devlet şifren yoksa asistan dışında her şey çalışır.")
         }
@@ -252,5 +254,105 @@ private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         androidx.compose.material3.Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Model aileleri: düğmeye basınca listede o aileden en uygun model seçilir. */
+private val MODEL_FAMILIES = listOf(
+    "DeepSeek" to "deepseek", "GLM" to "glm", "Qwen" to "qwen", "Llama" to "llama", "Gemma" to "gemma",
+    "GPT-OSS" to "gpt-oss", "Mistral" to "mistral", "Kimi" to "kimi", "Phi" to "phi",
+)
+
+/**
+ * Model seçimi (Gelişmiş): anahtarla servisten model listesini çeker. Ailelerin (DeepSeek, GLM, Qwen…) düğmesine basınca
+ * o ailenin en uygun modeli seçilir; "Otomatik" servisin kendi seçimi ("auto"). Tek tek modeller "Tüm modeller" altında.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ModelPicker(current: String, url: String, key: String, config: () -> AssistantConfig, onPick: (String) -> Unit) {
+    var models by remember { mutableStateOf<List<String>?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var showAll by remember { mutableStateOf(false) }
+    var reload by remember { mutableStateOf(0) }
+    // Anahtar ya da adres değişince listeyi kendiliğinden getir (yazarken her harfte istek atmasın diye kısa bekleme)
+    LaunchedEffect(url, key, reload) {
+        delay(600)
+        loading = true
+        error = null
+        val r = withContext(Dispatchers.IO) { runCatching { AssistantClient.models(config()) } }
+        loading = false
+        r.onSuccess { list ->
+            models = list
+            if (list.isEmpty()) error = "Servis model listesi vermedi; model adını yukarıya elle yazabilirsin"
+        }.onFailure {
+            models = null
+            error = it.message ?: "Model listesi alınamadı"
+        }
+    }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+            .padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Model seç", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    if (current == AssistantConfig.EVREN_MODEL) "Otomatik (servis seçer)" else current,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            if (loading) CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+            else TextButton(onClick = { reload++ }) { Text("Yenile") }
+        }
+        error?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error) }
+        val list = models.orEmpty()
+        if (list.isNotEmpty()) {
+            val best = AssistantClient.recommendedModel(list)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FilterChip(
+                    selected = current == AssistantConfig.EVREN_MODEL,
+                    onClick = { onPick(AssistantConfig.EVREN_MODEL) },
+                    label = { Text("Otomatik") },
+                )
+                if (best != null) {
+                    FilterChip(selected = current == best, onClick = { onPick(best) }, label = { Text("Önerilen") })
+                }
+                MODEL_FAMILIES.forEach { (label, tag) ->
+                    val family = list.filter { tag in it.lowercase() }
+                    if (family.isNotEmpty()) {
+                        FilterChip(
+                            selected = tag in current.lowercase(),
+                            onClick = { onPick(family.maxBy { AssistantClient.modelScore(it) }) },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            }
+            TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "Listeyi gizle" else "Tüm modeller (${list.size})") }
+            if (showAll) {
+                list.sortedByDescending { AssistantClient.modelScore(it) }.forEach { id ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable { onPick(id) },
+                    ) {
+                        RadioButton(selected = id == current, onClick = { onPick(id) })
+                        Text(id, style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.weight(1f))
+                        if (id == best) Text("Önerilen", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+            Text(
+                "Seçince \"Kaydet ve dene\" de. Bir model kötü cevap verirse başka aileyi dene.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

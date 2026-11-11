@@ -124,7 +124,7 @@ Eklendi (🧪, build-62+): Bugünkü tekrar (vm.dueCards/reviewAny, ana sayfa ka
 AssistantClient.gradeEssay JSON 5 ölçüt × 20, WritingScreen: liste → konu → süreli editör → değerlendirme).
 
 Eklendi (🧪, build-84+): asistan kurulum rehberi (ui/AssistantSetup.kt: Evren'i aç → evren.ssyz.org.tr/api-keys, e-Devlet, anahtar yapıştır,
-"Kaydet ve dene"; Evren 1 Kasım 2026'ya kadar ücretsiz, günlük kota; 429'da 5 sn bekleyip bir kez yeniden dener), çalışma serisi
+"Kaydet ve dene"; Evren ücretsiz kalıyor: kredi e-Devlet hesabına kendiliğinden tanımlanır, satın alınamaz (kullanıcı, 11 Kasım); 429'da 5 sn bekleyip bir kez yeniden dener), çalışma serisi
 (prefs activeDays StringSet + bestStreak; belgede 5 dk, kart tekrarı, Writing, haftalık liste işareti, yazılı not günü sayar; ana sayfa Hero + WeekCard),
 sitede Play Protect uyarısı + VirusTotal (APK digest'iyle rapor bağlantısı), arkadaşla paylaş metninde aynı uyarı.
 
@@ -153,6 +153,7 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 ## SouNote 3.0 (✅ yayınlandı build-124, 24 Ekim; PR #5 ile main)
 3.0.1 yayınlandı build-127; 3.1 yayınlandı build-138 (26 Ekim, PR #6 ile main). 3.2 yayınlandı build-145 (27 Ekim): RenderNode kaydı sistemce silinirse
 (hasDisplayList false) yeniden kaydedilir + pencere görünür olunca inkNodes atılır (notlar kalem değene kadar görünmüyordu).
+3.3 yayınlandı build-166 (11 Kasım): Listening, yan yana belge, toplu indirme, sınav günü kartı, not birleştirme, model seçici, kalem düğmesi, hafta 7–8.
 Tanıtım videosu sesli: .github/video/voice.mp3 + voice-asistan.mp3 (INSERTS), voice.txt paragrafları, align.py Whisper (ses ffmpeg ile çözülür). Otomatik yedek zip'i herkese açık ders klasöründeydi:
 Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörüne taşındı; uygulamadaki otomatik yedek klasörü de oraya çevrilmeli.
 - Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).
@@ -203,6 +204,27 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   widget_logo, vurgu rengi). smoke.sh ".MainActivity" ile açar: tema değiştirmez, takma ad açık kalır.
 - Son kullanılanlar temizleme (🧪, build-139+): VM recentsClearedAt + recentHidden (prefs JSON anahtar "d"/"n"/"c"+kimlik → an);
   recentVisible(key, time); ana sayfa "Temizle" (onaylı) + kartta "Listeden kaldır", kütüphane "Son açılanlar"da da; dinamik kısayollar silinir.
+- Listening pratiği (🧪, build-147+): ui/ListeningScreen.kt (MediaPlayer; hız 0.75–1.5, ±5 sn, tekrarla, kaldığın yer) + data/Listening.kt
+  ListeningStore (filesDir/listening/<driveId>.audio, prefs "listening" pos_/note_); Dersler'de ses satırında "Dinle" → vm.openListening;
+  ilgili kaynaklar = aynı hafta+gün ya da konu; asistanla alıştırma = ExerciseScreen(konu). CatalogRepo.download ses için HTML değil mi diye bakar.
+- Yan yana belge (🧪, build-147+): ui/SideDocPane.kt, belge ⋮ menüsü "Yan yana belge aç" (≥840dp); ikinci PdfContainer readOnly,
+  notlar vm.inkForSide (kaydedilmez), son sayfa hatırlanır.
+- Haftayı toplu indir (🧪, build-151+): Haftalar kartında "x/y PDF kütüphanende" + "Hepsini indir" (vm.downloadWeek, sırayla importResource,
+  weekDownload ilerleme); satırda ✓ "Kütüphanede" (vm.downloadedDoc), konu kartında x/y PDF. Uygulama içi APK güncellemesi YOK
+  (kullanıcı: indirdikleri yeri görsünler, GitHub'dan tarayıcıyla insin).
+- (🧪, build-153+) Listening oynatıcısı VM'de (data/ListeningPlayer.kt, vm.listeningPlayer); "Dinlerken aç" → vm.listenAlongside: PDF açılır,
+  ses belge ekranında ListeningMiniBar'da sürer (vm.listeningMini; closeDoc kapatır). Not birleştirme: .sounote manifest pdfSha256 + sender;
+  SouNotePackage.extract/finish; aynı PDF (boyut + SHA-256, yoksa aynı ad) varsa MergeNotesDialog (SouNoteActivity kökünde) →
+  vm.mergePackageInk: çizgiler yeni katman "Gelen: <ad>" (MAX dolu ise etkin katman), yazı/resim sayfaya eklenir. Sınav günü kartı:
+  ui/ExamDayCard.kt (examDayTarget: sınav/sunum 36 saat kala → başladıktan 2 saat sonrasına; HERO modülünde), konular, PDF'ler
+  (downloadWeek(EXAM_DOWNLOAD=-1)), deneme sınavı (konuların çoğunun dersi), kart tekrarı.
+- (🧪, build-160/161+) Asistan model seçici (Gelişmiş; AssistantSetup ModelPicker: GET /models anahtarla, MODEL_FAMILIES düğmeleri,
+  AssistantClient.recommendedModel/modelScore; Evren /v1/models anahtarsız açılmıyor). Kalem düğmesi (kullanıcı: geçici silgi istemedi, sadece kalem ↔ silgi): ToolState.stylusClick (SWITCH_ERASER/NONE;
+  PdfDocumentView.onGenericMotionEvent ACTION_BUTTON_PRESS ya da tuş 308–311 → ViewerScreen.stylusClick, 300 ms tekrar süzgeci).
+  Xiaomi Focus Pen düğmeleri önce sistem kısayollarına atalı; tablette denenmedi.
+  Focus Pen Pro'da düğme yok (çift dokunma/sıkıştırma/kaydırma): bu hareketler uygulamalara gelmiyor (build-164 tanıtma ekranıyla denendi,
+  kullanıcı vazgeçti, kod geri alındı). Kalem düğmesi desteği sadece yan düğmeli kalemler için kalır. Hafta/konu özeti: CoursesScreen SummaryButton →
+  AssistantDialog(AssistantSource.Course(başlık, indirilmiş PDF'ler), prefill özet isteği).
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.
   MainActivity ACTION_OPEN_HOME/WEEK/LIBRARY, ACTION_NEW_CANVAS, ACTION_OPEN_ASSISTANT. Simgeler res/drawable/ic_w_*.
@@ -215,7 +237,7 @@ Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/RE
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·
-  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · 06 1ojYUJlwP3PfdDgtm6yDwsao2bwvhi8E- ·
+  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · 06 1ojYUJlwP3PfdDgtm6yDwsao2bwvhi8E- · 07 1Xg4p2xcAOcjiSb4YnOSt1e5ZEhytBACU · 08 1bSqcOM-itqsZ7IaGWEonKyb9v9wwg6zl ·
   Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM. Hafta 6 (26 Ekim): 23 dosya program PDF'ine göre günlere ve konulara dağıtıldı.
   Yeni hafta: klasör aç ("Hafta 06 · 26 Ekim-1 Kasım"), dosyaları taşı (update_file parentId), WEEKS'e ekle.
 - OTOMASYON (🧪, build-137+): uygulama katalog yenilerken (açılış + ön plana gelince 3 saatte bir) Drive kök klasörünü
@@ -228,5 +250,7 @@ Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/RE
   Drive'da olmayanlar "!başlık|tür" olarak girer (uygulamada "Drive'da yok").
 - Katalog Drive'a da konabilir (SouNote-katalog.json, herkese açık) ve Catalog.kt REMOTE_URL ile uzaktan güncellenir; klasör herkese açık olmalı.
 - Sadece L4: katalogda başka kur yok.
+- Kullanıcı bazen dosyaları hafta klasörü yerine kök klasöre yükler: yeni hafta klasörünü aç, taşı. Otomatik yedek zip'i
+  (SouNote-otomatik-yedek-*.zip) kök klasöre düşerse gizli yedek klasörüne taşı (uygulamadaki yedek klasörü hâlâ kök klasörü gösteriyor).
 
 Her adımı küçük tut, çalıştığı doğrulanmadan sonrakine geçme.

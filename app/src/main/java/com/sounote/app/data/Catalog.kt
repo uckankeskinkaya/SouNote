@@ -215,7 +215,7 @@ object CatalogRepo {
     private fun JSONArray?.strings(): List<String> =
         if (this == null) emptyList() else (0 until length()).map { getString(it) }
 
-    /** Herkese açık Drive dosyasını ya da PDF bağlantısını indirir; beklenen türde değilse (PDF ya da Word/PPT) hata. */
+    /** Herkese açık Drive dosyasını ya da PDF bağlantısını indirir; beklenen türde değilse (PDF, Word/PPT, ses) hata. */
     fun download(res: Resource, target: File) {
         val url = res.driveId?.let { "https://drive.usercontent.google.com/download?id=$it&export=download&confirm=t" } ?: res.url
         var current = URL(url)
@@ -234,10 +234,15 @@ object CatalogRepo {
                         c.inputStream.use { input -> target.outputStream().use { input.copyTo(it) } }
                         val head = String(target.inputStream().use { s -> ByteArray(5).also { s.read(it) } })
                         // Word/PPT (docx/pptx) birer zip: "PK" ile başlar
-                        val ok = if (res.isOffice) head.startsWith("PK") else head == "%PDF-"
+                        val ok = when {
+                            res.isOffice -> head.startsWith("PK")
+                            res.isPdf -> head == "%PDF-"
+                            // Ses: Drive paylaşılmamışsa HTML giriş sayfası döner
+                            else -> !head.trimStart().startsWith("<")
+                        }
                         if (!ok) {
                             target.delete()
-                            throw IOException(if (res.isOffice) "Dosya indirilemedi ya da herkese açık paylaşılmamış" else "Dosya PDF değil ya da herkese açık paylaşılmamış")
+                            throw IOException(if (res.isPdf) "Dosya PDF değil ya da herkese açık paylaşılmamış" else "Dosya indirilemedi ya da herkese açık paylaşılmamış")
                         }
                         return
                     }

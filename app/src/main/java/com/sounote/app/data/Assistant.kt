@@ -126,6 +126,42 @@ object AssistantClient {
         }
     }
 
+    /** Servisin sunduğu modeller (GET /models), sohbet için uygun olmayanlar (embedding, rerank, ses…) çıkarılmış. */
+    fun models(config: AssistantConfig): List<String> {
+        val (code, text) = request(config, "/models", null)
+        if (code == 401) throw IOException("Anahtar yanlış ya da iptal edilmiş (HTTP 401)")
+        if (code !in 200..299) throw IOException("Model listesi alınamadı (HTTP $code)")
+        val arr = JSONObject(text).optJSONArray("data") ?: return emptyList()
+        return (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optString("id")?.takeIf { id -> id.isNotBlank() } }
+            .filter { id -> NOT_CHAT.none { it in id.lowercase() } }
+            .distinct()
+    }
+
+    private val NOT_CHAT = listOf("embed", "rerank", "whisper", "tts", "speech", "audio", "guard", "moderation", "bge", "e5-", "ocr", "image")
+
+    /**
+     * Listeden asistan işleri (Türkçe sohbet, essay puanlama, JSON üretme) için en uygun görünen model: büyük, talimatla eğitilmiş,
+     * genel amaçlı modeller öne; kod, küçük ve görüntü modelleri geri. Hiçbiri seçilemezse null ("auto" kalır).
+     */
+    fun recommendedModel(ids: List<String>): String? = ids.maxByOrNull { modelScore(it) }?.takeIf { modelScore(it) > 0 }
+
+    fun modelScore(id: String): Double {
+        val s = id.lowercase()
+        if (s == "auto") return 0.0
+        // Parametre sayısı: "70b", "8x7b", "120b", "a22b" gibi; MoE'de toplam sayılır
+        val size = Regex("""(\d+)x(\d+(?:\.\d+)?)b""").find(s)?.let { it.groupValues[1].toDouble() * it.groupValues[2].toDouble() }
+            ?: Regex("""(\d+(?:\.\d+)?)b(?![a-z])""").findAll(s).map { it.groupValues[1].toDouble() }.maxOrNull()
+            ?: 20.0
+        var score = kotlin.math.ln(1 + size) * 10
+        if ("instruct" in s || "chat" in s || "-it" in s) score += 6
+        if (listOf("qwen3", "qwen2.5", "llama-3.3", "llama3.3", "llama-4", "gpt-oss", "gemma-3", "gemma3", "deepseek", "mistral-large", "mistral-small", "kimi", "glm").any { it in s }) score += 8
+        if (listOf("coder", "code", "math").any { it in s }) score -= 15
+        if (listOf("vl", "vision").any { it in s }) score -= 6
+        if (listOf("mini", "tiny", "nano", "small").any { it in s } && "mistral-small" !in s) score -= 8
+        if ("base" in s && "instruct" !in s) score -= 10
+        return score
+    }
+
     /** Kullanım şartlarının metni ve sürümü (GET /terms/text). */
     fun termsText(config: AssistantConfig): Pair<String, Int> {
         val (code, text) = request(config, "/terms/text", null)

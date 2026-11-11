@@ -1008,6 +1008,23 @@ class PdfDocumentView(context: Context) : View(context) {
         return super.onHoverEvent(event)
     }
 
+    /** Kalemin yan düğmesine basıldı (true = birinci düğme): kalem ↔ silgi. Klavye tuşu olarak da gelebilir: ViewerScreen. */
+    var onStylusButton: ((primary: Boolean) -> Unit)? = null
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_BUTTON_PRESS && isStylusTool(event.getToolType(0)) && drawPointerId == -1) {
+            val b = event.actionButton
+            val primary = (b and (MotionEvent.BUTTON_STYLUS_PRIMARY or MotionEvent.BUTTON_SECONDARY)) != 0
+            val secondary = (b and (MotionEvent.BUTTON_STYLUS_SECONDARY or MotionEvent.BUTTON_TERTIARY)) != 0
+            if (primary || secondary) {
+                onStylusButton?.invoke(primary)
+                return true
+            }
+        }
+        return super.onGenericMotionEvent(event)
+    }
+
+
     private fun isStylusTool(type: Int) =
         type == MotionEvent.TOOL_TYPE_STYLUS || type == MotionEvent.TOOL_TYPE_ERASER
 
@@ -1044,8 +1061,7 @@ class PdfDocumentView(context: Context) : View(context) {
                         return
                     }
                     val erase = tools.tool == Tool.ERASER ||
-                        event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER ||
-                        (event.buttonState and MotionEvent.BUTTON_STYLUS_PRIMARY) != 0
+                        event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER
                     beginInput(event, idx, fromStylus = true, erase = erase)
                 }
             }

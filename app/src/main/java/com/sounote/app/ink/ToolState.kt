@@ -54,6 +54,9 @@ data class FavoritePen(
 )
 
 /** Seçili araç ve her aracın kendi ayarları. Kalınlıklar mm (sayfa üzerinde). */
+/** Kalemin yan düğmesine basınca: kalem ile silgi arasında geçiş ya da kapalı. */
+enum class StylusClick(val label: String) { SWITCH_ERASER("Kalem ↔ silgi"), NONE("Kapalı") }
+
 data class ToolState(
     val tool: Tool = Tool.PEN,
     val penType: PenType = PenType.FOUNTAIN,
@@ -84,6 +87,8 @@ data class ToolState(
     val tapeWidthMm: Float = 6f,
     /** Açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır. */
     val fingerDraw: Boolean = false,
+    /** Kalem yan düğmesi: basınca kalem ↔ silgi. */
+    val stylusClick: StylusClick = StylusClick.SWITCH_ERASER,
     /** Yeni metin kutularının yazı boyutu (pt) ve rengi. */
     val textSizePt: Float = 14f,
     val textColor: Int = PEN_COLORS[0],
@@ -159,6 +164,7 @@ data class ToolState(
             .putString("shapeKind", shapeKind.name)
             .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
+            .putString("stylusClick", stylusClick.name)
             .putFloat("textSizePt", textSizePt)
             .putInt("textColor", textColor)
             .putString("favorites", JSONArray().apply {
@@ -249,6 +255,7 @@ data class ToolState(
                 shapeKind = enumOr(prefs.getString("shapeKind", null), d.shapeKind),
                 textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
+                stylusClick = enumOr(prefs.getString("stylusClick", null), d.stylusClick),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),
                 textColor = prefs.getInt("textColor", d.textColor),
                 favorites = loadFavorites(prefs.getString("favorites", null)),

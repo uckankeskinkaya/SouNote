@@ -133,6 +133,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     val reading = vm.readingMode
     val wideViewer = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 840
     var sideNote by remember { mutableStateOf(false) }
+    // Tablette ikinci belge yan yana (okumak için)
+    var sideDoc by remember(doc.id) { mutableStateOf<DocRef?>(null) }
+    var sidePicker by remember { mutableStateOf(false) }
     fun askRegion() {
         val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
         scope.launch {
@@ -293,6 +296,30 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         vm.export(doc) { file -> printPdf(context, file, doc.title) }
     }
 
+    // Kalemin yan düğmesi (kâğıda değmeden basınca): ayardaki işlem. Hem hareket olayı hem tuş olarak gelebilir; ikisi
+    // birden gelirse bir kez sayılır.
+    var toolBeforeButton by remember { mutableStateOf(Tool.PEN) }
+    var lastStylusClick by remember { mutableStateOf(0L) }
+    fun stylusClick() {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastStylusClick < 300) return
+        lastStylusClick = now
+        val t = currentVm.tools
+        fun switchTo(target: Tool) {
+            if (t.tool == target) {
+                currentVm.updateTools(t.copy(tool = toolBeforeButton.takeIf { it != target } ?: Tool.PEN))
+            } else {
+                toolBeforeButton = t.tool
+                currentVm.updateTools(t.copy(tool = target))
+            }
+        }
+        when (t.stylusClick) {
+            com.sounote.app.ink.StylusClick.SWITCH_ERASER -> switchTo(Tool.ERASER)
+            com.sounote.app.ink.StylusClick.NONE -> Unit
+        }
+    }
+    val stylusClickState = rememberUpdatedState { stylusClick() }
+
     // Klavye kısayolları (klavyeli kılıf): geri al/ileri al, sayfa çevir, ara, yazdır.
     DisposableEffect(vm, ink) {
         vm.keyHandler = handler@{ e ->
@@ -309,6 +336,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     currentVm.flush()
                     currentVm.showMessage("Kaydedildi")
                 }
+                // Kalem düğmeleri (Android 14+ tuş kodları 308–311: birinci, ikinci, üçüncü düğme, kalem ucu)
+                e.keyCode in 308..311 && e.repeatCount == 0 -> stylusClickState.value()
                 e.keyCode == KeyEvent.KEYCODE_PAGE_DOWN -> view?.goToPage(current + 1)
                 e.keyCode == KeyEvent.KEYCODE_PAGE_UP -> view?.goToPage(current - 1)
                 ctrl && e.keyCode == KeyEvent.KEYCODE_MOVE_HOME -> view?.goToPage(0)
@@ -507,6 +536,14 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                     leadingIcon = { Icon(SouIcons.EditNote, contentDescription = null) },
                                     onClick = { moreMenu = false; sideNote = !sideNote },
                                 )
+                                DropdownMenuItem(
+                                    text = { Text(if (sideDoc != null) "Yan belgeyi kapat" else "Yan yana belge aç") },
+                                    leadingIcon = { Icon(SouIcons.ViewWeek, contentDescription = null) },
+                                    onClick = {
+                                        moreMenu = false
+                                        if (sideDoc != null) sideDoc = null else sidePicker = true
+                                    },
+                                )
                             }
                             DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },
@@ -663,6 +700,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 onLayers = { layersOpen = true },
                 layered = !layers.single,
             )
+            // Listening'den çalışma kâğıdı açıldı: dinleme burada sürer
+            if (vm.listeningMini) ListeningMiniBar(vm)
             audioPlay?.let { (name, ms, tapCount) ->
                 val f = vm.recordingFileFor(doc, name)
                 if (f.exists()) {
@@ -716,6 +755,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onTextBoxRequest = { p, box, isNew -> editingText = Triple(p, box, isNew) }
                                 onFormFieldRequest = { editingField = it }
                                 onUndoGesture = { this.ink.undo() }
+                                onStylusButton = { stylusClickState.value() }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
                                     // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)
@@ -795,6 +835,12 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                     }
                 }
             }
+            sideDoc?.takeIf { wideViewer }?.let { other ->
+                androidx.compose.material3.VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Box(Modifier.weight(1f).fillMaxHeight()) {
+                    SideDocPane(vm, other, darkTheme, onChange = { sidePicker = true }, onClose = { sideDoc = null })
+                }
+            }
             // Geniş ekranda belgeye bağlı yazılı not, PDF ile yan yana.
             if (sideNote && wideViewer) {
                 androidx.compose.material3.VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -802,6 +848,10 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
             }
             }
         }
+    }
+
+    if (sidePicker) {
+        SideDocPicker(vm, doc, onPick = { sideDoc = it; sidePicker = false }, onDismiss = { sidePicker = false })
     }
 
     if (assistantOpen) {

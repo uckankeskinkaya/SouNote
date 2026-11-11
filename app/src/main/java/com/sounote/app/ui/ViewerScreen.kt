@@ -296,11 +296,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         vm.export(doc) { file -> printPdf(context, file, doc.title) }
     }
 
-    // Kalemin yan düğmesi (kâğıda değmeden basınca): ayardaki işlem. Hem hareket olayı hem tuş olarak gelebilir; ikisi
-    // birden gelirse bir kez sayılır.
+    // Kalem düğmesi ya da tanıtılmış kalem hareketi (çift dokunma, kaydırma…). Aynı hareket hem tuş hem düğme olayı
+    // olarak gelebilir; 300 ms içinde ikincisi sayılmaz.
     var toolBeforeButton by remember { mutableStateOf(Tool.PEN) }
     var lastStylusClick by remember { mutableStateOf(0L) }
-    fun stylusClick() {
+    fun penAction(a: com.sounote.app.ink.StylusClick) {
         val now = android.os.SystemClock.uptimeMillis()
         if (now - lastStylusClick < 300) return
         lastStylusClick = now
@@ -313,12 +313,26 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                 currentVm.updateTools(t.copy(tool = target))
             }
         }
-        when (t.stylusClick) {
+        val current = page?.first ?: 0
+        when (a) {
             com.sounote.app.ink.StylusClick.SWITCH_ERASER -> switchTo(Tool.ERASER)
+            com.sounote.app.ink.StylusClick.SWITCH_HIGHLIGHTER -> switchTo(Tool.HIGHLIGHTER)
+            com.sounote.app.ink.StylusClick.SWITCH_LASSO -> switchTo(Tool.LASSO)
+            com.sounote.app.ink.StylusClick.LASER -> switchTo(Tool.LASER)
+            com.sounote.app.ink.StylusClick.UNDO -> ink.undo()
+            com.sounote.app.ink.StylusClick.REDO -> ink.redo()
+            com.sounote.app.ink.StylusClick.NEXT_PAGE -> view?.goToPage(current + 1)
+            com.sounote.app.ink.StylusClick.PREV_PAGE -> view?.goToPage(current - 1)
             com.sounote.app.ink.StylusClick.NONE -> Unit
         }
     }
+    fun stylusClick() = penAction(currentVm.tools.stylusClick)
     val stylusClickState = rememberUpdatedState { stylusClick() }
+    val penActionState = rememberUpdatedState<(com.sounote.app.ink.StylusClick) -> Unit> { penAction(it) }
+    DisposableEffect(vm) {
+        vm.penActionHandler = { penActionState.value(it) }
+        onDispose { vm.penActionHandler = null }
+    }
 
     // Klavye kısayolları (klavyeli kılıf): geri al/ileri al, sayfa çevir, ara, yazdır.
     DisposableEffect(vm, ink) {
@@ -755,7 +769,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onTextBoxRequest = { p, box, isNew -> editingText = Triple(p, box, isNew) }
                                 onFormFieldRequest = { editingField = it }
                                 onUndoGesture = { this.ink.undo() }
-                                onStylusButton = { stylusClickState.value() }
+                                onStylusButton = { b -> if (!currentVm.onPenSignal("btn:$b", "")) stylusClickState.value() }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
                                     // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)

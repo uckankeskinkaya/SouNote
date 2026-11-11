@@ -55,7 +55,21 @@ data class FavoritePen(
 
 /** Seçili araç ve her aracın kendi ayarları. Kalınlıklar mm (sayfa üzerinde). */
 /** Kalemin yan düğmesine basınca: kalem ile silgi arasında geçiş ya da kapalı. */
-enum class StylusClick(val label: String) { SWITCH_ERASER("Kalem ↔ silgi"), NONE("Kapalı") }
+/** Kalem düğmesi ya da kalem hareketi (çift dokunma, kaydırma…) ile yapılacak işlem. Adıyla saklanır. */
+enum class StylusClick(val label: String) {
+    SWITCH_ERASER("Kalem ↔ silgi"),
+    SWITCH_HIGHLIGHTER("Kalem ↔ fosforlu"),
+    SWITCH_LASSO("Kalem ↔ seçim"),
+    UNDO("Geri al"),
+    REDO("İleri al"),
+    NEXT_PAGE("Sonraki sayfa"),
+    PREV_PAGE("Önceki sayfa"),
+    LASER("Kalem ↔ lazer"),
+    NONE("Kapalı"),
+}
+
+/** Tanıtılmış kalem hareketi: [name] kullanıcının verdiği ad ("Çift dokunma"), [action] yapılacak işlem. */
+data class PenGesture(val name: String, val action: StylusClick)
 
 data class ToolState(
     val tool: Tool = Tool.PEN,
@@ -89,6 +103,8 @@ data class ToolState(
     val fingerDraw: Boolean = false,
     /** Kalem yan düğmesi: basınca kalem ↔ silgi. */
     val stylusClick: StylusClick = StylusClick.SWITCH_ERASER,
+    /** Tanıtılmış kalem hareketleri: sinyal ("key:<kod>" ya da "btn:<düğme>") → hareket. */
+    val penGestures: Map<String, PenGesture> = emptyMap(),
     /** Yeni metin kutularının yazı boyutu (pt) ve rengi. */
     val textSizePt: Float = 14f,
     val textColor: Int = PEN_COLORS[0],
@@ -165,6 +181,9 @@ data class ToolState(
             .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
             .putString("stylusClick", stylusClick.name)
+            .putString("penGestures", JSONObject().apply {
+                penGestures.forEach { (k, g) -> put(k, JSONObject().put("n", g.name).put("a", g.action.name)) }
+            }.toString())
             .putFloat("textSizePt", textSizePt)
             .putInt("textColor", textColor)
             .putString("favorites", JSONArray().apply {
@@ -256,6 +275,7 @@ data class ToolState(
                 textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
                 stylusClick = enumOr(prefs.getString("stylusClick", null), d.stylusClick),
+                penGestures = loadPenGestures(prefs.getString("penGestures", null)),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),
                 textColor = prefs.getInt("textColor", d.textColor),
                 favorites = loadFavorites(prefs.getString("favorites", null)),
@@ -263,6 +283,17 @@ data class ToolState(
                     ?.split(",")?.mapNotNull { it.toIntOrNull() } ?: emptyList(),
                 penMemory = loadPenMemory(prefs.getString("penMemory", null)),
             )
+        }
+
+        private fun loadPenGestures(json: String?): Map<String, PenGesture> {
+            if (json.isNullOrEmpty()) return emptyMap()
+            return runCatching {
+                val o = JSONObject(json)
+                o.keys().asSequence().associateWith { k ->
+                    val v = o.getJSONObject(k)
+                    PenGesture(v.optString("n"), enumOr(v.optString("a"), StylusClick.NONE))
+                }
+            }.getOrDefault(emptyMap())
         }
 
         private fun loadPenMemory(json: String?): Map<PenType, Pair<Int, Float>> {

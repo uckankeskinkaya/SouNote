@@ -44,6 +44,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -311,24 +312,8 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 vm.updateTools(tools.copy(fingerDraw = it))
             }
         },
-        Entry(Category.NOTES, "Kalem düğmesi", "kalem düğme yan tuş focus pen xiaomi s pen silgi geri al buton") {
-            Column(Modifier.padding(bottom = 8.dp)) {
-                SettingRow(SouIcons.Stylus, "Kalem düğmesi", subtitle = "Xiaomi Focus Pen, S Pen ve yan düğmeli diğer kalemler")
-                Column(Modifier.padding(start = 56.dp, end = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Düğmeye basınca", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        com.sounote.app.ink.StylusClick.entries.forEach { c ->
-                            FilterChip(selected = tools.stylusClick == c, onClick = { vm.updateTools(tools.copy(stylusClick = c)) }, label = { Text(c.label) })
-                        }
-                    }
-                    Text(
-                        "Xiaomi'de kalem düğmeleri önce sistem kısayollarına (ekran görüntüsü, not) atanmıştır. Uygulamada çalışması için " +
-                            "tabletin Ayarlar'ındaki kalem (Xiaomi Focus Pen) sayfasından düğme kısayollarını kapat.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+        Entry(Category.NOTES, "Kalem hareketleri", "kalem düğme hareket çift dokunma sıkıştırma kaydırma focus pen xiaomi s pen silgi geri al") {
+            PenGestureSettings(vm, tools)
         },
         Entry(Category.NOTES, "Yazma desteği", "yazma desteği titreme yumuşat düzelt çizgi bağla stabilizatör") {
             Column {
@@ -830,5 +815,82 @@ private fun TrashDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = { confirmEmpty = false }) { Text("Vazgeç") } },
         )
+    }
+}
+
+/** Kalem hareketleri: Focus Pen çift dokunma/sıkıştırma/kaydırma ve yan düğmeli kalemler. Hareketler tanıtılarak bağlanır. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun PenGestureSettings(vm: LibraryViewModel, tools: com.sounote.app.ink.ToolState) {
+    var editing by remember { mutableStateOf<String?>(null) }
+    DisposableEffect(Unit) { onDispose { vm.penLearning = null } }
+    Column(Modifier.padding(bottom = 8.dp)) {
+        SettingRow(SouIcons.Stylus, "Kalem hareketleri", subtitle = "Çift dokunma, sıkıştırma, kaydırma ya da kalem düğmesi")
+        Column(Modifier.padding(start = 56.dp, end = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "Tanıt'a bas, sonra kalemle o hareketi yap. Uygulamaya bir sinyal gelirse hareket kaydedilir ve ona işlem seçebilirsin.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LibraryViewModel.PEN_GESTURE_NAMES.forEach { name ->
+                val entry = tools.penGestures.entries.firstOrNull { it.value.name == name }
+                val learning = vm.penLearning == name
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(name, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            when {
+                                learning -> "Şimdi kalemle hareketi yap…"
+                                entry != null -> entry.value.action.label
+                                else -> "Tanıtılmadı"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (learning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (entry != null && !learning) {
+                        TextButton(onClick = { editing = if (editing == name) null else name }) { Text("İşlem") }
+                    }
+                    TextButton(onClick = { vm.penLearning = if (learning) null else name }) {
+                        Text(if (learning) "Vazgeç" else if (entry != null) "Yeniden" else "Tanıt")
+                    }
+                }
+                if (editing == name && entry != null) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        com.sounote.app.ink.StylusClick.entries.forEach { c ->
+                            FilterChip(
+                                selected = entry.value.action == c,
+                                onClick = {
+                                    vm.updateTools(tools.copy(penGestures = tools.penGestures + (entry.key to entry.value.copy(action = c))))
+                                    editing = null
+                                },
+                                label = { Text(c.label) },
+                            )
+                        }
+                        TextButton(onClick = {
+                            vm.updateTools(tools.copy(penGestures = tools.penGestures - entry.key))
+                            editing = null
+                        }) { Text("Unut") }
+                    }
+                }
+            }
+            if (vm.penLearning != null) {
+                Text(
+                    "Birkaç saniye içinde bir şey olmazsa bu hareket uygulamalara iletilmiyor demektir (HyperOS kendine ayırmış olabilir). " +
+                        "Tabletin Ayarlar → Kalem & klavye → Hızlı eylemler sayfasında o hareketi kapatıp yeniden dene.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (vm.penSignals.isNotEmpty()) {
+                Text("Son gelen: " + vm.penSignals.first(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("Tanıtılmamış kalem düğmesine basınca", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(com.sounote.app.ink.StylusClick.SWITCH_ERASER, com.sounote.app.ink.StylusClick.NONE).forEach { c ->
+                    FilterChip(selected = tools.stylusClick == c, onClick = { vm.updateTools(tools.copy(stylusClick = c)) }, label = { Text(c.label) })
+                }
+            }
+        }
     }
 }

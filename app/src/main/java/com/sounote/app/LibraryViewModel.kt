@@ -13,6 +13,7 @@ import android.provider.DocumentsContract
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -1063,6 +1064,46 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Görüntüleyicinin klavye kısayolları (açık belge yoksa null). */
     var keyHandler: ((android.view.KeyEvent) -> Boolean)? = null
+
+    /** Belge ekranı açıkken kalem hareketi/düğmesi işlemini yapar. */
+    var penActionHandler: ((com.sounote.app.ink.StylusClick) -> Unit)? = null
+
+    /** Tanıtılan hareketin adı (Ayarlar → Kalem hareketleri → Tanıt); null ise tanıtma kapalı. */
+    var penLearning by mutableStateOf<String?>(null)
+
+    /** Tanıtma sırasında gelen son sinyaller (ekranda gösterilir). */
+    val penSignals = mutableStateListOf<String>()
+
+    /**
+     * Etkinlikten gelen kalem sinyali. Tanıtma açıksa harekete bağlanır; değilse tanıtılmış hareketse işlemi yapılır.
+     * true dönerse olay tüketilir.
+     */
+    fun onPenSignal(signal: String, label: String): Boolean {
+        val learning = penLearning
+        if (learning != null) {
+            penSignals.add(0, label)
+            while (penSignals.size > 6) penSignals.removeAt(penSignals.lastIndex)
+            val old = tools.penGestures.filterValues { it.name != learning }
+            val action = tools.penGestures[signal]?.action ?: defaultPenAction(learning)
+            updateTools(tools.copy(penGestures = old + (signal to com.sounote.app.ink.PenGesture(learning, action))))
+            showMessage("$learning tanındı: $label")
+            penLearning = null
+            return true
+        }
+        val g = tools.penGestures[signal] ?: return false
+        val h = penActionHandler ?: return false
+        if (g.action == com.sounote.app.ink.StylusClick.NONE) return false
+        h(g.action)
+        return true
+    }
+
+    private fun defaultPenAction(name: String) = when (name) {
+        PEN_GESTURE_NAMES[0] -> com.sounote.app.ink.StylusClick.SWITCH_ERASER
+        PEN_GESTURE_NAMES[1] -> com.sounote.app.ink.StylusClick.UNDO
+        PEN_GESTURE_NAMES[2] -> com.sounote.app.ink.StylusClick.PREV_PAGE
+        PEN_GESTURE_NAMES[3] -> com.sounote.app.ink.StylusClick.NEXT_PAGE
+        else -> com.sounote.app.ink.StylusClick.SWITCH_ERASER
+    }
 
     // ---- Uygulama kilidi: açılışta ve bir dakikadan uzun arka planda kalınca parmak izi / PIN ----
 
@@ -2492,6 +2533,8 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
+        /** Ayarlarda tanıtılabilen kalem hareketleri. */
+        val PEN_GESTURE_NAMES = listOf("Çift dokunma", "Sıkıştırma", "Yukarı kaydırma", "Aşağı kaydırma", "Düğme")
         /** Paylaşılan paketten birleştirilen notların katman adı. */
         fun mergeLayerName(sender: String) = (if (sender.isBlank()) "Gelen notlar" else "Gelen: $sender").take(30)
 

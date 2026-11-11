@@ -221,6 +221,10 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   AssistantClient.recommendedModel/modelScore; Evren /v1/models anahtarsız açılmıyor). Kalem düğmesi (kullanıcı: geçici silgi istemedi, sadece kalem ↔ silgi): ToolState.stylusClick (SWITCH_ERASER/NONE;
   PdfDocumentView.onGenericMotionEvent ACTION_BUTTON_PRESS ya da tuş 308–311 → ViewerScreen.stylusClick, 300 ms tekrar süzgeci).
   Xiaomi Focus Pen düğmeleri önce sistem kısayollarına atalı; tablette denenmedi. Hafta/konu özeti: CoursesScreen SummaryButton →
+  (🧪, build-162+) Focus Pen Pro'da düğme yok, dokunmatik hareketler var (çift dokunma, sıkıştırma, yukarı/aşağı kaydırma). Ayarlar → Kalem hareketleri:
+  "Tanıt" → vm.penLearning; SouNoteActivity dispatchKeyEvent/dispatch*MotionEvent sinyali ("key:<kod>" / "btn:<düğme>") vm.onPenSignal'a verir,
+  ToolState.penGestures (prefs penGestures JSON sinyal → {n ad, a StylusClick}); belge ekranı vm.penActionHandler (ViewerScreen.penAction).
+  StylusClick: kalem ↔ silgi/fosforlu/seçim/lazer, geri/ileri al, sonraki/önceki sayfa, kapalı. Hangi hareketin uygulamaya geldiği tablette denenmedi.
   AssistantDialog(AssistantSource.Course(başlık, indirilmiş PDF'ler), prefill özet isteği).
 - Widget'lar (Widgets.kt): TodayWidget (seri, bugünkü süre, prefs dueCount), WeekWidget (weekTasks ile aynı sıra, prefs weekDone),
   QuickWidget (hızlı not, son belge prefs lastDocId/lastDocTitle, tuval, asistan); Widgets.updateAll (ExamWidget dahil) VM'de çağrılır.

@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
 import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -134,8 +135,36 @@ class SouNoteActivity : ComponentActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val code = event.keyCode
+        // Kalem hareketleri tuş olarak gelebilir (Focus Pen çift dokunma/kaydırma: hangi kod, cihaza göre değişir)
+        if (!vm.locked && code != KeyEvent.KEYCODE_BACK && (vm.penLearning != null || vm.tools.penGestures.containsKey("key:$code"))) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                val name = KeyEvent.keyCodeToString(code).removePrefix("KEYCODE_")
+                if (vm.onPenSignal("key:$code", "tuş $name ($code)")) return true
+            } else if (vm.penLearning != null || vm.penActionHandler != null) {
+                return true
+            }
+        }
         if (event.action == KeyEvent.ACTION_DOWN && !vm.locked && vm.keyHandler?.invoke(event) == true) return true
         return super.dispatchKeyEvent(event)
+    }
+
+    /** Tanıtma sırasında kalem düğmesi olaylarını yakalar (belge dışındaki ekranlarda görünüm almaz). */
+    private fun penButton(event: MotionEvent): Boolean {
+        if (vm.penLearning == null || event.actionMasked != MotionEvent.ACTION_BUTTON_PRESS) return false
+        val b = event.actionButton
+        return vm.onPenSignal("btn:$b", "kalem düğmesi $b")
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean =
+        penButton(ev) || super.dispatchGenericMotionEvent(ev)
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (vm.penLearning != null && ev.actionMasked == MotionEvent.ACTION_BUTTON_PRESS) {
+            penButton(ev)
+            return true
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onNewIntent(intent: Intent) {

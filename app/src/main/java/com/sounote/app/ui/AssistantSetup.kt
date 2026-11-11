@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.material3.RadioButton
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -172,6 +174,10 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
             }
         }
 
+        if (trimmed.isNotBlank()) {
+            ModelPicker(current = model, config = { current() }, onPick = { model = it; test = TestState.Idle })
+        }
+
         when (val t = test) {
             TestState.Running -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
@@ -244,5 +250,78 @@ private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         androidx.compose.material3.Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         Text(text, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * Model seçimi: anahtarla servisten listeyi çeker, asistan işleri için en uygun görüneni "Önerilen" diye işaretler.
+ * "auto" Evren'in kendi seçimidir; bazı modeller zayıf kaldığı için buradan sabit bir model seçilebilir.
+ */
+@Composable
+private fun ModelPicker(current: String, config: () -> AssistantConfig, onPick: (String) -> Unit) {
+    val scope = rememberCoroutineScope()
+    var models by remember { mutableStateOf<List<String>?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    fun load() {
+        loading = true
+        error = null
+        scope.launch {
+            val r = withContext(Dispatchers.IO) { runCatching { AssistantClient.models(config()) } }
+            loading = false
+            r.onSuccess { list ->
+                models = list
+                if (list.isEmpty()) error = "Servis model listesi vermedi"
+            }.onFailure { error = it.message ?: "Model listesi alınamadı" }
+        }
+    }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+            .padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Model", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    if (current == AssistantConfig.EVREN_MODEL) "auto (servis seçer)" else current,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (loading) CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+            else TextButton(onClick = { load() }) { Text(if (models == null) "Modelleri listele" else "Yenile") }
+        }
+        error?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error) }
+        models?.takeIf { it.isNotEmpty() }?.let { list ->
+            val best = AssistantClient.recommendedModel(list)
+            if (best != null && best != current) {
+                TextButton(onClick = { onPick(best) }) { Text("Önerileni seç: $best", maxLines = 1) }
+            }
+            val ordered = listOf(AssistantConfig.EVREN_MODEL) + list.sortedByDescending { AssistantClient.modelScore(it) }.filter { it != AssistantConfig.EVREN_MODEL }
+            ordered.forEach { id ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clickable { onPick(id) },
+                ) {
+                    RadioButton(selected = id == current, onClick = { onPick(id) })
+                    Text(
+                        if (id == AssistantConfig.EVREN_MODEL) "auto (servis seçer)" else id,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (id == best) Text("Önerilen", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            Text(
+                "Seçince \"Kaydet ve dene\" de. Cevaplar kötü olursa başka bir modeli dene.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }

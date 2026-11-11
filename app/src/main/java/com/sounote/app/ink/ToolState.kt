@@ -54,6 +54,18 @@ data class FavoritePen(
 )
 
 /** Seçili araç ve her aracın kendi ayarları. Kalınlıklar mm (sayfa üzerinde). */
+/** Kalemin yan düğmesine basılıyken yazınca ne olsun. */
+enum class StylusHold(val label: String) { ERASER("Silgi"), NONE("Kapalı") }
+
+/** Kalem kâğıda değmeden yan düğmeye basınca ne olsun. */
+enum class StylusClick(val label: String) {
+    SWITCH_ERASER("Kalem ↔ silgi"),
+    SWITCH_HIGHLIGHTER("Kalem ↔ fosforlu"),
+    SWITCH_LASSO("Kalem ↔ seçim"),
+    UNDO("Geri al"),
+    NONE("Kapalı"),
+}
+
 data class ToolState(
     val tool: Tool = Tool.PEN,
     val penType: PenType = PenType.FOUNTAIN,
@@ -84,6 +96,10 @@ data class ToolState(
     val tapeWidthMm: Float = 6f,
     /** Açıkken tek parmak çizer, iki parmak kaydırır/yakınlaştırır. */
     val fingerDraw: Boolean = false,
+    /** Kalem yan düğmesi: basılı tutarken yaz (birinci/ikinci düğme) ve dokunmadan bas. */
+    val stylusHold: StylusHold = StylusHold.ERASER,
+    val stylusHold2: StylusHold = StylusHold.ERASER,
+    val stylusClick: StylusClick = StylusClick.SWITCH_ERASER,
     /** Yeni metin kutularının yazı boyutu (pt) ve rengi. */
     val textSizePt: Float = 14f,
     val textColor: Int = PEN_COLORS[0],
@@ -159,6 +175,9 @@ data class ToolState(
             .putString("shapeKind", shapeKind.name)
             .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
+            .putString("stylusHold", stylusHold.name)
+            .putString("stylusHold2", stylusHold2.name)
+            .putString("stylusClick", stylusClick.name)
             .putFloat("textSizePt", textSizePt)
             .putInt("textColor", textColor)
             .putString("favorites", JSONArray().apply {
@@ -249,6 +268,9 @@ data class ToolState(
                 shapeKind = enumOr(prefs.getString("shapeKind", null), d.shapeKind),
                 textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
+                stylusHold = enumOr(prefs.getString("stylusHold", null), d.stylusHold),
+                stylusHold2 = enumOr(prefs.getString("stylusHold2", null), d.stylusHold2),
+                stylusClick = enumOr(prefs.getString("stylusClick", null), d.stylusClick),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),
                 textColor = prefs.getInt("textColor", d.textColor),
                 favorites = loadFavorites(prefs.getString("favorites", null)),

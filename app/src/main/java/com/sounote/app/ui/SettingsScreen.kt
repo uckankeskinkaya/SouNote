@@ -311,6 +311,31 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 vm.updateTools(tools.copy(fingerDraw = it))
             }
         },
+        Entry(Category.NOTES, "Kalem düğmesi", "kalem düğme yan tuş focus pen xiaomi s pen silgi geri al buton") {
+            Column(Modifier.padding(bottom = 8.dp)) {
+                SettingRow(SouIcons.Stylus, "Kalem düğmesi", subtitle = "Xiaomi Focus Pen, S Pen ve yan düğmeli diğer kalemler")
+                Column(Modifier.padding(start = 56.dp, end = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Düğme basılıyken yaz", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        com.sounote.app.ink.StylusHold.entries.forEach { h ->
+                            FilterChip(selected = tools.stylusHold == h, onClick = { vm.updateTools(tools.copy(stylusHold = h, stylusHold2 = h)) }, label = { Text(h.label) })
+                        }
+                    }
+                    Text("Kâğıda değmeden düğmeye bas", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        com.sounote.app.ink.StylusClick.entries.forEach { c ->
+                            FilterChip(selected = tools.stylusClick == c, onClick = { vm.updateTools(tools.copy(stylusClick = c)) }, label = { Text(c.label) })
+                        }
+                    }
+                    Text(
+                        "Xiaomi'de kalem düğmeleri önce sistem kısayollarına (ekran görüntüsü, not) atanmıştır. Uygulamada çalışması için " +
+                            "tabletin Ayarlar'ındaki kalem (Xiaomi Focus Pen) sayfasından düğme kısayollarını kapat.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
         Entry(Category.NOTES, "Yazma desteği", "yazma desteği titreme yumuşat düzelt çizgi bağla stabilizatör") {
             Column {
                 SettingRow(SouIcons.Draw, "Yazma desteği", subtitle = if (tools.smoothing == 0f) "Kapalı" else "%${(tools.smoothing * 100).toInt()}")

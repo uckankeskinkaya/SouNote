@@ -452,6 +452,10 @@ private fun TopicCard(
             Text(if (open) "▲" else "▼", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (open) {
+            val topicPdfs = topic.resources.filter { it.isPdf }.map { Triple(course, topic, it) }
+            if (topicPdfs.isNotEmpty()) {
+                Box(Modifier.padding(horizontal = 12.dp)) { SummaryButton(vm, topic.name, topicPdfs, "Konu özeti") }
+            }
             topic.resources.forEach { res ->
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 val key = vm.doneKey(res)
@@ -603,6 +607,7 @@ private fun WeekList(vm: LibraryViewModel, onTopics: () -> Unit) {
                     val pdfs = weekRes.filter { it.third.isPdf }.distinctBy { it.third.url }
                     if (pdfs.isNotEmpty()) {
                         val have = pdfs.count { vm.downloadedDoc(it.first, it.third) != null }
+                        SummaryButton(vm, "Hafta $week", pdfs, "Haftanın özeti")
                         val bulk = vm.weekDownload
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(SouIcons.Download, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
@@ -705,4 +710,30 @@ private fun kindIcon(kind: String) = when (kind) {
     "audio" -> SouIcons.Headphones
     "html" -> SouIcons.Quiz
     else -> SouIcons.Link
+}
+
+/**
+ * Hafta ya da konu özeti: kütüphanedeki PDF'lerinden asistan özet çıkarır (başlıklar, kurallar, örnekler, kelimeler).
+ * PDF'ler henüz indirilmediyse önce indirmesi söylenir; cevap asistan penceresinde "Notlara kaydet" ile saklanır.
+ */
+@Composable
+private fun SummaryButton(vm: LibraryViewModel, title: String, items: List<Triple<Course, Topic, Resource>>, label: String) {
+    var open by remember { mutableStateOf(false) }
+    val docs = items.mapNotNull { (c, _, r) -> vm.downloadedDoc(c, r) }.distinctBy { it.id }
+    TextButton(onClick = {
+        if (docs.isEmpty()) vm.showMessage("Özet için önce bu PDF'leri indir (Hepsini indir ya da tek tek İndir)") else open = true
+    }) {
+        Icon(SouIcons.StarShine, contentDescription = null, modifier = Modifier.size(18.dp))
+        Text("  $label", maxLines = 1)
+    }
+    if (open) {
+        val missing = items.size - docs.size
+        AssistantDialog(
+            vm,
+            AssistantSource.Course(title, docs),
+            prefill = "\"$title\" için bu PDF'lerden tek sayfalık bir özet çıkar: ana başlıklar, kurallar ve kalıplar, birer örnek cümle, " +
+                "önemli kelimeler (Türkçe anlamlarıyla) ve sınavda çıkabilecek 3 soru." +
+                if (missing > 0) " (Bazı PDF'ler henüz indirilmedi; sadece verilenlere göre özetle.)" else "",
+        ) { open = false }
+    }
 }

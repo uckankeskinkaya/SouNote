@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.RadioButton
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -168,14 +171,15 @@ internal fun AssistantSetup(config: AssistantConfig, onSave: (AssistantConfig) -
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Servis:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = { url = AssistantConfig.EVREN_URL; model = AssistantConfig.EVREN_MODEL }) { Text("Evren") }
-                TextButton(onClick = { url = AssistantConfig.DEEPSEEK_URL; model = AssistantConfig.DEEPSEEK_MODEL }) { Text("DeepSeek") }
+                TextButton(onClick = { url = AssistantConfig.DEEPSEEK_URL; model = AssistantConfig.DEEPSEEK_MODEL }) { Text("DeepSeek API") }
             }
-        }
-
-        if (trimmed.isNotBlank()) {
-            ModelPicker(current = model, config = { current() }, onPick = { model = it; test = TestState.Idle })
+            // Model seçimi: anahtar girilince servisin modelleri gelir, aileye basınca o ailenin en uygun modeli seçilir
+            if (trimmed.isNotBlank() && url.isNotBlank()) {
+                ModelPicker(current = model, url = url, key = trimmed, config = { current() }, onPick = { model = it; test = TestState.Idle })
+            }
         }
 
         when (val t = test) {
@@ -253,30 +257,41 @@ private fun InfoLine(icon: androidx.compose.ui.graphics.vector.ImageVector, text
     }
 }
 
+/** Model aileleri: düğmeye basınca listede o aileden en uygun model seçilir. */
+private val MODEL_FAMILIES = listOf(
+    "DeepSeek" to "deepseek", "GLM" to "glm", "Qwen" to "qwen", "Llama" to "llama", "Gemma" to "gemma",
+    "GPT-OSS" to "gpt-oss", "Mistral" to "mistral", "Kimi" to "kimi", "Phi" to "phi",
+)
+
 /**
- * Model seçimi: anahtarla servisten listeyi çeker, asistan işleri için en uygun görüneni "Önerilen" diye işaretler.
- * "auto" Evren'in kendi seçimidir; bazı modeller zayıf kaldığı için buradan sabit bir model seçilebilir.
+ * Model seçimi (Gelişmiş): anahtarla servisten model listesini çeker. Ailelerin (DeepSeek, GLM, Qwen…) düğmesine basınca
+ * o ailenin en uygun modeli seçilir; "Otomatik" servisin kendi seçimi ("auto"). Tek tek modeller "Tüm modeller" altında.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-private fun ModelPicker(current: String, config: () -> AssistantConfig, onPick: (String) -> Unit) {
-    val scope = rememberCoroutineScope()
+private fun ModelPicker(current: String, url: String, key: String, config: () -> AssistantConfig, onPick: (String) -> Unit) {
     var models by remember { mutableStateOf<List<String>?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    fun load() {
+    var showAll by remember { mutableStateOf(false) }
+    var reload by remember { mutableStateOf(0) }
+    // Anahtar ya da adres değişince listeyi kendiliğinden getir (yazarken her harfte istek atmasın diye kısa bekleme)
+    LaunchedEffect(url, key, reload) {
+        delay(600)
         loading = true
         error = null
-        scope.launch {
-            val r = withContext(Dispatchers.IO) { runCatching { AssistantClient.models(config()) } }
-            loading = false
-            r.onSuccess { list ->
-                models = list
-                if (list.isEmpty()) error = "Servis model listesi vermedi"
-            }.onFailure { error = it.message ?: "Model listesi alınamadı" }
+        val r = withContext(Dispatchers.IO) { runCatching { AssistantClient.models(config()) } }
+        loading = false
+        r.onSuccess { list ->
+            models = list
+            if (list.isEmpty()) error = "Servis model listesi vermedi; model adını yukarıya elle yazabilirsin"
+        }.onFailure {
+            models = null
+            error = it.message ?: "Model listesi alınamadı"
         }
     }
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
@@ -285,40 +300,56 @@ private fun ModelPicker(current: String, config: () -> AssistantConfig, onPick: 
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Model", style = MaterialTheme.typography.labelLarge)
+                Text("Model seç", style = MaterialTheme.typography.labelLarge)
                 Text(
-                    if (current == AssistantConfig.EVREN_MODEL) "auto (servis seçer)" else current,
+                    if (current == AssistantConfig.EVREN_MODEL) "Otomatik (servis seçer)" else current,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
             }
             if (loading) CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-            else TextButton(onClick = { load() }) { Text(if (models == null) "Modelleri listele" else "Yenile") }
+            else TextButton(onClick = { reload++ }) { Text("Yenile") }
         }
         error?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error) }
-        models?.takeIf { it.isNotEmpty() }?.let { list ->
+        val list = models.orEmpty()
+        if (list.isNotEmpty()) {
             val best = AssistantClient.recommendedModel(list)
-            if (best != null && best != current) {
-                TextButton(onClick = { onPick(best) }) { Text("Önerileni seç: $best", maxLines = 1) }
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FilterChip(
+                    selected = current == AssistantConfig.EVREN_MODEL,
+                    onClick = { onPick(AssistantConfig.EVREN_MODEL) },
+                    label = { Text("Otomatik") },
+                )
+                if (best != null) {
+                    FilterChip(selected = current == best, onClick = { onPick(best) }, label = { Text("Önerilen") })
+                }
+                MODEL_FAMILIES.forEach { (label, tag) ->
+                    val family = list.filter { tag in it.lowercase() }
+                    if (family.isNotEmpty()) {
+                        FilterChip(
+                            selected = tag in current.lowercase(),
+                            onClick = { onPick(family.maxBy { AssistantClient.modelScore(it) }) },
+                            label = { Text(label) },
+                        )
+                    }
+                }
             }
-            val ordered = listOf(AssistantConfig.EVREN_MODEL) + list.sortedByDescending { AssistantClient.modelScore(it) }.filter { it != AssistantConfig.EVREN_MODEL }
-            ordered.forEach { id ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().clickable { onPick(id) },
-                ) {
-                    RadioButton(selected = id == current, onClick = { onPick(id) })
-                    Text(
-                        if (id == AssistantConfig.EVREN_MODEL) "auto (servis seçer)" else id,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (id == best) Text("Önerilen", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "Listeyi gizle" else "Tüm modeller (${list.size})") }
+            if (showAll) {
+                list.sortedByDescending { AssistantClient.modelScore(it) }.forEach { id ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().clickable { onPick(id) },
+                    ) {
+                        RadioButton(selected = id == current, onClick = { onPick(id) })
+                        Text(id, style = MaterialTheme.typography.bodySmall, maxLines = 1, modifier = Modifier.weight(1f))
+                        if (id == best) Text("Önerilen", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
             Text(
-                "Seçince \"Kaydet ve dene\" de. Cevaplar kötü olursa başka bir modeli dene.",
+                "Seçince \"Kaydet ve dene\" de. Bir model kötü cevap verirse başka aileyi dene.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

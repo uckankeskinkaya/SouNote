@@ -153,6 +153,7 @@ yazı stüdyosunun metin yardımcıları data/Writing.kt EssayText. Çalışma s
 ## SouNote 3.0 (✅ yayınlandı build-124, 24 Ekim; PR #5 ile main)
 3.0.1 yayınlandı build-127; 3.1 yayınlandı build-138 (26 Ekim, PR #6 ile main). 3.2 yayınlandı build-145 (27 Ekim): RenderNode kaydı sistemce silinirse
 (hasDisplayList false) yeniden kaydedilir + pencere görünür olunca inkNodes atılır (notlar kalem değene kadar görünmüyordu).
+3.3 yayınlandı build-166 (11 Kasım): Listening, yan yana belge, toplu indirme, sınav günü kartı, not birleştirme, model seçici, kalem düğmesi, hafta 7–8.
 Tanıtım videosu sesli: .github/video/voice.mp3 + voice-asistan.mp3 (INSERTS), voice.txt paragrafları, align.py Whisper (ses ffmpeg ile çözülür). Otomatik yedek zip'i herkese açık ders klasöründeydi:
 Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörüne taşındı; uygulamadaki otomatik yedek klasörü de oraya çevrilmeli.
 - Tasarım: sade, emoji yok. Simgeler ui/Icons.kt SouIcons (Material Symbols Rounded; tools/make_icons.py ile üretilir, yeni simge = NAMES'e ekle).

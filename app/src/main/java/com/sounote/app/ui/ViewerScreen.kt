@@ -315,9 +315,6 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
         }
         when (t.stylusClick) {
             com.sounote.app.ink.StylusClick.SWITCH_ERASER -> switchTo(Tool.ERASER)
-            com.sounote.app.ink.StylusClick.SWITCH_HIGHLIGHTER -> switchTo(Tool.HIGHLIGHTER)
-            com.sounote.app.ink.StylusClick.SWITCH_LASSO -> switchTo(Tool.LASSO)
-            com.sounote.app.ink.StylusClick.UNDO -> ink.undo()
             com.sounote.app.ink.StylusClick.NONE -> Unit
         }
     }

@@ -218,8 +218,7 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   ui/ExamDayCard.kt (examDayTarget: sınav/sunum 36 saat kala → başladıktan 2 saat sonrasına; HERO modülünde), konular, PDF'ler
   (downloadWeek(EXAM_DOWNLOAD=-1)), deneme sınavı (konuların çoğunun dersi), kart tekrarı.
 - (🧪, build-160/161+) Asistan model seçici (Gelişmiş; AssistantSetup ModelPicker: GET /models anahtarla, MODEL_FAMILIES düğmeleri,
-  AssistantClient.recommendedModel/modelScore; Evren /v1/models anahtarsız açılmıyor). Kalem düğmesi: ToolState.stylusHold/stylusHold2
-  (basılıyken yaz: ERASER/NONE; BUTTON_STYLUS_PRIMARY|BUTTON_SECONDARY, STYLUS_SECONDARY|TERTIARY) + stylusClick (dokunmadan bas:
+  AssistantClient.recommendedModel/modelScore; Evren /v1/models anahtarsız açılmıyor). Kalem düğmesi (kullanıcı: geçici silgi istemedi, sadece kalem ↔ silgi): ToolState.stylusClick (SWITCH_ERASER/NONE;
   PdfDocumentView.onGenericMotionEvent ACTION_BUTTON_PRESS ya da tuş 308–311 → ViewerScreen.stylusClick, 300 ms tekrar süzgeci).
   Xiaomi Focus Pen düğmeleri önce sistem kısayollarına atalı; tablette denenmedi. Hafta/konu özeti: CoursesScreen SummaryButton →
   AssistantDialog(AssistantSource.Course(başlık, indirilmiş PDF'ler), prefill özet isteği).

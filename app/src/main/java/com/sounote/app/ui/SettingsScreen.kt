@@ -315,13 +315,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
             Column(Modifier.padding(bottom = 8.dp)) {
                 SettingRow(SouIcons.Stylus, "Kalem düğmesi", subtitle = "Xiaomi Focus Pen, S Pen ve yan düğmeli diğer kalemler")
                 Column(Modifier.padding(start = 56.dp, end = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Düğme basılıyken yaz", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        com.sounote.app.ink.StylusHold.entries.forEach { h ->
-                            FilterChip(selected = tools.stylusHold == h, onClick = { vm.updateTools(tools.copy(stylusHold = h, stylusHold2 = h)) }, label = { Text(h.label) })
-                        }
-                    }
-                    Text("Kâğıda değmeden düğmeye bas", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Düğmeye basınca", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         com.sounote.app.ink.StylusClick.entries.forEach { c ->
                             FilterChip(selected = tools.stylusClick == c, onClick = { vm.updateTools(tools.copy(stylusClick = c)) }, label = { Text(c.label) })

@@ -32,7 +32,6 @@ import com.sounote.app.ink.EraserMode
 import com.sounote.app.ink.GuideKind
 import com.sounote.app.ink.InkDocument
 import com.sounote.app.ink.LayerSet
-import com.sounote.app.ink.StylusHold
 import com.sounote.app.ink.Clip
 import com.sounote.app.ink.ImageItem
 import com.sounote.app.ink.Images
@@ -1009,7 +1008,7 @@ class PdfDocumentView(context: Context) : View(context) {
         return super.onHoverEvent(event)
     }
 
-    /** Kalem kâğıda değmeden yan düğmeye basıldı (true = birinci düğme). Klavye tuşu olarak da gelebilir: ViewerScreen. */
+    /** Kalemin yan düğmesine basıldı (true = birinci düğme): kalem ↔ silgi. Klavye tuşu olarak da gelebilir: ViewerScreen. */
     var onStylusButton: ((primary: Boolean) -> Unit)? = null
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
@@ -1025,15 +1024,6 @@ class PdfDocumentView(context: Context) : View(context) {
         return super.onGenericMotionEvent(event)
     }
 
-    /**
-     * Yan düğme basılıyken yazınca silgi mi: kalemler düğmeyi farklı bildirir (S Pen, Xiaomi Focus Pen, USI kalemleri:
-     * BUTTON_STYLUS_PRIMARY/SECONDARY ya da fare gibi BUTTON_SECONDARY/TERTIARY); ayarlarda iki düğme ayrı seçilir.
-     */
-    private fun stylusButtonErases(state: Int): Boolean {
-        val primary = (state and (MotionEvent.BUTTON_STYLUS_PRIMARY or MotionEvent.BUTTON_SECONDARY)) != 0
-        val secondary = (state and (MotionEvent.BUTTON_STYLUS_SECONDARY or MotionEvent.BUTTON_TERTIARY)) != 0
-        return (primary && tools.stylusHold == StylusHold.ERASER) || (secondary && tools.stylusHold2 == StylusHold.ERASER)
-    }
 
     private fun isStylusTool(type: Int) =
         type == MotionEvent.TOOL_TYPE_STYLUS || type == MotionEvent.TOOL_TYPE_ERASER
@@ -1071,8 +1061,7 @@ class PdfDocumentView(context: Context) : View(context) {
                         return
                     }
                     val erase = tools.tool == Tool.ERASER ||
-                        event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER ||
-                        stylusButtonErases(event.buttonState)
+                        event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER
                     beginInput(event, idx, fromStylus = true, erase = erase)
                 }
             }

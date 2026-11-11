@@ -883,7 +883,10 @@ private fun PenGestureSettings(vm: LibraryViewModel, tools: com.sounote.app.ink.
                 )
             }
             if (vm.penSignals.isNotEmpty()) {
-                Text("Son gelen: " + vm.penSignals.first(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Son gelenler:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                vm.penSignals.take(4).forEach {
+                    Text("• $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             Text("Tanıtılmamış kalem düğmesine basınca", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

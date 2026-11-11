@@ -1097,6 +1097,13 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         return true
     }
 
+    /** Tanıtma sırasında gelen, harekete bağlanmayan olay (ekranda gösterilir). */
+    fun logPenEvent(label: String) {
+        if (penSignals.firstOrNull() == label) return
+        penSignals.add(0, label)
+        while (penSignals.size > 6) penSignals.removeAt(penSignals.lastIndex)
+    }
+
     private fun defaultPenAction(name: String) = when (name) {
         PEN_GESTURE_NAMES[0] -> com.sounote.app.ink.StylusClick.SWITCH_ERASER
         PEN_GESTURE_NAMES[1] -> com.sounote.app.ink.StylusClick.UNDO

@@ -156,8 +156,40 @@ class SouNoteActivity : ComponentActivity() {
         return vm.onPenSignal("btn:$b", "kalem düğmesi $b")
     }
 
-    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean =
-        penButton(ev) || super.dispatchGenericMotionEvent(ev)
+    private var lastHoverButtons = 0
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        if (penButton(ev)) return true
+        val learning = vm.penLearning != null
+        when (ev.actionMasked) {
+            // Kaydırma hareketi sayfa çevirmek için kaydırma olayı olarak gelebilir
+            MotionEvent.ACTION_SCROLL -> {
+                val v = ev.getAxisValue(MotionEvent.AXIS_VSCROLL)
+                if (v != 0f && !vm.locked) {
+                    val sig = if (v > 0) "scroll:up" else "scroll:down"
+                    if ((learning || vm.tools.penGestures.containsKey(sig)) &&
+                        vm.onPenSignal(sig, if (v > 0) "yukarı kaydırma olayı" else "aşağı kaydırma olayı")
+                    ) return true
+                }
+            }
+            MotionEvent.ACTION_HOVER_ENTER, MotionEvent.ACTION_HOVER_MOVE, MotionEvent.ACTION_HOVER_EXIT -> {
+                // Hareket, kalem havadayken düğme durumu olarak gelebilir
+                val b = ev.buttonState
+                if (b != lastHoverButtons) {
+                    lastHoverButtons = b
+                    if (learning && b != 0 && vm.onPenSignal("btn:$b", "kalem düğme durumu $b")) return true
+                }
+            }
+            else -> if (learning) vm.logPenEvent("olay ${MotionEvent.actionToString(ev.actionMasked)} (bağlanmadı)")
+        }
+        return super.dispatchGenericMotionEvent(ev)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Sıkıştırma gibi hareketler sistem panelini açar: uygulamaya sinyal gelmez, sadece pencere odağı gider
+        if (!hasFocus && vm.penLearning != null) vm.logPenEvent("sistem bir pencere açtı (hareketi HyperOS kullandı)")
+    }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (vm.penLearning != null && ev.actionMasked == MotionEvent.ACTION_BUTTON_PRESS) {

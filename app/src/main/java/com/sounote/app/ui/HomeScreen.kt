@@ -234,6 +234,12 @@ fun HomeScreen(vm: LibraryViewModel) {
     fun module(m: HomeModule, index: Int, modifier: Modifier) {
         when (m) {
             HomeModule.HERO -> {
+                val today = todayLesson(vm)
+                if (today.isNotEmpty()) {
+                    Appear(index, modifier) {
+                        TodayLessonCard(vm, today)
+                    }
+                }
                 // Sınavdan önceki gün ve sınav günü: konular, PDF'ler, deneme sınavı
                 examDayTarget(vm)?.let { e ->
                     Appear(index, modifier) {

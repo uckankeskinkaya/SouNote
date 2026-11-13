@@ -254,7 +254,7 @@ Kurallar:
     }
 
     /** Deneme sınavı sorusu: 4 şık, doğru şıkkın sırası ve kısa açıklama. */
-    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String, val topic: String = "")
+    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String, val topic: String = "", val source: String = "")
 
     /**
      * Deneme sınavı: metinden (yoksa konu başlıklarından) çoktan seçmeli sorular.
@@ -265,7 +265,8 @@ Kurallar:
         val material = if (source.isBlank()) {
             "No course text is given: write the questions from the topic title, at Level 4 (B1+, SpeakOut B1+) exam standard."
         } else {
-            "Base the questions ONLY on the course material below (its grammar points, vocabulary and texts):\n<<<\n${source.take(14_000)}\n>>>"
+            "Each item must include a \"source\": a SHORT exact quote (5-15 words, copied verbatim from the course material) that supports the correct answer. For grammar items, quote the example/rule sentence they are based on.\n" +
+                "Base the questions ONLY on the course material below (its grammar points, vocabulary and texts):\n<<<\n${source.take(14_000)}\n>>>"
         }
         val seen = HashSet<String>()
         val kept = ArrayList<QuestionQuality.Mcq>()
@@ -298,14 +299,14 @@ Return ONLY a JSON array, nothing else:
                 val o = arr.optJSONObject(i) ?: return@mapNotNull null
                 val opts = o.optJSONArray("options") ?: return@mapNotNull null
                 val t = o.optString("topic").trim().let { name -> topics.firstOrNull { it.equals(name, ignoreCase = true) }.orEmpty() }
-                QuestionQuality.clean(QuestionQuality.Mcq(o.optString("q"), (0 until opts.length()).map { opts.optString(it) }, o.optInt("answer", -1), o.optString("why"), t))
+                QuestionQuality.clean(QuestionQuality.Mcq(o.optString("q"), (0 until opts.length()).map { opts.optString(it) }, o.optInt("answer", -1), o.optString("why"), t, o.optString("source").trim()))
             }
             val unique = QuestionQuality.distinctBy(fresh, seen) { it.q }
             val verdict = QuestionQuality.verify(strong, unique)
             kept += unique.filterIndexed { i, _ -> verdict[i] }.take(need)
         }
         if (kept.isEmpty()) throw IOException("Uygun soru çıkarılamadı, tekrar dene")
-        return kept.map { Question(it.q, it.options, it.answer, it.why, it.topic) }
+        return kept.map { Question(it.q, it.options, it.answer, it.why, it.topic, it.source) }
     }
 
     /**
@@ -472,6 +473,16 @@ object PdfText {
             stripper.extractRegions(doc.getPage(page))
             stripper.getTextForRegion("sel").replace(Regex("[ \\t]+"), " ").trim().take(maxChars)
         }
+
+    /** İlk [max] sayfanın metni, sayfa sayfa (PDF bir kez açılır). */
+    fun pages(context: Context, source: Uri, max: Int = 60): List<String> {
+        val doc = load(context, source)
+        return doc.use {
+            (1..minOf(doc.numberOfPages, max)).map { p ->
+                runCatching { PDFTextStripper().apply { startPage = p; endPage = p }.getText(doc) }.getOrDefault("")
+            }
+        }
+    }
 
     fun extract(context: Context, source: Uri, from: Int, to: Int, maxChars: Int = 16_000): String {
         val doc = load(context, source)

@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,9 +53,12 @@ import com.sounote.app.ExamReminders
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.AssistantClient
 import com.sounote.app.data.Course
+import com.sounote.app.data.DocRef
 import com.sounote.app.data.Exam
 import com.sounote.app.data.Topic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -252,6 +256,8 @@ fun PracticeSetupDialog(vm: LibraryViewModel, course: Course, initialTopic: Topi
 private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topic?, count: Int, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     var questions by remember { mutableStateOf<List<AssistantClient.Question>?>(null) }
+    var usedDocs by remember { mutableStateOf<List<DocRef>>(emptyList()) }
+    var searchingSource by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var index by remember { mutableStateOf(0) }
     var chosen by remember { mutableStateOf(-1) }
@@ -269,6 +275,7 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
             val r = runCatching {
                 // Konunun (ya da dersin) indirilmiş PDF'lerinin metni; yoksa konu başlıklarından
                 val docs = (topic?.let { t -> t.resources.mapNotNull { vm.downloadedDoc(course, it) } } ?: vm.courseDocs(course)).take(6)
+                usedDocs = docs
                 val per = 14_000 / docs.size.coerceAtLeast(1)
                 val sb = StringBuilder()
                 for (d in docs) sb.append("### ").append(d.title).append('\n').append(runCatching { vm.documentText(d, 0, 9_999) }.getOrDefault("").take(per)).append("\n\n")
@@ -280,6 +287,46 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
             r.onSuccess { questions = it }.onFailure {
                 ErrorLog.record("Deneme sınavı", it)
                 error = it.message ?: "Sorular hazırlanamadı"
+            }
+        }
+    }
+    fun showSource(questionIndex: Int, quote: String) {
+        if (searchingSource != null) return
+        searchingSource = questionIndex
+        val docs = usedDocs
+        scope.launch {
+            try {
+                val hit = withContext(Dispatchers.IO) {
+                    val whitespace = Regex("\\s+")
+                    fun normalize(text: String) = text.lowercase(Locale.ROOT).replace(whitespace, " ").trim()
+                    val normalizedQuote = normalize(quote)
+                    val prefix = normalizedQuote.split(' ').take(6).joinToString(" ")
+                    var fallback: Pair<DocRef, Int>? = null
+                    for (doc in docs) {
+                        coroutineContext.ensureActive()
+                        val pages = try {
+                            vm.documentPages(doc)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            continue
+                        }
+                        pages.forEachIndexed { pageIndex, pageText ->
+                            val normalizedPage = normalize(pageText)
+                            if (normalizedPage.contains(normalizedQuote)) return@withContext doc to pageIndex
+                            if (fallback == null && normalizedPage.contains(prefix)) fallback = doc to pageIndex
+                        }
+                    }
+                    fallback
+                }
+                if (hit != null) {
+                    onDismiss()
+                    vm.openAt(hit.first, hit.second)
+                } else {
+                    vm.showMessage("Kaynak cümle PDF'te bulunamadı")
+                }
+            } finally {
+                searchingSource = null
             }
         }
     }
@@ -327,7 +374,7 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                             Text("$right / ${qs.size} doğru", style = MaterialTheme.typography.headlineSmall)
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedButton(onClick = onDismiss) { Text("Kapat") }
-                                Button(onClick = ::load) { Text("Yeni test") }
+                                Button(onClick = ::load, enabled = searchingSource == null) { Text("Yeni test") }
                             }
                             TopicAnalysis(vm, course, qs, answers, onOpenDoc = { d -> onDismiss(); vm.open(d) })
                             if (qs.indices.any { answers.getOrNull(it) != qs[it].answer }) {
@@ -340,6 +387,23 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                                         answers.getOrNull(i)?.let { a -> if (a >= 0) Text("Senin cevabın: ${q.options[a]}", color = sou.danger, style = MaterialTheme.typography.bodySmall) }
                                         Text("Doğrusu: ${q.options[q.answer]}", color = sou.success, style = MaterialTheme.typography.bodySmall)
                                         if (q.why.isNotBlank()) Text(q.why, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (q.source.isNotBlank()) {
+                                            Text(
+                                                "Kaynak: “${q.source}”",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontStyle = FontStyle.Italic,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                            TextButton(
+                                                onClick = { showSource(i, q.source) },
+                                                enabled = searchingSource == null,
+                                            ) {
+                                                if (searchingSource == i) {
+                                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                                }
+                                                Text("Kaynakta göster", modifier = Modifier.padding(start = if (searchingSource == i) 8.dp else 0.dp))
+                                            }
+                                        }
                                     }
                                 }
                             }

@@ -117,6 +117,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var hitIndex by remember { mutableStateOf(0) }
     var searching by remember { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
+    var inkHistoryDialog by remember(doc.id, vm.docVersion) { mutableStateOf(false) }
     var insertAfterCurrent by remember { mutableStateOf(false) }
     var goToPageDialog by remember { mutableStateOf(false) }
     var recordingsDialog by remember { mutableStateOf(false) }
@@ -143,6 +144,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     LaunchedEffect(doc.id) {
         vm.pendingSideDocId?.let { id -> sideDoc = vm.imported.firstOrNull { it.id == id } }
         vm.pendingSideDocId = null
+    }
+    if (inkHistoryDialog) {
+        InkHistoryDialog(vm, doc, page?.first ?: 0, onDismiss = { inkHistoryDialog = false })
     }
     if (saveSetup) {
         var name by remember { mutableStateOf(doc.title) }
@@ -580,6 +584,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 text = { Text("Çalışma düzenini kaydet") },
                                 leadingIcon = { Icon(SouIcons.DashboardCustomize, contentDescription = null) },
                                 onClick = { moreMenu = false; saveSetup = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Not geçmişi") },
+                                leadingIcon = { Icon(SouIcons.History, contentDescription = null) },
+                                onClick = { moreMenu = false; inkHistoryDialog = true },
                             )
                             DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },

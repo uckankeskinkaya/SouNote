@@ -1023,6 +1023,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Belgenin metni (asistana bağlam): [from]..[to] sayfaları. */
+    /** Belgenin ilk [max] sayfasının metni, sayfa sayfa. */
+    suspend fun documentPages(doc: DocRef, max: Int = 60): List<String> = withContext(Dispatchers.IO) {
+        com.sounote.app.data.PdfText.pages(getApplication(), repo.resolveForOpen(doc).uri, max)
+    }
+
     suspend fun documentText(doc: DocRef, from: Int, to: Int): String = withContext(Dispatchers.IO) {
         com.sounote.app.data.PdfText.extract(getApplication(), repo.resolveForOpen(doc).uri, from, to)
     }
@@ -1812,6 +1817,26 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     /** Açık belgenin notları. Belge açılırken diskten yüklenir. */
     var ink by mutableStateOf(InkDocument())
         private set
+
+    fun pageHistory(doc: DocRef, page: Int): List<Long> = store.history(doc.id, page)
+
+    fun restorePageVersion(doc: DocRef, page: Int, stamp: Long) {
+        if (doc.id != openDoc?.id || pagesBusy) return
+        val document = ink
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { store.loadVersion(doc.id, page, stamp) }
+            }
+            if (doc.id != openDoc?.id || ink !== document || pagesBusy) return@launch
+            result.onSuccess { content ->
+                ink.commit(page, content)
+                showMessage("Sayfa notları geri yüklendi (geri al ile vazgeçebilirsin)")
+            }.onFailure {
+                ErrorLog.record("Not geçmişi yüklenemedi", it)
+                showMessage("Not geçmişi yüklenemedi")
+            }
+        }
+    }
 
     private fun attachInk(doc: DocRef, loaded: Map<Int, PageContent>) {
         detachInk()

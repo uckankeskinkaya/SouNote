@@ -138,6 +138,7 @@ fun MainShell(vm: LibraryViewModel) {
 
     BoxWithConstraints(Modifier.fillMaxSize().souBackground()) {
         val kind = if (maxWidth < 600.dp) NavKind.BAR else NavKind.RAIL
+        val tall = maxHeight >= 520.dp
         when (kind) {
             NavKind.BAR -> Scaffold(
                 bottomBar = {
@@ -158,7 +159,7 @@ fun MainShell(vm: LibraryViewModel) {
                 Box(Modifier.padding(inner).consumeWindowInsets(inner).fillMaxSize()) { content() }
             }
             else -> Row(Modifier.fillMaxSize()) {
-                SouRail(vm, tall = maxHeight >= 520.dp)
+                SouRail(vm, tall = tall)
                 Box(Modifier.weight(1f).fillMaxHeight()) { content() }
             }
         }

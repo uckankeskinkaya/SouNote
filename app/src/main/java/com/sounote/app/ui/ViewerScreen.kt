@@ -860,7 +860,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         modifier = Modifier.fillMaxSize(),
                     )
                     penRing?.let { at ->
-                        PenRingOverlay(at, tools, onPick = { vm.updateTools(it); penRing = null }, onDismiss = { penRing = null })
+                        PenRingOverlay(at, tools, onPick = { vm.updateTools(it) }, onDismiss = { penRing = null })
                     }
                     if (reading && vm.fullScreen) {
                         Row(

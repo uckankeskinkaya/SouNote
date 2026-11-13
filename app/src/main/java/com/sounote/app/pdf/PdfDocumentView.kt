@@ -1016,6 +1016,14 @@ class PdfDocumentView(context: Context) : View(context) {
     var penRingEnabled = true
     private var ringDownX = 0f
     private var ringDownY = 0f
+    /** Parmakla kıpırdatmadan basılı tutunca da halka açılır (parmakla yazma açıkken yarım çizgi atılır). */
+    private var fingerRingX = 0f
+    private var fingerRingY = 0f
+    private val fingerRingRunnable = Runnable {
+        if (multiTouch || scaledThisGesture) return@Runnable
+        if (tools.fingerDraw && drawPointerId != -1 && !inputFromStylus) cancelInput()
+        onPenRing?.invoke(fingerRingX, fingerRingY)
+    }
     private val ringRunnable = Runnable {
         if (drawPointerId != -1 && inputFromStylus && selMode == SelMode.NONE && textPage < 0) {
             cancelInput()
@@ -1140,6 +1148,25 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         trackTwoFingerTap(event)
+
+        // Parmakla basılı tutma → kalem halkası (kalem, fosforlu, silgi, şekil araçlarında)
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                removeCallbacks(fingerRingRunnable)
+                if (penRingEnabled && onPenRing != null && tools.tool != Tool.TEXT && tools.tool != Tool.LASSO) {
+                    fingerRingX = event.getX(0)
+                    fingerRingY = event.getY(0)
+                    postDelayed(fingerRingRunnable, 500)
+                }
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val i = event.findPointerIndex(event.getPointerId(0))
+                if (i >= 0 && kotlin.math.hypot(event.getX(i) - fingerRingX, event.getY(i) - fingerRingY) > 10 * resources.displayMetrics.density) {
+                    removeCallbacks(fingerRingRunnable)
+                }
+            }
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> removeCallbacks(fingerRingRunnable)
+        }
 
         if (tools.tool == Tool.LASSO && handleFingerSelection(event)) return
 

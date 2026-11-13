@@ -136,6 +136,35 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Tablette ikinci belge yan yana (okumak için)
     var sideDoc by remember(doc.id) { mutableStateOf<DocRef?>(null) }
     var sidePicker by remember { mutableStateOf(false) }
+    var saveSetup by remember { mutableStateOf(false) }
+    // Kayıtlı çalışma düzeninden açıldıysa yan belge de gelsin
+    LaunchedEffect(doc.id) {
+        vm.pendingSideDocId?.let { id -> sideDoc = vm.imported.firstOrNull { it.id == id } }
+        vm.pendingSideDocId = null
+    }
+    if (saveSetup) {
+        var name by remember { mutableStateOf(doc.title) }
+        AlertDialog(
+            onDismissRequest = { saveSetup = false },
+            title = { Text("Çalışma düzenini kaydet") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text("Ad") })
+                    Text(
+                        listOfNotNull(
+                            "Belge: ${doc.title}",
+                            sideDoc?.let { "Yan belge: ${it.title}" },
+                            vm.listeningPlayer.res?.takeIf { vm.listeningMini }?.let { "Dinleme: ${it.title}" },
+                        ).joinToString("\n") + "\nKaldığın sayfa ve saniye kendiliğinden hatırlanır.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { vm.saveStudySetup(name, doc, sideDoc); saveSetup = false }) { Text("Kaydet") } },
+            dismissButton = { TextButton(onClick = { saveSetup = false }) { Text("Vazgeç") } },
+        )
+    }
     fun askRegion() {
         val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
         scope.launch {
@@ -545,6 +574,11 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                     },
                                 )
                             }
+                            DropdownMenuItem(
+                                text = { Text("Çalışma düzenini kaydet") },
+                                leadingIcon = { Icon(SouIcons.DashboardCustomize, contentDescription = null) },
+                                onClick = { moreMenu = false; saveSetup = true },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },
                                 onClick = {

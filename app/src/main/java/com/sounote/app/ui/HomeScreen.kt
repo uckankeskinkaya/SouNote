@@ -252,6 +252,17 @@ fun HomeScreen(vm: LibraryViewModel) {
                 }
             }
             HomeModule.CONTINUE -> {
+                if (vm.studySetups.isNotEmpty()) {
+                    Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionHeader("Çalışma düzenleri")
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            vm.studySetups.forEach { st -> StudySetupChip(st, onOpen = { vm.openStudySetup(st) }, onDelete = { vm.deleteStudySetup(st) }) }
+                        }
+                    }
+                }
                 if (empty) {
                     Appear(index, modifier) { StartCard(onNotebook = { newNotebook = true }, onImport = importPdf) }
                 } else if (recentDocs.isNotEmpty()) {
@@ -806,5 +817,35 @@ private fun ReviewCard(count: Int, onStart: () -> Unit) {
             Text("Yaklaşık ${(count * 20 + 59) / 60} dk", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         OutlinedButton(onClick = onStart) { Text("Başla") }
+    }
+}
+
+/** Kayıtlı çalışma düzeni: dokununca belge, yan belge ve dinleme kaydı birlikte açılır. */
+@Composable
+private fun StudySetupChip(s: LibraryViewModel.StudySetup, onOpen: () -> Unit, onDelete: () -> Unit) {
+    var confirm by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.card(12.dp).clickable(onClick = onOpen).padding(start = 12.dp, top = 6.dp, bottom = 6.dp, end = 2.dp),
+    ) {
+        Icon(SouIcons.DashboardCustomize, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        Column(Modifier.padding(start = 10.dp)) {
+            Text(s.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                listOfNotNull("Belge", s.sideDocId?.let { "yan belge" }, s.audioUrl?.let { "dinleme" }).joinToString(" · "),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = { confirm = true }) { Icon(SouIcons.Close, contentDescription = "Düzeni sil", modifier = Modifier.size(18.dp)) }
+    }
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { Text("Düzen silinsin mi?") },
+            text = { Text("\"${s.name}\" düzeni silinir; belgelerin ve notların silinmez.") },
+            confirmButton = { TextButton(onClick = { confirm = false; onDelete() }) { Text("Sil") } },
+            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Vazgeç") } },
+        )
     }
 }

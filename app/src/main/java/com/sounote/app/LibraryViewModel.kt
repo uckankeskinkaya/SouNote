@@ -921,6 +921,68 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (local != null) open(local) else downloadResource(course, topic, res)
     }
 
+    // ---- Kayıtlı çalışma düzenleri: belge + yan belge + dinleme kaydı (sayfa ve saniye zaten belge/kayıt başına saklanıyor) ----
+
+    data class StudySetup(val id: String, val name: String, val docId: String, val sideDocId: String?, val audioUrl: String?, val created: Long)
+
+    var studySetups by mutableStateOf(loadStudySetups())
+        private set
+
+    /** Belge ekranı açılınca yan yana açılacak belge (düzenden geldiyse). */
+    var pendingSideDocId by mutableStateOf<String?>(null)
+
+    private fun loadStudySetups(): List<StudySetup> = runCatching {
+        val arr = org.json.JSONArray(prefs.getString("studySetups", "[]"))
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            StudySetup(
+                o.getString("id"), o.optString("name"), o.getString("doc"),
+                o.optString("side").ifBlank { null }, o.optString("audio").ifBlank { null }, o.optLong("t"),
+            )
+        }
+    }.getOrDefault(emptyList())
+
+    private fun storeStudySetups(list: List<StudySetup>) {
+        studySetups = list
+        val arr = org.json.JSONArray()
+        list.forEach { s ->
+            arr.put(
+                org.json.JSONObject().put("id", s.id).put("name", s.name).put("doc", s.docId)
+                    .put("side", s.sideDocId ?: "").put("audio", s.audioUrl ?: "").put("t", s.created),
+            )
+        }
+        prefs.edit().putString("studySetups", arr.toString()).apply()
+    }
+
+    /** Açık belgeyi, yan belgeyi ve (belge ekranında sürüyorsa) dinleme kaydını bir düzen olarak saklar. Aynı adlı düzen güncellenir. */
+    fun saveStudySetup(name: String, doc: DocRef, side: DocRef?) {
+        val n = name.trim().ifBlank { doc.title }
+        val audio = listeningPlayer.res?.url?.takeIf { listeningMini }
+        val old = studySetups.firstOrNull { it.name.equals(n, ignoreCase = true) }
+        val s = StudySetup(old?.id ?: java.util.UUID.randomUUID().toString(), n, doc.id, side?.id, audio, System.currentTimeMillis())
+        storeStudySetups(listOf(s) + studySetups.filter { it.id != s.id })
+        showMessage(if (old != null) "\"$n\" düzeni güncellendi" else "\"$n\" düzeni kaydedildi")
+    }
+
+    fun deleteStudySetup(s: StudySetup) = storeStudySetups(studySetups.filter { it.id != s.id })
+
+    /** Düzeni açar: belge kaldığı sayfadan, yan belge, dinleme kaydı kaldığı saniyeden (duraklatılmış). Eksik olan atlanır. */
+    fun openStudySetup(s: StudySetup) {
+        val doc = imported.firstOrNull { it.id == s.docId }
+        if (doc == null) {
+            showMessage("Bu düzenin belgesi kütüphanede bulunamadı")
+            return
+        }
+        pendingSideDocId = s.sideDocId?.takeIf { id -> imported.any { it.id == id } }
+        val res = s.audioUrl?.let { url -> catalog.courses.asSequence().flatMap { it.topics.asSequence() }.flatMap { it.resources.asSequence() }.firstOrNull { it.url == url } }
+        if (res != null && listeningStore.downloaded(res)) {
+            if (listeningPlayer.load(res)) listeningMini = true
+        } else if (s.audioUrl != null) {
+            showMessage("Dinleme kaydı bulunamadı; belge açıldı")
+        }
+        open(doc)
+    }
+
     fun closeListeningMini() {
         listeningMini = false
         listeningPlayer.release()

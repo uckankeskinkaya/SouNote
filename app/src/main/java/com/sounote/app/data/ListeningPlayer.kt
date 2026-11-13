@@ -25,6 +25,19 @@ class ListeningPlayer(private val store: ListeningStore) {
     var loop by mutableStateOf(false)
         private set
 
+    /** A–B tekrarı: bölümün başı ve sonu (ms). İkisi de doluyken B'ye gelince A'ya döner. */
+    var abA by mutableStateOf<Int?>(null)
+        private set
+    var abB by mutableStateOf<Int?>(null)
+        private set
+
+    /** Tekrarlar arası bekleme (ms): cümleyi tekrar etmek/yazmak için. */
+    var abGap by mutableIntStateOf(0)
+        private set
+
+    /** Tekrar arası beklemede (oynatıcı duraklatıldı, süre dolunca sürer). */
+    private var gapUntil = 0L
+
     /** Kayıt sonuna gelince (çalışma serisi için). */
     var onCompleted: (() -> Unit)? = null
     private var mp: MediaPlayer? = null
@@ -52,6 +65,7 @@ class ListeningPlayer(private val store: ListeningStore) {
             res = r
             speed = 1f
             loop = false
+            clearAb()
             true
         } catch (e: Exception) {
             p.release()
@@ -62,6 +76,12 @@ class ListeningPlayer(private val store: ListeningStore) {
 
     fun toggle() {
         val p = mp ?: return
+        if (gapUntil != 0L) {
+            // Tekrar arası beklerken duraklat: bekleme iptal
+            gapUntil = 0L
+            playing = false
+            return
+        }
         if (p.isPlaying) {
             p.pause()
             playing = false
@@ -101,9 +121,54 @@ class ListeningPlayer(private val store: ListeningStore) {
         mp?.isLooping = loop
     }
 
-    /** Çalarken konumu okur (ekranlar 200 ms'de bir çağırır). */
+    /** A noktası: şu anki konum. B, A'dan önceyse silinir. */
+    fun markA() {
+        val p = mp ?: return
+        abA = p.currentPosition
+        if ((abB ?: Int.MAX_VALUE) <= p.currentPosition + 500) abB = null
+    }
+
+    /** B noktası: şu anki konum (A'dan en az 1 sn sonra olmalı); hemen A'ya döner. */
+    fun markB(): Boolean {
+        val p = mp ?: return false
+        val a = abA ?: return false
+        if (p.currentPosition < a + 1_000) return false
+        abB = p.currentPosition
+        seekTo(a)
+        return true
+    }
+
+    fun setAbGap(ms: Int) {
+        abGap = ms
+    }
+
+    fun clearAb() {
+        abA = null
+        abB = null
+        gapUntil = 0L
+    }
+
+    /** Çalarken konumu okur (ekranlar 200 ms'de bir çağırır); A–B tekrarını ve aradaki beklemeyi yürütür. */
     fun tick() {
-        mp?.let { position = it.currentPosition }
+        val p = mp ?: return
+        val now = android.os.SystemClock.uptimeMillis()
+        if (gapUntil != 0L) {
+            if (now >= gapUntil) {
+                gapUntil = 0L
+                p.start()
+            }
+            return
+        }
+        position = p.currentPosition
+        val a = abA
+        val b = abB
+        if (a != null && b != null && p.isPlaying && p.currentPosition >= b) {
+            seekTo(a)
+            if (abGap > 0) {
+                p.pause()
+                gapUntil = now + abGap
+            }
+        }
     }
 
     /** Kaydı kapatır, kaldığı yeri saklar. */
@@ -114,6 +179,7 @@ class ListeningPlayer(private val store: ListeningStore) {
         }
         mp = null
         res = null
+        clearAb()
         playing = false
         position = 0
         duration = 0

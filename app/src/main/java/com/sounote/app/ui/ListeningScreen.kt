@@ -151,6 +151,7 @@ fun ListeningScreen(vm: LibraryViewModel, course: Course, topic: Topic, res: Res
                             leadingIcon = { Icon(SouIcons.Replay, contentDescription = null, modifier = Modifier.size(18.dp)) },
                         )
                     }
+                    AbControls(vm)
                 }
 
                 // Not
@@ -255,6 +256,9 @@ fun ListeningMiniBar(vm: LibraryViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp),
         )
+        if (player.abA != null && player.abB != null) {
+            TextButton(onClick = { player.clearAb() }) { Text("A–B kapat") }
+        }
         TextButton(onClick = { player.seekBy(-5_000) }) { Text("−5") }
         IconButton(onClick = { player.toggle() }) {
             Icon(if (player.playing) SouIcons.Pause else SouIcons.PlayArrow, contentDescription = if (player.playing) "Duraklat" else "Çal")
@@ -288,4 +292,41 @@ private fun speedText(s: Float) = when (s) {
     0.75f -> "0,75×"
     1.25f -> "1,25×"
     else -> "1,5×"
+}
+
+/**
+ * A–B tekrarı: "A" bölümün başını, "B" sonunu işaretler; sonra bölüm aralarda isteğe bağlı beklemeyle tekrar tekrar çalar.
+ * Kaçırılan cümleyi dinleyip yazmak için.
+ */
+@Composable
+private fun AbControls(vm: LibraryViewModel) {
+    val player = vm.listeningPlayer
+    val a = player.abA
+    val b = player.abB
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Bölüm tekrarı", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+            OutlinedButton(onClick = { player.markA() }) { Text(if (a == null) "A" else "A ${clock(a)}") }
+            OutlinedButton(
+                onClick = { if (!player.markB()) vm.showMessage("Önce A'yı işaretle; B, A'dan en az 1 sn sonra olmalı") },
+                enabled = a != null,
+            ) { Text(if (b == null) "B" else "B ${clock(b)}") }
+            if (a != null) TextButton(onClick = { player.clearAb() }) { Text("Temizle") }
+        }
+        if (a != null && b != null) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Tekrarlar arası", modifier = Modifier.align(Alignment.CenterVertically), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                listOf(0 to "Beklemeden", 2_000 to "2 sn", 4_000 to "4 sn", 8_000 to "8 sn").forEach { (ms, label) ->
+                    FilterChip(selected = player.abGap == ms, onClick = { player.setAbGap(ms) }, label = { Text(label) })
+                }
+            }
+        } else {
+            Text(
+                if (a == null) "Tekrarlamak istediğin yerin başında A'ya, sonunda B'ye bas."
+                else "Şimdi bölümün sonunda B'ye bas.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }

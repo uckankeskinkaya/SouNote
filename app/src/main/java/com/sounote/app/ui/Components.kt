@@ -73,37 +73,17 @@ import androidx.compose.ui.unit.sp
 
 /** Kartların zemini (düz renk gereken yerler için): açık temada beyaz, koyu temada lacivert-mavi yüzey. */
 @Composable
-internal fun cardBackground(): Color =
-    if (LocalSouColors.current.isDark) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
+internal fun cardBackground(): Color = MaterialTheme.colorScheme.surface
 
-/**
- * Standart kart, logodaki cam kutucuk gibi: koyu temada yarı saydam lacivert-mavi, sol üstten ışıyan ince kenar;
- * açık temada beyaz, mavi ışıltılı kenar.
- */
+/** Standart kart (4.0): düz yüzey, ince gri kenar, 14 dp köşe. Parıltı ve degrade yok. */
 @Composable
-internal fun Modifier.card(radius: Dp = 18.dp): Modifier {
+internal fun Modifier.card(radius: Dp = 14.dp): Modifier {
     val shape = RoundedCornerShape(radius)
-    val sou = LocalSouColors.current
     val scheme = MaterialTheme.colorScheme
-    val dark = sou.isDark
-    val fill = if (dark) {
-        Brush.linearGradient(
-            listOf(
-                lerp(scheme.background, sou.glowA, 0.2f).copy(alpha = 0.8f),
-                lerp(scheme.background, sou.glowA, 0.08f).copy(alpha = 0.72f),
-            ),
-        )
-    } else {
-        Brush.linearGradient(listOf(Color.White, lerp(Color.White, scheme.background, 0.5f)))
-    }
-    val edge = Brush.linearGradient(
-        if (dark) listOf(sou.glowB.copy(alpha = 0.6f), sou.glowA.copy(alpha = 0.12f), sou.glowA.copy(alpha = 0.35f))
-        else listOf(sou.glowA.copy(alpha = 0.45f), sou.glowB.copy(alpha = 0.15f), sou.glowA.copy(alpha = 0.3f)),
-    )
     return this
         .clip(shape)
-        .background(fill)
-        .border(1.dp, edge, shape)
+        .background(cardBackground())
+        .border(1.dp, scheme.outlineVariant, shape)
 }
 
 /** Bölüm başlığı: başlık ve sağda "Tümü" gibi bir eylem. */
@@ -480,31 +460,6 @@ internal fun ProgressBar(
     }
 }
 
-/**
- * Uygulama zemini: logodaki gibi koyu lacivert üstünde mavi ve mor ışık parıltısı (açık temada çok hafif).
- * Renkler temadan gelir; ekran içerikleri bunun üstünde saydam zeminle çizilir.
- */
+/** Uygulama zemini (4.0): düz kâğıt/kömür tonu; ekran içerikleri bunun üstünde saydam zeminle çizilir. */
 @Composable
-internal fun Modifier.souBackground(): Modifier {
-    val scheme = MaterialTheme.colorScheme
-    val sou = LocalSouColors.current
-    val dark = sou.isDark
-    // Logodaki gibi: koyu zemin üstünde temanın ışıkları
-    val top = if (dark) lerp(scheme.background, sou.glowA, 0.12f) else lerp(scheme.background, sou.glowA, 0.06f)
-    val bottom = scheme.background
-    val glow1 = sou.glowA.copy(alpha = if (dark) 0.5f else 0.18f)
-    val glow2 = sou.glowB.copy(alpha = if (dark) 0.28f else 0.2f)
-    val glow3 = sou.glowA.copy(alpha = if (dark) 0.14f else 0.08f)
-    return drawBehind {
-        drawRect(Brush.verticalGradient(listOf(top, bottom)))
-        val r1 = size.maxDimension * 0.8f
-        val c1 = Offset(size.width * 0.92f, size.height * 0.0f)
-        drawCircle(Brush.radialGradient(listOf(glow1, Color.Transparent), center = c1, radius = r1), r1, c1)
-        val r2 = size.maxDimension * 0.65f
-        val c2 = Offset(size.width * 0.0f, size.height * 1.0f)
-        drawCircle(Brush.radialGradient(listOf(glow2, Color.Transparent), center = c2, radius = r2), r2, c2)
-        val r3 = size.maxDimension * 0.45f
-        val c3 = Offset(size.width * 0.25f, size.height * 0.4f)
-        drawCircle(Brush.radialGradient(listOf(glow3, Color.Transparent), center = c3, radius = r3), r3, c3)
-    }
-}
+internal fun Modifier.souBackground(): Modifier = background(MaterialTheme.colorScheme.background)

@@ -4,6 +4,9 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -58,15 +61,19 @@ import com.sounote.app.LibraryViewModel.NavStyle
 import com.sounote.app.LibraryViewModel.Tab
 import com.sounote.app.R
 
-/** Ana bölümler. Telefonun alt çubuğunda Ayarlar yok (ana sayfadaki ⚙ düğmesinden açılır). */
+/**
+ * Ana bölümler (4.0): Bugün, Kütüphane, Çalış, Takvim. Yazı (Writing) Çalış'ın içinden açılır, Ayarlar menünün altında
+ * (telefonda ana sayfadaki ⚙ düğmesinden).
+ */
 private val TABS = listOf(
-    Tab.HOME to "Ana sayfa",
+    Tab.HOME to "Bugün",
     Tab.LIBRARY to "Kütüphane",
-    Tab.COURSES to "Dersler",
-    Tab.EXAMS to "Planlayıcı",
-    Tab.WRITING to "Yazı",
-    Tab.SETTINGS to "Ayarlar",
+    Tab.COURSES to "Çalış",
+    Tab.EXAMS to "Takvim",
 )
+
+/** Menüde hangi bölüm seçili görünsün: Writing ekranı Çalış'ın altında. */
+private fun railTab(t: Tab) = if (t == Tab.WRITING) Tab.COURSES else t
 
 @Composable
 private fun TabIcon(tab: Tab, selected: Boolean) {
@@ -130,59 +137,17 @@ fun MainShell(vm: LibraryViewModel) {
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().souBackground()) {
-        val kind = when {
-            maxWidth < 600.dp -> NavKind.BAR
-            vm.navStyle == NavStyle.RAIL -> NavKind.RAIL
-            vm.navStyle == NavStyle.EXPANDED -> NavKind.DRAWER
-            maxWidth >= 1000.dp -> NavKind.DRAWER
-            else -> NavKind.RAIL
-        }
-        // Yatay telefonda yükseklik az: logo gizlenir, sekmeler kaydırılabilir.
-        val tall = maxHeight >= 520.dp
-        val toggleExpanded = { vm.updateNavStyle(if (kind == NavKind.DRAWER) NavStyle.RAIL else NavStyle.EXPANDED) }
+        val kind = if (maxWidth < 600.dp) NavKind.BAR else NavKind.RAIL
         when (kind) {
-            NavKind.DRAWER -> Row(Modifier.fillMaxSize()) {
-                NavDrawer(vm, tall, onCollapse = toggleExpanded)
-                Box(Modifier.weight(1f).fillMaxHeight()) { content() }
-            }
-            NavKind.RAIL -> Row(Modifier.fillMaxSize()) {
-                NavigationRail(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                    header = {
-                        IconButton(onClick = toggleExpanded) { Icon(SouIcons.Menu, contentDescription = "Menüyü genişlet") }
-                        if (tall) AppLogo(40.dp, Modifier.padding(vertical = 8.dp), elevated = false)
-                    },
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(if (tall) 6.dp else 0.dp),
-                        modifier = Modifier.verticalScroll(rememberScrollState()),
-                    ) {
-                        TABS.forEach { (tab, label) ->
-                            NavigationRailItem(
-                                selected = vm.tab == tab,
-                                onClick = { vm.tab = tab },
-                                icon = { TabIcon(tab, vm.tab == tab) },
-                                label = { TabLabel(label) },
-                            )
-                        }
-                        NavigationRailItem(
-                            selected = false,
-                            onClick = { vm.searchOpen = true },
-                            icon = { Icon(SouIcons.Search, contentDescription = null) },
-                            label = { TabLabel("Ara") },
-                        )
-                    }
-                }
-                Box(Modifier.weight(1f).fillMaxHeight()) { content() }
-            }
             NavKind.BAR -> Scaffold(
                 bottomBar = {
-                    NavigationBar {
-                        TABS.filter { it.first != Tab.SETTINGS }.forEach { (tab, label) ->
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                        TABS.forEach { (tab, label) ->
+                            val sel = railTab(vm.tab) == tab
                             NavigationBarItem(
-                                selected = vm.tab == tab,
+                                selected = sel,
                                 onClick = { vm.tab = tab },
-                                icon = { TabIcon(tab, vm.tab == tab) },
+                                icon = { TabIcon(tab, sel) },
                                 label = { TabLabel(label) },
                             )
                         }
@@ -191,6 +156,10 @@ fun MainShell(vm: LibraryViewModel) {
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
             ) { inner ->
                 Box(Modifier.padding(inner).consumeWindowInsets(inner).fillMaxSize()) { content() }
+            }
+            else -> Row(Modifier.fillMaxSize()) {
+                SouRail(vm, tall = maxHeight >= 520.dp)
+                Box(Modifier.weight(1f).fillMaxHeight()) { content() }
             }
         }
         SnackbarHost(
@@ -210,56 +179,73 @@ fun MainShell(vm: LibraryViewModel) {
     UpdateDialogs(vm)
 }
 
-/** Geniş ekran menüsü: logo, bölümler ve araçlar (arama, asistan, hızlı not). */
+/**
+ * Tablet menüsü (4.0): solda dar, düz bir sütun. Üstte logo, ortada dört bölüm (seçili olanın simgesi dolu ve
+ * yumuşak bir hap içinde), en altta Asistan ve Ayarlar.
+ */
 @Composable
-private fun NavDrawer(vm: LibraryViewModel, tall: Boolean, onCollapse: () -> Unit) {
-    val itemColors = NavigationDrawerItemDefaults.colors(unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+private fun SouRail(vm: LibraryViewModel, tall: Boolean) {
+    val scheme = MaterialTheme.colorScheme
+    Row(Modifier.fillMaxHeight()) {
+        Column(
+            Modifier
+                .width(84.dp)
+                .fillMaxHeight()
+                .background(scheme.surface)
+                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(vertical = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (tall) AppLogo(40.dp, Modifier.padding(bottom = 18.dp), elevated = false)
+            Column(
+                Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(if (tall) 8.dp else 2.dp),
+            ) {
+                TABS.forEach { (tab, label) ->
+                    val sel = railTab(vm.tab) == tab
+                    RailItem(label, sel, onClick = { vm.tab = tab }) { TabIcon(tab, sel) }
+                }
+            }
+            RailItem("Asistan", false, onClick = { vm.openAssistant() }) { Icon(SouIcons.StarShine, contentDescription = null) }
+            RailItem("Ayarlar", vm.tab == Tab.SETTINGS, onClick = { vm.tab = Tab.SETTINGS }) {
+                Icon(if (vm.tab == Tab.SETTINGS) SouIcons.SettingsFilled else SouIcons.Settings, contentDescription = null)
+            }
+        }
+        androidx.compose.foundation.layout.Spacer(Modifier.width(1.dp).fillMaxHeight().background(scheme.outlineVariant))
+    }
+}
+
+@Composable
+private fun RailItem(label: String, selected: Boolean, onClick: () -> Unit, icon: @Composable () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
     Column(
-        Modifier
-            .width(248.dp)
-            .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .width(76.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-            if (tall) AppLogo(36.dp, Modifier.padding(start = 8.dp, end = 10.dp), elevated = false)
-            Text("SouNote", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            IconButton(onClick = onCollapse) { Icon(SouIcons.Menu, contentDescription = "Menüyü daralt") }
+        Box(
+            Modifier
+                .size(width = 56.dp, height = 32.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                .background(if (selected) scheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides if (selected) scheme.primary else scheme.onSurfaceVariant,
+            ) { icon() }
         }
-        TABS.forEach { (tab, label) ->
-            NavigationDrawerItem(
-                label = { Text(label, style = MaterialTheme.typography.labelLarge) },
-                selected = vm.tab == tab,
-                onClick = { vm.tab = tab },
-                icon = { TabIcon(tab, vm.tab == tab) },
-                colors = itemColors,
-                modifier = Modifier.height(52.dp),
-            )
-        }
-        HorizontalDivider(Modifier.padding(vertical = 12.dp, horizontal = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
         Text(
-            "Araçlar",
+            label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, bottom = 6.dp),
-        )
-        NavigationDrawerItem(
-            label = { Text("Her yerde ara", style = MaterialTheme.typography.labelLarge) },
-            selected = false,
-            onClick = { vm.searchOpen = true },
-            icon = { Icon(SouIcons.Search, contentDescription = null) },
-            colors = itemColors,
-            modifier = Modifier.height(48.dp),
-        )
-        NavigationDrawerItem(
-            label = { Text("Asistan", style = MaterialTheme.typography.labelLarge) },
-            selected = false,
-            onClick = { vm.openAssistant() },
-            icon = { Icon(SouIcons.StarShine, contentDescription = null) },
-            colors = itemColors,
-            modifier = Modifier.height(48.dp),
+            color = if (selected) scheme.onSurface else scheme.onSurfaceVariant,
+            fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }

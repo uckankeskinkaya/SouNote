@@ -122,7 +122,18 @@ fun CoursesScreen(vm: LibraryViewModel) {
         },
         containerColor = Color.Transparent,
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.padding(padding).fillMaxSize()) {
+        // 4.0: Yazı stüdyosu artık ayrı sekme değil, Çalış'ın içinden açılır
+        if (course == null) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                PracticeTile(SouIcons.EditNote, "Yazı stüdyosu", Color(0xFFBE185D), Modifier.weight(1f)) { vm.tab = LibraryViewModel.Tab.WRITING }
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(2f))
+            }
+        }
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
             when {
                 catalog.courses.isEmpty() -> EmptyCatalog(vm)
@@ -132,6 +143,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
                     expanded = if (id in expanded) expanded - id else expanded + id
                 }
             }
+        }
         }
     }
 }
@@ -735,5 +747,20 @@ private fun SummaryButton(vm: LibraryViewModel, title: String, items: List<Tripl
                 "önemli kelimeler (Türkçe anlamlarıyla) ve sınavda çıkabilecek 3 soru." +
                 if (missing > 0) " (Bazı PDF'ler henüz indirilmedi; sadece verilenlere göre özetle.)" else "",
         ) { open = false }
+    }
+}
+
+/** Çalış ekranının üstündeki pratik kutucuğu: renkli simge + kısa ad. */
+@Composable
+internal fun PracticeTile(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, tint: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Row(
+        modifier.card().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(36.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).background(tint.copy(alpha = 0.13f)),
+            contentAlignment = Alignment.Center,
+        ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp)) }
+        Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 10.dp), maxLines = 1)
     }
 }

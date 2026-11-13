@@ -96,73 +96,89 @@ enum class AppTheme(
 
 private fun mix(a: Long, b: Long, t: Float) = Color(ColorUtils.blendARGB(a.toInt(), b.toInt(), t))
 
-/** Temanın koyu hali: zemin + ışık renginden kademeli yüzeyler. */
+/*
+ * 4.0 yüzeyleri: düz, nötr (parıltı/degrade yok). Tema sadece vurgu rengini belirler.
+ * Açık: kâğıt tonu zemin, beyaz yüzeyler, ince gri çizgiler. Koyu: nötr kömür grisi.
+ */
+private const val L_BG = 0xFFF6F6F3
+private const val L_INK = 0xFF1B1C1F
+private const val D_BG = 0xFF111318
+private const val D_SURFACE = 0xFF1A1D24
+private const val D_INK = 0xFFECEDF0
+
+/** Açık temadaki vurgu (Elektrik daha mat bir indigoya çekildi). */
+private fun AppTheme.lightAccent(): Long = if (this == AppTheme.ELECTRIC) 0xFF3346D3 else lightPrimary
+
+/** Koyu temadaki vurgu: açık, yumuşak ton. */
+private fun AppTheme.darkAccent(): Long = if (this == AppTheme.ELECTRIC) 0xFF8C9BFF else darkPrimary
+
+/** Temanın koyu hali: nötr kömür grisi yüzeyler, temanın vurgusu. */
 private fun darkSchemeOf(t: AppTheme): ColorScheme {
-    val white = 0xFFFFFFFF
+    val accent = t.darkAccent()
     return darkColorScheme(
-        primary = Color(t.darkPrimary),
-        onPrimary = Color(t.darkOnPrimary),
-        primaryContainer = Color(t.darkContainer),
-        onPrimaryContainer = mix(white, t.darkPrimary, 0.15f),
-        secondary = mix(t.glowB, white, 0.25f),
-        onSecondary = Color(t.bg),
-        secondaryContainer = mix(t.bg, t.darkPrimary, 0.26f),
-        onSecondaryContainer = mix(white, t.glowB, 0.12f),
-        tertiary = mix(t.glowB, white, 0.15f),
-        onTertiary = Color(t.bg),
-        tertiaryContainer = mix(t.bg, t.glowB, 0.32f),
-        onTertiaryContainer = mix(white, t.glowB, 0.1f),
-        background = Color(t.bg),
-        onBackground = mix(white, t.glowB, 0.08f),
-        surface = mix(t.bg, t.glowA, 0.04f),
-        onSurface = mix(white, t.glowB, 0.08f),
-        surfaceVariant = mix(t.bg, t.glowA, 0.24f),
-        onSurfaceVariant = mix(white, t.glowA, 0.35f).copy(alpha = 0.92f),
-        surfaceTint = Color(t.darkPrimary),
-        outline = mix(t.bg, t.glowB, 0.45f),
-        outlineVariant = mix(t.bg, t.glowA, 0.26f),
-        surfaceBright = mix(t.bg, t.glowA, 0.3f),
-        surfaceDim = Color(t.bg),
-        surfaceContainerLowest = mix(t.bg, 0xFF000000, 0.35f),
-        surfaceContainerLow = mix(t.bg, t.glowA, 0.07f),
-        surfaceContainer = mix(t.bg, t.glowA, 0.11f),
-        surfaceContainerHigh = mix(t.bg, t.glowA, 0.16f),
-        surfaceContainerHighest = mix(t.bg, t.glowA, 0.22f),
+        primary = Color(accent),
+        onPrimary = mix(D_BG, accent, 0.1f),
+        primaryContainer = mix(D_SURFACE, accent, 0.28f),
+        onPrimaryContainer = mix(0xFFFFFFFF, accent, 0.25f),
+        secondary = mix(accent, D_INK, 0.35f),
+        onSecondary = Color(D_BG),
+        secondaryContainer = mix(D_SURFACE, accent, 0.18f),
+        onSecondaryContainer = mix(D_INK, accent, 0.15f),
+        tertiary = mix(accent, D_INK, 0.5f),
+        onTertiary = Color(D_BG),
+        tertiaryContainer = Color(0xFF272A33),
+        onTertiaryContainer = Color(D_INK),
+        background = Color(D_BG),
+        onBackground = Color(D_INK),
+        surface = Color(D_SURFACE),
+        onSurface = Color(D_INK),
+        surfaceVariant = Color(0xFF242832),
+        onSurfaceVariant = Color(0xFF9AA0AB),
+        surfaceTint = Color(accent),
+        outline = Color(0xFF5A606C),
+        outlineVariant = Color(0xFF2A2E37),
+        surfaceBright = Color(0xFF2C303A),
+        surfaceDim = Color(D_BG),
+        surfaceContainerLowest = Color(0xFF0C0D11),
+        surfaceContainerLow = Color(0xFF16181E),
+        surfaceContainer = Color(D_SURFACE),
+        surfaceContainerHigh = Color(0xFF20232B),
+        surfaceContainerHighest = Color(0xFF272A33),
     )
 }
 
-/** Temanın açık hali: logonun kâğıdı üstünde mürekkep ve vurgu. */
+/** Temanın açık hali: kâğıt tonu zemin, beyaz yüzeyler, temanın vurgusu. */
 private fun lightSchemeOf(t: AppTheme): ColorScheme {
-    val white = 0xFFFFFFFF
+    val accent = t.lightAccent()
     return lightColorScheme(
-        primary = Color(t.lightPrimary),
+        primary = Color(accent),
         onPrimary = Color.White,
-        primaryContainer = mix(t.paper, t.lightPrimary, 0.16f),
-        onPrimaryContainer = mix(t.ink, t.lightPrimary, 0.3f),
-        secondary = mix(t.lightPrimary, t.ink, 0.3f),
+        primaryContainer = mix(0xFFFFFFFF, accent, 0.12f),
+        onPrimaryContainer = mix(L_INK, accent, 0.55f),
+        secondary = mix(accent, L_INK, 0.35f),
         onSecondary = Color.White,
-        secondaryContainer = mix(t.paper, t.lightPrimary, 0.12f),
-        onSecondaryContainer = Color(t.ink),
-        tertiary = mix(t.glowB, t.ink, 0.45f),
+        secondaryContainer = mix(0xFFFFFFFF, accent, 0.09f),
+        onSecondaryContainer = Color(L_INK),
+        tertiary = mix(accent, L_INK, 0.5f),
         onTertiary = Color.White,
-        tertiaryContainer = mix(t.paper, t.glowB, 0.25f),
-        onTertiaryContainer = Color(t.ink),
-        background = Color(t.paper),
-        onBackground = Color(t.ink),
-        surface = mix(t.paper, white, 0.5f),
-        onSurface = Color(t.ink),
-        surfaceVariant = mix(t.paper, t.lightPrimary, 0.1f),
-        onSurfaceVariant = mix(t.ink, t.paper, 0.32f),
-        surfaceTint = Color(t.lightPrimary),
-        outline = mix(t.ink, t.paper, 0.5f),
-        outlineVariant = mix(t.paper, t.lightPrimary, 0.18f),
-        surfaceBright = mix(t.paper, white, 0.5f),
-        surfaceDim = mix(t.paper, t.ink, 0.1f),
+        tertiaryContainer = Color(0xFFEDEDE8),
+        onTertiaryContainer = Color(L_INK),
+        background = Color(L_BG),
+        onBackground = Color(L_INK),
+        surface = Color.White,
+        onSurface = Color(L_INK),
+        surfaceVariant = Color(0xFFEEEEEA),
+        onSurfaceVariant = Color(0xFF5F626A),
+        surfaceTint = Color(accent),
+        outline = Color(0xFFB9BBC0),
+        outlineVariant = Color(0xFFE5E5E0),
+        surfaceBright = Color.White,
+        surfaceDim = Color(0xFFE6E6E1),
         surfaceContainerLowest = Color.White,
-        surfaceContainerLow = mix(t.paper, white, 0.4f),
-        surfaceContainer = mix(t.paper, t.lightPrimary, 0.04f),
-        surfaceContainerHigh = mix(t.paper, t.lightPrimary, 0.08f),
-        surfaceContainerHighest = mix(t.paper, t.lightPrimary, 0.12f),
+        surfaceContainerLow = Color(0xFFFAFAF8),
+        surfaceContainer = Color(0xFFF1F1EE),
+        surfaceContainerHigh = Color(0xFFEBEBE7),
+        surfaceContainerHighest = Color(0xFFE4E4DF),
     )
 }
 
@@ -292,13 +308,14 @@ val LocalSouColors = staticCompositionLocalOf {
 
 private fun souColors(scheme: ColorScheme, dark: Boolean, theme: AppTheme): SouColors = SouColors(
     isDark = dark,
-    hero = listOf(Color(theme.heroA), Color(theme.heroB)),
+    // Düz tasarım: karşılama kartı tek renk (eski degrade yerine vurgu tonu)
+    hero = listOf(scheme.primary, scheme.primary),
     aurora = Color.Transparent,
     success = if (dark) Color(0xFF7FD69A) else Color(0xFF2E7D32),
     warning = if (dark) Color(0xFFFFB86B) else Color(0xFFC2570C),
     danger = if (dark) Color(0xFFFF8A80) else Color(0xFFD64545),
     star = Color(0xFFF2B705),
-    cardBorder = scheme.outlineVariant.copy(alpha = if (dark) 0.6f else 0.55f),
+    cardBorder = scheme.outlineVariant,
     glowA = Color(theme.glowA),
     glowB = Color(theme.glowB),
     logo = theme.logo,
@@ -329,10 +346,10 @@ private val SouTypography: Typography = Typography().let { t ->
 
 private val SouShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(18.dp),
+    extraLarge = RoundedCornerShape(24.dp),
 )
 
 // ---- Boşluk, yoğunluk ve hareket ----

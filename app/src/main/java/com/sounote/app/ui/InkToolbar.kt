@@ -108,16 +108,14 @@ fun InkToolbar(
     // Renk seçici açıkken seçilen rengin hangi araca gideceği
     var picker by remember { mutableStateOf<Tool?>(null) }
 
-    Surface(tonalElevation = 2.dp) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
         Column {
             ToolbarRow {
                 if (leading != null) {
                     leading()
                     Separator()
                 }
-                // Kalemi olmayanlar için en başta, hemen görünür
-                FingerToggle(state.fingerDraw) { onChange(state.copy(fingerDraw = !state.fingerDraw)) }
-                Separator()
+                // 4.0: en çok kullanılan altı araç her zaman görünür; diğerleri "Diğer araçlar" menüsünde
                 ToolChip("Kalem", state.tool == Tool.PEN, vector = SouIcons.InkPen) {
                     onChange(state.copy(tool = Tool.PEN))
                 }
@@ -127,28 +125,61 @@ fun InkToolbar(
                 ToolChip("Silgi", state.tool == Tool.ERASER, vector = SouIcons.InkEraser) {
                     onChange(state.copy(tool = Tool.ERASER))
                 }
-                ToolChip("Yazı", state.tool == Tool.TEXT, vector = SouIcons.TextFields) {
-                    onChange(state.copy(tool = Tool.TEXT))
-                }
                 ToolChip("Seç", state.tool == Tool.LASSO, vector = SouIcons.GestureSelect) {
                     onChange(state.copy(tool = Tool.LASSO))
                 }
-                ToolChip("Bant", state.tool == Tool.TAPE, vector = SouIcons.VisibilityOff) {
-                    onChange(state.copy(tool = Tool.TAPE))
-                }
-                ToolChip("Lazer", state.tool == Tool.LASER, vector = SouIcons.StylusLaserPointer) {
-                    onChange(state.copy(tool = Tool.LASER))
+                ToolChip("Yazı", state.tool == Tool.TEXT, vector = SouIcons.TextFields) {
+                    onChange(state.copy(tool = Tool.TEXT))
                 }
                 ToolChip("Şekil", state.tool == Tool.SHAPE, vector = SouIcons.Shapes) {
                     onChange(state.copy(tool = Tool.SHAPE))
                 }
-                ToolChip("Damga", state.tool == Tool.STAMP, vector = SouIcons.Approval) {
-                    onChange(state.copy(tool = Tool.STAMP))
+                // Menüden seçilmiş araç (bant, lazer, damga) seçiliyken burada da görünsün
+                when (state.tool) {
+                    Tool.TAPE -> ToolChip("Bant", true, vector = SouIcons.VisibilityOff) {}
+                    Tool.LASER -> ToolChip("Lazer", true, vector = SouIcons.StylusLaserPointer) {}
+                    Tool.STAMP -> ToolChip("Damga", true, vector = SouIcons.Approval) {}
+                    else -> Unit
                 }
-                ToolChip("Resim ekle", false, vector = SouIcons.Image, onClick = onInsertImage)
+                if (state.guide == GuideKind.RULER) {
+                    ToolChip("Cetvel", true, vector = SouIcons.Straighten) { onChange(state.copy(guide = GuideKind.NONE)) }
+                }
+                if (state.guide == GuideKind.PROTRACTOR) {
+                    ToolChip("Açıölçer", true, vector = SouIcons.Architecture) { onChange(state.copy(guide = GuideKind.NONE)) }
+                }
+                // Parmakla yazma açıksa kapatmak için görünür kalır
+                if (state.fingerDraw) FingerToggle(true) { onChange(state.copy(fingerDraw = false)) }
                 Box {
+                    var more by remember { mutableStateOf(false) }
                     var stickers by remember { mutableStateOf(false) }
-                    ToolChip("Çıkartma", stickers, vector = SouIcons.Mood) { stickers = true }
+                    ToolChip("Diğer araçlar", more, vector = SouIcons.MoreVert) { more = true }
+                    DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
+                        @Composable
+                        fun item(label: String, icon: ImageVector, on: Boolean = false, onClick: () -> Unit) {
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                leadingIcon = { Icon(icon, contentDescription = null) },
+                                trailingIcon = { if (on) Icon(SouIcons.Check, contentDescription = "Açık") },
+                                onClick = { more = false; onClick() },
+                            )
+                        }
+                        item("Ezber bandı", SouIcons.VisibilityOff, state.tool == Tool.TAPE) { onChange(state.copy(tool = Tool.TAPE)) }
+                        item("Lazer kalem", SouIcons.StylusLaserPointer, state.tool == Tool.LASER) { onChange(state.copy(tool = Tool.LASER)) }
+                        item("Damga", SouIcons.Approval, state.tool == Tool.STAMP) { onChange(state.copy(tool = Tool.STAMP)) }
+                        HorizontalDivider()
+                        item("Resim ekle", SouIcons.Image) { onInsertImage() }
+                        item("Çıkartma", SouIcons.Mood) { stickers = true }
+                        HorizontalDivider()
+                        item("Cetvel", SouIcons.Straighten, state.guide == GuideKind.RULER) {
+                            onChange(state.copy(guide = if (state.guide == GuideKind.RULER) GuideKind.NONE else GuideKind.RULER))
+                        }
+                        item("Açıölçer", SouIcons.Architecture, state.guide == GuideKind.PROTRACTOR) {
+                            onChange(state.copy(guide = if (state.guide == GuideKind.PROTRACTOR) GuideKind.NONE else GuideKind.PROTRACTOR))
+                        }
+                        if (onLayers != null) item("Katmanlar", SouIcons.Layers, layered) { onLayers() }
+                        HorizontalDivider()
+                        item("Parmakla yaz", SouIcons.TouchApp, state.fingerDraw) { onChange(state.copy(fingerDraw = !state.fingerDraw)) }
+                    }
                     DropdownMenu(expanded = stickers, onDismissRequest = { stickers = false }) {
                         androidx.compose.foundation.layout.FlowRow(
                             maxItemsInEachRow = 4,
@@ -170,14 +201,6 @@ fun InkToolbar(
                         }
                     }
                 }
-                Separator()
-                ToolChip("Cetvel", state.guide == GuideKind.RULER, vector = SouIcons.Straighten) {
-                    onChange(state.copy(guide = if (state.guide == GuideKind.RULER) GuideKind.NONE else GuideKind.RULER))
-                }
-                ToolChip("Açıölçer", state.guide == GuideKind.PROTRACTOR, vector = SouIcons.Architecture) {
-                    onChange(state.copy(guide = if (state.guide == GuideKind.PROTRACTOR) GuideKind.NONE else GuideKind.PROTRACTOR))
-                }
-                if (onLayers != null) ToolChip("Katmanlar", layered, vector = SouIcons.Layers) { onLayers() }
                 Separator()
                 Favorites(state, onChange)
             }

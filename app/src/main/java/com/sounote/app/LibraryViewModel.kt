@@ -117,7 +117,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     var searchQuery by mutableStateOf("")
     var sortMode by mutableStateOf(enumValueOrNull<SortMode>(prefs.getString("sort", null)) ?: SortMode.RECENT)
         private set
-    var themeMode by mutableStateOf(enumValueOrNull<ThemeMode>(prefs.getString("theme", null)) ?: ThemeMode.DARK) // Varsayılan: logodaki koyu görünüm
+    // 4.0: yeni kurulumda açık (kâğıt) tema. Eski kurulumda tema hiç seçilmemişse koyu kalır (görünüm birden değişmesin).
+    var themeMode by mutableStateOf(
+        enumValueOrNull<ThemeMode>(prefs.getString("theme", null))
+            ?: if (prefs.getBoolean("onboarded", false)) ThemeMode.DARK.also { prefs.edit().putString("theme", it.name).apply() } else ThemeMode.LIGHT,
+    )
         private set
 
     fun updateSort(mode: SortMode) {

@@ -446,7 +446,7 @@ private fun EssayEditor(vm: LibraryViewModel, start: Essay, onBack: () -> Unit, 
                         vm.saveEssay(essay)
                         scope.launch {
                             val r = runCatching {
-                                withContext(Dispatchers.IO) { AssistantClient.gradeEssay(vm.assistantConfig, essay.type, essay.topic, essay.text) }
+                                withContext(Dispatchers.IO) { AssistantClient.gradeEssay(AssistantClient.heavy(vm.assistantConfig), essay.type, essay.topic, essay.text) }
                             }
                             grading = false
                             r.onSuccess { fb ->

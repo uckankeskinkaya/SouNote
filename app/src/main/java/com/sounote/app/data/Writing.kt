@@ -116,7 +116,7 @@ ${text.take(10_000)}
 /** Mevcut asistan servisiyle (OpenAI uyumlu) yazma koçu. Metni asla kendisi değiştirmez; öneri döndürür. */
 object WritingCoach {
     fun suggestions(config: AssistantConfig, text: String, mode: CoachMode): List<CoachSuggestion> {
-        val reply = AssistantClient.chat(config, listOf(ChatMessage("user", mode.prompt(text))))
+        val reply = AssistantClient.chat(AssistantClient.heavy(config), listOf(ChatMessage("user", mode.prompt(text))))
         val start = reply.indexOf('[')
         val end = reply.lastIndexOf(']')
         if (start < 0 || end < start) throw IOException("Koç önerileri beklenen biçimde gelmedi, tekrar dene")
@@ -131,5 +131,5 @@ object WritingCoach {
     }
 
     fun review(config: AssistantConfig, text: String): String =
-        AssistantClient.chat(config, listOf(ChatMessage("user", CoachMode.ORGANIZATION.prompt(text))))
+        AssistantClient.chat(AssistantClient.heavy(config), listOf(ChatMessage("user", CoachMode.ORGANIZATION.prompt(text))))
 }

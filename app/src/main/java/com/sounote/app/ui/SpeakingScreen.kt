@@ -130,7 +130,7 @@ fun SpeakingScreen(vm: LibraryViewModel, onDismiss: () -> Unit) {
         stage = Stage.GRADING
         scope.launch {
             val r = runCatching {
-                withContext(Dispatchers.IO) { AssistantClient.gradeSpeaking(vm.assistantConfig, topic, transcript, seconds, base.words) }
+                withContext(Dispatchers.IO) { AssistantClient.gradeSpeaking(AssistantClient.heavy(vm.assistantConfig), topic, transcript, seconds, base.words) }
             }
             val a = base.copy(feedback = r.getOrNull())
             r.onFailure {

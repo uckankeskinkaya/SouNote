@@ -172,7 +172,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                     vm.documentText(doc.doc, from, to).also { docTexts[sc] = it }
                 }
                 if (text.isBlank()) throw java.io.IOException("Bu sayfada okunabilir metin yok (taranmış görüntü olabilir)")
-                withContext(Dispatchers.IO) { AssistantClient.generateCards(vm.assistantConfig, text) }
+                withContext(Dispatchers.IO) { AssistantClient.generateCards(AssistantClient.heavy(vm.assistantConfig), text) }
             }
             makingCards = false
             r.onSuccess { cardDraft = it }.onFailure {
@@ -221,7 +221,7 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
                 val system = AssistantClient.systemPrompt(vm.catalog, vm.userName) + (contextText?.let { "\n\n$it" } ?: "")
                 val history = messages.takeLast(12)
                 withContext(Dispatchers.IO) {
-                    AssistantClient.chat(vm.assistantConfig, listOf(ChatMessage("system", system)) + history)
+                    AssistantClient.chat(AssistantClient.heavy(vm.assistantConfig), listOf(ChatMessage("system", system)) + history, temperature = 0.3)
                 }
             }
             busy = false

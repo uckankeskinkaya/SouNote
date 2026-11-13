@@ -107,7 +107,7 @@ fun ExamPlanDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
         scope.launch {
             val r = runCatching {
                 withContext(Dispatchers.IO) {
-                    AssistantClient.studyPlan(vm.assistantConfig, exam.title.ifBlank { exam.course }, examDetails(vm, exam), days)
+                    AssistantClient.studyPlan(AssistantClient.heavy(vm.assistantConfig), exam.title.ifBlank { exam.course }, examDetails(vm, exam), days)
                 }
             }
             busy = false

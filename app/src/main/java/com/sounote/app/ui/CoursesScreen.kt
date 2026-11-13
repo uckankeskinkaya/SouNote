@@ -125,12 +125,28 @@ fun CoursesScreen(vm: LibraryViewModel) {
         Column(Modifier.padding(padding).fillMaxSize()) {
         // 4.0: Yazı stüdyosu artık ayrı sekme değil, Çalış'ın içinden açılır
         if (course == null) {
+            var exerciseOpen by remember { mutableStateOf(false) }
+            var speakingOpen by remember { mutableStateOf(false) }
+            var testCourse by remember { mutableStateOf<com.sounote.app.data.Course?>(null) }
+            if (exerciseOpen) ExerciseScreen(vm) { exerciseOpen = false }
+            if (speakingOpen) SpeakingScreen(vm) { speakingOpen = false }
+            testCourse?.let { c -> PracticeSetupDialog(vm, c) { testCourse = null } }
+            val ready = vm.assistantConfig.ready
+            fun needAssistant(block: () -> Unit) {
+                if (ready) block() else vm.showMessage("Bunun için önce asistanı kur: Ayarlar → Asistan")
+            }
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                PracticeTile(SouIcons.EditNote, "Yazı stüdyosu", Color(0xFFBE185D), Modifier.weight(1f)) { vm.tab = LibraryViewModel.Tab.WRITING }
-                androidx.compose.foundation.layout.Spacer(Modifier.weight(2f))
+                PracticeTile(SouIcons.Quiz, "Deneme sınavı", Color(0xFF7C3AED), Modifier.width(180.dp)) {
+                    needAssistant {
+                        testCourse = catalog.courses.firstOrNull { it.name.contains("Grammar", ignoreCase = true) } ?: catalog.courses.firstOrNull()
+                    }
+                }
+                PracticeTile(SouIcons.Checklist, "Alıştırma", Color(0xFF3346D3), Modifier.width(180.dp)) { needAssistant { exerciseOpen = true } }
+                PracticeTile(SouIcons.EditNote, "Yazı stüdyosu", Color(0xFFBE185D), Modifier.width(180.dp)) { vm.tab = LibraryViewModel.Tab.WRITING }
+                PracticeTile(SouIcons.RecordVoiceOver, "Speaking", Color(0xFF0369A1), Modifier.width(180.dp)) { speakingOpen = true }
             }
         }
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {

@@ -7,7 +7,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilledIconButton
@@ -16,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -484,12 +482,11 @@ fun AssistantDialog(vm: LibraryViewModel, source: AssistantSource, prefill: Stri
 /** Asistanın simgesi: tema renginde daire içinde yıldız. */
 @Composable
 private fun BotAvatar(size: Dp) {
-    val hero = listOf(MaterialTheme.colorScheme.primary, LocalSouColors.current.hero.last())
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(size).clip(CircleShape).background(Brush.linearGradient(hero)),
+        modifier = Modifier.size(size).clip(CircleShape).background(MaterialTheme.colorScheme.primary),
     ) {
-        Icon(SouIcons.StarShine, contentDescription = null, tint = Color.White, modifier = Modifier.size(size * 0.5f))
+        Icon(SouIcons.StarShine, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(size * 0.5f))
     }
 }
 
@@ -599,8 +596,7 @@ private fun TypingBubble() {
             horizontalArrangement = Arrangement.spacedBy(5.dp),
             modifier = Modifier
                 .padding(start = 8.dp)
-                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp))
-                .background(cardBackground())
+                .card()
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             repeat(3) { i ->
@@ -637,13 +633,7 @@ private fun Bubble(m: ChatMessage, vm: LibraryViewModel) {
         Column(Modifier.padding(start = 8.dp).weight(1f, fill = false)) {
             Box(
                 Modifier
-                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp))
-                    .background(cardBackground())
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                        RoundedCornerShape(topStart = 4.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 18.dp),
-                    )
+                    .card()
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
                 SelectionContainer { MarkdownText(m.content, MaterialTheme.colorScheme.onSurface) }

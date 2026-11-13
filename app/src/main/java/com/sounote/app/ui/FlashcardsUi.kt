@@ -265,7 +265,6 @@ fun StudyDialog(
                                 rotationY = flip
                                 cameraDistance = 14f * density
                             }
-                            .shadow(10.dp, RoundedCornerShape(28.dp))
                             .clip(RoundedCornerShape(28.dp))
                             .background(Color(0xFFFFFDF8))
                             .pointerInput(card.id) {

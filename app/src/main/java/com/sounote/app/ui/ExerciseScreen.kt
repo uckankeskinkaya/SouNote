@@ -359,7 +359,7 @@ private fun ExerciseCard(
         modifier = Modifier
             .fillMaxWidth()
             .card()
-            .then(if (verdict != null) Modifier.border(1.5.dp, vColor, RoundedCornerShape(18.dp)) else Modifier)
+            .then(if (verdict != null) Modifier.border(1.5.dp, vColor, RoundedCornerShape(14.dp)) else Modifier)
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -385,7 +385,7 @@ private fun ExerciseCard(
             Text(
                 e.given,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(10.dp),
+                modifier = Modifier.fillMaxWidth().card(radius = 10.dp).padding(10.dp),
             )
         }
         Text(e.question, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)

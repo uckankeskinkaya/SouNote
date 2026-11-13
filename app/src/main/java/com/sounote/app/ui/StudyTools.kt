@@ -362,10 +362,9 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                        .card()
                                         .background(bg)
-                                        .border(1.5.dp, border, RoundedCornerShape(16.dp))
+                                        .border(1.dp, border, RoundedCornerShape(14.dp))
                                         .clickable(enabled = !answered) { chosen = i }
                                         .padding(14.dp),
                                 ) {

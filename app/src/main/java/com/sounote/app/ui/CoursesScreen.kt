@@ -106,7 +106,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
         topBar = {
             TopAppBar(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                title = { Text(course?.name ?: "Dersler") },
+                title = { Text(course?.name ?: "Çalış") },
                 navigationIcon = {
                     if (course != null) {
                         IconButton(onClick = { selected = null }) { Icon(SouIcons.ArrowBack, contentDescription = "Geri") }

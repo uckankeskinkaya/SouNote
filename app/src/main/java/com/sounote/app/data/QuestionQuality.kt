@@ -31,7 +31,7 @@ Quality rules (all mandatory):
 
     private val BANNED = listOf("all of the above", "none of the above", "both a and b", "all of them", "none of them")
 
-    data class Mcq(val q: String, val options: List<String>, val answer: Int, val why: String)
+    data class Mcq(val q: String, val options: List<String>, val answer: Int, val why: String, val topic: String = "")
 
     /** "A) text", "b. text" gibi önekleri atar. */
     fun stripLabel(s: String): String = s.trim().replace(Regex("^[(\\[]?[A-Da-d][).:\\]]\\s+"), "").trim()
@@ -50,7 +50,7 @@ Quality rules (all mandatory):
         if (opts.any { o -> BANNED.any { it in o.lowercase() } }) return null
         val correct = opts[m.answer]
         val shuffled = opts.shuffled(random)
-        return Mcq(q, shuffled, shuffled.indexOf(correct), m.why.trim())
+        return Mcq(q, shuffled, shuffled.indexOf(correct), m.why.trim(), m.topic)
     }
 
     /** Soru kökü neredeyse aynı olanları ayıklar ([seen]: önceki turlardan kalanlar). */

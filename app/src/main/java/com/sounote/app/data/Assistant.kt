@@ -254,13 +254,13 @@ Kurallar:
     }
 
     /** Deneme sınavı sorusu: 4 şık, doğru şıkkın sırası ve kısa açıklama. */
-    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String)
+    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String, val topic: String = "")
 
     /**
      * Deneme sınavı: metinden (yoksa konu başlıklarından) çoktan seçmeli sorular.
      * Cevap JSON: [{"q": "...", "options": ["A","B","C","D"], "answer": 0, "why": "..."}]
      */
-    fun practiceTest(config: AssistantConfig, topic: String, source: String, count: Int): List<Question> {
+    fun practiceTest(config: AssistantConfig, topic: String, source: String, count: Int, topics: List<String> = emptyList()): List<Question> {
         val strong = heavy(config)
         val material = if (source.isBlank()) {
             "No course text is given: write the questions from the topic title, at Level 4 (B1+, SpeakOut B1+) exam standard."
@@ -269,6 +269,10 @@ Kurallar:
         }
         val seen = HashSet<String>()
         val kept = ArrayList<QuestionQuality.Mcq>()
+        // Ders geneli testte her soru bir konuya bağlanır (sonuçta konu konu analiz için)
+        val topicRule = if (topics.isEmpty()) "" else
+            "\nSpread the questions over these course topics and give each item a \"topic\" field with EXACTLY one of these names: " +
+                topics.joinToString(" | ")
         // En fazla 3 tur: her turda eksik kadar (+ yedek) soru istenir, temizlenir, denetlenir
         for (round in 0 until 3) {
             val need = count - kept.size
@@ -280,9 +284,9 @@ ${QuestionQuality.EXAM_STYLE}
 Write ${need + 3} multiple-choice questions on the topic "$topic".
 $material
 Mix item types: about half sentence-completion/cloze on the grammar points, a third vocabulary in context, the rest short reading
-(put the paragraph inside "q", then the question). "why": ONE sentence in Turkish explaining why the answer is right and the main distractor wrong.$avoid
+(put the paragraph inside "q", then the question). "why": ONE sentence in Turkish explaining why the answer is right and the main distractor wrong.$topicRule$avoid
 Return ONLY a JSON array, nothing else:
-[{"q": "...", "options": ["...", "...", "...", "..."], "answer": 0, "why": "..."}]
+[{"q": "...", "options": ["...", "...", "...", "..."], "answer": 0, "why": "..."${if (topics.isEmpty()) "" else ", \"topic\": \"...\""}}]
 """.trim()
             val res = runCatching { chat(strong, listOf(ChatMessage("user", prompt)), temperature = 0.7) }
             val reply = res.getOrNull() ?: if (kept.isEmpty()) throw res.exceptionOrNull()!! else break
@@ -293,14 +297,15 @@ Return ONLY a JSON array, nothing else:
             val fresh = (0 until arr.length()).mapNotNull { i ->
                 val o = arr.optJSONObject(i) ?: return@mapNotNull null
                 val opts = o.optJSONArray("options") ?: return@mapNotNull null
-                QuestionQuality.clean(QuestionQuality.Mcq(o.optString("q"), (0 until opts.length()).map { opts.optString(it) }, o.optInt("answer", -1), o.optString("why")))
+                val t = o.optString("topic").trim().let { name -> topics.firstOrNull { it.equals(name, ignoreCase = true) }.orEmpty() }
+                QuestionQuality.clean(QuestionQuality.Mcq(o.optString("q"), (0 until opts.length()).map { opts.optString(it) }, o.optInt("answer", -1), o.optString("why"), t))
             }
             val unique = QuestionQuality.distinctBy(fresh, seen) { it.q }
             val verdict = QuestionQuality.verify(strong, unique)
             kept += unique.filterIndexed { i, _ -> verdict[i] }.take(need)
         }
         if (kept.isEmpty()) throw IOException("Uygun soru çıkarılamadı, tekrar dene")
-        return kept.map { Question(it.q, it.options, it.answer, it.why) }
+        return kept.map { Question(it.q, it.options, it.answer, it.why, it.topic) }
     }
 
     /**

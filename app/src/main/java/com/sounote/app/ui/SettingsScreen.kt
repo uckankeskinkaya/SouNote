@@ -44,6 +44,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -479,6 +480,9 @@ fun SettingsScreen(vm: LibraryViewModel) {
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
+        LaunchedEffect(wide, selected) {
+            if (wide && selected == null) selected = Category.entries.first().name
+        }
         // Telefonda kategori sayfasından geri: kategori listesine.
         BackHandler(enabled = !wide && category != null && q.isEmpty()) { selected = null }
         Scaffold(
@@ -500,7 +504,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 if (showList || q.isNotEmpty()) {
                     Column(
                         Modifier
-                            .then(if (wide) Modifier.width(320.dp) else Modifier.weight(1f))
+                            .then(if (wide) Modifier.width(300.dp) else Modifier.weight(1f))
                             .fillMaxHeight()
                             .padding(horizontal = 16.dp),
                     ) {
@@ -510,18 +514,23 @@ fun SettingsScreen(vm: LibraryViewModel) {
                         } else {
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
                                 items(Category.entries) { c ->
-                                    val sel = wide && (category ?: Category.APPEARANCE) == c && q.isEmpty()
+                                    val sel = wide && (category ?: Category.entries.first()) == c
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(if (sel) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                            .clip(RoundedCornerShape(if (wide) 12.dp else 16.dp))
+                                            .background(if (sel) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
                                             .clickable { selected = c.name; query = "" }
                                             .padding(horizontal = 12.dp, vertical = 12.dp),
                                     ) {
-                                        Icon(c.icon, contentDescription = null, tint = if (sel) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(c.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 16.dp))
+                                        Icon(c.icon, contentDescription = null, tint = if (sel) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            c.label,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = if (sel) MaterialTheme.colorScheme.onPrimaryContainer else Color.Unspecified,
+                                            modifier = Modifier.weight(1f).padding(start = 16.dp),
+                                        )
                                         if (!wide) {
                                             Icon(
                                                 SouIcons.ChevronRight,
@@ -535,12 +544,15 @@ fun SettingsScreen(vm: LibraryViewModel) {
                         }
                     }
                 }
+                if (wide) {
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
+                }
                 if (wide || (category != null && q.isEmpty())) {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                         if (wide && q.isNotEmpty()) {
                             SearchResults(results, Modifier.widthIn(max = 760.dp).padding(horizontal = 16.dp))
                         } else {
-                            val c = category ?: Category.APPEARANCE
+                            val c = category ?: Category.entries.first()
                             Column(
                                 Modifier
                                     .widthIn(max = 760.dp)

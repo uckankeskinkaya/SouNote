@@ -251,6 +251,9 @@ Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yaz�
 - Deneme sınavı konu analizi (🧪): ders geneli testte her soru bir konuya bağlanır; sonuçta konu konu doğru/toplam, zayıf konu üstte, konunun PDF'ini aç ve o konudan alıştırma; konu puanları konu haritasına yazılır. AssistantClient.practiceTest(topics) + Question.topic + StudyTools TopicAnalysis.
 - Kayıtlı çalışma düzeni (🧪): belge ekranı ⋮ → "Çalışma düzenini kaydet" (belge + yan belge + dinleme kaydı), Bugün'de tek dokunuşla açılır. LibraryViewModel.StudySetup/saveStudySetup/openStudySetup (prefs "studySetups", pendingSideDocId) + HomeScreen StudySetupChip.
 - Hızlı kalem halkası (🧪): sayfada kalemle kıpırdatmadan basılı tut → kalem, fosforlu, silgi ve son renkler; Ayarlar → Not alma'dan kapatılır. PdfDocumentView.onPenRing/penRingEnabled (450 ms, 8dp) + ui/PenRing.kt PenRingOverlay + ToolState.penRing.
+- Not geçmişi (🧪): belge ⋮ → Not geçmişi → Geri yükle (geri al ile vazgeçilir); InkStore.save history/<page>-<stamp>.bin (3 dk aralık, sayfa başına 15), history()/loadVersion(); remapPages/copyPage geçmişi taşır. VM pageHistory/restorePageVersion (ink.commit) + ui/InkHistoryDialog.kt.
+- Bugün derste kartı (🧪): Bugün'de günün konuları ve PDF'leri (aç / indir / hepsini indir), ses kayıtları için Dinle; ui/TodayLessonCard.kt todayLesson(vm) (week + day 1..5), TODAY_DOWNLOAD = -2, HERO modülünde.
+- Kaynakta göster (🧪): deneme soruları kısa kaynak alıntısıyla gelir, yanlış soruda PDF'te o cümlenin sayfası açılır; Question.source / Mcq.source (practiceTest istemi, sadece ders metni varken), StudyTools showSource + VM documentPages (PdfText.pages, PDF bir kez açılır).
 - Yardımcılar: gpt-sor (Codex, model gpt-6.1-sol, ~/.codex/config.toml; görsel üretebilir), gemini-sor (sadece fikir). GPT'ye dar, tek dosyalık
   görev ver; geniş görevlerde 25 dk sınırına takılıyor. Diff'i mutlaka incele (klasör rengi/PDF beyazı gibi gereksiz değişiklikler yapıyor).
 

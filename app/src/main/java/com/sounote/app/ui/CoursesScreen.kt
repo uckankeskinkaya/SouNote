@@ -55,6 +55,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -79,6 +81,9 @@ fun CoursesScreen(vm: LibraryViewModel) {
     var byWeek by vm::coursesByWeek
     val catalog = vm.catalog
     val course = catalog.courses.find { it.id == selected }
+    // 4.0: geniş tablette iki panel — solda dersler, sağda seçili dersin konuları (ders seçilmemişse ilki)
+    val twoPane = LocalConfiguration.current.screenWidthDp >= 900 && !byWeek && catalog.courses.isNotEmpty()
+    val shown = if (twoPane) course ?: catalog.courses.first() else course
 
     // Sınavlar ekranından bir konuya gelindi: o alanı aç, konuyu genişlet.
     LaunchedEffect(vm.focusTopic) {
@@ -89,7 +94,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
         }
         vm.focusTopic = null
     }
-    BackHandler(enabled = course != null) { selected = null }
+    BackHandler(enabled = course != null && !twoPane) { selected = null }
     // Arama sonucundan ya da hızlı erişimden gelindi: dersi aç.
     LaunchedEffect(vm.focusCourse) {
         val id = vm.focusCourse ?: return@LaunchedEffect
@@ -106,15 +111,15 @@ fun CoursesScreen(vm: LibraryViewModel) {
         topBar = {
             TopAppBar(
                 colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                title = { Text(course?.name ?: "Çalış") },
+                title = { Text(if (twoPane) "Çalış" else course?.name ?: "Çalış") },
                 navigationIcon = {
-                    if (course != null) {
+                    if (course != null && !twoPane) {
                         IconButton(onClick = { selected = null }) { Icon(SouIcons.ArrowBack, contentDescription = "Geri") }
                     }
                 },
                 actions = {
-                    if (course != null) {
-                        FavoriteButton(vm.isFavorite(QuickItem.COURSE, course.id), onToggle = { vm.toggleFavorite(QuickItem.COURSE, course.id) })
+                    if (shown != null) {
+                        FavoriteButton(vm.isFavorite(QuickItem.COURSE, shown.id), onToggle = { vm.toggleFavorite(QuickItem.COURSE, shown.id) })
                     }
                     IconButton(onClick = { vm.refreshCatalog() }) { Icon(SouIcons.Refresh, contentDescription = "Yenile") }
                 },
@@ -124,7 +129,7 @@ fun CoursesScreen(vm: LibraryViewModel) {
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
         // 4.0: Yazı stüdyosu artık ayrı sekme değil, Çalış'ın içinden açılır
-        if (course == null) {
+        if (course == null || twoPane) {
             var exerciseOpen by remember { mutableStateOf(false) }
             var speakingOpen by remember { mutableStateOf(false) }
             var testCourse by remember { mutableStateOf<com.sounote.app.data.Course?>(null) }
@@ -153,6 +158,16 @@ fun CoursesScreen(vm: LibraryViewModel) {
             if (vm.catalogLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
             when {
                 catalog.courses.isEmpty() -> EmptyCatalog(vm)
+                twoPane && shown != null -> Row(Modifier.fillMaxSize()) {
+                    CoursePane(vm, shown, onWeeks = { byWeek = true }) { selected = it.id }
+                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+                        androidx.compose.runtime.key(shown.id) {
+                            CourseDetail(vm, shown, expanded) { id ->
+                                expanded = if (id in expanded) expanded - id else expanded + id
+                            }
+                        }
+                    }
+                }
                 course == null && byWeek -> WeekList(vm) { byWeek = false }
                 course == null -> CourseGrid(vm, onWeeks = { byWeek = true }) { selected = it.id }
                 else -> CourseDetail(vm, course, expanded) { id ->
@@ -778,5 +793,52 @@ internal fun PracticeTile(icon: androidx.compose.ui.graphics.vector.ImageVector,
             contentAlignment = Alignment.Center,
         ) { Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp)) }
         Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 10.dp), maxLines = 1)
+    }
+}
+
+/** İki panelli Çalış'ın sol sütunu: görünüm seçici (Konular/Haftalar) ve dersler. */
+@Composable
+private fun CoursePane(vm: LibraryViewModel, selected: Course, onWeeks: () -> Unit, onSelect: (Course) -> Unit) {
+    Column(
+        Modifier
+            .width(260.dp)
+            .fillMaxHeight()
+            .padding(start = 16.dp, top = 8.dp, bottom = 16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (vm.catalog.termStart != 0L) {
+            Box(Modifier.padding(bottom = 8.dp)) { ViewSwitch(byWeek = false, onTopics = {}, onWeeks = onWeeks) }
+        }
+        vm.catalog.courses.forEach { c ->
+            val on = c.id == selected.id
+            val (done, total) = vm.progressOf(c.topics.flatMap { it.resources })
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                    .background(if (on) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                    .clickable { onSelect(c) }
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+            ) {
+                CourseArt(c, 36.dp)
+                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                    Text(
+                        c.name,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (on) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Medium,
+                        color = if (on) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        if (total > 0) "${c.topics.size} konu · %${done * 100 / total}" else "${c.topics.size} konu",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }

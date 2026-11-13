@@ -207,17 +207,17 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 ) {
                     AppTheme.entries.forEach { t ->
                         val sel = vm.appTheme == t
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        val accent = Color(if (LocalSouColors.current.isDark) t.darkPrimary else t.lightPrimary)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .width(112.dp)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(t.heroB), Color(t.bg))))
+                                .width(150.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
                                 .border(
-                                    if (sel) 2.5.dp else 1.dp,
-                                    if (sel) Color(t.glowB) else Color(t.glowA).copy(alpha = 0.4f),
-                                    RoundedCornerShape(18.dp),
+                                    if (sel) 2.dp else 1.dp,
+                                    if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    RoundedCornerShape(12.dp),
                                 )
                                 .clickable { vm.updateAppTheme(t) }
                                 .padding(10.dp),
@@ -225,10 +225,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
                             androidx.compose.foundation.Image(
                                 androidx.compose.ui.res.painterResource(t.logo),
                                 contentDescription = null,
-                                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(14.dp)),
+                                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)),
                             )
-                            Text(t.label, color = Color.White, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = Color(t.darkPrimary), modifier = Modifier.size(18.dp))
+                            Text(t.label, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = accent, modifier = Modifier.size(18.dp))
+                            else Box(Modifier.size(12.dp).clip(androidx.compose.foundation.shape.CircleShape).background(accent))
                         }
                     }
                 }

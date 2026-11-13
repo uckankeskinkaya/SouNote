@@ -45,7 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -88,7 +87,7 @@ fun PagePanel(
         if (currentPage in 0 until pageCount) grid.scrollToItem(currentPage)
     }
 
-    Surface(tonalElevation = 1.dp, modifier = Modifier.width(280.dp).fillMaxHeight()) {
+    Surface(modifier = Modifier.width(280.dp).fillMaxHeight()) {
         Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -143,12 +142,14 @@ fun PagePanel(
                             Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(0.72f)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color.White)
-                                .border(
-                                    if (i == currentPage) 2.5.dp else 1.dp,
-                                    if (i == currentPage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                    RoundedCornerShape(6.dp),
+                                .background(Color.White, RoundedCornerShape(6.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+                                .then(
+                                    if (i == currentPage) Modifier.border(
+                                        2.5.dp,
+                                        MaterialTheme.colorScheme.primary,
+                                        RoundedCornerShape(6.dp),
+                                    ) else Modifier,
                                 ),
                         ) {
                             PageThumb(i, ink, loader)
@@ -201,6 +202,7 @@ fun PagePanel(
     }
     deleting?.let { i ->
         AlertDialog(
+            tonalElevation = 0.dp,
             onDismissRequest = { deleting = null },
             title = { Text("${i + 1}. sayfa silinsin mi?") },
             text = { Text("Sayfa ve üzerindeki notlar silinecek. Bu işlem geri alınamaz.") },
@@ -282,6 +284,7 @@ private fun PageThumb(page: Int, ink: InkDocument, loader: PageThumbLoader) {
 @Composable
 fun TemplateDialog(title: String, onPick: (PageTemplate) -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
+        tonalElevation = 0.dp,
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

@@ -51,10 +51,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
@@ -97,12 +95,12 @@ fun OnboardingScreen(vm: LibraryViewModel) {
     }
 
     Box(Modifier.fillMaxSize().souBackground()) {
-        // Üstte hafif marka rengi
+        // Üstte düz yüzey
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(320.dp)
-                .background(Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f), Color.Transparent))),
+                .background(MaterialTheme.colorScheme.surface),
         )
         Column(Modifier.fillMaxSize().systemBarsPadding()) {
             Row(
@@ -148,7 +146,7 @@ fun OnboardingScreen(vm: LibraryViewModel) {
                                 vm = vm,
                             )
                         },
-                    ) { AppLogo(96.dp) }
+                    ) { AppLogo(96.dp, elevated = false) }
                 }
             }
             Box(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)) {
@@ -327,13 +325,8 @@ private fun ChoiceCard(
     Column(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = modifier
-            .clip(shape)
-            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)
-            .border(
-                if (selected) 2.dp else 1.dp,
-                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                shape,
-            )
+            .card(16.dp)
+            .then(if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
             .clickable(onClick = onClick)
             .padding(16.dp),
     ) {
@@ -353,23 +346,8 @@ private fun WelcomeArt() {
         infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "float",
     )
-    val glow by t.animateFloat(
-        0.85f, 1.1f,
-        infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "glow",
-    )
     Box(Modifier.size(280.dp), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier
-                .size(260.dp)
-                .graphicsLayer {
-                    scaleX = glow
-                    scaleY = glow
-                }
-                .clip(CircleShape)
-                .background(Brush.radialGradient(listOf(Brand.Blue.copy(alpha = 0.30f), Color.Transparent))),
-        )
-        AppLogo(150.dp, Modifier.graphicsLayer { translationY = float.dp.toPx() })
+        AppLogo(150.dp, Modifier.graphicsLayer { translationY = float.dp.toPx() }, elevated = false)
     }
 }
 
@@ -382,14 +360,15 @@ private fun PenArt() {
         infiniteRepeatable(tween(4200, easing = LinearEasing)),
         label = "progress",
     )
-    val shape = RoundedCornerShape(18.dp)
-    Box(Modifier.size(width = 320.dp, height = 230.dp).shadow(14.dp, shape).clip(shape).background(Color.White)) {
+    val ink = MaterialTheme.colorScheme.onSurface
+    val ruling = MaterialTheme.colorScheme.outlineVariant
+    Box(Modifier.size(width = 320.dp, height = 230.dp).card(18.dp)) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
             val gap = h / 7f
             for (i in 1..6) {
-                drawLine(Color(0xFFDCE4F7), Offset(0f, gap * i), Offset(w, gap * i), strokeWidth = 1.dp.toPx())
+                drawLine(ruling, Offset(0f, gap * i), Offset(w, gap * i), strokeWidth = 1.dp.toPx())
             }
             drawLine(Color(0xFFF2B8B5), Offset(w * 0.12f, 0f), Offset(w * 0.12f, h), strokeWidth = 1.dp.toPx())
 
@@ -426,7 +405,7 @@ private fun PenArt() {
             measure.getSegment(0f, length * write, drawn, true)
             drawPath(
                 drawn,
-                Brand.Deep,
+                ink,
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
             if (write < 1f) {
@@ -481,14 +460,11 @@ private fun DocsArt() {
 
 @Composable
 private fun MiniDoc(color: Color, label: String, modifier: Modifier) {
-    val shape = RoundedCornerShape(12.dp)
     Column(
         verticalArrangement = Arrangement.spacedBy(9.dp),
         modifier = modifier
             .size(width = 128.dp, height = 170.dp)
-            .shadow(10.dp, shape)
-            .clip(shape)
-            .background(Color.White)
+            .card(12.dp)
             .padding(14.dp),
     ) {
         Box(Modifier.clip(RoundedCornerShape(6.dp)).background(color).padding(horizontal = 8.dp, vertical = 3.dp)) {
@@ -500,7 +476,7 @@ private fun MiniDoc(color: Color, label: String, modifier: Modifier) {
                     .fillMaxWidth(if (i % 3 == 2) 0.6f else 1f)
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(Color(0xFFE3E8F2)),
+                    .background(MaterialTheme.colorScheme.outlineVariant),
             )
         }
     }

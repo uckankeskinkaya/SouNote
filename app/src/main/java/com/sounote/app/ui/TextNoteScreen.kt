@@ -8,7 +8,6 @@ import android.content.Intent
 import android.text.format.DateUtils
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -674,7 +673,6 @@ internal fun TextNoteCard(
     menu: (@Composable (dismiss: () -> Unit) -> Unit)? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(10.dp)
     val ago = remember(note.updated) {
         DateUtils.getRelativeTimeSpanString(note.updated, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
@@ -683,9 +681,7 @@ internal fun TextNoteCard(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.75f)
-                .clip(shape)
-                .background(Color(0xFFFFFDF6))
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+                .card()
                 .padding(12.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -693,18 +689,18 @@ internal fun TextNoteCard(
                     note.displayTitle,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1A1C20),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     note.plainBody,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF4A4E57),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (note.pinned) Icon(SouIcons.KeepFilled, contentDescription = "Sabit", tint = Color(0xFF1E4BF0), modifier = Modifier.align(Alignment.TopEnd).size(16.dp))
+            if (note.pinned) Icon(SouIcons.KeepFilled, contentDescription = "Sabit", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.TopEnd).size(16.dp))
             Text(
                 "Aa",
                 style = MaterialTheme.typography.labelSmall,

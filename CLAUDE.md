@@ -247,6 +247,10 @@ Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yaz�
 - Asistan kalitesi (build-170+): data/QuestionQuality.kt (EXAM_STYLE, clean: 4 farklı şık + karıştırma, distinctBy, verify/verifyGaps ile
   ikinci çözüm), practiceTest/Exercises.generate 3 tura kadar tamamlar; AssistantClient.heavy(config): model "auto" ise en güçlü model (6 sa önbellek);
   sohbet, puanlama, plan, koç heavy kullanır.
+- Listening A–B bölüm tekrarı (🧪): A ve B işaretlenir, bölüm tekrar tekrar çalar; tekrarlar arası 0/2/4/8 sn bekleme. ListeningPlayer.abA/abB/abGap/changeAbGap + ListeningScreen AbControls.
+- Deneme sınavı konu analizi (🧪): ders geneli testte her soru bir konuya bağlanır; sonuçta konu konu doğru/toplam, zayıf konu üstte, konunun PDF'ini aç ve o konudan alıştırma; konu puanları konu haritasına yazılır. AssistantClient.practiceTest(topics) + Question.topic + StudyTools TopicAnalysis.
+- Kayıtlı çalışma düzeni (🧪): belge ekranı ⋮ → "Çalışma düzenini kaydet" (belge + yan belge + dinleme kaydı), Bugün'de tek dokunuşla açılır. LibraryViewModel.StudySetup/saveStudySetup/openStudySetup (prefs "studySetups", pendingSideDocId) + HomeScreen StudySetupChip.
+- Hızlı kalem halkası (🧪): sayfada kalemle kıpırdatmadan basılı tut → kalem, fosforlu, silgi ve son renkler; Ayarlar → Not alma'dan kapatılır. PdfDocumentView.onPenRing/penRingEnabled (450 ms, 8dp) + ui/PenRing.kt PenRingOverlay + ToolState.penRing.
 - Yardımcılar: gpt-sor (Codex, model gpt-6.1-sol, ~/.codex/config.toml; görsel üretebilir), gemini-sor (sadece fikir). GPT'ye dar, tek dosyalık
   görev ver; geniş görevlerde 25 dk sınırına takılıyor. Diff'i mutlaka incele (klasör rengi/PDF beyazı gibi gereksiz değişiklikler yapıyor).
 

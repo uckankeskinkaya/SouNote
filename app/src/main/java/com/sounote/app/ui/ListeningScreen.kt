@@ -251,7 +251,8 @@ fun ListeningMiniBar(vm: LibraryViewModel) {
         Icon(SouIcons.Headphones, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp).size(20.dp))
         Text(res.title, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         Text(
-            "${clock(player.position)} / ${clock(player.duration)}",
+            if (player.gapLeftMs > 0) "Tekrara ${(player.gapLeftMs + 999) / 1000} sn"
+            else "${clock(player.position)} / ${clock(player.duration)}",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -314,6 +315,13 @@ private fun AbControls(vm: LibraryViewModel) {
             if (a != null) TextButton(onClick = { player.clearAb() }) { Text("Temizle") }
         }
         if (a != null && b != null) {
+            if (player.gapLeftMs > 0) {
+                Text(
+                    "Tekrara ${(player.gapLeftMs + 999) / 1000} sn",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Tekrarlar arası", modifier = Modifier.align(Alignment.CenterVertically), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 listOf(0 to "Beklemeden", 2_000 to "2 sn", 4_000 to "4 sn", 8_000 to "8 sn").forEach { (ms, label) ->

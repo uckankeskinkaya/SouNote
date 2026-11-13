@@ -37,6 +37,8 @@ class ListeningPlayer(private val store: ListeningStore) {
 
     /** Tekrar arası beklemede (oynatıcı duraklatıldı, süre dolunca sürer). */
     private var gapUntil = 0L
+    var gapLeftMs by mutableIntStateOf(0)
+        private set
 
     /** Kayıt sonuna gelince (çalışma serisi için). */
     var onCompleted: (() -> Unit)? = null
@@ -79,6 +81,7 @@ class ListeningPlayer(private val store: ListeningStore) {
         if (gapUntil != 0L) {
             // Tekrar arası beklerken duraklat: bekleme iptal
             gapUntil = 0L
+            gapLeftMs = 0
             playing = false
             return
         }
@@ -146,6 +149,7 @@ class ListeningPlayer(private val store: ListeningStore) {
         abA = null
         abB = null
         gapUntil = 0L
+        gapLeftMs = 0
     }
 
     /** Çalarken konumu okur (ekranlar 200 ms'de bir çağırır); A–B tekrarını ve aradaki beklemeyi yürütür. */
@@ -153,8 +157,10 @@ class ListeningPlayer(private val store: ListeningStore) {
         val p = mp ?: return
         val now = android.os.SystemClock.uptimeMillis()
         if (gapUntil != 0L) {
+            gapLeftMs = (gapUntil - now).coerceAtLeast(0).toInt()
             if (now >= gapUntil) {
                 gapUntil = 0L
+                gapLeftMs = 0
                 p.start()
             }
             return
@@ -167,6 +173,7 @@ class ListeningPlayer(private val store: ListeningStore) {
             if (abGap > 0) {
                 p.pause()
                 gapUntil = now + abGap
+                gapLeftMs = abGap
             }
         }
     }

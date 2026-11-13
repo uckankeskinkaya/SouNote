@@ -2,16 +2,10 @@
 
 package com.sounote.app.ui
 
-import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -37,7 +32,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -56,7 +50,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -68,10 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -189,6 +179,7 @@ fun HomeScreen(vm: LibraryViewModel) {
         if (uri != null) vm.enableAutoBackup(uri)
     }
     var newNotebook by remember { mutableStateOf(false) }
+    var newMenuOpen by remember { mutableStateOf(false) }
     var statsOpen by remember { mutableStateOf(false) }
     var layoutOpen by remember { mutableStateOf(false) }
     var quickEdit by remember { mutableStateOf(false) }
@@ -242,21 +233,18 @@ fun HomeScreen(vm: LibraryViewModel) {
     @Composable
     fun module(m: HomeModule, index: Int, modifier: Modifier) {
         when (m) {
-            HomeModule.HERO -> Column(modifier, verticalArrangement = Arrangement.spacedBy(space.md)) {
-                Appear(index, Modifier.fillMaxWidth()) {
-                    Greeting(greeting(vm.userName), days.first().second, vm.streak, vm.activeToday)
-                }
+            HomeModule.HERO -> {
                 // Sınavdan önceki gün ve sınav günü: konular, PDF'ler, deneme sınavı
                 examDayTarget(vm)?.let { e ->
-                    Appear(index, Modifier.fillMaxWidth()) {
+                    Appear(index, modifier) {
                         ExamDayCard(vm, e, onReview = { scope.launch { review = vm.dueCards().ifEmpty { null } } })
                     }
                 }
             }
             HomeModule.QUICK_ACCESS -> if (quick.isNotEmpty()) {
-                Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
+                Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionHeader("Favoriler", action = "Düzenle", onAction = { quickEdit = true })
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(space.md), contentPadding = PaddingValues(end = 8.dp)) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(end = 8.dp)) {
                         items(quick, key = { it.item.key }) { e ->
                             QuickTile(e, vm, Modifier.animateItem().pressScale(), onOpen = { openQuick(vm, e) })
                         }
@@ -264,24 +252,31 @@ fun HomeScreen(vm: LibraryViewModel) {
                 }
             }
             HomeModule.CONTINUE -> {
-                val last = recentDocs.firstOrNull()
                 if (empty) {
                     Appear(index, modifier) { StartCard(onNotebook = { newNotebook = true }, onImport = importPdf) }
-                } else if (last != null) {
-                    Appear(index, modifier.pressScale(0.98f)) {
-                        ContinueCard(last, vm.lastPage(last), vm.lastOpened(last), menu = { d -> docMenu(last, d) }) { vm.open(last) }
+                } else if (recentDocs.isNotEmpty()) {
+                    Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionHeader("Devam et", action = "Kütüphane") { vm.tab = LibraryViewModel.Tab.LIBRARY }
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            recentDocs.take(4).forEach { doc ->
+                                Box(Modifier.weight(1f)) {
+                                    DocCard(doc, onClick = { vm.open(doc) }, menu = { d -> docMenu(doc, d) }, favorite = vm.isFavorite(QuickItem.DOC, doc.id))
+                                }
+                            }
+                            repeat(4 - recentDocs.take(4).size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
                 }
             }
             HomeModule.UPCOMING -> {
                 val now = System.currentTimeMillis()
-                val next = vm.allExams.filter { it.time > now && !vm.isDone(it) }.take(3)
+                val next = vm.allExams.filter { it.time > now && !vm.isDone(it) }.take(4)
                 if (next.isNotEmpty()) {
-                    Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
-                        SectionHeader("Yaklaşanlar", action = "Planlayıcı") { vm.tab = LibraryViewModel.Tab.EXAMS }
+                    Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionHeader("Yaklaşanlar", action = "Takvim") { vm.tab = LibraryViewModel.Tab.EXAMS }
                         Column(Modifier.fillMaxWidth().card()) {
                             next.forEachIndexed { i, e ->
-                                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), modifier = Modifier.padding(start = 72.dp))
+                                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 ExamRow(e, vm) { vm.tab = LibraryViewModel.Tab.EXAMS }
                             }
                         }
@@ -309,22 +304,25 @@ fun HomeScreen(vm: LibraryViewModel) {
                 }
             }
             HomeModule.ACTIONS -> Appear(index, modifier) {
-                QuickActions(
-                    listOf(
-                        QuickAction(SouIcons.Add, "Yeni defter") { newNotebook = true },
-                        QuickAction(SouIcons.EditNote, "Hızlı not") { vm.quickNote() },
-                        QuickAction(SouIcons.PictureAsPdf, "PDF ekle") { importPdf() },
-                        QuickAction(SouIcons.StarShine, "Asistan") { vm.openAssistant() },
-                        // Kalemi olmayanlar için: tek dokunuşla parmakla yazma
-                        QuickAction(SouIcons.TouchApp, "Parmakla yaz", toggled = vm.tools.fingerDraw) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SectionHeader("Hızlı başla")
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PracticeTile(SouIcons.NoteAdd, "Yeni defter", Color(0xFF3346D3), Modifier.weight(1f)) { newNotebook = true }
+                        PracticeTile(SouIcons.PictureAsPdf, "PDF aç", Color(0xFFC2410C), Modifier.weight(1f)) { importPdf() }
+                        PracticeTile(SouIcons.Bolt, "Hızlı not", Color(0xFFB45309), Modifier.weight(1f)) { vm.quickNote() }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PracticeTile(SouIcons.StarShine, "Asistan", Color(0xFF7C3AED), Modifier.weight(1f)) { vm.openAssistant() }
+                        PracticeTile(SouIcons.TouchApp, if (vm.tools.fingerDraw) "Parmakla yaz: açık" else "Parmakla yaz", Color(0xFF0F766E), Modifier.weight(1f)) {
                             vm.updateTools(vm.tools.copy(fingerDraw = !vm.tools.fingerDraw))
                             vm.showMessage(if (vm.tools.fingerDraw) "Parmakla yazma açık" else "Parmakla yazma kapalı")
-                        },
-                    ),
-                )
+                        }
+                        PracticeTile(SouIcons.EditNote, "Yazı stüdyosu", Color(0xFFBE185D), Modifier.weight(1f)) { vm.tab = LibraryViewModel.Tab.WRITING }
+                    }
+                }
             }
             HomeModule.RECENT -> if (recentAll.size > 1) {
-                Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
+                Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionHeader("Son kullanılanlar", action = "Temizle") { clearRecents = true }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(space.lg), contentPadding = PaddingValues(end = 8.dp)) {
                         items(recentAll, key = {
@@ -364,7 +362,7 @@ fun HomeScreen(vm: LibraryViewModel) {
                 }
             }
             HomeModule.NOTES -> if (vm.textNotes.isNotEmpty()) {
-                Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(space.md)) {
+                Column(modifier.appear(index), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionHeader("Yazılı notlar", action = "Tümü") { vm.tab = LibraryViewModel.Tab.WRITING }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(space.lg), contentPadding = PaddingValues(end = 8.dp)) {
                         items(vm.textNotes.take(12), key = { "t" + it.id }) { n ->
@@ -391,18 +389,35 @@ fun HomeScreen(vm: LibraryViewModel) {
                 .padding(horizontal = if (narrow) 20.dp else 32.dp, vertical = if (narrow) 8.dp else 20.dp),
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(if (narrow) 24.dp else 28.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
                 modifier = Modifier.widthIn(max = 1100.dp).fillMaxWidth().align(Alignment.CenterHorizontally),
             ) {
-                // Üst satır: logo, arama ve ayarlar
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AppLogo(32.dp, elevated = false)
-                    Text("SouNote", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 10.dp).weight(1f))
-                    IconButton(onClick = { vm.searchOpen = true }, modifier = Modifier.semantics { contentDescription = "Ara" }) {
-                        Icon(SouIcons.Search, contentDescription = null)
+                    Column(Modifier.weight(1f)) {
+                        Text(greeting(vm.userName), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                        val now = System.currentTimeMillis()
+                        val week = vm.catalog.weekOf(now)
+                        val date = SimpleDateFormat("d MMMM EEEE", TR).format(Date(now))
+                        Text(date + if (week > 0) " · Hafta $week" else "", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = { vm.tab = LibraryViewModel.Tab.SETTINGS }) {
-                        Icon(SouIcons.Settings, contentDescription = "Ayarlar")
+                    IconButton(onClick = { vm.searchOpen = true }) {
+                        Icon(SouIcons.Search, contentDescription = "Ara")
+                    }
+                    if (narrow) {
+                        IconButton(onClick = { vm.tab = LibraryViewModel.Tab.SETTINGS }) {
+                            Icon(SouIcons.Settings, contentDescription = "Ayarlar")
+                        }
+                    }
+                    Box {
+                        Button(onClick = { newMenuOpen = true }) {
+                            Icon(SouIcons.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Yeni", modifier = Modifier.padding(start = 8.dp))
+                        }
+                        DropdownMenu(expanded = newMenuOpen, onDismissRequest = { newMenuOpen = false }) {
+                            DropdownMenuItem(text = { Text("Yeni defter") }, onClick = { newMenuOpen = false; newNotebook = true })
+                            DropdownMenuItem(text = { Text("PDF ekle") }, onClick = { newMenuOpen = false; importPdf() })
+                            DropdownMenuItem(text = { Text("Hızlı not") }, onClick = { newMenuOpen = false; vm.quickNote() })
+                        }
                     }
                 }
                 val modules = vm.homeLayout.visible
@@ -413,11 +428,11 @@ fun HomeScreen(vm: LibraryViewModel) {
                     val hero = modules.firstOrNull()?.takeIf { it == HomeModule.HERO }
                     if (hero != null) key(hero) { module(hero, 0, Modifier.fillMaxWidth()) }
                     if (vm.showBackupNudge) BackupNudge(onPick = { pickBackupFolder.launch(null) }, onLater = vm::snoozeBackupNudge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.Top) {
-                        Column(Modifier.weight(1.35f), verticalArrangement = Arrangement.spacedBy(28.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Top) {
+                        Column(Modifier.weight(1.35f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                             modules.filter { it != hero && it !in right }.forEachIndexed { i, m -> key(m) { module(m, i + 1, Modifier.fillMaxWidth()) } }
                         }
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(28.dp)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
                             modules.filter { it != hero && it in right }.forEachIndexed { i, m -> key(m) { module(m, i + 1, Modifier.fillMaxWidth()) } }
                         }
                     }
@@ -499,39 +514,6 @@ fun HomeScreen(vm: LibraryViewModel) {
     }
 }
 
-/** Karşılama: tarih, selam ve tek satır özet (seri, bugünkü süre). */
-@Composable
-private fun Greeting(greeting: String, todayMs: Long, streak: Int, activeToday: Boolean) {
-    val date = remember { SimpleDateFormat("d MMMM EEEE", TR).format(Date()) }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(date, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(greeting, style = MaterialTheme.typography.headlineMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-            val sou = LocalSouColors.current
-            InfoPill(
-                SouIcons.LocalFireDepartment,
-                if (streak > 0) "$streak gün seri" else "Seri yok",
-                if (streak > 0 && activeToday) sou.warning else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            InfoPill(SouIcons.Timer, "Bugün ${formatStudy(todayMs)}", MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun InfoPill(icon: ImageVector, text: String, tint: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
-        Text(text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 6.dp))
-    }
-}
-
 /** Favori kutucuğu: belge kapağı, klasör, ders çizimi ya da not. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -594,76 +576,29 @@ private fun CourseMiniCard(course: Course, onClick: () -> Unit) {
     }
 }
 
-@Composable
-@OptIn(ExperimentalFoundationApi::class)
-private fun ContinueCard(
-    doc: DocRef,
-    page: Int,
-    openedAt: Long,
-    menu: @Composable (dismiss: () -> Unit) -> Unit,
-    onOpen: () -> Unit,
-) {
-    var menuOpen by remember { mutableStateOf(false) }
-    val ago = remember(openedAt) {
-        DateUtils.getRelativeTimeSpanString(openedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
-    }
-    val thumbShape = RoundedCornerShape(8.dp)
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.fillMaxWidth().card().combinedClickable(onClick = onOpen, onLongClick = { menuOpen = true }).padding(14.dp),
-    ) {
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) { menu { menuOpen = false } }
-        Box(
-            Modifier
-                .width(60.dp)
-                .aspectRatio(0.75f)
-                .clip(thumbShape)
-                .background(Color.White)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, thumbShape),
-        ) { Thumbnail(doc) }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
-            Text("Devam et", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(doc.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text("Sayfa ${page + 1} · $ago", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(SouIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-/** Yaklaşan sınav/ödev satırı: tarih kutusu, başlık, kalan süre. */
+/** Yaklaşan sınav veya ödev. */
 @Composable
 private fun ExamRow(e: com.sounote.app.data.Exam, vm: LibraryViewModel, onClick: () -> Unit) {
-    val day = remember(e.time) { SimpleDateFormat("d", TR).format(Date(e.time)) }
-    val month = remember(e.time) { SimpleDateFormat("MMM", TR).format(Date(e.time)) }
-    val c = countdownColor(e.time)
-    val color = Color(vm.courseColor(e.course))
+    val type = examType(e)
+    val color = type.color()
+    val now = System.currentTimeMillis()
+    val today = SimpleDateFormat("yyyy-MM-dd", TR).format(Date(e.time)) == SimpleDateFormat("yyyy-MM-dd", TR).format(Date(now))
+    val date = if (e.slot.isNotBlank()) e.slot else SimpleDateFormat("d MMM, HH:mm", TR).format(Date(e.time))
+    val remaining = ((e.time - now + 86_400_000L - 1L) / 86_400_000L).coerceAtLeast(0L)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(44.dp).clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = 0.12f)).padding(vertical = 6.dp),
-        ) {
-            Text(day, style = MaterialTheme.typography.titleMedium, color = color)
-            Text(month, style = MaterialTheme.typography.labelSmall, color = color)
+        ExamTypeBadge(type, 40.dp)
+        Column(Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)) {
+            Text(e.title.ifBlank { e.course }, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("$date · ${type.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
-            Text(e.title.ifBlank { e.course }, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(e.kindIcon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                Text(
-                    e.course,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
+        if (today) {
+            Text("Bugün", style = MaterialTheme.typography.labelMedium, color = color, modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 3.dp))
+        } else {
+            Text("$remaining gün", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(countdownText(e.time), color = c, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -733,7 +668,7 @@ private fun StartCard(onNotebook: () -> Unit, onImport: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxWidth().card().padding(24.dp),
     ) {
-        AppLogo(72.dp)
+        Icon(SouIcons.NoteAdd, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
         Text("İlk defterini oluştur", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         Text(
             "Boş defter aç ya da PDF ekle.",
@@ -748,93 +683,28 @@ private fun StartCard(onNotebook: () -> Unit, onImport: () -> Unit) {
     }
 }
 
-private class QuickAction(
-    val icon: ImageVector,
-    val title: String,
-    /** Aç/kapa için: null değilse açıkken dolu renkli görünür. */
-    val toggled: Boolean? = null,
-    val onClick: () -> Unit,
-)
-
-/** Hızlı başla: yuvarlak simge + tek kelime, tek satır. */
-@Composable
-private fun QuickActions(actions: List<QuickAction>) {
-    Row(Modifier.fillMaxWidth()) {
-        actions.forEach { a ->
-            val on = a.toggled == true
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(16.dp))
-                    .pressScale()
-                    .clickable(onClick = a.onClick)
-                    .padding(vertical = 8.dp),
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)),
-                ) {
-                    Icon(
-                        a.icon,
-                        contentDescription = null,
-                        tint = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-                Text(
-                    a.title,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    }
-}
-
 @Composable
 private fun WeekCard(days: List<Pair<Long, Long>>, vm: LibraryViewModel, modifier: Modifier, onOpen: () -> Unit) {
-    val dayName = remember { SimpleDateFormat("EEE", TR) }
     val max = (days.maxOfOrNull { it.second } ?: 0L).coerceAtLeast(1L)
-    // Çubuklar açılışta aşağıdan büyür (animasyon kapalıysa hemen tam boy).
-    val animate = LocalMotionLevel.current != MotionLevel.OFF
-    val grow = remember { Animatable(if (animate) 0f else 1f) }
-    LaunchedEffect(Unit) { if (animate) grow.animateTo(1f, tween(700, delayMillis = 250, easing = FastOutSlowInEasing)) }
-    Column(modifier = modifier.card().clickable(onClick = onOpen).padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Bu hafta", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            Text(formatStudy(days.sumOf { it.second }), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+    val todayMinutes = (days.firstOrNull()?.second ?: 0L) / 60_000L
+    val warning = LocalSouColors.current.warning
+    Row(
+        modifier.card().clickable(onClick = onOpen).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.size(46.dp).clip(RoundedCornerShape(12.dp)).background(warning.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            Icon(SouIcons.LocalFireDepartment, contentDescription = null, tint = warning, modifier = Modifier.size(26.dp))
         }
-        Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.fillMaxWidth().padding(top = 14.dp)) {
-            days.reversed().forEachIndexed { i, (t, ms) ->
-                val today = i == days.size - 1
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    Box(
-                        Modifier
-                            .width(14.dp)
-                            .height((64f * ms / max * grow.value).dp.coerceAtLeast(4.dp))
-                            .clip(RoundedCornerShape(5.dp))
-                            .background(
-                                when {
-                                    today -> MaterialTheme.colorScheme.primary
-                                    vm.isActiveDay(t) -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                                    else -> MaterialTheme.colorScheme.surfaceContainerHighest
-                                },
-                            ),
-                    )
-                    Text(
-                        dayName.format(Date(t)),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
+        Column(Modifier.weight(1f)) {
+            Text("${vm.streak} gün", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Çalışma serisi · bugün $todayMinutes dk", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Row(Modifier.height(32.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            days.reversed().forEachIndexed { i, (_, ms) ->
+                val fraction = (ms.toFloat() / max).coerceIn(0f, 1f)
+                val alpha = if (i == days.lastIndex) 1f else 0.35f + 0.65f * fraction
+                Box(Modifier.width(8.dp).height((32f * fraction).dp.coerceAtLeast(4.dp)).clip(RoundedCornerShape(3.dp)).background(MaterialTheme.colorScheme.primary.copy(alpha = alpha)))
             }
         }
     }
@@ -923,15 +793,18 @@ internal fun QuickAccessDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
 /** Bütün belgelerde tekrar zamanı gelmiş bilgi kartları. */
 @Composable
 private fun ReviewCard(count: Int, onStart: () -> Unit) {
+    val success = LocalSouColors.current.success
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().card().clickable(onClick = onStart).padding(start = 14.dp, end = 10.dp, top = 12.dp, bottom = 12.dp),
+        modifier = Modifier.fillMaxWidth().card().clickable(onClick = onStart).padding(14.dp),
     ) {
-        IconBadge(SouIcons.Style)
-        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-            Text("Bugünkü tekrar", style = MaterialTheme.typography.titleMedium)
-            Text("$count kart", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(success.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+            Icon(SouIcons.Style, contentDescription = null, tint = success, modifier = Modifier.size(22.dp))
         }
-        Button(onClick = onStart) { Text("Başla") }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text("$count kart tekrar bekliyor", style = MaterialTheme.typography.titleSmall)
+            Text("Yaklaşık ${(count * 20 + 59) / 60} dk", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        OutlinedButton(onClick = onStart) { Text("Başla") }
     }
 }

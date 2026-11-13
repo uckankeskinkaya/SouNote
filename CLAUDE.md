@@ -234,6 +234,22 @@ Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd si
 çizim ve bilgi kartı denemeleri, kalite katmanları, WebGL'siz statik görünüm. Logo: "A. Dengeli" (site/brand-src, make_logo.py).
 Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/README.md. build.yml site/** değişikliğinde APK derlemez.
 
+## SouNote 4.0 arayüzü (🧪, build-171+; 13 Kasım)
+Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yazıları). Onaylanan maket: scratchpad mock/ (HTML, açık kâğıt tonu).
+- Theme.kt: darkSchemeOf/lightSchemeOf düz nötr yüzeyler (açık #F6F6F3 zemin, beyaz yüzey, #E5E5E0 çizgi; koyu #111318/#1A1D24), tema sadece vurgu
+  (ELECTRIC açıkta #3346D3, koyuda #8C9BFF). Components: card() = surface + 1dp outlineVariant, 14dp; souBackground() düz zemin. hero tek renk.
+- AppShell: 4 sekme (HOME "Bugün", LIBRARY, COURSES "Çalış", EXAMS "Takvim"); WRITING Çalış'tan açılır (railTab), SETTINGS raydaki Ayarlar.
+  Tablet: SouRail (84dp, hap seçili, altta Asistan + Ayarlar); <600dp NavigationBar. NavStyle/NavDrawer kullanılmıyor.
+- ExamKind.kt: ExamType (QUIZ/WRITING/SPEAKING/PRESENTATION/LISTENING/TASK/FINAL; ad + kind'dan examType()), ExamTypeBadge. Bugün ve Takvim kullanır.
+- Bugün (HomeScreen): selam + tarih·hafta, "Yeni" menüsü, Devam et (4 DocCard), Hızlı başla (PracticeTile 3×2), Yaklaşanlar (tür simgesi),
+  tekrar kartı, seri kartı. Takvim: ExamListRow + ExamTypeLegend; "Ekle" düğmesi YOK (kullanıcı: sınavları ben eklerim).
+  Çalış: üstte pratik şeridi (Deneme sınavı, Alıştırma, Yazı stüdyosu, Speaking). smoke.sh sekme adları güncel.
+- Asistan kalitesi (build-170+): data/QuestionQuality.kt (EXAM_STYLE, clean: 4 farklı şık + karıştırma, distinctBy, verify/verifyGaps ile
+  ikinci çözüm), practiceTest/Exercises.generate 3 tura kadar tamamlar; AssistantClient.heavy(config): model "auto" ise en güçlü model (6 sa önbellek);
+  sohbet, puanlama, plan, koç heavy kullanır.
+- Yardımcılar: gpt-sor (Codex, model gpt-6.1-sol, ~/.codex/config.toml; görsel üretebilir), gemini-sor (sadece fikir). GPT'ye dar, tek dosyalık
+  görev ver; geniş görevlerde 25 dk sınırına takılıyor. Diff'i mutlaka incele (klasör rengi/PDF beyazı gibi gereksiz değişiklikler yapıyor).
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·

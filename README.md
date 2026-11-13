@@ -28,12 +28,13 @@
 
 | | |
 |---|---|
-| 🎨 **Görünüm (3.0)** | Logonun 6 halinden 6 tema (Elektrik, Safir, Gümüş, Siyah beyaz, Zümrüt, Gül): parlayan zemin, cam kartlar; logo, uygulama simgesi ve widget'lar temaya göre değişir; emoji yerine simgeler, Canva çizimleri; telefonda alt çubuk, tablette yan menü ve yatayda iki sütunlu ana sayfa |
+| 🎨 **Görünüm (4.0)** | Sade, düz arayüz: kâğıt tonu açık tema ve kömür grisi koyu tema, tek vurgu rengi (6 tema), parıltı ve degrade yok; dört bölüm: Bugün, Kütüphane, Çalış, Takvim (tablette sol menü, altta Asistan ve Ayarlar; telefonda alt çubuk); her öğede simge |
 | 🏠 **Ana sayfa** | Bölümleri sırala ya da gizle; favoriler ve sabitlenenlerle hızlı erişim; son kullanılanları tek tek kaldır ya da temizle (dosyalar silinmez) |
 | ✍️ **Kalem** | 14 kalem (dolma, jel, ince uç, keçeli, pastel, neon, noktalı, fırça, kaligrafi…), her kalem ayarını hatırlar; yazma desteği (titreme süzme), cetvel ve açıölçer, çıkartmalar, son kullanılan renkler, katmanlar (gizle/göster, sıra), sonsuz tuval; fosforlu, silgi, şekil düzeltme, lasso, metin kutusu, resim, avuç içi engelleme |
 | 📄 **PDF** | Okuma modu, lasso ile seçilen bölgeyi asistana sor, tablette yan yana not; içe aktar ya da klasör bağla, yakınlaşınca net çizim, form doldurma, PDF içinde arama, notlu PDF olarak dışa aktar |
 | 📚 **Dersler** | Drive'daki ders klasörüne eklenen yeni hafta ve dosyalar uygulamaya kendiliğinden gelir ("Yeni gelenler"); haftalık kaynaklar konu ve hafta hafta; Word/PowerPoint dosyaları WPS/Office'te açılır, PDF olarak SouNote'a paylaşılır; bitirdiklerini işaretle, haftanın ilerlemesini gör |
-| 📅 **Planlayıcı** | Liste, hafta, ay ve zaman çizelgesi; ödev tamamlama, öncelik, filtreler, hatırlatıcılar, ana ekran widget'ları (sıradaki sınav, bugün, hafta listesi, hızlı işlemler); asistanla sınav öncesi gün gün çalışma planı |
+| 📅 **Takvim** | Her sınavın türü simgeyle (sınav, Writing, Speaking, sunum, Listening, ödev, kur atlama); liste, hafta, ay ve zaman çizelgesi; ödev tamamlama, öncelik, filtreler, hatırlatıcılar, ana ekran widget'ları (sıradaki sınav, bugün, hafta listesi, hızlı işlemler); asistanla sınav öncesi gün gün çalışma planı |
+| 🧠 **Asistan soruları** | Deneme sınavı ve alıştırmalar okulun sınav tarzında; aynı şıklar ve tekrar eden sorular ayıklanır, her soru ikinci kez çözülüp denetlenir, doğru cevap şıklara dağılır; ağır işlerde en güçlü model |
 | 🃏 **Bilgi kartları** | Sayfadan seçip karta çevir ya da asistana ürettir; dokun çevir, kaydırarak bildim/bilemedim; aralıklı tekrar (Leitner) |
 | 🤖 **Asistan** | Açık belgeyi ya da bir dersin bütün PDF'lerini okur (ders özeti); özet, kelime listesi, soru, essay değerlendirmesi. Evren (e-Devlet) anahtarı için uygulama içinde adım adım kurulum |
 | 🔎 **Genel arama** | Dersler, klasörler, belgeler, notlar, sınavlar; PDF'lerin içinde sayfa sayfa; filtreler ve son aramalar |

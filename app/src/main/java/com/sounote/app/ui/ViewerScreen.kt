@@ -137,6 +137,8 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var sideDoc by remember(doc.id) { mutableStateOf<DocRef?>(null) }
     var sidePicker by remember { mutableStateOf(false) }
     var saveSetup by remember { mutableStateOf(false) }
+    // Kalemle basılı tutunca açılan hızlı kalem halkasının yeri (görünüm koordinatı)
+    var penRing by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
     // Kayıtlı çalışma düzeninden açıldıysa yan belge de gelsin
     LaunchedEffect(doc.id) {
         vm.pendingSideDocId?.let { id -> sideDoc = vm.imported.firstOrNull { it.id == id } }
@@ -790,6 +792,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onFormFieldRequest = { editingField = it }
                                 onUndoGesture = { this.ink.undo() }
                                 onStylusButton = { stylusClickState.value() }
+                                onPenRing = { x, y -> penRing = androidx.compose.ui.geometry.Offset(x, y) }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
                                     // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)
@@ -832,6 +835,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             container.setLowLatency(tools.lowLatency)
                             val v = container.pdfView
                             v.tools = tools
+                            v.penRingEnabled = tools.penRing
                             v.twoPage = vm.twoPage
                             v.setDarkTheme(darkTheme)
                             v.setInverted(vm.nightReading)
@@ -846,6 +850,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    penRing?.let { at ->
+                        PenRingOverlay(at, tools, onPick = { vm.updateTools(it); penRing = null }, onDismiss = { penRing = null })
+                    }
                     if (reading && vm.fullScreen) {
                         Row(
                             Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(50))

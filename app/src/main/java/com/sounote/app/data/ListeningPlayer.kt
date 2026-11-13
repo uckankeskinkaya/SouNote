@@ -138,7 +138,7 @@ class ListeningPlayer(private val store: ListeningStore) {
         return true
     }
 
-    fun setAbGap(ms: Int) {
+    fun changeAbGap(ms: Int) {
         abGap = ms
     }
 

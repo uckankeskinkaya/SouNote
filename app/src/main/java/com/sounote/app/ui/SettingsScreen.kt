@@ -313,6 +313,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 vm.updateTools(tools.copy(fingerDraw = it))
             }
         },
+        Entry(Category.NOTES, "Kalem halkası", "kalem halka basılı tut hızlı renk silgi fosforlu") {
+            SwitchRow(SouIcons.InkPen, "Kalem halkası", "Kalemle sayfada basılı tut: kalem, fosforlu, silgi ve renkler açılır", tools.penRing) {
+                vm.updateTools(tools.copy(penRing = it))
+            }
+        },
         Entry(Category.NOTES, "Kalem düğmesi", "kalem düğme yan tuş focus pen xiaomi s pen silgi geri al buton") {
             Column(Modifier.padding(bottom = 8.dp)) {
                 SettingRow(SouIcons.Stylus, "Kalem düğmesi", subtitle = "Xiaomi Focus Pen, S Pen ve yan düğmeli diğer kalemler")

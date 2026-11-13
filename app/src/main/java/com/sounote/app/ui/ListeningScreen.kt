@@ -317,7 +317,7 @@ private fun AbControls(vm: LibraryViewModel) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Tekrarlar arası", modifier = Modifier.align(Alignment.CenterVertically), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 listOf(0 to "Beklemeden", 2_000 to "2 sn", 4_000 to "4 sn", 8_000 to "8 sn").forEach { (ms, label) ->
-                    FilterChip(selected = player.abGap == ms, onClick = { player.setAbGap(ms) }, label = { Text(label) })
+                    FilterChip(selected = player.abGap == ms, onClick = { player.changeAbGap(ms) }, label = { Text(label) })
                 }
             }
         } else {

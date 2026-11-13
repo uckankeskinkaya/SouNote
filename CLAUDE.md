@@ -257,6 +257,11 @@ Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yaz�
 - Yardımcılar: gpt-sor (Codex, model gpt-6.1-sol, ~/.codex/config.toml; görsel üretebilir), gemini-sor (sadece fikir). GPT'ye dar, tek dosyalık
   görev ver; geniş görevlerde 25 dk sınırına takılıyor. Diff'i mutlaka incele (klasör rengi/PDF beyazı gibi gereksiz değişiklikler yapıyor).
 
+REDDEDİLEN FİKİRLER (kullanıcı beğenmedi, tekrar önerme): sınıf duyuruları, kelime defteri, el yazısını yazıya çevirme, tek dokunuşla hata raporu,
+haftalık özet bildirimi, sesli okuma (TTS), speaking sınav simülasyonu, uygulama içi APK güncelleme, yanlışlar kuyruğu, essay karşılaştırma,
+takıldığın yere işaret, boş hâliyle yeniden çöz, essay taslak kutuları, paragrafı kur (cümle sıralama), kanıtı sen bul, solak modu/el ayarı,
+katman seçerek paylaş, çevrimdışı ders paketi, PDF sürümü değişince not taşıma, listening metni.
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·

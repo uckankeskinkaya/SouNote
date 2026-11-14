@@ -270,7 +270,7 @@ katman seçerek paylaş, çevrimdışı ders paketi, PDF sürümü değişince n
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·
-  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · 06 1ojYUJlwP3PfdDgtm6yDwsao2bwvhi8E- · 07 1Xg4p2xcAOcjiSb4YnOSt1e5ZEhytBACU · 08 1bSqcOM-itqsZ7IaGWEonKyb9v9wwg6zl ·
+  04 1Pey8wrErbhwuiyrnO2XR8WGRjvTMoF_2 · 05 1H1EqjgFYcBzws5FTsLoHCsjBGUIgPzx7 · 06 1ojYUJlwP3PfdDgtm6yDwsao2bwvhi8E- · 07 1Xg4p2xcAOcjiSb4YnOSt1e5ZEhytBACU · 08 1bSqcOM-itqsZ7IaGWEonKyb9v9wwg6zl · 09 1D_PLCj3IS1g7ydICvIeELjPPckT2eS7I ·
   Diğer 1GGk0lDJ3_zDYWGSBE9nl247k78YATQUM. Hafta 6 (26 Ekim): 23 dosya program PDF'ine göre günlere ve konulara dağıtıldı.
   Yeni hafta: klasör aç ("Hafta 06 · 26 Ekim-1 Kasım"), dosyaları taşı (update_file parentId), WEEKS'e ekle.
 - OTOMASYON (🧪, build-137+): uygulama katalog yenilerken (açılış + ön plana gelince 3 saatte bir) Drive kök klasörünü

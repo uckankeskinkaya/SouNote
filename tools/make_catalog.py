@@ -199,7 +199,43 @@ raw = """1NDnzxRuyb9rNNWfMUkX1ls4UugEHRm3t|PPT (Reading Strategies III- Pronoun 
 1ttQceVzBEoU0s8m81MW-awBBDKELTU_-|REVISION HANDOUT FOR PROGRESS TEST|pdf
 1g7aGIl5_TPJbIJpTSaeVpJq4n8v2LREF|Self Study Handout (Hafta 8)|pdf
 1s2qLWvscU8ar7haq78uBjc8LTz8Ps8ws|Self Study Handout Answer Key (Hafta 8)|pdf
-1-BlCg5ar6kjYMfJt_B86nVh0mDD-uAbu|Self Study Handout Listening Track (Hafta 8)|audio"""
+1-BlCg5ar6kjYMfJt_B86nVh0mDD-uAbu|Self Study Handout Listening Track (Hafta 8)|audio
+15_0SEp2A_5_dBYg6h6TKgBxj1MB63I3C|PPT (Presentation Skills IV - Final Review)|pptx
+1ekdKvIn2wzhbTjdx-WZjgAYxgxN6q5bT|PPT (Presentation Skills IV - Final Review) (PDF)|pdf
+1OdNMvOt2aIdyFfSObszpspJ9ABXqyI17|Presentation Rating Scale|pdf
+1RPVg3uGoeqhgxE43H3PRerTFgtKPxg_9|PPT (Effective Presenters and Listeners)|pptx
+1cE3elk2c7ByoYeHBHzgxRn8S3QvwTTQo|PPT (Effective Presenters and Listeners) (PDF)|pdf
+15f5IeiwUJDdZt8TRWLQewQ3RExyXB12b|PPT LISTENING & SPEAKING (Online Advertisement)|pptx
+1S2Z5rci8m_UlCLgn3eIdW6hBLpW2712e|PPT LISTENING & SPEAKING (Online Advertisement) (PDF)|pdf
+1Pjc_MGk7cQ1Y54DLjatERXGX8KBLnK5a|HANDOUT LISTENING & SPEAKING (Online Advertisement)|pdf
+1EiZI3SwNBpTYdP1uYfpbl68yuxBYBZZq|Online Advertisement - Listening (Lecture)|audio
+1TbtcUfYtMBW91YQsMFftIVZkGBacH1wz|Online Ads (video)|video
+1CEIMafU4RjJVYdbcVnh_lVnFPTUpDA72|HANDOUT (Vocabulary How To B1+ U5C)|pdf
+1HyptF8nuQ4UT_I0eZYhsQfB3V_ipdrar|INTEGRATED HANDOUT (The Consumer Trap)|pdf
+1txwIDG8_-K2qjaYq1lQ_8n7OqsNsdBUn|PPT (Causatives)|pptx
+19JIt2i-kw3E1NfMfaPidqwlm7U6Q_h8h|PPT (Causatives) (PDF)|pdf
+1XfTsqRx0weeH_SHmpg56voRmC8HC8IFv|HANDOUT 1 (Causatives - Rewrite)|pdf
+1_K9-CN2wp4yuOu0rXqSPTA8vrD7qcxKZ|HANDOUT 2 (Grammar B1+ U5D)|pdf
+1aVl0YrblKsymNmpmYAoixBp9RJGxf4cU|ACTIVITY HANDOUT (Causatives)|pdf
+1V7LX4bAIXUGxKODULCKbJ-nPiPKjHVeN|PPT (Listening Strategies IV - Note Taking)|pptx
+1_E1slN5LE242j1FhzujBTHVdkJUKge0e|PPT (Listening Strategies IV - Note Taking) (PDF)|pdf
+1hozIDCXMxSaA_PuwlaFZU4o2pk72olkT|HANDOUT (Listening Note Taking)|pdf
+1AOCGy9Khh2Ohffl6OeO9P-ch8UvujUgt|Listening Note Taking - Track 1 (Third Culture Kids)|audio
+19cvC6mD8ya75OXvA--IH68akkThg3xaY|Listening Note Taking - Track 2 (Video Games)|audio
+1Logd-NSEqGTj_gL19QSj3Zjbvi1IqaJa|PPT SPEAKING (Agatha Christie)|pptx
+11miqrP5JJHEdqPge_bGol1qqhCJKD4bz|PPT SPEAKING (Agatha Christie) (PDF)|pdf
+18pSx_tQe388pnVU4milcWoWlFFobu6Zb|HANDOUT (Reading - Agatha Christie)|pdf
+1XhJkotQmAErv0ndJp4MVS_oa9dcXl9aK|Agatha Christie's Mysterious Disappearance (video)|video
+1oYO2l3xLl_vH8cdUgsU3uzojKS8BUbnj|HANDOUT (Rewrite - Unit 5 Review)|pdf
+13NbphKYOoq7Q-hPX9lxJum2Xmz_nUKcC|LISTENING HANDOUT (Vaccines - Note-taking)|pdf
+1xQf9DGl8mECnFBIGFgUq-sm3rAXiQaGw|Vaccines - Listening (Lecture)|audio
+1FgliD8VYRoJCDDxWSR7krgGTqLol_zdS|WRITING HANDOUT (Opinion Essay) PRACTICE IV|pdf
+17Y0BOEDZP3g1metHRgr6q3Zs_Y19wzr5|ACTIVITY HANDOUT (Proverbs)|pdf
+1GzBxe6-aTLwnQhEhf8Eyg0j7eI6Ew4y_|Proverbs List|pdf
+1NpXt0USdKL2DdC966z1KcsT04qaMpXNh|ACTIVITY HANDOUT (Project Time: Adverts)|pdf
+19XcLm4-wEMjXq8qSzPjIqAE7e5EwI3kf|Self Study Handout Answer Key (Hafta 9)|pdf
+1aWz0qoEOHwL38S4iXSRaUvW0mSON7W5S|Self Study Handout Listening Track (Hafta 9)|audio
+129TaOs4qR_bt8RHYqbfJsbXSYh3qf49u|L4 Fall Week 9 Program|pdf"""
 for line in raw.splitlines():
     i,t,k = line.split("|"); F[t]=(i,k)
 used=set()
@@ -223,6 +259,7 @@ courses = [
    {"id":"indirect-questions","name":"Indirect and Negative Questions","resources":R("PPT (Indirect and Negative Questions)","PPT (Indirect and Negative Questions) (PDF)","HANDOUT 1 (Indirect and Negative Questions)","HANDOUT 2 (Rewrite Indirect Negative Questions)")},
    {"id":"comparatives","name":"Comparative and Superlative Structures","resources":R("PPT (Comparative and Superlative Structures)","PPT (Comparative and Superlative Structures) (PDF)","HANDOUT 1 (Comparative and Superlative Structures)","HANDOUT 2 (Grammar B1+ U5A U5B)","ACTIVITY HANDOUT (Comparative Structures)")},
    {"id":"purpose","name":"Clauses of Purpose (to, so that, in order to)","resources":R("PPT (Clauses of Purpose)","PPT (Clauses of Purpose) (PDF)","HANDOUT 1 (Clauses of Purpose)","HANDOUT 2 (Rewrite Clauses of Purpose)","WORKSHEET (Clauses of Purpose)")},
+   {"id":"causatives","name":"Causatives (have / get something done)","resources":R("PPT (Causatives)","PPT (Causatives) (PDF)","HANDOUT 1 (Causatives - Rewrite)","HANDOUT 2 (Grammar B1+ U5D)","ACTIVITY HANDOUT (Causatives)")},
    {"id":"preferences","name":"Expressing Preferences (prefer, would rather)","resources":R("PPT (Expressing Preferences)","PPT (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Expressing Preferences)","WORKSHEET (Prefer, Would Prefer, Would Rather)")},
  ]},
  {"id":"vocabulary","name":"Vocabulary","emoji":"🔤","color":"#8E63CE","topics":[
@@ -230,26 +267,27 @@ courses = [
    {"id":"vocab-u2","name":"Unit 2 (2A–2D)","resources":R("HANDOUT (Vocabulary 2A B)","HANDOUT (Vocabulary How to Activity B1+ U2C)","HANDOUT (Vocabulary B1+ U2D)","HANDOUT (Vocabulary and How to)")},
    {"id":"vocab-u3","name":"Unit 3 (3A–3D)","resources":R("HANDOUT (Vocabulary B1+ U3A)","HANDOUT (Vocabulary How To B1+ 3C)","HANDOUT (Vocabulary and Grammar B1+ U3D)")},
    {"id":"vocab-u4","name":"Unit 4 (4A–4D)","resources":R("HANDOUT (Vocabulary B1+ U4A)","HANDOUT (Vocabulary B1+ U4B)","HANDOUT (Vocabulary How To B1+ U4C)","HANDOUT (Vocabulary B1+ U4D)")},
-   {"id":"vocab-u5","name":"Unit 5 (5A–5B)","resources":R("HANDOUT (Vocabulary B1+ U5A U5B)","HANDOUT (Vocabulary Review Units 1-5)")},
+   {"id":"vocab-u5","name":"Unit 5 (5A–5C)","resources":R("HANDOUT (Vocabulary B1+ U5A U5B)","HANDOUT (Vocabulary How To B1+ U5C)","HANDOUT (Vocabulary Review Units 1-5)")},
    {"id":"vocab-general","name":"Kelime öğrenme","resources":R("HANDOUT (Vocabulary)","PPT (Vocabulary - So What Do You Study)","PPT (Vocabulary - So What Do You Study) (PDF)","Knowing a word","Knowing a word (PDF)")},
  ]},
  {"id":"reading","name":"Reading","emoji":"📖","color":"#3FA36B","topics":[
    {"id":"reading-strategies","name":"Reading Strategies (I–IV)","resources":R("PPT (Reading Strategies I - Introduction)","PPT (Reading Strategies I - Introduction) (PDF)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details)","PPT (Reading Strategies II - Topic, Main Ideas, Supporting Details) (PDF)","PPT (Reading Strategies III- Pronoun Reference)","PPT (Reading Strategies III- Pronoun Reference) (PDF)","PPT Reading Strategies IV (Inferring Unknown Words)","PPT Reading Strategies IV (Inferring Unknown Words) (PDF)","HANDOUT (Inferring Unknown Words)")},
-   {"id":"reading-practice","name":"Reading alıştırmaları","resources":R("HANDOUT (Reading)","HANDOUT (Reading) 2","Reading practice","HANDOUT (Reading - Making a Movie)","GREAT HIP HOP HOAX (Reading)")},
+   {"id":"reading-practice","name":"Reading alıştırmaları","resources":R("HANDOUT (Reading)","HANDOUT (Reading) 2","Reading practice","HANDOUT (Reading - Making a Movie)","GREAT HIP HOP HOAX (Reading)","HANDOUT (Reading - Agatha Christie)")},
  ]},
  {"id":"listening","name":"Listening","emoji":"🎧","color":"#3AA6B9","topics":[
-   {"id":"listening-strategies","name":"Listening Strategies (I–III)","resources":R("PPT (Listening Strategies I - Introduction)","PPT (Listening Strategies I - Introduction) (PDF)","PPT (Listening Strategies II)","HANDOUT (Listening Strategies II)","Listening 1 - Sounds for a Tiny Dragon","Listening 2 - Spoilers in the Group Chat","PPT (Listening Strategies III)","PPT (Listening Strategies III) (PDF)","Listening Strategies III - Track 1","Listening Strategies III - Track 2","Listening Strategies III - Track 3","Self Study Handout Listening Track (Hafta 7)")},
+   {"id":"listening-strategies","name":"Listening Strategies (I–IV)","resources":R("PPT (Listening Strategies I - Introduction)","PPT (Listening Strategies I - Introduction) (PDF)","PPT (Listening Strategies II)","HANDOUT (Listening Strategies II)","Listening 1 - Sounds for a Tiny Dragon","Listening 2 - Spoilers in the Group Chat","PPT (Listening Strategies III)","PPT (Listening Strategies III) (PDF)","Listening Strategies III - Track 1","Listening Strategies III - Track 2","Listening Strategies III - Track 3","Self Study Handout Listening Track (Hafta 7)","PPT (Listening Strategies IV - Note Taking)","PPT (Listening Strategies IV - Note Taking) (PDF)","HANDOUT (Listening Note Taking)","Listening Note Taking - Track 1 (Third Culture Kids)","Listening Note Taking - Track 2 (Video Games)")},
+   {"id":"listening-lectures","name":"Lecture dinleme ve not alma","resources":R("HANDOUT LISTENING & SPEAKING (Online Advertisement)","Online Advertisement - Listening (Lecture)","LISTENING HANDOUT (Vaccines - Note-taking)","Vaccines - Listening (Lecture)","Self Study Handout Listening Track (Hafta 9)")},
  ]},
  {"id":"writing","name":"Writing","emoji":"✍️","color":"#E0893A","topics":[
    {"id":"essay-structure","name":"Opinion Essay: giriş, gelişme, sonuç","resources":R("WRITING HANDOUT (Introductory Paragraph)","WRITING HANDOUT (Body Paragraphs)","WRITING HANDOUT (Concluding Paragraph)","WRITING HANDOUT (Points to Notice)","PPT (Opinion Essay)","PPT (Opinion Essay) (PDF)")},
    {"id":"paragraph-to-essay","name":"Opinion Paragraph → Opinion Essay","resources":R("PPT (From Opinion Paragraph to Opinion Essay)","PPT (From Opinion Paragraph to Opinion Essay) (PDF)","WRITING HANDOUT (From Opinion Paragraph to Opinion Essay)")},
-   {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays) (PDF)","WRITING HANDOUT (Opinion Essay) Practice I","WRITING HANDOUT (Opinion Essay) PRACTICE III","Opinion essay peer evaluation checklist","Opinion essay peer evaluation checklist (PDF)")},
+   {"id":"essay-samples","name":"Örnek essay'ler ve pratik","resources":R("WRITING HANDOUT (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays)","PPT WRITING (Sample Opinion Essays) (PDF)","WRITING HANDOUT (Opinion Essay) Practice I","WRITING HANDOUT (Opinion Essay) PRACTICE III","WRITING HANDOUT (Opinion Essay) PRACTICE IV","Opinion essay peer evaluation checklist","Opinion essay peer evaluation checklist (PDF)")},
    {"id":"linkers","name":"Linkers (bağlaçlar)","resources":R("WRITING HANDOUT (Opinion Essay Linkers)")},
  ]},
  {"id":"speaking","name":"Speaking","emoji":"🗣️","color":"#D65B7F","topics":[
-   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Talking about Yourself) (PDF)","PPT SPEAKING (Habits)","PPT SPEAKING (Habits) (PDF)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Pet Hates) (PDF)","PPT SPEAKING (Learning)","PPT SPEAKING (Learning) (PDF)","PPT SPEAKING (Work Life)","PPT SPEAKING (Work Life) (PDF)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (The Mic is Yours) (PDF)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)","PPT SPEAKING (A Truth A Lie)","PPT SPEAKING (A Truth A Lie) (PDF)","Follow up Questions","PPT SPEAKING (Film Making)","PPT SPEAKING (Film Making) (PDF)","PPT SPEAKING (Consumption Habits)","PPT SPEAKING (Consumption Habits) (PDF)","SPEAKING - Follow-up questions")},
+   {"id":"speaking-topics","name":"Speaking konuları","resources":R("PPT SPEAKING (Talking about Yourself)","PPT SPEAKING (Talking about Yourself) (PDF)","PPT SPEAKING (Habits)","PPT SPEAKING (Habits) (PDF)","PPT SPEAKING (Pet Hates)","PPT SPEAKING (Pet Hates) (PDF)","PPT SPEAKING (Learning)","PPT SPEAKING (Learning) (PDF)","PPT SPEAKING (Work Life)","PPT SPEAKING (Work Life) (PDF)","PPT SPEAKING (The Mic is Yours)","PPT SPEAKING (The Mic is Yours) (PDF)","PPT SPEAKING (Expressing Preferences)","PPT SPEAKING (Expressing Preferences) (PDF)","ACTIVITY HANDOUT (Role Play Job Interview)","PPT SPEAKING (A Truth A Lie)","PPT SPEAKING (A Truth A Lie) (PDF)","Follow up Questions","PPT SPEAKING (Film Making)","PPT SPEAKING (Film Making) (PDF)","PPT SPEAKING (Consumption Habits)","PPT SPEAKING (Consumption Habits) (PDF)","SPEAKING - Follow-up questions","PPT SPEAKING (Agatha Christie)","PPT SPEAKING (Agatha Christie) (PDF)","PPT LISTENING & SPEAKING (Online Advertisement)","PPT LISTENING & SPEAKING (Online Advertisement) (PDF)")},
    {"id":"speaking-tips","name":"Konuşmayı geliştirme","resources":R("TELL ME MORE (Perfect speaking)","PPT (Using AI to Learn English)","PPT (Using AI to Learn English) (PDF)")},
-   {"id":"presentation","name":"Sunum (Presentation Skills I–III) ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)","Citing Sources in a Presentation (Instruction)","Citing Sources in a Presentation (Instruction) (PDF)","Citing Sources in a Presentation (Practice)","Citing Sources Listening")},
+   {"id":"presentation","name":"Sunum (Presentation Skills I–IV) ve grup projesi","resources":R("PPT (Group Project: Our Class Our Story)","PPT (Group Project: Our Class Our Story) (PDF)","PPT (Presentation Skills I)","PPT (Presentation Skills I) (PDF)","PPT (Presentation Skills II - Organizing Content, Presentation Tools)","PPT (Presentation Skills II - Organizing Content, Presentation Tools) (PDF)","Citing Sources in a Presentation (Instruction)","Citing Sources in a Presentation (Instruction) (PDF)","Citing Sources in a Presentation (Practice)","Citing Sources Listening","PPT (Presentation Skills IV - Final Review)","PPT (Presentation Skills IV - Final Review) (PDF)","Presentation Rating Scale","PPT (Effective Presenters and Listeners)","PPT (Effective Presenters and Listeners) (PDF)")},
  ]},
  {"id":"units","name":"Ünite materyalleri","emoji":"🧭","color":"#5B7FD6","topics":[
    {"id":"unit-habits","name":"Habits / The Hoarding Habit","resources":R("INTEGRATED HANDOUT (Habits)","INTEGRATED HANDOUT (The Hoarding Habit)","Video 1 - The Hoarding Habit","Video 2 - Hoarder Denise's House Tour")},
@@ -259,12 +297,15 @@ courses = [
    {"id":"unit-teamwork","name":"Teamwork (Unit 3C)","resources":R("INTEGRATED HANDOUT (Teamwork)")},
    {"id":"unit-strange","name":"Strange Stories (Unit 4)","resources":R("INTEGRATED HANDOUT (Strange Stories and the Facts Behind Them)")},
    {"id":"unit-consumption","name":"Consumption (Unit 5)","resources":R("INTEGRATED HANDOUT (Consumption)","Inside the Mind of a Gen Z Consumer (video)","Consumption - Listening Track 1","Consumption - Listening Track 2","Consumption - Listening Track 3","Consumption - Listening Track 4")},
+   {"id":"unit-consumer-trap","name":"The Consumer Trap / Online Ads (Unit 5C)","resources":R("INTEGRATED HANDOUT (The Consumer Trap)","Online Ads (video)","ACTIVITY HANDOUT (Project Time: Adverts)")},
+   {"id":"unit-christie","name":"Agatha Christie (Unit 5D)","resources":R("Agatha Christie's Mysterious Disappearance (video)")},
+   {"id":"unit-proverbs","name":"Proverbs (atasözleri)","resources":R("ACTIVITY HANDOUT (Proverbs)","Proverbs List")},
    {"id":"unit-video","name":"Video etkinlikleri","resources":R("ACTIVITY HANDOUT (Video)","Video (Activity)","Activity handout video")},
  ]},
  {"id":"exam-prep","name":"Sınav hazırlık","emoji":"🎯","color":"#C62828","topics":[
    {"id":"quiz1-l4","name":"L4 Quiz 1 hazırlık","resources":R("L4 Quiz 1 özet kağıdı","L4 Quiz 1 Grammar çalışma kağıdı","L4 Quiz 1 Grammar çalışma kağıdı (PDF)","L4 Quiz 1 deneme testi")},
-   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key","Self Study Handout (Hafta 7)","Self Study Handout Answer Key (Hafta 7)","REVISION HANDOUT FOR PROGRESS TEST","Self Study Handout (Hafta 8)","Self Study Handout Answer Key (Hafta 8)","Self Study Handout Listening Track (Hafta 8)")},
-   {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)","PPT (Haftalık Ders Programı ve İçeriği) (PDF)","L4 Fall Week 6 Program")},
+   {"id":"revision","name":"Genel tekrar (B1)","resources":R("REVISION HANDOUT (B1)","Self Study Handout Answer Key","Self Study Handout (Hafta 7)","Self Study Handout Answer Key (Hafta 7)","REVISION HANDOUT FOR PROGRESS TEST","Self Study Handout (Hafta 8)","Self Study Handout Answer Key (Hafta 8)","Self Study Handout Listening Track (Hafta 8)","HANDOUT (Rewrite - Unit 5 Review)","Self Study Handout Answer Key (Hafta 9)")},
+   {"id":"program","name":"Haftalık program ve ders saatleri","resources":R("PPT (Haftalık Ders Programı ve İçeriği)","PPT (Haftalık Ders Programı ve İçeriği) (PDF)","L4 Fall Week 6 Program","L4 Fall Week 9 Program")},
  ]},
 ]
 # ---- Haftalık program (Harmanlanmış Eğitim, L4 Fall). gün: 1=Pzt … 5=Cuma, 6=bu hafta (günü belli değil), 0=kendi çalışman (self-study) ----
@@ -328,6 +369,21 @@ WEEKS = {
      (3,"PPT (Comparative and Superlative Structures) (PDF)"),(3,"ACTIVITY HANDOUT (Comparative Structures)"),(3,"!Workbook s. 34-35|pdf"),
      (4,"REVISION HANDOUT FOR PROGRESS TEST"),(4,"HANDOUT (Vocabulary Review Units 1-5)"),
      (0,"Self Study Handout (Hafta 8)"),(0,"Self Study Handout Listening Track (Hafta 8)"),(0,"Self Study Handout Answer Key (Hafta 8)")],
+ # Hafta 9 (L4 FALL WEEK 9 PROGRAM.pdf, 16-20 Kasım; günler handout başlıklarından): Pzt 5C Online Advertisement, Salı Presentation Skills IV +
+ # The Consumer Trap, Çarş. 5D Causatives, Perş. Listening Strategies IV (not alma) + Agatha Christie, Cuma Unit 5 tekrar + Vaccines + Writing.
+ 9: [(1,"PPT LISTENING & SPEAKING (Online Advertisement) (PDF)"),(1,"HANDOUT LISTENING & SPEAKING (Online Advertisement)"),(1,"Online Advertisement - Listening (Lecture)"),
+     (1,"Online Ads (video)"),(1,"HANDOUT (Vocabulary How To B1+ U5C)"),
+     (2,"PPT (Presentation Skills IV - Final Review) (PDF)"),(2,"Presentation Rating Scale"),(2,"PPT (Effective Presenters and Listeners) (PDF)"),
+     (2,"INTEGRATED HANDOUT (The Consumer Trap)"),
+     (3,"PPT (Causatives) (PDF)"),(3,"HANDOUT 1 (Causatives - Rewrite)"),(3,"HANDOUT 2 (Grammar B1+ U5D)"),(3,"ACTIVITY HANDOUT (Causatives)"),
+     (4,"PPT (Listening Strategies IV - Note Taking) (PDF)"),(4,"HANDOUT (Listening Note Taking)"),(4,"Listening Note Taking - Track 1 (Third Culture Kids)"),
+     (4,"Listening Note Taking - Track 2 (Video Games)"),(4,"PPT SPEAKING (Agatha Christie) (PDF)"),(4,"HANDOUT (Reading - Agatha Christie)"),
+     (4,"Agatha Christie's Mysterious Disappearance (video)"),
+     (5,"!Unit 5 Review, s. 66|pdf"),(5,"HANDOUT (Rewrite - Unit 5 Review)"),(5,"LISTENING HANDOUT (Vaccines - Note-taking)"),(5,"Vaccines - Listening (Lecture)"),
+     (5,"WRITING HANDOUT (Opinion Essay) PRACTICE IV"),
+     (6,"ACTIVITY HANDOUT (Proverbs)"),(6,"Proverbs List"),(6,"ACTIVITY HANDOUT (Project Time: Adverts)"),
+     (0,"L4 Fall Week 9 Program"),(0,"!Workbook s. 36-37|pdf"),(0,"!Self Study Handout (Hafta 9)|pdf"),(0,"Self Study Handout Listening Track (Hafta 9)"),
+     (0,"Self Study Handout Answer Key (Hafta 9)")],
 }
 byTitle={}
 for c in courses:
@@ -387,7 +443,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-11-11","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-11-14","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

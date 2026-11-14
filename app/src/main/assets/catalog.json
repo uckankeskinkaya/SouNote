@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-11",
+ "updated": "2026-11-14",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -520,6 +520,49 @@
      ]
     },
     {
+     "id": "causatives",
+     "name": "Causatives (have / get something done)",
+     "resources": [
+      {
+       "title": "PPT (Causatives)",
+       "url": "https://drive.google.com/file/d/1txwIDG8_-K2qjaYq1lQ_8n7OqsNsdBUn/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Causatives) (PDF)",
+       "url": "https://drive.google.com/file/d/19JIt2i-kw3E1NfMfaPidqwlm7U6Q_h8h/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 3,
+       "order": 9
+      },
+      {
+       "title": "HANDOUT 1 (Causatives - Rewrite)",
+       "url": "https://drive.google.com/file/d/1XfTsqRx0weeH_SHmpg56voRmC8HC8IFv/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 3,
+       "order": 10
+      },
+      {
+       "title": "HANDOUT 2 (Grammar B1+ U5D)",
+       "url": "https://drive.google.com/file/d/1_K9-CN2wp4yuOu0rXqSPTA8vrD7qcxKZ/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 3,
+       "order": 11
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Causatives)",
+       "url": "https://drive.google.com/file/d/1aVl0YrblKsymNmpmYAoixBp9RJGxf4cU/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 3,
+       "order": 12
+      }
+     ]
+    },
+    {
      "id": "preferences",
      "name": "Expressing Preferences (prefer, would rather)",
      "resources": [
@@ -684,7 +727,7 @@
     },
     {
      "id": "vocab-u5",
-     "name": "Unit 5 (5A–5B)",
+     "name": "Unit 5 (5A–5C)",
      "resources": [
       {
        "title": "HANDOUT (Vocabulary B1+ U5A U5B)",
@@ -693,6 +736,14 @@
        "week": 8,
        "day": 3,
        "order": 17
+      },
+      {
+       "title": "HANDOUT (Vocabulary How To B1+ U5C)",
+       "url": "https://drive.google.com/file/d/1CEIMafU4RjJVYdbcVnh_lVnFPTUpDA72/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 1,
+       "order": 4
       },
       {
        "title": "HANDOUT (Vocabulary Review Units 1-5)",
@@ -876,6 +927,14 @@
        "week": 7,
        "day": 0,
        "order": 23
+      },
+      {
+       "title": "HANDOUT (Reading - Agatha Christie)",
+       "url": "https://drive.google.com/file/d/18pSx_tQe388pnVU4milcWoWlFFobu6Zb/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 4,
+       "order": 18
       }
      ]
     }
@@ -889,7 +948,7 @@
    "topics": [
     {
      "id": "listening-strategies",
-     "name": "Listening Strategies (I–III)",
+     "name": "Listening Strategies (I–IV)",
      "resources": [
       {
        "title": "PPT (Listening Strategies I - Introduction)",
@@ -983,6 +1042,89 @@
        "week": 7,
        "day": 0,
        "order": 21
+      },
+      {
+       "title": "PPT (Listening Strategies IV - Note Taking)",
+       "url": "https://drive.google.com/file/d/1V7LX4bAIXUGxKODULCKbJ-nPiPKjHVeN/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Listening Strategies IV - Note Taking) (PDF)",
+       "url": "https://drive.google.com/file/d/1_E1slN5LE242j1FhzujBTHVdkJUKge0e/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 4,
+       "order": 13
+      },
+      {
+       "title": "HANDOUT (Listening Note Taking)",
+       "url": "https://drive.google.com/file/d/1hozIDCXMxSaA_PuwlaFZU4o2pk72olkT/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 4,
+       "order": 14
+      },
+      {
+       "title": "Listening Note Taking - Track 1 (Third Culture Kids)",
+       "url": "https://drive.google.com/file/d/1AOCGy9Khh2Ohffl6OeO9P-ch8UvujUgt/view",
+       "kind": "audio",
+       "week": 9,
+       "day": 4,
+       "order": 15
+      },
+      {
+       "title": "Listening Note Taking - Track 2 (Video Games)",
+       "url": "https://drive.google.com/file/d/19cvC6mD8ya75OXvA--IH68akkThg3xaY/view",
+       "kind": "audio",
+       "week": 9,
+       "day": 4,
+       "order": 16
+      }
+     ]
+    },
+    {
+     "id": "listening-lectures",
+     "name": "Lecture dinleme ve not alma",
+     "resources": [
+      {
+       "title": "HANDOUT LISTENING & SPEAKING (Online Advertisement)",
+       "url": "https://drive.google.com/file/d/1Pjc_MGk7cQ1Y54DLjatERXGX8KBLnK5a/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 1,
+       "order": 1
+      },
+      {
+       "title": "Online Advertisement - Listening (Lecture)",
+       "url": "https://drive.google.com/file/d/1EiZI3SwNBpTYdP1uYfpbl68yuxBYBZZq/view",
+       "kind": "audio",
+       "week": 9,
+       "day": 1,
+       "order": 2
+      },
+      {
+       "title": "LISTENING HANDOUT (Vaccines - Note-taking)",
+       "url": "https://drive.google.com/file/d/13NbphKYOoq7Q-hPX9lxJum2Xmz_nUKcC/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 5,
+       "order": 22
+      },
+      {
+       "title": "Vaccines - Listening (Lecture)",
+       "url": "https://drive.google.com/file/d/1xQf9DGl8mECnFBIGFgUq-sm3rAXiQaGw/view",
+       "kind": "audio",
+       "week": 9,
+       "day": 5,
+       "order": 23
+      },
+      {
+       "title": "Self Study Handout Listening Track (Hafta 9)",
+       "url": "https://drive.google.com/file/d/1aWz0qoEOHwL38S4iXSRaUvW0mSON7W5S/view",
+       "kind": "audio",
+       "week": 9,
+       "day": 0,
+       "order": 31
       }
      ]
     }
@@ -1118,6 +1260,14 @@
        "week": 6,
        "day": 3,
        "order": 13
+      },
+      {
+       "title": "WRITING HANDOUT (Opinion Essay) PRACTICE IV",
+       "url": "https://drive.google.com/file/d/1FgliD8VYRoJCDDxWSR7krgGTqLol_zdS/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 5,
+       "order": 24
       },
       {
        "title": "Opinion essay peer evaluation checklist",
@@ -1322,6 +1472,32 @@
        "week": 8,
        "day": 1,
        "order": 1
+      },
+      {
+       "title": "PPT SPEAKING (Agatha Christie)",
+       "url": "https://drive.google.com/file/d/1Logd-NSEqGTj_gL19QSj3Zjbvi1IqaJa/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT SPEAKING (Agatha Christie) (PDF)",
+       "url": "https://drive.google.com/file/d/11miqrP5JJHEdqPge_bGol1qqhCJKD4bz/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 4,
+       "order": 17
+      },
+      {
+       "title": "PPT LISTENING & SPEAKING (Online Advertisement)",
+       "url": "https://drive.google.com/file/d/15f5IeiwUJDdZt8TRWLQewQ3RExyXB12b/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT LISTENING & SPEAKING (Online Advertisement) (PDF)",
+       "url": "https://drive.google.com/file/d/1S2Z5rci8m_UlCLgn3eIdW6hBLpW2712e/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 1,
+       "order": 0
       }
      ]
     },
@@ -1351,7 +1527,7 @@
     },
     {
      "id": "presentation",
-     "name": "Sunum (Presentation Skills I–III) ve grup projesi",
+     "name": "Sunum (Presentation Skills I–IV) ve grup projesi",
      "resources": [
       {
        "title": "PPT (Group Project: Our Class Our Story)",
@@ -1417,6 +1593,40 @@
        "week": 8,
        "day": 2,
        "order": 9
+      },
+      {
+       "title": "PPT (Presentation Skills IV - Final Review)",
+       "url": "https://drive.google.com/file/d/15_0SEp2A_5_dBYg6h6TKgBxj1MB63I3C/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Presentation Skills IV - Final Review) (PDF)",
+       "url": "https://drive.google.com/file/d/1ekdKvIn2wzhbTjdx-WZjgAYxgxN6q5bT/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 2,
+       "order": 5
+      },
+      {
+       "title": "Presentation Rating Scale",
+       "url": "https://drive.google.com/file/d/1OdNMvOt2aIdyFfSObszpspJ9ABXqyI17/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 2,
+       "order": 6
+      },
+      {
+       "title": "PPT (Effective Presenters and Listeners)",
+       "url": "https://drive.google.com/file/d/1RPVg3uGoeqhgxE43H3PRerTFgtKPxg_9/view",
+       "kind": "pptx"
+      },
+      {
+       "title": "PPT (Effective Presenters and Listeners) (PDF)",
+       "url": "https://drive.google.com/file/d/1cE3elk2c7ByoYeHBHzgxRn8S3QvwTTQo/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 2,
+       "order": 7
       }
      ]
     }
@@ -1625,6 +1835,72 @@
      ]
     },
     {
+     "id": "unit-consumer-trap",
+     "name": "The Consumer Trap / Online Ads (Unit 5C)",
+     "resources": [
+      {
+       "title": "INTEGRATED HANDOUT (The Consumer Trap)",
+       "url": "https://drive.google.com/file/d/1HyptF8nuQ4UT_I0eZYhsQfB3V_ipdrar/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 2,
+       "order": 8
+      },
+      {
+       "title": "Online Ads (video)",
+       "url": "https://drive.google.com/file/d/1TbtcUfYtMBW91YQsMFftIVZkGBacH1wz/view",
+       "kind": "video",
+       "week": 9,
+       "day": 1,
+       "order": 3
+      },
+      {
+       "title": "ACTIVITY HANDOUT (Project Time: Adverts)",
+       "url": "https://drive.google.com/file/d/1NpXt0USdKL2DdC966z1KcsT04qaMpXNh/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 6,
+       "order": 27
+      }
+     ]
+    },
+    {
+     "id": "unit-christie",
+     "name": "Agatha Christie (Unit 5D)",
+     "resources": [
+      {
+       "title": "Agatha Christie's Mysterious Disappearance (video)",
+       "url": "https://drive.google.com/file/d/1XhJkotQmAErv0ndJp4MVS_oa9dcXl9aK/view",
+       "kind": "video",
+       "week": 9,
+       "day": 4,
+       "order": 19
+      }
+     ]
+    },
+    {
+     "id": "unit-proverbs",
+     "name": "Proverbs (atasözleri)",
+     "resources": [
+      {
+       "title": "ACTIVITY HANDOUT (Proverbs)",
+       "url": "https://drive.google.com/file/d/17Y0BOEDZP3g1metHRgr6q3Zs_Y19wzr5/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 6,
+       "order": 25
+      },
+      {
+       "title": "Proverbs List",
+       "url": "https://drive.google.com/file/d/1GzBxe6-aTLwnQhEhf8Eyg0j7eI6Ew4y_/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 6,
+       "order": 26
+      }
+     ]
+    },
+    {
      "id": "unit-video",
      "name": "Video etkinlikleri",
      "resources": [
@@ -1752,6 +2028,22 @@
        "week": 8,
        "day": 0,
        "order": 25
+      },
+      {
+       "title": "HANDOUT (Rewrite - Unit 5 Review)",
+       "url": "https://drive.google.com/file/d/1oYO2l3xLl_vH8cdUgsU3uzojKS8BUbnj/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 5,
+       "order": 21
+      },
+      {
+       "title": "Self Study Handout Answer Key (Hafta 9)",
+       "url": "https://drive.google.com/file/d/19XcLm4-wEMjXq8qSzPjIqAE7e5EwI3kf/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 0,
+       "order": 32
       }
      ]
     },
@@ -1776,6 +2068,14 @@
        "week": 6,
        "day": 0,
        "order": 18
+      },
+      {
+       "title": "L4 Fall Week 9 Program",
+       "url": "https://drive.google.com/file/d/129TaOs4qR_bt8RHYqbfJsbXSYh3qf49u/view",
+       "kind": "pdf",
+       "week": 9,
+       "day": 0,
+       "order": 28
       }
      ]
     }
@@ -2226,6 +2526,27 @@
    "title": "Workbook s. 34-35",
    "kind": "pdf",
    "order": 21
+  },
+  {
+   "week": 9,
+   "day": 5,
+   "title": "Unit 5 Review, s. 66",
+   "kind": "pdf",
+   "order": 20
+  },
+  {
+   "week": 9,
+   "day": 0,
+   "title": "Workbook s. 36-37",
+   "kind": "pdf",
+   "order": 29
+  },
+  {
+   "week": 9,
+   "day": 0,
+   "title": "Self Study Handout (Hafta 9)",
+   "kind": "pdf",
+   "order": 30
   }
  ]
 }

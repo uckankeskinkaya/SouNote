@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "rose" temasının uygulama simgesi: 4.0 logosu (tools/make_logo4.py) -->
+<!-- "rose" temasının uygulama simgesi: logo: kıvrılıp S olan not kâğıdı (tools/make_logo5.py) -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_bg_rose" />
     <foreground android:drawable="@drawable/ic_fg_rose" />

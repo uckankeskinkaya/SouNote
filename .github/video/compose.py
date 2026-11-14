@@ -1,6 +1,6 @@
 """Tanıtım videosu: sahne kayıtlarını telefon çerçevesine oturtur, başlık kartları ekler, birleştirir.
 
-Girdi: scenes/NN-ad.mp4 (record.sh) + uygulama logosu (.github/video/logo.png, tools/make_logo4.py). Çıktı: out/sounote.mp4 (1080x1920, dikey) ve out/poster.jpg.
+Girdi: scenes/NN-ad.mp4 (record.sh) + uygulama logosu (.github/video/logo.png, tools/make_logo5.py). Çıktı: out/sounote.mp4 (1080x1920, dikey) ve out/poster.jpg.
 Seslendirme varsa (align.py: out/voice.wav + out/voice-times.json) her parça kendi paragrafı kadar sürer
 (kayıt kısaysa son kare bekletilir) ve ses videoya eklenir.
 """

@@ -262,6 +262,11 @@ haftalık özet bildirimi, sesli okuma (TTS), speaking sınav simülasyonu, uygu
 takıldığın yere işaret, boş hâliyle yeniden çöz, essay taslak kutuları, paragrafı kur (cümle sıralama), kanıtı sen bul, solak modu/el ayarı,
 katman seçerek paylaş, çevrimdışı ders paketi, PDF sürümü değişince not taşıma, listening metni.
 
+- Logo (14 Kasım, kullanıcı onayladı): mavi degrade zeminde kıvrılıp S olan çizgili not kâğıdı (kalem ucu ve yıldız yok). Kaynak tools/art/logo_source.png
+  (Canva üretimi, yıldız silindi); `python3 tools/make_logo5.py` zemini (2. derece yüzey) ve kâğıdı (alfa) ayırır, her temaya ton döndürür:
+  drawable-nodpi/logo_<tema>.webp (AppLogo, widget), ic_bg_/ic_fg_<tema>.webp (uyarlanabilir simge), ic_launcher_monochrome.webp, site brand + og.jpg, video logo.
+  Açılış zemini #012985. Önceki logo denemelerini (S'li kâğıt, baykuş, kalem ucu vb.) kullanıcı beğenmedi.
+
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:
   Hafta 01 1_LtxFdJkk_niIhFy6Yb51kEj4imxIf-y · 02 1w5xH2YWfGvsXWFDFMNsw6xyji1EU-Wyh · 03 13B7g3Ggx9iQgfHkNUxvAm2GQznBdv1In ·

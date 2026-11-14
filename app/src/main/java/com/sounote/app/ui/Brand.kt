@@ -26,7 +26,7 @@ object Brand {
     val gradient get() = Brush.linearGradient(listOf(Blue, Deep))
 }
 
-/** Uygulama logosu (4.0): temanın renginde kare içinde köşesi kıvrık kâğıt ve kalemle yazılmış "S". Düz tasarım: gölge yok. */
+/** Uygulama logosu: temanın renginde zeminde kıvrılıp S olan çizgili not kâğıdı (tools/make_logo5.py). */
 @Composable
 fun AppLogo(size: Dp, modifier: Modifier = Modifier, elevated: Boolean = true) {
     val shape = RoundedCornerShape(size * 0.22f)

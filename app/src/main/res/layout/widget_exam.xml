@@ -17,7 +17,7 @@
             android:id="@+id/widget_logo"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@drawable/logo_tile" />
+            android:src="@drawable/logo_v_electric" />
 
         <TextView
             android:id="@+id/widget_label"

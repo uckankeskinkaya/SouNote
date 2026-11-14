@@ -26,7 +26,7 @@ object Brand {
     val gradient get() = Brush.linearGradient(listOf(Blue, Deep))
 }
 
-/** Uygulama logosu: kare içinde kâğıt ve dolma kalem; seçili temanın logosu (Elektrik = simgedeki). */
+/** Uygulama logosu (4.0): temanın renginde kare içinde köşesi kıvrık kâğıt ve kalemle yazılmış "S". Düz tasarım: gölge yok. */
 @Composable
 fun AppLogo(size: Dp, modifier: Modifier = Modifier, elevated: Boolean = true) {
     val shape = RoundedCornerShape(size * 0.22f)
@@ -35,7 +35,6 @@ fun AppLogo(size: Dp, modifier: Modifier = Modifier, elevated: Boolean = true) {
         contentDescription = null,
         modifier = modifier
             .size(size)
-            .then(if (elevated) Modifier.shadow(size * 0.12f, shape) else Modifier)
             .clip(shape),
     )
 }

@@ -53,32 +53,32 @@ enum class AppTheme(
     val heroA: Long, val heroB: Long,
 ) {
     ELECTRIC(
-        "Elektrik", "Lacivert, parlayan elektrik mavisi", com.sounote.app.R.drawable.logo_tile,
+        "Elektrik", "İndigo mavi", com.sounote.app.R.drawable.logo_v_electric,
         0xFF010518, 0xFF1F4FFF, 0xFF3D8BFF, 0xFF5482FF, 0xFFFFFFFF, 0xFF15329A,
         0xFFEAF0FF, 0xFF1E4BF0, 0xFF081133, 0xFF2A5BFF, 0xFF0A1A6E,
     ),
     SAPPHIRE(
-        "Safir", "Gece mavisi cam, gümüş ışık", com.sounote.app.R.drawable.logo_sapphire,
+        "Safir", "Gece mavisi", com.sounote.app.R.drawable.logo_v_sapphire,
         0xFF040A1A, 0xFF2C5BA8, 0xFFA9C6F5, 0xFF86A8E8, 0xFF06173D, 0xFF1F3F7C,
         0xFFEEF2F9, 0xFF2A52A0, 0xFF0B1630, 0xFF3A66B8, 0xFF0B1A3E,
     ),
     SILVER(
-        "Gümüş", "Antrasit, beyaz ışıltı", com.sounote.app.R.drawable.logo_silver,
+        "Gümüş", "Antrasit gri", com.sounote.app.R.drawable.logo_v_silver,
         0xFF0C0E12, 0xFF7F92B5, 0xFFF2F4F8, 0xFFB3C3DF, 0xFF16233D, 0xFF35435F,
         0xFFF1F2F5, 0xFF4A5F86, 0xFF14171D, 0xFF5C6F93, 0xFF1B2130,
     ),
     MONO(
-        "Siyah beyaz", "Sade, tek renk", com.sounote.app.R.drawable.logo_mono,
+        "Siyah beyaz", "Sade, tek renk", com.sounote.app.R.drawable.logo_v_mono,
         0xFF040404, 0xFFBDBDBD, 0xFFFFFFFF, 0xFFE8E8E8, 0xFF111111, 0xFF3A3A3A,
         0xFFF4F4F4, 0xFF1F1F1F, 0xFF0F0F0F, 0xFF4A4A4A, 0xFF0D0D0D,
     ),
     EMERALD(
-        "Zümrüt", "Koyu yeşil, krem kâğıt, altın uç", com.sounote.app.R.drawable.logo_emerald,
+        "Zümrüt", "Koyu yeşil", com.sounote.app.R.drawable.logo_v_emerald,
         0xFF06120C, 0xFF2F7A52, 0xFFE0BC6A, 0xFF6CC497, 0xFF06301B, 0xFF1D5A3B,
         0xFFF6F0DF, 0xFF256E48, 0xFF0E1F16, 0xFF2E7D55, 0xFF0B2416,
     ),
     ROSE(
-        "Gül", "Mürdüm, parlayan pembe", com.sounote.app.R.drawable.logo_rose,
+        "Gül", "Gül pembesi", com.sounote.app.R.drawable.logo_v_rose,
         0xFF150A10, 0xFFFF4F8B, 0xFFFF9EC0, 0xFFFF7FA8, 0xFF4A0A24, 0xFF7A1E45,
         0xFFFFF0F5, 0xFFC2356F, 0xFF2A0E1A, 0xFFE04A85, 0xFF3A0F22,
     ),
@@ -296,7 +296,7 @@ data class SouColors(
     /** Temanın ışık renkleri (zemin parıltısı, kart kenarı) ve logosu. */
     val glowA: Color = Color(0xFF1F4FFF),
     val glowB: Color = Color(0xFF3D8BFF),
-    val logo: Int = com.sounote.app.R.drawable.logo_tile,
+    val logo: Int = com.sounote.app.R.drawable.logo_v_electric,
 )
 
 val LocalSouColors = staticCompositionLocalOf {

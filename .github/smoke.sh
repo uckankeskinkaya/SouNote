@@ -57,7 +57,7 @@ tap "Başlayalım"; sleep 2; shot 02-ana
 
 # 2) Sekmeler (telefonda Ayarlar ana sayfadaki ⚙ düğmesinde)
 for t in Kütüphane Çalış Takvim; do tap "$t"; shot "03-$t"; done
-tap "Çalış"; tap "Yazı stüdyosu"; shot "03-Yazı"
+tap "Bugün"; tap "Yazı stüdyosu"; shot "03-Yazı"
 tap "Bugün"; tap "Ayarlar"; shot "03-Ayarlar"
 tap "Görünüm"; shot 03b-gorunum
 tap "Koyu"; sleep 1; shot 03c-koyu-ayarlar
@@ -76,7 +76,7 @@ tap "Oku"; shot 06b-okuma; tap "Not al"
 back
 
 # 5) Yazı stüdyosu, asistan, arama, ortalama (her birinden önce uygulama öne getirilir)
-app; tap "Çalış"; tap "Yazı stüdyosu"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot 07-essay
+app; tap "Bugün"; tap "Yazı stüdyosu"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot 07-essay
 tap "Yapı"; shot 07b-yapi; back; back; back
 app; tap "Bugün"; top; tap "Asistan"; sleep 2; shot 08-asistan; back
 app; tap "Bugün"; top; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back

@@ -234,7 +234,7 @@ Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd si
 çizim ve bilgi kartı denemeleri, kalite katmanları, WebGL'siz statik görünüm. Logo: "A. Dengeli" (site/brand-src, make_logo.py).
 Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/README.md. build.yml site/** değişikliğinde APK derlemez.
 
-## SouNote 4.0 (yayın: 14 Kasım; arayüz build-171+, 13 Kasım)
+## SouNote 4.0 (✅ yayınlandı build-198, 14 Kasım; PR #9 ile main)
 Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yazıları). Onaylanan maket: scratchpad mock/ (HTML, açık kâğıt tonu).
 - Theme.kt: darkSchemeOf/lightSchemeOf düz nötr yüzeyler (açık #F6F6F3 zemin, beyaz yüzey, #E5E5E0 çizgi; koyu #111318/#1A1D24), tema sadece vurgu
   (ELECTRIC açıkta #3346D3, koyuda #8C9BFF). Components: card() = surface + 1dp outlineVariant, 14dp; souBackground() düz zemin. hero tek renk.

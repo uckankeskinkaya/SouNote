@@ -56,16 +56,17 @@ tap "İleri"; tap "İleri"; shot 01c-kurulum
 tap "Başlayalım"; sleep 2; shot 02-ana
 
 # 2) Sekmeler (telefonda Ayarlar ana sayfadaki ⚙ düğmesinde)
-for t in Kütüphane Dersler Planlayıcı Yazı; do tap "$t"; shot "03-$t"; done
-tap "Ana sayfa"; tap "Ayarlar"; shot "03-Ayarlar"
+for t in Kütüphane Çalış Takvim; do tap "$t"; shot "03-$t"; done
+tap "Bugün"; tap "Yazı stüdyosu"; shot "03-Yazı"
+tap "Bugün"; tap "Ayarlar"; shot "03-Ayarlar"
 tap "Görünüm"; shot 03b-gorunum
 tap "Koyu"; sleep 1; shot 03c-koyu-ayarlar
 back
-tap "Ana sayfa"; sleep 1; shot 03d-koyu-ana
+tap "Bugün"; sleep 1; shot 03d-koyu-ana
 adb shell input swipe 540 1700 540 500 300; shot 04-ana-asagi
 
 # 3) Planlayıcı görünümleri, kütüphane listesi
-tap "Planlayıcı"; tap "Hafta"; shot 05a-hafta; tap "Ay"; shot 05b-ay; tap "Zaman çizelgesi"; shot 05c-zaman; tap "Liste"
+tap "Takvim"; tap "Hafta"; shot 05a-hafta; tap "Ay"; shot 05b-ay; tap "Zaman çizelgesi"; shot 05c-zaman; tap "Liste"
 tap "Kütüphane"; tap "Liste görünümü"; shot 05d-kutuphane-liste; tap "Izgara görünümü"
 
 # 4) Hızlı not (belge ekranı), okuma modu, geri
@@ -75,17 +76,17 @@ tap "Oku"; shot 06b-okuma; tap "Not al"
 back
 
 # 5) Yazı stüdyosu, asistan, arama, ortalama (her birinden önce uygulama öne getirilir)
-app; tap "Yazı"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot 07-essay
+app; tap "Bugün"; tap "Yazı stüdyosu"; tap "Yeni essay"; sleep 2; adb shell input text "deneme"; shot 07-essay
 tap "Yapı"; shot 07b-yapi; back; back; back
-app; tap "Ana sayfa"; top; tap "Asistan"; sleep 2; shot 08-asistan; back
-app; tap "Ana sayfa"; top; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back
-app; tap "Planlayıcı"; tap "Not ortalamam"; sleep 2; shot 10b-ortalama; back
+app; tap "Bugün"; top; tap "Asistan"; sleep 2; shot 08-asistan; back
+app; tap "Bugün"; top; tap "Ara"; sleep 3; adb shell input text "grammar"; sleep 2; shot 09-arama; back; back
+app; tap "Takvim"; tap "Not ortalamam"; sleep 2; shot 10b-ortalama; back
 
 # 6) Hızlı geçişler + döndürme (yatayda navigasyon rayı)
 app
-for t in Kütüphane Dersler Planlayıcı Yazı "Ana sayfa" Dersler; do tap "$t"; done
+for t in Kütüphane Çalış Takvim Bugün Çalış; do tap "$t"; done
 adb shell settings put system accelerometer_rotation 0; adb shell settings put system user_rotation 1; sleep 2; shot 11-yatay
-tap "Ana sayfa"; sleep 1; shot 11b-yatay-ana
+tap "Bugün"; sleep 1; shot 11b-yatay-ana
 adb shell settings put system user_rotation 0; sleep 2
 
 # Sonuç

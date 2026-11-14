@@ -31,11 +31,11 @@ export interface ScreenDef {
 export const SCREENS: ScreenDef[] = [
   { id: "splash", label: "SouNote", orientation: "portrait" },
   {
-    id: "home", label: "Ana sayfa", orientation: "portrait", src: "screens/home.webp",
+    id: "home", label: "Bugün", orientation: "portrait", src: "screens/home.webp",
     hotspots: [
       { u: 0.45, v: 0.03, title: "Her şeyde ara", text: "Dersler, klasörler, belgeler, notlar, sınavlar ve PDF'lerin içi; filtreler ve son aramalar." },
       { u: 0.5, v: 0.12, title: "Günün özeti", text: "Karşılama, bugünkü çalışma süren ve çalışma serin." },
-      { u: 0.5, v: 0.72, title: "Senin ana sayfan", text: "Bölümleri sırala ya da gizle; favorilerin hızlı erişimde." },
+      { u: 0.5, v: 0.72, title: "Senin Bugün ekranın", text: "Bölümleri sırala ya da gizle; favorilerin hızlı erişimde." },
     ],
   },
   {
@@ -47,7 +47,7 @@ export const SCREENS: ScreenDef[] = [
     ],
   },
   {
-    id: "courses-land", label: "Dersler (yatay)", orientation: "landscape", src: "screens/courses-land.webp",
+    id: "courses-land", label: "Kütüphane (yatay)", orientation: "landscape", src: "screens/courses-land.webp",
     hotspots: [
       { u: 0.04, v: 0.35, title: "Yan menü", text: "Tablet yatay tutulunca alt menü yerine yan menü çıkar." },
       { u: 0.33, v: 0.3, title: "Konular ve haftalar", text: "Kaynakları konuya ya da haftaya göre gör." },
@@ -55,11 +55,11 @@ export const SCREENS: ScreenDef[] = [
     ],
   },
   {
-    id: "courses", label: "Dersler", orientation: "portrait", src: "screens/courses.webp",
+    id: "courses", label: "Kütüphane", orientation: "portrait", src: "screens/courses.webp",
     hotspots: [{ u: 0.5, v: 0.5, title: "Konu konu kaynaklar", text: "Grammar, Vocabulary, Reading, Listening, Writing ve Speaking." }],
   },
   {
-    id: "exams", label: "Planlayıcı", orientation: "portrait", src: "screens/exams.webp",
+    id: "exams", label: "Takvim", orientation: "portrait", src: "screens/exams.webp",
     hotspots: [
       { u: 0.5, v: 0.055, title: "Dört görünüm", text: "Liste, hafta, ay ve zaman çizelgesi." },
       { u: 0.5, v: 0.4, title: "Aylık takvim", text: "Sınav ve ödev günleri ders rengiyle işaretli; güne dokununca o günün listesi." },

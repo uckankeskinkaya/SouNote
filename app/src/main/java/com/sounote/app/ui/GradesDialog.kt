@@ -1,7 +1,5 @@
 package com.sounote.app.ui
 
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.background
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -111,8 +109,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
+                                    .card()
                                     .padding(16.dp),
                             ) {
                                 Text("Ankara Üniversitesi Hazırlık", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -174,6 +171,7 @@ fun GradesDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
     if (confirmTemplate) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirmTemplate = false },
+            tonalElevation = 0.dp,
             title = { Text("Okul şablonu yüklensin mi?") },
             text = { Text("Ankara Üniversitesi Hazırlık hesabı (kur içi %40 + Kur Atlama %60, geçme 70) kurulur. Şu anki liste ve girdiğin puanlar silinir.") },
             confirmButton = {

@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,9 +53,12 @@ import com.sounote.app.ExamReminders
 import com.sounote.app.LibraryViewModel
 import com.sounote.app.data.AssistantClient
 import com.sounote.app.data.Course
+import com.sounote.app.data.DocRef
 import com.sounote.app.data.Exam
 import com.sounote.app.data.Topic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -107,7 +111,7 @@ fun ExamPlanDialog(vm: LibraryViewModel, onDismiss: () -> Unit) {
         scope.launch {
             val r = runCatching {
                 withContext(Dispatchers.IO) {
-                    AssistantClient.studyPlan(vm.assistantConfig, exam.title.ifBlank { exam.course }, examDetails(vm, exam), days)
+                    AssistantClient.studyPlan(AssistantClient.heavy(vm.assistantConfig), exam.title.ifBlank { exam.course }, examDetails(vm, exam), days)
                 }
             }
             busy = false
@@ -252,6 +256,8 @@ fun PracticeSetupDialog(vm: LibraryViewModel, course: Course, initialTopic: Topi
 private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topic?, count: Int, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     var questions by remember { mutableStateOf<List<AssistantClient.Question>?>(null) }
+    var usedDocs by remember { mutableStateOf<List<DocRef>>(emptyList()) }
+    var searchingSource by remember { mutableStateOf<Int?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var index by remember { mutableStateOf(0) }
     var chosen by remember { mutableStateOf(-1) }
@@ -269,15 +275,58 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
             val r = runCatching {
                 // Konunun (ya da dersin) indirilmiş PDF'lerinin metni; yoksa konu başlıklarından
                 val docs = (topic?.let { t -> t.resources.mapNotNull { vm.downloadedDoc(course, it) } } ?: vm.courseDocs(course)).take(6)
+                usedDocs = docs
                 val per = 14_000 / docs.size.coerceAtLeast(1)
                 val sb = StringBuilder()
                 for (d in docs) sb.append("### ").append(d.title).append('\n').append(runCatching { vm.documentText(d, 0, 9_999) }.getOrDefault("").take(per)).append("\n\n")
                 val label = topic?.let { "${course.name} · ${it.name} (" + it.resources.take(8).joinToString(", ") { r -> r.title } + ")" } ?: course.name
-                withContext(Dispatchers.IO) { AssistantClient.practiceTest(vm.assistantConfig, label, sb.toString(), count) }
+                val topicNames = if (topic == null) course.topics.map { it.name } else emptyList()
+                withContext(Dispatchers.IO) { AssistantClient.practiceTest(vm.assistantConfig, label, sb.toString(), count, topicNames) }
+                    .map { q -> if (topic != null) q.copy(topic = topic.name) else q }
             }
             r.onSuccess { questions = it }.onFailure {
                 ErrorLog.record("Deneme sınavı", it)
                 error = it.message ?: "Sorular hazırlanamadı"
+            }
+        }
+    }
+    fun showSource(questionIndex: Int, quote: String) {
+        if (searchingSource != null) return
+        searchingSource = questionIndex
+        val docs = usedDocs
+        scope.launch {
+            try {
+                val hit = withContext(Dispatchers.IO) {
+                    val whitespace = Regex("\\s+")
+                    fun normalize(text: String) = text.lowercase(Locale.ROOT).replace(whitespace, " ").trim()
+                    val normalizedQuote = normalize(quote)
+                    val prefix = normalizedQuote.split(' ').take(6).joinToString(" ")
+                    var fallback: Pair<DocRef, Int>? = null
+                    for (doc in docs) {
+                        coroutineContext.ensureActive()
+                        val pages = try {
+                            vm.documentPages(doc)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            continue
+                        }
+                        pages.forEachIndexed { pageIndex, pageText ->
+                            val normalizedPage = normalize(pageText)
+                            if (normalizedPage.contains(normalizedQuote)) return@withContext doc to pageIndex
+                            if (fallback == null && normalizedPage.contains(prefix)) fallback = doc to pageIndex
+                        }
+                    }
+                    fallback
+                }
+                if (hit != null) {
+                    onDismiss()
+                    vm.openAt(hit.first, hit.second)
+                } else {
+                    vm.showMessage("Kaynak cümle PDF'te bulunamadı")
+                }
+            } finally {
+                searchingSource = null
             }
         }
     }
@@ -325,7 +374,11 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                             Text("$right / ${qs.size} doğru", style = MaterialTheme.typography.headlineSmall)
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedButton(onClick = onDismiss) { Text("Kapat") }
-                                Button(onClick = ::load) { Text("Yeni test") }
+                                Button(onClick = ::load, enabled = searchingSource == null) { Text("Yeni test") }
+                            }
+                            TopicAnalysis(vm, course, qs, answers, onOpenDoc = { d -> onDismiss(); vm.open(d) })
+                            if (qs.indices.any { answers.getOrNull(it) != qs[it].answer }) {
+                                Text("Yanlışların", style = MaterialTheme.typography.titleSmall, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
                             }
                             qs.forEachIndexed { i, q ->
                                 if (answers.getOrNull(i) != q.answer) {
@@ -334,6 +387,23 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                                         answers.getOrNull(i)?.let { a -> if (a >= 0) Text("Senin cevabın: ${q.options[a]}", color = sou.danger, style = MaterialTheme.typography.bodySmall) }
                                         Text("Doğrusu: ${q.options[q.answer]}", color = sou.success, style = MaterialTheme.typography.bodySmall)
                                         if (q.why.isNotBlank()) Text(q.why, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        if (q.source.isNotBlank()) {
+                                            Text(
+                                                "Kaynak: “${q.source}”",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontStyle = FontStyle.Italic,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                            TextButton(
+                                                onClick = { showSource(i, q.source) },
+                                                enabled = searchingSource == null,
+                                            ) {
+                                                if (searchingSource == i) {
+                                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                                }
+                                                Text("Kaynakta göster", modifier = Modifier.padding(start = if (searchingSource == i) 8.dp else 0.dp))
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -362,10 +432,9 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                        .card()
                                         .background(bg)
-                                        .border(1.5.dp, border, RoundedCornerShape(16.dp))
+                                        .border(1.dp, border, RoundedCornerShape(14.dp))
                                         .clickable(enabled = !answered) { chosen = i }
                                         .padding(14.dp),
                                 ) {
@@ -394,6 +463,83 @@ private fun PracticeTestScreen(vm: LibraryViewModel, course: Course, topic: Topi
                             },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                         ) { Text(if (index == qs.size - 1) "Bitir" else "Sonraki") }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Deneme sınavı sonrası konu analizi: her konuda kaç soru, kaç doğru; en zayıf konu üstte. Konunun kütüphanedeki PDF'i ve
+ * o konudan alıştırma tek dokunuşla açılır. Az soruyla ölçülen konuya kesin yargı verilmez; konu puanı konu haritasına yazılır.
+ */
+@Composable
+private fun TopicAnalysis(
+    vm: LibraryViewModel,
+    course: Course,
+    qs: List<AssistantClient.Question>,
+    answers: List<Int>,
+    onOpenDoc: (com.sounote.app.data.DocRef) -> Unit,
+) {
+    val groups = remember(qs, answers.size) {
+        qs.indices.groupBy { qs[it].topic }
+            .filterKeys { it.isNotBlank() }
+            .map { (name, idx) -> Triple(name, idx.size, idx.count { answers.getOrNull(it) == qs[it].answer }) }
+            .sortedBy { (_, total, right) -> right.toFloat() / total }
+    }
+    if (groups.isEmpty()) return
+    var exerciseTopic by remember { mutableStateOf<Topic?>(null) }
+    exerciseTopic?.let { t -> ExerciseScreen(vm, course = course, initialTopic = t) { exerciseTopic = null } }
+    // Konu puanları konu haritasına (en az 2 soru varsa)
+    androidx.compose.runtime.LaunchedEffect(groups) {
+        groups.forEach { (name, total, right) ->
+            if (total >= 2) course.topics.firstOrNull { it.name == name }?.let { vm.recordTestScore(it.id, right * 100 / total) }
+        }
+    }
+    val sou = LocalSouColors.current
+    Column(Modifier.fillMaxWidth().card(), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        Text("Konu konu", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(start = 14.dp, top = 12.dp, bottom = 4.dp))
+        groups.forEachIndexed { i, (name, total, right) ->
+            if (i > 0) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            val t = course.topics.firstOrNull { it.name == name }
+            val doc = t?.resources?.filter { it.isPdf }?.firstNotNullOfOrNull { vm.downloadedDoc(course, it) }
+            val ratio = right.toFloat() / total
+            val color = when {
+                total < 2 -> MaterialTheme.colorScheme.onSurfaceVariant
+                ratio >= 0.8f -> sou.success
+                ratio >= 0.5f -> sou.warning
+                else -> sou.danger
+            }
+            Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, modifier = Modifier.weight(1f))
+                    Text(
+                        if (total < 2) "$right/$total doğru · az soru" else "$right/$total doğru",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = color,
+                    )
+                }
+                ProgressBar(ratio, Modifier.fillMaxWidth(), color = color, height = 4.dp)
+                if (right < total && t != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (doc != null) {
+                            OutlinedButton(onClick = { onOpenDoc(doc) }) {
+                                Icon(SouIcons.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text("PDF'i aç", modifier = Modifier.padding(start = 6.dp))
+                            }
+                        } else {
+                            Text(
+                                "Bu konunun PDF'i kütüphanende yok",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                            )
+                        }
+                        OutlinedButton(onClick = { exerciseTopic = t }) {
+                            Icon(SouIcons.Checklist, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Alıştırma", modifier = Modifier.padding(start = 6.dp))
+                        }
                     }
                 }
             }

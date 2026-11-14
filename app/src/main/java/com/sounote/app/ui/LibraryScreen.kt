@@ -632,47 +632,33 @@ private fun UserFolderCard(
     menu: @Composable (dismiss: () -> Unit) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
-    Column(Modifier.pressScale().combinedClickable(onClick = onClick, onLongClick = { open = true })) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.75f)
-                .clip(CardShape)
-                .background(
-                    androidx.compose.ui.graphics.Brush.linearGradient(
-                        listOf(Color(folder.color), Color(folder.color).copy(alpha = 0.75f).compositeOver(Color.Black)),
-                    ),
-                ),
-        ) {
-            if (folder.icon.isNotEmpty()) {
-                Text(folder.icon, fontSize = 56.sp)
-                Text(
-                    folder.name,
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.TopCenter).padding(10.dp),
-                )
-            } else {
-                Icon(
-                    painterResource(R.drawable.ic_folder),
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier.size(72.dp),
-                )
-            }
+    // 4.0: kısa yatay kart — klasörün renginde simge (ya da kendi işareti), ad ve belge sayısı
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .card(12.dp)
+            .combinedClickable(onClick = onClick, onLongClick = { open = true })
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        if (folder.icon.isNotEmpty()) {
+            Text(folder.icon, fontSize = 24.sp)
+        } else {
+            Icon(SouIcons.FolderFilled, contentDescription = null, tint = Color(folder.color), modifier = Modifier.size(28.dp))
+        }
+        Column(Modifier.weight(1f).padding(start = 10.dp)) {
             Text(
-                "$count",
-                color = Color.White,
+                folder.name,
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
+            Text("$count belge", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Box {
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) { menu { open = false } }
         }
-        CardTitle(folder.name)
     }
 }
 
@@ -1021,23 +1007,23 @@ private val CardShape = RoundedCornerShape(10.dp)
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FolderCard(folder: FolderRef, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
-    Column(Modifier.pressScale().combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.75f)
-                .clip(CardShape)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-        ) {
-            Icon(
-                painterResource(R.drawable.ic_folder),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(72.dp),
-            )
-        }
-        CardTitle(folder.name)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .card(12.dp)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        Icon(SouIcons.FolderFilled, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+        Text(
+            folder.name,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 10.dp),
+        )
     }
 }
 
@@ -1107,7 +1093,8 @@ internal fun formatStudy(ms: Long): String {
 private fun CardTitle(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier.padding(top = 8.dp, start = 2.dp, end = 2.dp),

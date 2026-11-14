@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -142,7 +143,6 @@ fun ExamsScreen(vm: LibraryViewModel) {
             (courseFilter.isEmpty() || e.course == courseFilter) &&
             (showDone || !vm.isDone(e))
     }
-    val newExam = { Exam("m:" + UUID.randomUUID(), courseFilter, "", defaultExamTime(), kind = kindFilter.ifEmpty { "exam" }) }
     val onItem = { e: Exam -> if (!e.global) editing = e }
     val onLong = { e: Exam -> if (!e.global) deleting = e }
     val motion = LocalMotionLevel.current
@@ -152,7 +152,7 @@ fun ExamsScreen(vm: LibraryViewModel) {
     Scaffold(
         topBar = {
             SouTopBar(
-                "Planlayıcı",
+                "Takvim",
                 actions = {
                     Box {
                         var aiMenu by remember { mutableStateOf(false) }
@@ -175,13 +175,6 @@ fun ExamsScreen(vm: LibraryViewModel) {
                     }
                     IconButton(onClick = { vm.refreshCatalog() }) { Icon(SouIcons.Refresh, contentDescription = "Yenile") }
                 },
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { editing = newExam() },
-                icon = { Icon(SouIcons.Add, contentDescription = null) },
-                text = { Text("Ekle") },
             )
         },
         containerColor = Color.Transparent,
@@ -392,11 +385,22 @@ private fun PlannerList(
                 EmptyState(SouIcons.Event, "Yaklaşan bir şey yok", art = com.sounote.app.R.drawable.empty_calendar)
             }
         }
+        item(key = "legend") { ExamTypeLegend() }
         groups.forEach { (label, list) ->
-            item(key = "h:$label") { SectionHeader(label, modifier = Modifier.padding(top = 6.dp)) }
-            items(list, key = { it.id }) { exam ->
-                Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                    ExamCard(exam, vm, onClick = { onItem(exam) }, onLongClick = { onLong(exam) })
+            item(key = "h:$label") {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp, start = 2.dp),
+                )
+            }
+            item(key = "g:$label") {
+                Column(Modifier.fillMaxWidth().card().animateItem()) {
+                    list.forEachIndexed { i, exam ->
+                        if (i > 0) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        ExamListRow(vm, exam, onItem, onLong)
+                    }
                 }
             }
         }
@@ -407,9 +411,12 @@ private fun PlannerList(
                 }
             }
             if (showPast) {
-                items(past, key = { "p" + it.id }) { exam ->
-                    Box(Modifier.animateItem(), propagateMinConstraints = true) {
-                        ExamCard(exam, vm, onClick = { onItem(exam) }, onLongClick = { onLong(exam) })
+                item(key = "past") {
+                    Column(Modifier.fillMaxWidth().card().animateItem()) {
+                        past.forEachIndexed { i, exam ->
+                            if (i > 0) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            ExamListRow(vm, exam, onItem, onLong)
+                        }
                     }
                 }
             }
@@ -425,7 +432,8 @@ private fun PlannerList(
 @Composable
 private fun MiniExam(vm: LibraryViewModel, e: Exam, onItem: (Exam) -> Unit, onLong: (Exam) -> Unit, showDate: Boolean = false) {
     val done = vm.isDone(e)
-    val color = Color(vm.courseColor(e.course))
+    val type = examType(e)
+    val color = type.color()
     val time = remember(e.time, e.slot, showDate) {
         (if (showDate) SimpleDateFormat("d MMM EEE", TR).format(Date(e.time)) + " · " else "") +
             e.slot.ifBlank { SimpleDateFormat("HH:mm", TR).format(Date(e.time)) }
@@ -444,7 +452,7 @@ private fun MiniExam(vm: LibraryViewModel, e: Exam, onItem: (Exam) -> Unit, onLo
         if (e.kind != "exam") {
             Checkbox(checked = done, onCheckedChange = { vm.toggleExamDone(e) }, modifier = Modifier.size(36.dp))
         } else {
-            Icon(e.kindIcon, contentDescription = null, tint = color, modifier = Modifier.padding(horizontal = 8.dp).size(18.dp))
+            Icon(type.icon, contentDescription = type.label, tint = color, modifier = Modifier.padding(horizontal = 8.dp).size(18.dp))
         }
         Column(Modifier.weight(1f).padding(vertical = 4.dp)) {
             Text(
@@ -928,5 +936,78 @@ private fun ExamDialog(
             },
             dismissButton = { TextButton(onClick = { pickTime = false }) { Text("Vazgeç") } },
         )
+    }
+}
+
+/** Sınav türlerinin açıklaması (simge + ad). */
+@Composable
+private fun ExamTypeLegend() {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        ExamType.entries.forEach { t ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(9.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(9.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                Icon(t.icon, contentDescription = null, tint = t.color(), modifier = Modifier.size(16.dp))
+                Text(t.label, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 6.dp))
+            }
+        }
+    }
+}
+
+/** Liste görünümündeki satır: tarih, tür simgesi, başlık, kalan süre; ödevlerde onay kutusu. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ExamListRow(vm: LibraryViewModel, e: Exam, onItem: (Exam) -> Unit, onLong: (Exam) -> Unit) {
+    val done = vm.isDone(e)
+    val type = examType(e)
+    val color = type.color()
+    val day = remember(e.time) { SimpleDateFormat("d", TR).format(Date(e.time)) }
+    val weekday = remember(e.time) { SimpleDateFormat("EEE", TR).format(Date(e.time)) }
+    val today = remember(e.time) { startOfDay(e.time) == startOfDay(System.currentTimeMillis()) }
+    val detail = remember(e.time, e.slot, e.topics, vm.catalog) {
+        val time = e.slot.ifBlank { SimpleDateFormat("HH:mm", TR).format(Date(e.time)) }
+        val topics = e.topics.mapNotNull { vm.catalog.topic(it)?.second?.name }.take(3).joinToString(", ")
+        listOf(type.label, time, topics).filter { it.isNotBlank() }.joinToString(" · ")
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = { onItem(e) }, onLongClick = { onLong(e) })
+            .graphicsLayer { alpha = if (done) 0.55f else 1f }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Column(Modifier.width(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(day, style = MaterialTheme.typography.titleMedium, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(weekday, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        ExamTypeBadge(type, 40.dp, Modifier.padding(start = 12.dp))
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(
+                e.title.ifBlank { e.course },
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textDecoration = if (done) TextDecoration.LineThrough else null,
+            )
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (today && !done) {
+            Text(
+                "Bugün",
+                style = MaterialTheme.typography.labelMedium,
+                color = color,
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(color.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 3.dp),
+            )
+        } else {
+            Text(countdownText(e.time), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (e.kind != "exam") {
+            Checkbox(checked = done, onCheckedChange = { vm.toggleExamDone(e) }, modifier = Modifier.padding(start = 4.dp).size(36.dp))
+        }
     }
 }

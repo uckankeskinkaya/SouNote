@@ -89,6 +89,8 @@ data class ToolState(
     val fingerDraw: Boolean = false,
     /** Kalem yan düğmesi: basınca kalem ↔ silgi. */
     val stylusClick: StylusClick = StylusClick.SWITCH_ERASER,
+    /** Kalemle sayfada basılı tutunca hızlı kalem halkası. */
+    val penRing: Boolean = true,
     /** Yeni metin kutularının yazı boyutu (pt) ve rengi. */
     val textSizePt: Float = 14f,
     val textColor: Int = PEN_COLORS[0],
@@ -165,6 +167,7 @@ data class ToolState(
             .putInt("textBackground", textBackground)
             .putBoolean("fingerDraw", fingerDraw)
             .putString("stylusClick", stylusClick.name)
+            .putBoolean("penRing", penRing)
             .putFloat("textSizePt", textSizePt)
             .putInt("textColor", textColor)
             .putString("favorites", JSONArray().apply {
@@ -256,6 +259,7 @@ data class ToolState(
                 textBackground = prefs.getInt("textBackground", d.textBackground),
                 fingerDraw = prefs.getBoolean("fingerDraw", d.fingerDraw),
                 stylusClick = enumOr(prefs.getString("stylusClick", null), d.stylusClick),
+                penRing = prefs.getBoolean("penRing", d.penRing),
                 textSizePt = prefs.getFloat("textSizePt", d.textSizePt),
                 textColor = prefs.getInt("textColor", d.textColor),
                 favorites = loadFavorites(prefs.getString("favorites", null)),

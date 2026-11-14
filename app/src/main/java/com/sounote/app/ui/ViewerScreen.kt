@@ -117,6 +117,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     var hitIndex by remember { mutableStateOf(0) }
     var searching by remember { mutableStateOf(false) }
     var moreMenu by remember { mutableStateOf(false) }
+    var inkHistoryDialog by remember(doc.id, vm.docVersion) { mutableStateOf(false) }
     var insertAfterCurrent by remember { mutableStateOf(false) }
     var goToPageDialog by remember { mutableStateOf(false) }
     var recordingsDialog by remember { mutableStateOf(false) }
@@ -136,6 +137,40 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
     // Tablette ikinci belge yan yana (okumak için)
     var sideDoc by remember(doc.id) { mutableStateOf<DocRef?>(null) }
     var sidePicker by remember { mutableStateOf(false) }
+    var saveSetup by remember { mutableStateOf(false) }
+    // Kalemle basılı tutunca açılan hızlı kalem halkasının yeri (görünüm koordinatı)
+    var penRing by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
+    // Kayıtlı çalışma düzeninden açıldıysa yan belge de gelsin
+    LaunchedEffect(doc.id) {
+        vm.pendingSideDocId?.let { id -> sideDoc = vm.imported.firstOrNull { it.id == id } }
+        vm.pendingSideDocId = null
+    }
+    if (inkHistoryDialog) {
+        InkHistoryDialog(vm, doc, page?.first ?: 0, onDismiss = { inkHistoryDialog = false })
+    }
+    if (saveSetup) {
+        var name by remember { mutableStateOf(doc.title) }
+        AlertDialog(
+            onDismissRequest = { saveSetup = false },
+            title = { Text("Çalışma düzenini kaydet") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text("Ad") })
+                    Text(
+                        listOfNotNull(
+                            "Belge: ${doc.title}",
+                            sideDoc?.let { "Yan belge: ${it.title}" },
+                            vm.listeningPlayer.res?.takeIf { vm.listeningMini }?.let { "Dinleme: ${it.title}" },
+                        ).joinToString("\n") + "\nKaldığın sayfa ve saniye kendiliğinden hatırlanır.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = { TextButton(onClick = { vm.saveStudySetup(name, doc, sideDoc); saveSetup = false }) { Text("Kaydet") } },
+            dismissButton = { TextButton(onClick = { saveSetup = false }) { Text("Vazgeç") } },
+        )
+    }
     fun askRegion() {
         val (p, r) = lassoRegion ?: view?.selectionRegion() ?: return
         scope.launch {
@@ -546,6 +581,16 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 )
                             }
                             DropdownMenuItem(
+                                text = { Text("Çalışma düzenini kaydet") },
+                                leadingIcon = { Icon(SouIcons.DashboardCustomize, contentDescription = null) },
+                                onClick = { moreMenu = false; saveSetup = true },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Not geçmişi") },
+                                leadingIcon = { Icon(SouIcons.History, contentDescription = null) },
+                                onClick = { moreMenu = false; inkHistoryDialog = true },
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Ses kayıtları (${vm.recordings.size})") },
                                 onClick = {
                                     moreMenu = false
@@ -756,6 +801,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                                 onFormFieldRequest = { editingField = it }
                                 onUndoGesture = { this.ink.undo() }
                                 onStylusButton = { stylusClickState.value() }
+                                onPenRing = { x, y -> penRing = androidx.compose.ui.geometry.Offset(x, y) }
                                 onRedoGesture = { this.ink.redo() }
                                 onOpenLink = { uri ->
                                     // PDF içindeki bağlantı: sadece web, e-posta ve telefon (dosya/uygulama içi adresler açılmaz)
@@ -798,6 +844,7 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                             container.setLowLatency(tools.lowLatency)
                             val v = container.pdfView
                             v.tools = tools
+                            v.penRingEnabled = tools.penRing
                             v.twoPage = vm.twoPage
                             v.setDarkTheme(darkTheme)
                             v.setInverted(vm.nightReading)
@@ -812,6 +859,9 @@ fun ViewerScreen(doc: DocRef, vm: LibraryViewModel) {
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    penRing?.let { at ->
+                        PenRingOverlay(at, tools, onPick = { vm.updateTools(it) }, onDismiss = { penRing = null })
+                    }
                     if (reading && vm.fullScreen) {
                         Row(
                             Modifier.align(Alignment.TopEnd).padding(8.dp).clip(RoundedCornerShape(50))

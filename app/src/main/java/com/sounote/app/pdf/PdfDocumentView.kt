@@ -1011,6 +1011,26 @@ class PdfDocumentView(context: Context) : View(context) {
     /** Kalemin yan düğmesine basıldı (true = birinci düğme): kalem ↔ silgi. Klavye tuşu olarak da gelebilir: ViewerScreen. */
     var onStylusButton: ((primary: Boolean) -> Unit)? = null
 
+    /** Kalemle sayfada hareketsiz basılı tutunca (450 ms): kalem halkası açılır (görünüm koordinatı). Çizgi bırakılmaz. */
+    var onPenRing: ((x: Float, y: Float) -> Unit)? = null
+    var penRingEnabled = true
+    private var ringDownX = 0f
+    private var ringDownY = 0f
+    /** Parmakla kıpırdatmadan basılı tutunca da halka açılır (parmakla yazma açıkken yarım çizgi atılır). */
+    private var fingerRingX = 0f
+    private var fingerRingY = 0f
+    private val fingerRingRunnable = Runnable {
+        if (multiTouch || scaledThisGesture) return@Runnable
+        if (tools.fingerDraw && drawPointerId != -1 && !inputFromStylus) cancelInput()
+        onPenRing?.invoke(fingerRingX, fingerRingY)
+    }
+    private val ringRunnable = Runnable {
+        if (drawPointerId != -1 && inputFromStylus && selMode == SelMode.NONE && textPage < 0) {
+            cancelInput()
+            onPenRing?.invoke(ringDownX, ringDownY)
+        }
+    }
+
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_BUTTON_PRESS && isStylusTool(event.getToolType(0)) && drawPointerId == -1) {
             val b = event.actionButton
@@ -1063,11 +1083,21 @@ class PdfDocumentView(context: Context) : View(context) {
                     val erase = tools.tool == Tool.ERASER ||
                         event.getToolType(idx) == MotionEvent.TOOL_TYPE_ERASER
                     beginInput(event, idx, fromStylus = true, erase = erase)
+                    removeCallbacks(ringRunnable)
+                    if (!erase && penRingEnabled && onPenRing != null && (tools.tool == Tool.PEN || tools.tool == Tool.HIGHLIGHTER)) {
+                        ringDownX = event.getX(idx)
+                        ringDownY = event.getY(idx)
+                        postDelayed(ringRunnable, 450)
+                    }
                 }
             }
             MotionEvent.ACTION_MOVE -> {
                 val idx = event.findPointerIndex(drawPointerId)
                 if (idx >= 0) {
+                    // Kalem kıpırdadıysa yazıyor demektir: halka açılmasın
+                    if (kotlin.math.hypot(event.getX(idx) - ringDownX, event.getY(idx) - ringDownY) > 8 * resources.displayMetrics.density) {
+                        removeCallbacks(ringRunnable)
+                    }
                     when {
                         selMode != SelMode.NONE -> selMove(event.getX(idx), event.getY(idx))
                         textPage >= 0 -> textMove(event.getX(idx), event.getY(idx))
@@ -1076,6 +1106,7 @@ class PdfDocumentView(context: Context) : View(context) {
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                removeCallbacks(ringRunnable)
                 if (event.getPointerId(event.actionIndex) == drawPointerId) {
                     if (selMode != SelMode.NONE) {
                         selUp()
@@ -1087,10 +1118,13 @@ class PdfDocumentView(context: Context) : View(context) {
                     }
                 }
             }
-            MotionEvent.ACTION_CANCEL -> when {
-                selMode != SelMode.NONE -> selCancel()
-                textPage >= 0 -> textCancel()
-                else -> cancelInput()
+            MotionEvent.ACTION_CANCEL -> {
+                removeCallbacks(ringRunnable)
+                when {
+                    selMode != SelMode.NONE -> selCancel()
+                    textPage >= 0 -> textCancel()
+                    else -> cancelInput()
+                }
             }
         }
     }
@@ -1114,6 +1148,25 @@ class PdfDocumentView(context: Context) : View(context) {
         }
 
         trackTwoFingerTap(event)
+
+        // Parmakla basılı tutma → kalem halkası (kalem, fosforlu, silgi, şekil araçlarında)
+        when (action) {
+            MotionEvent.ACTION_DOWN -> {
+                removeCallbacks(fingerRingRunnable)
+                if (penRingEnabled && onPenRing != null && tools.tool != Tool.TEXT && tools.tool != Tool.LASSO) {
+                    fingerRingX = event.getX(0)
+                    fingerRingY = event.getY(0)
+                    postDelayed(fingerRingRunnable, 500)
+                }
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val i = event.findPointerIndex(event.getPointerId(0))
+                if (i >= 0 && kotlin.math.hypot(event.getX(i) - fingerRingX, event.getY(i) - fingerRingY) > 10 * resources.displayMetrics.density) {
+                    removeCallbacks(fingerRingRunnable)
+                }
+            }
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> removeCallbacks(fingerRingRunnable)
+        }
 
         if (tools.tool == Tool.LASSO && handleFingerSelection(event)) return
 

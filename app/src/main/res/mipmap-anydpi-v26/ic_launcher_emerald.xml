@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "emerald" temasının uygulama simgesi: logonun içi tam zemin -->
+<!-- "emerald" temasının uygulama simgesi: logo: kıvrılıp S olan not kâğıdı (tools/make_logo5.py) -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_emerald_bg" />
-    <foreground android:drawable="@android:color/transparent" />
+    <background android:drawable="@drawable/ic_bg_emerald" />
+    <foreground android:drawable="@drawable/ic_fg_emerald" />
     <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

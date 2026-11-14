@@ -1,6 +1,6 @@
 """Tanıtım videosu: sahne kayıtlarını telefon çerçevesine oturtur, başlık kartları ekler, birleştirir.
 
-Girdi: scenes/NN-ad.mp4 (record.sh) + uygulama logosu (logo_tile.png). Çıktı: out/sounote.mp4 (1080x1920, dikey) ve out/poster.jpg.
+Girdi: scenes/NN-ad.mp4 (record.sh) + uygulama logosu (.github/video/logo.png, tools/make_logo5.py). Çıktı: out/sounote.mp4 (1080x1920, dikey) ve out/poster.jpg.
 Seslendirme varsa (align.py: out/voice.wav + out/voice-times.json) her parça kendi paragrafı kadar sürer
 (kayıt kısaysa son kare bekletilir) ve ses videoya eklenir.
 """
@@ -18,7 +18,7 @@ FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 # Logodaki gibi: üstte lacivert, altta neredeyse siyah; elektrik mavisi ışıklar
 TOP, BOTTOM = (6, 22, 78), (1, 5, 24)
 GLOW_A, GLOW_B = (31, 79, 255), (61, 139, 255)
-LOGO = "app/src/main/res/drawable-nodpi/logo_tile.png"
+LOGO = ".github/video/logo.png"
 # Ekrandaki telefonun yeri (720x1600 kaydı 0.72 ölçekle)
 PW, PH = 640, 1422
 PX, PY = (W - PW) // 2, 420

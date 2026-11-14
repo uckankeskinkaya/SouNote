@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- "electric" temasının uygulama simgesi: logo: kıvrılıp S olan not kâğıdı (tools/make_logo5.py) -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@drawable/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_logo_fg" />
+    <background android:drawable="@drawable/ic_bg_electric" />
+    <foreground android:drawable="@drawable/ic_fg_electric" />
     <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

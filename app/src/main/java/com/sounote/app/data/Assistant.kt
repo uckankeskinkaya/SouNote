@@ -58,27 +58,42 @@ data class ChatMessage(val role: String, val content: String)
 
 object AssistantClient {
     /** /chat/completions çağrısı; cevabın metnini döndürür. Evren 429'da birkaç saniye bekletir: bir kez tekrar denenir. */
-    fun chat(config: AssistantConfig, messages: List<ChatMessage>): String =
+    fun chat(config: AssistantConfig, messages: List<ChatMessage>, temperature: Double = 0.4): String =
         try {
-            chatOnce(config, messages)
+            chatOnce(config, messages, temperature)
         } catch (e: IOException) {
             if (e is TermsNotAcceptedException || e.message?.contains("HTTP 429") != true) throw e
             Thread.sleep(5_000)
-            chatOnce(config, messages)
+            chatOnce(config, messages, temperature)
         }
 
-    private fun chatOnce(config: AssistantConfig, messages: List<ChatMessage>): String {
+    @Volatile private var bestCache: Triple<String, String, Long>? = null
+
+    /**
+     * Soru üretme ve denetleme gibi ağır işler için yapılandırma: model "auto" ise servisin en güçlü görünen modeli
+     * (6 saat önbellekli). Liste alınamazsa olduğu gibi döner.
+     */
+    fun heavy(config: AssistantConfig): AssistantConfig {
+        if (!config.model.equals("auto", ignoreCase = true)) return config
+        val now = System.currentTimeMillis()
+        bestCache?.let { (key, model, at) -> if (key == config.baseUrl + config.apiKey.takeLast(6) && now - at < 6 * 3_600_000L) return config.copy(model = model) }
+        val best = runCatching { recommendedModel(models(config)) }.getOrNull() ?: return config
+        bestCache = Triple(config.baseUrl + config.apiKey.takeLast(6), best, now)
+        return config.copy(model = best)
+    }
+
+    private fun chatOnce(config: AssistantConfig, messages: List<ChatMessage>, temperature: Double): String {
         val base = config.baseUrl.trim().trimEnd('/')
         val url = if (base.endsWith("/chat/completions")) base else "$base/chat/completions"
         val body = JSONObject()
             .put("model", config.model)
-            .put("temperature", 0.4)
+            .put("temperature", temperature)
             .put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
         val c = URL(url).openConnection() as HttpURLConnection
         try {
             c.requestMethod = "POST"
             c.connectTimeout = 15_000
-            c.readTimeout = 90_000
+            c.readTimeout = 150_000
             c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
             c.setRequestProperty("Authorization", "Bearer ${config.apiKey}")
@@ -239,42 +254,59 @@ Kurallar:
     }
 
     /** Deneme sınavı sorusu: 4 şık, doğru şıkkın sırası ve kısa açıklama. */
-    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String)
+    data class Question(val q: String, val options: List<String>, val answer: Int, val why: String, val topic: String = "", val source: String = "")
 
     /**
      * Deneme sınavı: metinden (yoksa konu başlıklarından) çoktan seçmeli sorular.
      * Cevap JSON: [{"q": "...", "options": ["A","B","C","D"], "answer": 0, "why": "..."}]
      */
-    fun practiceTest(config: AssistantConfig, topic: String, source: String, count: Int): List<Question> {
+    fun practiceTest(config: AssistantConfig, topic: String, source: String, count: Int, topics: List<String> = emptyList()): List<Question> {
+        val strong = heavy(config)
         val material = if (source.isBlank()) {
-            "Ders metni yok: soruları konu başlığına göre, L4 (B1+) SpeakOut düzeyinde hazırla."
+            "No course text is given: write the questions from the topic title, at Level 4 (B1+, SpeakOut B1+) exam standard."
         } else {
-            "Soruları sadece aşağıdaki ders metnine dayanarak hazırla:\n<<<\n${source.take(14_000)}\n>>>"
+            "Each item must include a \"source\": a SHORT exact quote (5-15 words, copied verbatim from the course material) that supports the correct answer. For grammar items, quote the example/rule sentence they are based on.\n" +
+                "Base the questions ONLY on the course material below (its grammar points, vocabulary and texts):\n<<<\n${source.take(14_000)}\n>>>"
         }
-        val prompt = """
-İngilizce hazırlık L4 (B1+) öğrencisi için "$topic" konusundan $count soruluk çoktan seçmeli deneme sınavı hazırla.
+        val seen = HashSet<String>()
+        val kept = ArrayList<QuestionQuality.Mcq>()
+        // Ders geneli testte her soru bir konuya bağlanır (sonuçta konu konu analiz için)
+        val topicRule = if (topics.isEmpty()) "" else
+            "\nSpread the questions over these course topics and give each item a \"topic\" field with EXACTLY one of these names: " +
+                topics.joinToString(" | ")
+        // En fazla 3 tur: her turda eksik kadar (+ yedek) soru istenir, temizlenir, denetlenir
+        for (round in 0 until 3) {
+            val need = count - kept.size
+            if (need <= 0) break
+            val avoid = if (kept.isEmpty()) "" else "\nDo NOT repeat or paraphrase these existing questions:\n" + kept.joinToString("\n") { "- " + it.q.take(140) }
+            val prompt = """
+${QuestionQuality.EXAM_STYLE}
+
+Write ${need + 3} multiple-choice questions on the topic "$topic".
 $material
-Kurallar:
-- Her soruda 4 şık, tek doğru cevap; şıklar birbirine yakın ama net.
-- Soru ve şıklar İngilizce olabilir; "why" alanı Türkçe ve tek cümle açıklama.
-- Grammar, vocabulary ve reading becerilerini karışık ölç; aynı soruyu tekrar etme.
-- SADECE JSON dizisi döndür, başka hiçbir şey yazma:
-[{"q": "...", "options": ["...", "...", "...", "..."], "answer": 0, "why": "..."}]
+Mix item types: about half sentence-completion/cloze on the grammar points, a third vocabulary in context, the rest short reading
+(put the paragraph inside "q", then the question). "why": ONE sentence in Turkish explaining why the answer is right and the main distractor wrong.$topicRule$avoid
+Return ONLY a JSON array, nothing else:
+[{"q": "...", "options": ["...", "...", "...", "..."], "answer": 0, "why": "..."${if (topics.isEmpty()) "" else ", \"topic\": \"...\""}}]
 """.trim()
-        val reply = chat(config, listOf(ChatMessage("user", prompt)))
-        val start = reply.indexOf('[')
-        val end = reply.lastIndexOf(']')
-        if (start < 0 || end <= start) throw IOException("Asistan soruları beklenen biçimde vermedi, tekrar dene")
-        val arr = JSONArray(reply.substring(start, end + 1))
-        return (0 until arr.length()).mapNotNull { i ->
-            val o = arr.optJSONObject(i) ?: return@mapNotNull null
-            val opts = o.optJSONArray("options") ?: return@mapNotNull null
-            val options = (0 until opts.length()).map { opts.optString(it).trim() }.filter { it.isNotEmpty() }
-            val answer = o.optInt("answer", -1)
-            val q = o.optString("q").trim()
-            if (q.isEmpty() || options.size < 2 || answer !in options.indices) null
-            else Question(q, options, answer, o.optString("why").trim())
-        }.ifEmpty { throw IOException("Soru çıkarılamadı") }
+            val res = runCatching { chat(strong, listOf(ChatMessage("user", prompt)), temperature = 0.7) }
+            val reply = res.getOrNull() ?: if (kept.isEmpty()) throw res.exceptionOrNull()!! else break
+            val start = reply.indexOf('[')
+            val end = reply.lastIndexOf(']')
+            if (start < 0 || end <= start) { if (round == 2 && kept.isEmpty()) throw IOException("Asistan soruları beklenen biçimde vermedi, tekrar dene"); continue }
+            val arr = runCatching { JSONArray(reply.substring(start, end + 1)) }.getOrNull() ?: continue
+            val fresh = (0 until arr.length()).mapNotNull { i ->
+                val o = arr.optJSONObject(i) ?: return@mapNotNull null
+                val opts = o.optJSONArray("options") ?: return@mapNotNull null
+                val t = o.optString("topic").trim().let { name -> topics.firstOrNull { it.equals(name, ignoreCase = true) }.orEmpty() }
+                QuestionQuality.clean(QuestionQuality.Mcq(o.optString("q"), (0 until opts.length()).map { opts.optString(it) }, o.optInt("answer", -1), o.optString("why"), t, o.optString("source").trim()))
+            }
+            val unique = QuestionQuality.distinctBy(fresh, seen) { it.q }
+            val verdict = QuestionQuality.verify(strong, unique)
+            kept += unique.filterIndexed { i, _ -> verdict[i] }.take(need)
+        }
+        if (kept.isEmpty()) throw IOException("Uygun soru çıkarılamadı, tekrar dene")
+        return kept.map { Question(it.q, it.options, it.answer, it.why, it.topic, it.source) }
     }
 
     /**
@@ -388,6 +420,9 @@ Nasıl cevap vereceksin:
 - Writing (opinion paragraph/essay) metni gelirse: yapı (giriş-thesis, body, conclusion), linkers, grammar ve kelime hatalarını madde madde göster, düzeltilmiş halini ver.
 - Kullanıcının açık belgesinin metni verildiyse cevabı o metne dayandır; metinde olmayan şeyi uydurma, emin değilsen söyle.
 - Bilmediğin bir tarih/kuralı uydurma.
+- Sadece sorulana cevap ver; konu dışına çıkma, kendini tekrar etme, uzun giriş/kapanış cümleleri yazma.
+- Türkçen düzgün ve doğal olsun; anlamsız, yarım ya da karışık dilli cümle kurma. Emin değilsen "emin değilim" de.
+- Alıştırma/soru hazırlarken her sorunun tek doğru cevabı olsun, şıklar birbirinden farklı olsun; cevabı kendin çözüp kontrol et.
 
 Uygulama (SouNote) hakkında bilmen gerekenler (kullanıcı nasıl yapılır diye sorarsa anlat):
 - Ana sayfa: kaldığın yerden devam, hızlı başla (yeni defter, hızlı not, yazılı not, PDF içe aktar, klasör bağla), yaklaşan sınavlar.
@@ -438,6 +473,16 @@ object PdfText {
             stripper.extractRegions(doc.getPage(page))
             stripper.getTextForRegion("sel").replace(Regex("[ \\t]+"), " ").trim().take(maxChars)
         }
+
+    /** İlk [max] sayfanın metni, sayfa sayfa (PDF bir kez açılır). */
+    fun pages(context: Context, source: Uri, max: Int = 60): List<String> {
+        val doc = load(context, source)
+        return doc.use {
+            (1..minOf(doc.numberOfPages, max)).map { p ->
+                runCatching { PDFTextStripper().apply { startPage = p; endPage = p }.getText(doc) }.getOrDefault("")
+            }
+        }
+    }
 
     fun extract(context: Context, source: Uri, from: Int, to: Int, maxChars: Int = 16_000): String {
         val doc = load(context, source)

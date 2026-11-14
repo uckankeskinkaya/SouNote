@@ -19,8 +19,9 @@ jobs:
       - name: İndir
         run: |
           mkdir out
-          while read -r NAME URL; do [ -z "$NAME" ] && continue
-          big=$(printf '%s' "$URL" | sed -E 's#/height:[0-9]+/#/height:896/#; s#/width:[0-9]+\?#/width:1776?#; s#&x-canva-quality=thumbnail##')
+          while read -r NAME URL SIZE; do [ -z "$NAME" ] && continue
+          W=${SIZE%x*}; H=${SIZE#*x}; [ -z "$SIZE" ] && { W=1776; H=896; }
+          big=$(printf '%s' "$URL" | sed -E "s#/height:[0-9]+/#/height:$H/#; s#/width:[0-9]+\\?#/width:$W?#; s#&x-canva-quality=thumbnail##")
           if curl -fsS -o "out/$NAME.png" "$big"; then echo "büyük boy alındı"; else curl -fsS -o "out/$NAME.png" "$URL"; echo "küçük resim alındı"; fi
           file "out/$NAME.png"
           done < src/.github/canva/request.txt

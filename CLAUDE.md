@@ -179,7 +179,7 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   gizli katman çizilmez/dışa aktarılmaz; sadece çizgiler, yazı/resim katmansız).
 - Sonsuz tuval: PaperSize.CANVAS 4800×4800 pt tek sayfa; PdfDocumentView canvasMode (genişlik ≥ CANVAS_MIN_PT): A4 ölçeğinde yerleşir,
   minZoom tamamını gösterir, kaldığın yer prefs canvasView_<id>.
-- Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
+- Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3 (4.0'dan beri versionName 4.0.<run>, MAJOR = 4).
 - 3.0.1 (🧪, build-127+): kalemler yeniden yazıldı. Kullanıcı (ekran görüntüsü): uçlarda kocaman damla, ortada ince, boncuklu çizgi.
   Neden: basınç katsayısı 0.35–1.6 (çok geniş) + kalınlık 12 kademeye bölünüp her kademe ayrı yuvarlak uçlu yol. Şimdi ink/StrokeOutline.kt:
   basınçlı dolma/jel, fırça, kaligrafi tek parça doldurulan dış hat (yakın noktalar atılır, basınç ileri-geri yumuşatılır, penFactor 0.62–1.38,
@@ -233,6 +233,39 @@ Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd si
 3B tablet (prosedürel, gerçek ekran görüntüleri), kaydırma koreografisi (.slot[data-slot] yuvaları), 3D İncele, açılış (logo → tablet),
 çizim ve bilgi kartı denemeleri, kalite katmanları, WebGL'siz statik görünüm. Logo: "A. Dengeli" (site/brand-src, make_logo.py).
 Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/README.md. build.yml site/** değişikliğinde APK derlemez.
+
+## SouNote 4.0 (yayın: 14 Kasım; arayüz build-171+, 13 Kasım)
+Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yazıları). Onaylanan maket: scratchpad mock/ (HTML, açık kâğıt tonu).
+- Theme.kt: darkSchemeOf/lightSchemeOf düz nötr yüzeyler (açık #F6F6F3 zemin, beyaz yüzey, #E5E5E0 çizgi; koyu #111318/#1A1D24), tema sadece vurgu
+  (ELECTRIC açıkta #3346D3, koyuda #8C9BFF). Components: card() = surface + 1dp outlineVariant, 14dp; souBackground() düz zemin. hero tek renk.
+- AppShell: 4 sekme (HOME "Bugün", LIBRARY, COURSES "Çalış", EXAMS "Takvim"); WRITING Çalış'tan açılır (railTab), SETTINGS raydaki Ayarlar.
+  Tablet: SouRail (84dp, hap seçili, altta Asistan + Ayarlar); <600dp NavigationBar. NavStyle/NavDrawer kullanılmıyor.
+- ExamKind.kt: ExamType (QUIZ/WRITING/SPEAKING/PRESENTATION/LISTENING/TASK/FINAL; ad + kind'dan examType()), ExamTypeBadge. Bugün ve Takvim kullanır.
+- Bugün (HomeScreen): selam + tarih·hafta, "Yeni" menüsü, Devam et (4 DocCard), Hızlı başla (PracticeTile 3×2), Yaklaşanlar (tür simgesi),
+  tekrar kartı, seri kartı. Takvim: ExamListRow + ExamTypeLegend; "Ekle" düğmesi YOK (kullanıcı: sınavları ben eklerim).
+  Çalış: üstte pratik şeridi (Deneme sınavı, Alıştırma, Yazı stüdyosu, Speaking). smoke.sh sekme adları güncel.
+- Asistan kalitesi (build-170+): data/QuestionQuality.kt (EXAM_STYLE, clean: 4 farklı şık + karıştırma, distinctBy, verify/verifyGaps ile
+  ikinci çözüm), practiceTest/Exercises.generate 3 tura kadar tamamlar; AssistantClient.heavy(config): model "auto" ise en güçlü model (6 sa önbellek);
+  sohbet, puanlama, plan, koç heavy kullanır.
+- Listening A–B bölüm tekrarı (🧪): A ve B işaretlenir, bölüm tekrar tekrar çalar; tekrarlar arası 0/2/4/8 sn bekleme. ListeningPlayer.abA/abB/abGap/changeAbGap + ListeningScreen AbControls.
+- Deneme sınavı konu analizi (🧪): ders geneli testte her soru bir konuya bağlanır; sonuçta konu konu doğru/toplam, zayıf konu üstte, konunun PDF'ini aç ve o konudan alıştırma; konu puanları konu haritasına yazılır. AssistantClient.practiceTest(topics) + Question.topic + StudyTools TopicAnalysis.
+- Kayıtlı çalışma düzeni (🧪): belge ekranı ⋮ → "Çalışma düzenini kaydet" (belge + yan belge + dinleme kaydı), Bugün'de tek dokunuşla açılır. LibraryViewModel.StudySetup/saveStudySetup/openStudySetup (prefs "studySetups", pendingSideDocId) + HomeScreen StudySetupChip.
+- Hızlı kalem halkası (🧪): sayfada kalemle kıpırdatmadan basılı tut → kalem, fosforlu, silgi ve son renkler; Ayarlar → Not alma'dan kapatılır. PdfDocumentView.onPenRing/penRingEnabled (450 ms, 8dp) + ui/PenRing.kt PenRingOverlay + ToolState.penRing.
+- Not geçmişi (🧪): belge ⋮ → Not geçmişi → Geri yükle (geri al ile vazgeçilir); InkStore.save history/<page>-<stamp>.bin (3 dk aralık, sayfa başına 15), history()/loadVersion(); remapPages/copyPage geçmişi taşır. VM pageHistory/restorePageVersion (ink.commit) + ui/InkHistoryDialog.kt.
+- Bugün derste kartı (🧪): Bugün'de günün konuları ve PDF'leri (aç / indir / hepsini indir), ses kayıtları için Dinle; ui/TodayLessonCard.kt todayLesson(vm) (week + day 1..5), TODAY_DOWNLOAD = -2, HERO modülünde.
+- Kaynakta göster (🧪): deneme soruları kısa kaynak alıntısıyla gelir, yanlış soruda PDF'te o cümlenin sayfası açılır; Question.source / Mcq.source (practiceTest istemi, sadece ders metni varken), StudyTools showSource + VM documentPages (PdfText.pages, PDF bir kez açılır).
+- Yardımcılar: gpt-sor (Codex, model gpt-6.1-sol, ~/.codex/config.toml; görsel üretebilir), gemini-sor (sadece fikir). GPT'ye dar, tek dosyalık
+  görev ver; geniş görevlerde 25 dk sınırına takılıyor. Diff'i mutlaka incele (klasör rengi/PDF beyazı gibi gereksiz değişiklikler yapıyor).
+
+REDDEDİLEN FİKİRLER (kullanıcı beğenmedi, tekrar önerme): sınıf duyuruları, kelime defteri, el yazısını yazıya çevirme, tek dokunuşla hata raporu,
+haftalık özet bildirimi, sesli okuma (TTS), speaking sınav simülasyonu, uygulama içi APK güncelleme, yanlışlar kuyruğu, essay karşılaştırma,
+takıldığın yere işaret, boş hâliyle yeniden çöz, essay taslak kutuları, paragrafı kur (cümle sıralama), kanıtı sen bul, solak modu/el ayarı,
+katman seçerek paylaş, çevrimdışı ders paketi, PDF sürümü değişince not taşıma, listening metni.
+
+- Logo (14 Kasım, kullanıcı onayladı): mavi degrade zeminde kıvrılıp S olan çizgili not kâğıdı (kalem ucu ve yıldız yok). Kaynak tools/art/logo_source.png
+  (Canva üretimi, yıldız silindi); `python3 tools/make_logo5.py` zemini (2. derece yüzey) ve kâğıdı (alfa) ayırır, her temaya ton döndürür:
+  drawable-nodpi/logo_<tema>.webp (AppLogo, widget), ic_bg_/ic_fg_<tema>.webp (uyarlanabilir simge), ic_launcher_monochrome.webp, site brand + og.jpg, video logo.
+  Açılış zemini #012985. Önceki logo denemelerini (S'li kâğıt, baykuş, kalem ucu vb.) kullanıcı beğenmedi.
 
 ## Devam eden iş (sonraki oturum)
 - Drive düzeni (yapıldı, 23 Ekim): "Ingilizce calismalar" (1f2chdgREDpdIpHoKh4I43oeBRC0tlo8q) altında hafta klasörleri:

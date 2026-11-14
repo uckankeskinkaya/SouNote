@@ -83,6 +83,8 @@ const browser = await chromium.launch({ args: GL });
   await page.click('[data-x="orient"]'); await page.click('[data-x="flip"]'); await sleep(1100);
   await page.screenshot({ path: `${OUT}/explore-back.png` });
   await page.click('[data-x="flip"]'); await sleep(1300);
+  // sürükleme tableti 90°'den fazla döndürdüyse ilk çevirme öne getirmiş olur: ön yüze dön
+  if (Math.cos(await page.evaluate(() => window.__sn.state.ry)) < 0) { await page.click('[data-x="flip"]'); await sleep(1300); }
   const spots = await page.$$eval(".hotspot:not(.is-hidden)", (b) => b.length);
   check("bilgi noktaları görünüyor", spots > 0, `${spots} nokta`);
   if (spots) { await page.click(".hotspot:not(.is-hidden)"); await sleep(200); check("bilgi noktası açılıyor", await page.evaluate(() => !!document.querySelector(".hotspot-pop:not([hidden])"))); }

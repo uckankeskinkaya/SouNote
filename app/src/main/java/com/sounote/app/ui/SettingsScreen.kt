@@ -44,6 +44,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -207,17 +208,17 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 ) {
                     AppTheme.entries.forEach { t ->
                         val sel = vm.appTheme == t
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        val accent = Color(if (LocalSouColors.current.isDark) t.darkPrimary else t.lightPrimary)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .width(112.dp)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(t.heroB), Color(t.bg))))
+                                .width(150.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
                                 .border(
-                                    if (sel) 2.5.dp else 1.dp,
-                                    if (sel) Color(t.glowB) else Color(t.glowA).copy(alpha = 0.4f),
-                                    RoundedCornerShape(18.dp),
+                                    if (sel) 2.dp else 1.dp,
+                                    if (sel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    RoundedCornerShape(12.dp),
                                 )
                                 .clickable { vm.updateAppTheme(t) }
                                 .padding(10.dp),
@@ -225,10 +226,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
                             androidx.compose.foundation.Image(
                                 androidx.compose.ui.res.painterResource(t.logo),
                                 contentDescription = null,
-                                modifier = Modifier.size(64.dp).clip(RoundedCornerShape(14.dp)),
+                                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)),
                             )
-                            Text(t.label, color = Color.White, style = MaterialTheme.typography.labelLarge, maxLines = 1)
-                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = Color(t.darkPrimary), modifier = Modifier.size(18.dp))
+                            Text(t.label, style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.weight(1f).padding(start = 10.dp))
+                            if (sel) Icon(SouIcons.CheckCircle, contentDescription = "Seçili", tint = accent, modifier = Modifier.size(18.dp))
+                            else Box(Modifier.size(12.dp).clip(androidx.compose.foundation.shape.CircleShape).background(accent))
                         }
                     }
                 }
@@ -309,6 +311,11 @@ fun SettingsScreen(vm: LibraryViewModel) {
         Entry(Category.NOTES, "Parmakla çiz", "parmak kalem çizim dokunma") {
             SwitchRow(SouIcons.TouchApp, "Parmakla çiz", "Tek parmak çizer, iki parmak kaydırır", tools.fingerDraw) {
                 vm.updateTools(tools.copy(fingerDraw = it))
+            }
+        },
+        Entry(Category.NOTES, "Kalem halkası", "kalem halka basılı tut hızlı renk silgi fosforlu") {
+            SwitchRow(SouIcons.InkPen, "Kalem halkası", "Kalemle sayfada basılı tut: kalem, fosforlu, silgi ve renkler açılır", tools.penRing) {
+                vm.updateTools(tools.copy(penRing = it))
             }
         },
         Entry(Category.NOTES, "Kalem düğmesi", "kalem düğme yan tuş focus pen xiaomi s pen silgi geri al buton") {
@@ -478,6 +485,9 @@ fun SettingsScreen(vm: LibraryViewModel) {
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val wide = maxWidth >= 840.dp
+        LaunchedEffect(wide, selected) {
+            if (wide && selected == null) selected = Category.entries.first().name
+        }
         // Telefonda kategori sayfasından geri: kategori listesine.
         BackHandler(enabled = !wide && category != null && q.isEmpty()) { selected = null }
         Scaffold(
@@ -499,7 +509,7 @@ fun SettingsScreen(vm: LibraryViewModel) {
                 if (showList || q.isNotEmpty()) {
                     Column(
                         Modifier
-                            .then(if (wide) Modifier.width(320.dp) else Modifier.weight(1f))
+                            .then(if (wide) Modifier.width(300.dp) else Modifier.weight(1f))
                             .fillMaxHeight()
                             .padding(horizontal = 16.dp),
                     ) {
@@ -509,18 +519,23 @@ fun SettingsScreen(vm: LibraryViewModel) {
                         } else {
                             LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
                                 items(Category.entries) { c ->
-                                    val sel = wide && (category ?: Category.APPEARANCE) == c && q.isEmpty()
+                                    val sel = wide && (category ?: Category.entries.first()) == c
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .clip(RoundedCornerShape(16.dp))
-                                            .background(if (sel) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                            .clip(RoundedCornerShape(if (wide) 12.dp else 16.dp))
+                                            .background(if (sel) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
                                             .clickable { selected = c.name; query = "" }
                                             .padding(horizontal = 12.dp, vertical = 12.dp),
                                     ) {
-                                        Icon(c.icon, contentDescription = null, tint = if (sel) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text(c.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 16.dp))
+                                        Icon(c.icon, contentDescription = null, tint = if (sel) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            c.label,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = if (sel) MaterialTheme.colorScheme.onPrimaryContainer else Color.Unspecified,
+                                            modifier = Modifier.weight(1f).padding(start = 16.dp),
+                                        )
                                         if (!wide) {
                                             Icon(
                                                 SouIcons.ChevronRight,
@@ -534,12 +549,15 @@ fun SettingsScreen(vm: LibraryViewModel) {
                         }
                     }
                 }
+                if (wide) {
+                    Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
+                }
                 if (wide || (category != null && q.isEmpty())) {
                     Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                         if (wide && q.isNotEmpty()) {
                             SearchResults(results, Modifier.widthIn(max = 760.dp).padding(horizontal = 16.dp))
                         } else {
-                            val c = category ?: Category.APPEARANCE
+                            val c = category ?: Category.entries.first()
                             Column(
                                 Modifier
                                     .widthIn(max = 760.dp)

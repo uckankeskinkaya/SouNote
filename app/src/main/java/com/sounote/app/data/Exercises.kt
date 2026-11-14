@@ -38,33 +38,63 @@ data class ExerciseVerdict(val score: Float, val feedback: String = "", val fix:
 
 object Exercises {
 
-    /** Asistandan alıştırma ister. [source] boşsa konu başlığına göre hazırlar. */
+    /** Asistandan alıştırma ister. [source] boşsa konu başlığına göre hazırlar. Sorular temizlenir ve denetlenir. */
     fun generate(config: AssistantConfig, topic: String, source: String, count: Int, types: Set<ExerciseType>): List<Exercise> {
-        val kinds = (types.ifEmpty { ExerciseType.entries.toSet() }).joinToString("\n") { "- \"${it.key}\": ${it.label} — ${it.brief}" }
+        val strong = AssistantClient.heavy(config)
+        val kinds = (types.ifEmpty { ExerciseType.entries.toSet() }).joinToString("\n") { "- \"${it.key}\": ${it.brief}" }
         val material = if (source.isBlank()) {
-            "Ders metni yok: alıştırmaları konu başlığına göre, L4 (B1+) SpeakOut düzeyinde hazırla."
+            "No course text is given: write the items from the topic title, at Level 4 (B1+, SpeakOut B1+) exam standard."
         } else {
-            "Alıştırmaları sadece aşağıdaki ders metnine dayanarak hazırla:\n<<<\n${source.take(14_000)}\n>>>"
+            "Base the items ONLY on the course material below:\n<<<\n${source.take(14_000)}\n>>>"
         }
-        val prompt = """
-İngilizce hazırlık L4 (B1+) öğrencisi için "$topic" konusundan $count maddelik alıştırma hazırla.
+        val seen = HashSet<String>()
+        val kept = ArrayList<Exercise>()
+        for (round in 0 until 3) {
+            val need = count - kept.size
+            if (need <= 0) break
+            val avoid = if (kept.isEmpty()) "" else "\nDo NOT repeat or paraphrase these existing items:\n" + kept.joinToString("\n") { "- " + it.question.take(140) }
+            val prompt = """
+${QuestionQuality.EXAM_STYLE}
+
+Write ${need + 3} practice items on the topic "$topic".
 $material
-Kullanılacak türler (dengeli dağıt):
+Item types to use (spread them evenly):
 $kinds
-Kurallar:
-- Sorular İngilizce; "why" alanı Türkçe ve tek cümle (kural ya da ipucu).
-- "mcq": "options" 4 şık, "answer" doğru şıkkın sırası (0'dan).
-- "gap": "q" içinde boşluk ___ ile gösterilir; "answer" boşluğa gelecek ifade; "accept" kabul edilen başka yazımlar (kısaltmalı/kısaltmasız gibi).
-- "rewrite": "given" dönüştürülecek cümle, "q" yönerge (ör. "Combine using a relative clause"), "answer" doğru cümle.
-- "open": "answer" kısa örnek cevap.
-- Aynı soruyu tekrar etme; zorluk B1+.
-- SADECE JSON dizisi döndür, başka hiçbir şey yazma:
+Format rules:
+- "mcq": "options" 4 options, "answer" index of the correct option (0-3).
+- "gap": "q" is a full sentence with ONE gap written ____ ; a hint in brackets is allowed, e.g. "(live)". "answer" fills the gap; "accept" lists other correct spellings (contracted/full form). The gap must have one clear answer.
+- "rewrite": "given" is the original sentence, "q" the instruction with the key word in capitals (e.g. "Rewrite using SO AS TO"), "answer" the correct sentence. Like real exam rewrite items: combine two sentences, change the structure, keep the meaning.
+- "open": "answer" a short model answer.
+- "why": ONE sentence in Turkish (the rule or the clue).$avoid
+Return ONLY a JSON array, nothing else:
 [{"type": "mcq", "q": "...", "options": ["...", "...", "...", "..."], "answer": 0, "why": "..."},
- {"type": "gap", "q": "She ___ (live) here since 2020.", "answer": "has lived", "accept": ["has been living"], "why": "..."},
+ {"type": "gap", "q": "She ____ (live) here since 2020.", "answer": "has lived", "accept": ["has been living"], "why": "..."},
  {"type": "rewrite", "given": "...", "q": "...", "answer": "...", "why": "..."},
  {"type": "open", "q": "...", "answer": "...", "why": "..."}]
 """.trim()
-        return parse(AssistantClient.chat(config, listOf(ChatMessage("user", prompt))))
+            val res = runCatching { AssistantClient.chat(strong, listOf(ChatMessage("user", prompt)), temperature = 0.7) }
+            val reply = res.getOrNull() ?: if (kept.isEmpty()) throw res.exceptionOrNull()!! else break
+            val parsedRes = runCatching { parse(reply) }
+            if (parsedRes.isFailure && round == 2 && kept.isEmpty()) throw parsedRes.exceptionOrNull()!!
+            val parsed = parsedRes.getOrDefault(emptyList())
+            val cleaned = parsed.mapNotNull { e ->
+                if (e.type != ExerciseType.MCQ) return@mapNotNull e
+                val m = QuestionQuality.clean(QuestionQuality.Mcq(e.question, e.options, e.answerIndex, e.why)) ?: return@mapNotNull null
+                e.copy(question = m.q, options = m.options, answerIndex = m.answer, answer = m.options[m.answer])
+            }.filter { e -> types.isEmpty() || e.type in types }
+            val unique = QuestionQuality.distinctBy(cleaned, seen) { it.given + " " + it.question }
+            val mcqs = unique.filter { it.type == ExerciseType.MCQ }
+            val gaps = unique.filter { it.type == ExerciseType.GAP }
+            val mcqOk = QuestionQuality.verify(strong, mcqs.map { QuestionQuality.Mcq(it.question, it.options, it.answerIndex, it.why) })
+            val gapOk = QuestionQuality.verifyGaps(strong, gaps)
+            val bad = HashSet<Exercise>().apply {
+                mcqs.forEachIndexed { i, e -> if (!mcqOk[i]) add(e) }
+                gaps.forEachIndexed { i, e -> if (!gapOk[i]) add(e) }
+            }
+            kept += unique.filter { it !in bad }.take(need)
+        }
+        if (kept.isEmpty()) throw IOException("Uygun alıştırma çıkarılamadı, tekrar dene")
+        return kept
     }
 
     fun parse(reply: String): List<Exercise> {
@@ -80,7 +110,7 @@ Kurallar:
             when (type) {
                 ExerciseType.MCQ -> {
                     val opts = o.optJSONArray("options") ?: return@mapNotNull null
-                    val options = (0 until opts.length()).map { opts.optString(it).trim() }.filter { it.isNotEmpty() }
+                    val options = (0 until opts.length()).map { QuestionQuality.stripLabel(opts.optString(it)) }.filter { it.isNotEmpty() }
                     val a = o.optInt("answer", -1)
                     if (q.isEmpty() || options.size < 2 || a !in options.indices) null
                     else Exercise(type, q, options = options, answerIndex = a, answer = options[a], why = why)
@@ -140,7 +170,7 @@ Kurallar:
 Cevaplar:
 ${JSONArray(list).toString(1)}
 """.trim()
-        val reply = AssistantClient.chat(config, listOf(ChatMessage("user", prompt)))
+        val reply = AssistantClient.chat(AssistantClient.heavy(config), listOf(ChatMessage("user", prompt)), temperature = 0.2)
         val start = reply.indexOf('[')
         val end = reply.lastIndexOf(']')
         if (start < 0 || end <= start) throw IOException("Değerlendirme beklenen biçimde gelmedi, tekrar dene")

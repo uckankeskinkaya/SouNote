@@ -117,7 +117,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     var searchQuery by mutableStateOf("")
     var sortMode by mutableStateOf(enumValueOrNull<SortMode>(prefs.getString("sort", null)) ?: SortMode.RECENT)
         private set
-    var themeMode by mutableStateOf(enumValueOrNull<ThemeMode>(prefs.getString("theme", null)) ?: ThemeMode.DARK) // Varsayılan: logodaki koyu görünüm
+    // 4.0: yeni kurulumda açık (kâğıt) tema. Eski kurulumda tema hiç seçilmemişse koyu kalır (görünüm birden değişmesin).
+    var themeMode by mutableStateOf(
+        enumValueOrNull<ThemeMode>(prefs.getString("theme", null))
+            ?: if (prefs.getBoolean("onboarded", false)) ThemeMode.DARK.also { prefs.edit().putString("theme", it.name).apply() } else ThemeMode.LIGHT,
+    )
         private set
 
     fun updateSort(mode: SortMode) {
@@ -917,6 +921,68 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         if (local != null) open(local) else downloadResource(course, topic, res)
     }
 
+    // ---- Kayıtlı çalışma düzenleri: belge + yan belge + dinleme kaydı (sayfa ve saniye zaten belge/kayıt başına saklanıyor) ----
+
+    data class StudySetup(val id: String, val name: String, val docId: String, val sideDocId: String?, val audioUrl: String?, val created: Long)
+
+    var studySetups by mutableStateOf(loadStudySetups())
+        private set
+
+    /** Belge ekranı açılınca yan yana açılacak belge (düzenden geldiyse). */
+    var pendingSideDocId by mutableStateOf<String?>(null)
+
+    private fun loadStudySetups(): List<StudySetup> = runCatching {
+        val arr = org.json.JSONArray(prefs.getString("studySetups", "[]"))
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            StudySetup(
+                o.getString("id"), o.optString("name"), o.getString("doc"),
+                o.optString("side").ifBlank { null }, o.optString("audio").ifBlank { null }, o.optLong("t"),
+            )
+        }
+    }.getOrDefault(emptyList())
+
+    private fun storeStudySetups(list: List<StudySetup>) {
+        studySetups = list
+        val arr = org.json.JSONArray()
+        list.forEach { s ->
+            arr.put(
+                org.json.JSONObject().put("id", s.id).put("name", s.name).put("doc", s.docId)
+                    .put("side", s.sideDocId ?: "").put("audio", s.audioUrl ?: "").put("t", s.created),
+            )
+        }
+        prefs.edit().putString("studySetups", arr.toString()).apply()
+    }
+
+    /** Açık belgeyi, yan belgeyi ve (belge ekranında sürüyorsa) dinleme kaydını bir düzen olarak saklar. Aynı adlı düzen güncellenir. */
+    fun saveStudySetup(name: String, doc: DocRef, side: DocRef?) {
+        val n = name.trim().ifBlank { doc.title }
+        val audio = listeningPlayer.res?.url?.takeIf { listeningMini }
+        val old = studySetups.firstOrNull { it.name.equals(n, ignoreCase = true) }
+        val s = StudySetup(old?.id ?: java.util.UUID.randomUUID().toString(), n, doc.id, side?.id, audio, System.currentTimeMillis())
+        storeStudySetups(listOf(s) + studySetups.filter { it.id != s.id })
+        showMessage(if (old != null) "\"$n\" düzeni güncellendi" else "\"$n\" düzeni kaydedildi")
+    }
+
+    fun deleteStudySetup(s: StudySetup) = storeStudySetups(studySetups.filter { it.id != s.id })
+
+    /** Düzeni açar: belge kaldığı sayfadan, yan belge, dinleme kaydı kaldığı saniyeden (duraklatılmış). Eksik olan atlanır. */
+    fun openStudySetup(s: StudySetup) {
+        val doc = imported.firstOrNull { it.id == s.docId }
+        if (doc == null) {
+            showMessage("Bu düzenin belgesi kütüphanede bulunamadı")
+            return
+        }
+        pendingSideDocId = s.sideDocId?.takeIf { id -> imported.any { it.id == id } }
+        val res = s.audioUrl?.let { url -> catalog.courses.asSequence().flatMap { it.topics.asSequence() }.flatMap { it.resources.asSequence() }.firstOrNull { it.url == url } }
+        if (res != null && listeningStore.downloaded(res)) {
+            if (listeningPlayer.load(res)) listeningMini = true
+        } else if (s.audioUrl != null) {
+            showMessage("Dinleme kaydı bulunamadı; belge açıldı")
+        }
+        open(doc)
+    }
+
     fun closeListeningMini() {
         listeningMini = false
         listeningPlayer.release()
@@ -957,6 +1023,11 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Belgenin metni (asistana bağlam): [from]..[to] sayfaları. */
+    /** Belgenin ilk [max] sayfasının metni, sayfa sayfa. */
+    suspend fun documentPages(doc: DocRef, max: Int = 60): List<String> = withContext(Dispatchers.IO) {
+        com.sounote.app.data.PdfText.pages(getApplication(), repo.resolveForOpen(doc).uri, max)
+    }
+
     suspend fun documentText(doc: DocRef, from: Int, to: Int): String = withContext(Dispatchers.IO) {
         com.sounote.app.data.PdfText.extract(getApplication(), repo.resolveForOpen(doc).uri, from, to)
     }
@@ -1747,6 +1818,26 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     var ink by mutableStateOf(InkDocument())
         private set
 
+    fun pageHistory(doc: DocRef, page: Int): List<Long> = store.history(doc.id, page)
+
+    fun restorePageVersion(doc: DocRef, page: Int, stamp: Long) {
+        if (doc.id != openDoc?.id || pagesBusy) return
+        val document = ink
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { store.loadVersion(doc.id, page, stamp) }
+            }
+            if (doc.id != openDoc?.id || ink !== document || pagesBusy) return@launch
+            result.onSuccess { content ->
+                ink.commit(page, content)
+                showMessage("Sayfa notları geri yüklendi (geri al ile vazgeçebilirsin)")
+            }.onFailure {
+                ErrorLog.record("Not geçmişi yüklenemedi", it)
+                showMessage("Not geçmişi yüklenemedi")
+            }
+        }
+    }
+
     private fun attachInk(doc: DocRef, loaded: Map<Int, PageContent>) {
         detachInk()
         val document = InkDocument().apply { load(loaded) }
@@ -2507,7 +2598,7 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
         private const val AUTO_BACKUP_INTERVAL_MS = 20L * 60 * 60 * 1000
         const val TRASH_DAYS = 30
         /** "Yenilikler" penceresinin ana sürümü: 2.0'a güncelleyen kullanıcı bir kez görür. */
-        const val MAJOR = 3
+        const val MAJOR = 4
         const val LOCK_AFTER_MS = 60_000L
         /** Belgede bu kadar çalışılan gün seriye sayılır. */
         private const val STREAK_MIN_STUDY = 5L * 60 * 1000

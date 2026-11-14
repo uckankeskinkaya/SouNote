@@ -17,7 +17,7 @@
             android:id="@+id/widget_logo"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@drawable/logo_tile" />
+            android:src="@drawable/logo_electric" />
 
         <TextView
             android:id="@+id/widget_label"
@@ -26,7 +26,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="Sıradaki sınav"
-            android:textColor="#B3DDE3FF"
+            android:textColor="@color/widget_text2"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -50,7 +50,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:textColor="#FFFFFFFF"
+                android:textColor="@color/widget_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -65,7 +65,8 @@
                     android:layout_width="14dp"
                     android:layout_height="14dp"
                     android:alpha="0.8"
-                    android:src="@drawable/ic_w_event" />
+                    android:src="@drawable/ic_w_event"
+                    android:tint="@color/widget_text2" />
 
                 <TextView
                     android:id="@+id/widget_date"
@@ -74,7 +75,7 @@
                     android:layout_marginStart="6dp"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:textColor="#D9DDE3FF"
+                    android:textColor="@color/widget_text2"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
@@ -91,7 +92,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
-                android:textColor="#FF8DA6FF"
+                android:textColor="@color/widget_accent"
                 android:textSize="34sp"
                 android:textStyle="bold" />
 
@@ -99,7 +100,7 @@
                 android:id="@+id/widget_countdown"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#D9DDE3FF"
+                android:textColor="@color/widget_text2"
                 android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
@@ -123,7 +124,7 @@
             android:paddingTop="5dp"
             android:paddingEnd="10dp"
             android:paddingBottom="5dp"
-            android:textColor="#E6FFFFFF"
+            android:textColor="@color/widget_text2"
             android:textSize="12sp" />
 
         <ImageView
@@ -131,7 +132,8 @@
             android:layout_height="14dp"
             android:layout_marginStart="10dp"
             android:alpha="0.8"
-            android:src="@drawable/ic_w_timer" />
+            android:src="@drawable/ic_w_timer"
+            android:tint="@color/widget_text2" />
 
         <TextView
             android:id="@+id/widget_study"
@@ -139,7 +141,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:maxLines="1"
-            android:textColor="#D9DDE3FF"
+            android:textColor="@color/widget_text2"
             android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>

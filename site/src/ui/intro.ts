@@ -1,4 +1,4 @@
-// Açılış (~2,9 sn): karanlık → kâğıt ve kalem birleşir → mavi-mor ışık geçer → kamera geri çekilir,
+// Açılış (~2,9 sn): kâğıt ve kalem birleşir → kamera geri çekilir,
 // logo 3B tabletin ekranına iner. Sayfa beklemez: gezinme ve indirme bu sırada da kullanılabilir.
 // Oturum başına bir kez oynar; hareket azaltılmışsa hiç oynamaz. Tıklama, tuş ya da kaydırma atlatır.
 import type { StageApi } from "../three/stage";
@@ -15,10 +15,7 @@ export function playIntro(getStage: () => StageApi | null, stageReady: Promise<u
   const logo = box.querySelector<HTMLElement>(".intro__logo")!;
   const paper = box.querySelector<HTMLElement>(".intro__paper")!;
   const pen = box.querySelector<HTMLElement>(".intro__pen")!;
-  const sheen = box.querySelector<HTMLElement>(".intro__sheen")!;
   const word = box.querySelector<HTMLElement>(".intro__word")!;
-  const aura = box.querySelector<HTMLElement>(".intro__aura")!;
-  sheen.style.setProperty("--mask", `url("${new URL("brand/logo-a-symbol-512.png", document.baseURI).href}")`);
 
   const anims: Animation[] = [];
   const A = (el: Element, k: Keyframe[], o: KeyframeAnimationOptions) => {
@@ -28,10 +25,9 @@ export function playIntro(getStage: () => StageApi | null, stageReady: Promise<u
   };
   const E = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-  A(aura, [{ opacity: 0 }, { opacity: 0.7, offset: 0.5 }, { opacity: 1 }], { duration: 1800, easing: "ease-out" });
   A(paper, [
-    { opacity: 0, transform: "translateY(22px) rotate(-7deg) scale(0.92)", filter: "blur(10px)" },
-    { opacity: 1, transform: "none", filter: "blur(0px)" },
+    { opacity: 0, transform: "translateY(22px) rotate(-7deg) scale(0.92)" },
+    { opacity: 1, transform: "none" },
   ], { duration: 850, delay: 180, easing: E });
   // Kalem kendi ekseni boyunca (sağ üstten) gelir ve kâğıda oturur
   A(pen, [
@@ -39,12 +35,6 @@ export function playIntro(getStage: () => StageApi | null, stageReady: Promise<u
     { opacity: 1, offset: 0.45 },
     { opacity: 1, transform: "none" },
   ], { duration: 720, delay: 620, easing: E });
-  A(sheen, [
-    { opacity: 0, backgroundPosition: "110% 0" },
-    { opacity: 1, offset: 0.25 },
-    { opacity: 1, offset: 0.75 },
-    { opacity: 0, backgroundPosition: "-10% 0" },
-  ], { duration: 820, delay: 1220, easing: "ease-in-out" });
   A(word, [{ opacity: 0, transform: "translateY(10px)", letterSpacing: "0.04em" }, { opacity: 1, transform: "none", letterSpacing: "-0.03em" }], { duration: 650, delay: 1350, easing: E });
 
   let done = false;
@@ -85,9 +75,8 @@ export function playIntro(getStage: () => StageApi | null, stageReady: Promise<u
     const st = ok ? getStage() : null;
     if (done) return;
     A(word, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: "ease-in" });
-    A(box, [{ backgroundColor: "rgba(5,8,20,1)" }, { backgroundColor: "rgba(5,8,20,0)" }], { duration: PULL_MS * 0.8, easing: "ease-in-out" });
+    A(box, [{ backgroundColor: getComputedStyle(root).getPropertyValue("--bg").trim() }, { backgroundColor: "transparent" }], { duration: PULL_MS * 0.8, easing: "ease-in-out" });
     box.style.background = "transparent";
-    A(aura, [{ opacity: 1 }, { opacity: 0 }], { duration: PULL_MS * 0.7 });
     if (!st) {
       A(logo, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(0.6)" }], { duration: 700, easing: E }).finished.then(finish);
       return;

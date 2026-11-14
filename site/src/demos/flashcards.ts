@@ -228,7 +228,7 @@ export function mountFlashcards(host: HTMLElement): void {
   }
 
   function complete(correct: number, total: number) {
-    const colors = ["#4a7dff", "#8b6cf6", "#60d7f7", "#f4f7ff"];
+    const colors = ["#3346D3", "#5F626A", "#8A8D94", "#D6D6D0"];
     const bits = reduce() ? "" : Array.from({ length: 28 }, (_, i) => {
       const ang = (i / 28) * Math.PI * 2;
       const dist = 90 + ((i * 37) % 70);

@@ -108,16 +108,14 @@ fun InkToolbar(
     // Renk seçici açıkken seçilen rengin hangi araca gideceği
     var picker by remember { mutableStateOf<Tool?>(null) }
 
-    Surface(tonalElevation = 2.dp) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
         Column {
             ToolbarRow {
                 if (leading != null) {
                     leading()
                     Separator()
                 }
-                // Kalemi olmayanlar için en başta, hemen görünür
-                FingerToggle(state.fingerDraw) { onChange(state.copy(fingerDraw = !state.fingerDraw)) }
-                Separator()
+                // 4.0: en çok kullanılan altı araç her zaman görünür; diğerleri "Diğer araçlar" menüsünde
                 ToolChip("Kalem", state.tool == Tool.PEN, vector = SouIcons.InkPen) {
                     onChange(state.copy(tool = Tool.PEN))
                 }
@@ -127,28 +125,61 @@ fun InkToolbar(
                 ToolChip("Silgi", state.tool == Tool.ERASER, vector = SouIcons.InkEraser) {
                     onChange(state.copy(tool = Tool.ERASER))
                 }
-                ToolChip("Yazı", state.tool == Tool.TEXT, vector = SouIcons.TextFields) {
-                    onChange(state.copy(tool = Tool.TEXT))
-                }
                 ToolChip("Seç", state.tool == Tool.LASSO, vector = SouIcons.GestureSelect) {
                     onChange(state.copy(tool = Tool.LASSO))
                 }
-                ToolChip("Bant", state.tool == Tool.TAPE, vector = SouIcons.VisibilityOff) {
-                    onChange(state.copy(tool = Tool.TAPE))
-                }
-                ToolChip("Lazer", state.tool == Tool.LASER, vector = SouIcons.StylusLaserPointer) {
-                    onChange(state.copy(tool = Tool.LASER))
+                ToolChip("Yazı", state.tool == Tool.TEXT, vector = SouIcons.TextFields) {
+                    onChange(state.copy(tool = Tool.TEXT))
                 }
                 ToolChip("Şekil", state.tool == Tool.SHAPE, vector = SouIcons.Shapes) {
                     onChange(state.copy(tool = Tool.SHAPE))
                 }
-                ToolChip("Damga", state.tool == Tool.STAMP, vector = SouIcons.Approval) {
-                    onChange(state.copy(tool = Tool.STAMP))
+                // Menüden seçilmiş araç (bant, lazer, damga) seçiliyken burada da görünsün
+                when (state.tool) {
+                    Tool.TAPE -> ToolChip("Bant", true, vector = SouIcons.VisibilityOff) {}
+                    Tool.LASER -> ToolChip("Lazer", true, vector = SouIcons.StylusLaserPointer) {}
+                    Tool.STAMP -> ToolChip("Damga", true, vector = SouIcons.Approval) {}
+                    else -> Unit
                 }
-                ToolChip("Resim ekle", false, vector = SouIcons.Image, onClick = onInsertImage)
+                if (state.guide == GuideKind.RULER) {
+                    ToolChip("Cetvel", true, vector = SouIcons.Straighten) { onChange(state.copy(guide = GuideKind.NONE)) }
+                }
+                if (state.guide == GuideKind.PROTRACTOR) {
+                    ToolChip("Açıölçer", true, vector = SouIcons.Architecture) { onChange(state.copy(guide = GuideKind.NONE)) }
+                }
+                // Parmakla yazma açıksa kapatmak için görünür kalır
+                if (state.fingerDraw) FingerToggle(true) { onChange(state.copy(fingerDraw = false)) }
                 Box {
+                    var more by remember { mutableStateOf(false) }
                     var stickers by remember { mutableStateOf(false) }
-                    ToolChip("Çıkartma", stickers, vector = SouIcons.Mood) { stickers = true }
+                    ToolChip("Diğer araçlar", more, vector = SouIcons.MoreVert) { more = true }
+                    DropdownMenu(expanded = more, onDismissRequest = { more = false }) {
+                        @Composable
+                        fun item(label: String, icon: ImageVector, on: Boolean = false, onClick: () -> Unit) {
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                leadingIcon = { Icon(icon, contentDescription = null) },
+                                trailingIcon = { if (on) Icon(SouIcons.Check, contentDescription = "Açık") },
+                                onClick = { more = false; onClick() },
+                            )
+                        }
+                        item("Ezber bandı", SouIcons.VisibilityOff, state.tool == Tool.TAPE) { onChange(state.copy(tool = Tool.TAPE)) }
+                        item("Lazer kalem", SouIcons.StylusLaserPointer, state.tool == Tool.LASER) { onChange(state.copy(tool = Tool.LASER)) }
+                        item("Damga", SouIcons.Approval, state.tool == Tool.STAMP) { onChange(state.copy(tool = Tool.STAMP)) }
+                        HorizontalDivider()
+                        item("Resim ekle", SouIcons.Image) { onInsertImage() }
+                        item("Çıkartma", SouIcons.Mood) { stickers = true }
+                        HorizontalDivider()
+                        item("Cetvel", SouIcons.Straighten, state.guide == GuideKind.RULER) {
+                            onChange(state.copy(guide = if (state.guide == GuideKind.RULER) GuideKind.NONE else GuideKind.RULER))
+                        }
+                        item("Açıölçer", SouIcons.Architecture, state.guide == GuideKind.PROTRACTOR) {
+                            onChange(state.copy(guide = if (state.guide == GuideKind.PROTRACTOR) GuideKind.NONE else GuideKind.PROTRACTOR))
+                        }
+                        if (onLayers != null) item("Katmanlar", SouIcons.Layers, layered) { onLayers() }
+                        HorizontalDivider()
+                        item("Parmakla yaz", SouIcons.TouchApp, state.fingerDraw) { onChange(state.copy(fingerDraw = !state.fingerDraw)) }
+                    }
                     DropdownMenu(expanded = stickers, onDismissRequest = { stickers = false }) {
                         androidx.compose.foundation.layout.FlowRow(
                             maxItemsInEachRow = 4,
@@ -170,14 +201,6 @@ fun InkToolbar(
                         }
                     }
                 }
-                Separator()
-                ToolChip("Cetvel", state.guide == GuideKind.RULER, vector = SouIcons.Straighten) {
-                    onChange(state.copy(guide = if (state.guide == GuideKind.RULER) GuideKind.NONE else GuideKind.RULER))
-                }
-                ToolChip("Açıölçer", state.guide == GuideKind.PROTRACTOR, vector = SouIcons.Architecture) {
-                    onChange(state.copy(guide = if (state.guide == GuideKind.PROTRACTOR) GuideKind.NONE else GuideKind.PROTRACTOR))
-                }
-                if (onLayers != null) ToolChip("Katmanlar", layered, vector = SouIcons.Layers) { onLayers() }
                 Separator()
                 Favorites(state, onChange)
             }
@@ -275,16 +298,13 @@ private fun Favorites(state: ToolState, onChange: (ToolState) -> Unit) {
 /** Favori kalem: renkli nokta (kalınlığa göre büyür) + kalınlık. Basılı tutunca silinir. */
 @Composable
 private fun FavoriteChip(f: FavoritePen, active: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(12.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .height(34.dp)
-            .border(
-                if (active) 2.dp else 1.dp,
-                if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                shape,
-            )
+            .height(36.dp)
+            .clip(shape)
+            .background(if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 10.dp),
     ) {
@@ -305,6 +325,7 @@ private fun FavoriteChip(f: FavoritePen, active: Boolean, onClick: () -> Unit, o
         Text(
             if (f.tool == Tool.PEN && f.penType.short.isNotEmpty()) "${mm(f.widthMm)} ${f.penType.short}" else mm(f.widthMm),
             style = MaterialTheme.typography.labelMedium,
+            color = if (active) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 6.dp),
         )
     }
@@ -316,62 +337,96 @@ private fun FavoriteChip(f: FavoritePen, active: Boolean, onClick: () -> Unit, o
 private fun PenOptions(state: ToolState, onChange: (ToolState) -> Unit, onCustomColor: () -> Unit) {
     var typeMenu by remember { mutableStateOf(false) }
     Box {
-        // Seçili kalem: küçük çizimi ve adı; dokununca kalem kutusu açılır.
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
-                .height(36.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .height(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                 .clickable { typeMenu = true }
-                .padding(start = 6.dp, end = 8.dp),
+                .padding(start = 6.dp, end = 10.dp),
         ) {
-            // Kalem çizimi her temada açık zeminde (koyu kalemler koyu temada kaybolmasın).
-            PenImage(
-                state.penType,
-                Modifier.size(width = 48.dp, height = 24.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF1F2F5)),
-                horizontal = true,
-            )
-            Text(state.penType.label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 6.dp))
-            Icon(SouIcons.ArrowDropDown, null, Modifier.size(18.dp))
-        }
-        DropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
-            Text(
-                "Kalemler",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 8.dp),
-            )
-            androidx.compose.foundation.layout.FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                maxItemsInEachRow = 5,
-                modifier = Modifier.width(400.dp).padding(horizontal = 10.dp, vertical = 4.dp),
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(width = 48.dp, height = 26.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF4F4F1)),
             ) {
-                PenType.entries.forEach { t ->
-                    val sel = t == state.penType
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .width(70.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0xFFF1F2F5))
-                            .border(if (sel) 2.dp else 0.dp, if (sel) MaterialTheme.colorScheme.primary else Color.Transparent, RoundedCornerShape(14.dp))
-                            .clickable {
-                                typeMenu = false
-                                onChange(state.switchPen(t))
+                PenImage(state.penType, Modifier.fillMaxSize(), horizontal = true)
+            }
+            Column {
+                Text(state.penType.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+                Text("${mm(state.penWidthMm)} mm", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(SouIcons.ArrowDropDown, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        DropdownMenu(
+            expanded = typeMenu,
+            onDismissRequest = { typeMenu = false },
+        ) {
+            Column(Modifier.width(440.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Kalem", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    maxItemsInEachRow = 5,
+                ) {
+                    PenType.entries.forEach { t ->
+                        val sel = t == state.penType
+                        val shape = RoundedCornerShape(12.dp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .width(72.dp)
+                                .clip(shape)
+                                .background(if (sel) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)
+                                .then(if (sel) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
+                                .clickable {
+                                    typeMenu = false
+                                    onChange(state.switchPen(t))
+                                }
+                                .padding(vertical = 8.dp),
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.height(64.dp).width(40.dp)
+                                    .background(Color(0xFFF4F4F1), RoundedCornerShape(8.dp)),
+                            ) {
+                                PenImage(t, Modifier.height(60.dp).width(26.dp))
                             }
-                            .padding(vertical = 8.dp),
-                    ) {
-                        PenImage(t, Modifier.height(76.dp).width(30.dp))
-                        Text(
-                            t.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF1A1C20),
-                            maxLines = 2,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.padding(top = 6.dp),
-                        )
+                            Text(
+                                t.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (sel) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
                     }
+                }
+                Text("Kalınlık", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        listOf(0.3f, 0.5f, 0.8f, 1.2f, 2.0f).forEach { w ->
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.size(40.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(if (kotlin.math.abs(state.penWidthMm - w) < 0.05f) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)
+                                    .clickable { onChange(state.copy(penWidthMm = w)) }
+                                    .semantics { contentDescription = "${mm(w)} mm" },
+                            ) {
+                                Box(Modifier.size((4f + w * 6f).coerceAtMost(18f).dp).background(Color(state.penColor), CircleShape))
+                            }
+                        }
+                    }
+                    WidthControl(state.penWidthMm, min = 0.1f, max = 5f, step = 0.1f) { onChange(state.copy(penWidthMm = it)) }
+                }
+                Text("Renk", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                    Palette(ToolState.PEN_COLORS, state.customColors, state.penColor, { onChange(state.withCustomColor(it).copy(penColor = it)) }, onCustomColor)
                 }
             }
         }
@@ -403,43 +458,76 @@ private fun PenImage(type: PenType, modifier: Modifier, horizontal: Boolean = fa
 private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }) { Icon(SouIcons.Settings, contentDescription = "Kalem ayarları") }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            Column(Modifier.width(320.dp).padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text("Yazma desteği", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    "El titremesini süzer, çizgileri yumuşak ve bağlantılı yapar",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Slider(
-                    value = state.smoothing,
-                    onValueChange = { onChange(state.copy(smoothing = (it * 20).roundToInt() / 20f)) },
-                    valueRange = 0f..1f,
-                )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Kapalı", style = MaterialTheme.typography.labelSmall)
-                    Text("Güçlü", style = MaterialTheme.typography.labelSmall)
+        IconButton(onClick = { open = true }) { Icon(SouIcons.Tune, contentDescription = "Kalem ayarları") }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+        ) {
+            Column(Modifier.width(340.dp).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(9.dp)),
+                        ) {
+                            Icon(SouIcons.GestureSelect, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("Yazma desteği", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "El titremesini süzer, çizgileri yumuşak ve bağlantılı yapar",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Slider(
+                        value = state.smoothing,
+                        onValueChange = { onChange(state.copy(smoothing = (it * 20).roundToInt() / 20f)) },
+                        valueRange = 0f..1f,
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Kapalı", style = MaterialTheme.typography.labelSmall)
+                        Text("Güçlü", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
-                Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 16.dp))
-                Text(
-                    if (state.penType.usesPressure) "Bu kalemde etkili" else "Dolma, jel ya da fırça kalemde etkili",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Slider(
-                    value = state.pressureSensitivity,
-                    onValueChange = { onChange(state.copy(pressureSensitivity = (it * 20).roundToInt() / 20f)) },
-                    valueRange = 0f..1f,
-                )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Sert", style = MaterialTheme.typography.labelSmall)
-                    Text("Yumuşak", style = MaterialTheme.typography.labelSmall)
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(9.dp)),
+                        ) {
+                            Icon(SouIcons.PenSize2, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("Basınç hassasiyeti", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                if (state.penType.usesPressure) "Bu kalemde etkili" else "Dolma, jel ya da fırça kalemde etkili",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Slider(
+                        value = state.pressureSensitivity,
+                        onValueChange = { onChange(state.copy(pressureSensitivity = (it * 20).roundToInt() / 20f)) },
+                        valueRange = 0f..1f,
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Sert", style = MaterialTheme.typography.labelSmall)
+                        Text("Yumuşak", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(9.dp)),
+                    ) {
+                        Icon(SouIcons.Shapes, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Column(Modifier.weight(1f)) {
                         Text("Şekil düzeltme", style = MaterialTheme.typography.titleSmall)
                         Text(
@@ -452,8 +540,14 @@ private fun PenSettings(state: ToolState, onChange: (ToolState) -> Unit) {
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(9.dp)),
+                    ) {
+                        Icon(SouIcons.Bolt, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                     Column(Modifier.weight(1f)) {
                         Text("Düşük gecikme (deneysel)", style = MaterialTheme.typography.titleSmall)
                         Text(
@@ -729,7 +823,7 @@ private fun Palette(
                 .border(2.5.dp, Brush.sweepGradient(HUE_COLORS), CircleShape)
                 .clickable(onClick = onCustom),
         ) {
-            Text("+", style = MaterialTheme.typography.titleMedium)
+            Icon(SouIcons.Add, contentDescription = "Özel renk", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -739,17 +833,18 @@ private fun Swatch(c: Int, isSelected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .size(30.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick)
             .border(
-                width = if (isSelected) 2.5.dp else 1.dp,
+                width = if (isSelected) 2.dp else 1.dp,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                 shape = CircleShape,
             )
-            .padding(3.dp)
+            .padding(if (isSelected) 5.dp else 4.dp)
             // Beyaz halka: siyah/koyu renkler koyu temada da görünsün (sayfa da beyaz).
             .background(Color.White, CircleShape)
             .padding(2.dp)
-            .background(Color(c), CircleShape)
-            .clickable(onClick = onClick),
+            .background(Color(c), CircleShape),
     )
 }
 
@@ -792,22 +887,22 @@ private fun WidthControl(value: Float, min: Float, max: Float, step: Float, onCh
     fun snap(v: Float) = ((v / step).roundToInt() * step).coerceIn(min, max)
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { onChange(snap(value - step)) }) {
-            Text("−", style = MaterialTheme.typography.titleLarge)
+            Icon(SouIcons.Remove, contentDescription = "Kalınlığı azalt", tint = MaterialTheme.colorScheme.onSurface)
         }
         Slider(
             value = value.coerceIn(min, max),
             onValueChange = { onChange(snap(it)) },
             valueRange = min..max,
-            modifier = Modifier.width(200.dp),
+            modifier = Modifier.width(160.dp),
         )
         IconButton(onClick = { onChange(snap(value + step)) }) {
-            Text("+", style = MaterialTheme.typography.titleLarge)
+            Icon(SouIcons.Add, contentDescription = "Kalınlığı artır", tint = MaterialTheme.colorScheme.onSurface)
         }
         Text(
             "${mm(value)} mm",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.widthIn(min = 56.dp),
+            modifier = Modifier.widthIn(min = 52.dp),
         )
     }
 }

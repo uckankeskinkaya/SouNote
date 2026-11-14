@@ -32,7 +32,7 @@
             android:layout_height="14dp"
             android:id="@+id/week_dot0"
             android:src="@drawable/ic_w_dot"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/week_item0"
@@ -43,7 +43,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="13sp" />
     </LinearLayout>
 
@@ -60,7 +60,7 @@
             android:layout_height="14dp"
             android:id="@+id/week_dot1"
             android:src="@drawable/ic_w_dot"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/week_item1"
@@ -71,7 +71,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="13sp" />
     </LinearLayout>
 
@@ -89,7 +89,7 @@
             android:layout_height="14dp"
             android:id="@+id/week_dot2"
             android:src="@drawable/ic_w_dot"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/week_item2"
@@ -99,7 +99,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="13sp" />
     </LinearLayout>
 
@@ -117,7 +117,7 @@
             android:layout_height="14dp"
             android:id="@+id/week_dot3"
             android:src="@drawable/ic_w_dot"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/week_item3"
@@ -127,7 +127,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:maxLines="1"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="13sp" />
     </LinearLayout>
 
@@ -136,7 +136,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:textColor="#D9DCE3FF"
+        android:textColor="@color/widget_text2"
         android:textSize="13sp"
         android:visibility="gone" />
 </LinearLayout>

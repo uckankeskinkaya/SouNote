@@ -149,8 +149,7 @@ fun TopicMapScreen(vm: LibraryViewModel, course: Course, onOpenTopic: (Topic) ->
                                 .offset { IntOffset((p.x - nodeWpx / 2).roundToInt(), (p.y - nodeHpx / 2).roundToInt()) }
                                 .width(nodeW)
                                 .appear(i)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .card(16.dp)
                                 .border(if (selected == t) 2.dp else 1.dp, if (selected == t) c else c.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                                 .clickable { selected = if (selected == t) null else t }
                                 .padding(horizontal = 8.dp, vertical = 8.dp),

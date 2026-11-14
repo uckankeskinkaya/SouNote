@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.view.View
 import android.widget.RemoteViews
 import com.sounote.app.data.CatalogRepo
@@ -45,21 +46,17 @@ object Widgets {
             ?: AppTheme.fromLegacy(p.getString("darkPalette", null)) ?: AppTheme.ELECTRIC
     }
 
-    private fun background(t: AppTheme) = when (t) {
-        AppTheme.ELECTRIC -> R.drawable.widget_bg_electric
-        AppTheme.SAPPHIRE -> R.drawable.widget_bg_sapphire
-        AppTheme.SILVER -> R.drawable.widget_bg_silver
-        AppTheme.MONO -> R.drawable.widget_bg_mono
-        AppTheme.EMERALD -> R.drawable.widget_bg_emerald
-        AppTheme.ROSE -> R.drawable.widget_bg_rose
-    }
-
     /** Widget'ı temaya boyar: zemin, logo, vurgu yazıları ve [icons] simgeleri. */
     internal fun style(context: Context, v: RemoteViews, accentTexts: IntArray = intArrayOf(), icons: IntArray = intArrayOf()) {
         val t = theme(context)
-        v.setInt(R.id.widget_root, "setBackgroundResource", background(t))
+        v.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg)
         v.setImageViewResource(R.id.widget_logo, t.logo)
-        val accent = t.darkPrimary.toInt()
+        val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val accent = if (night) {
+            (if (t == AppTheme.ELECTRIC) 0xFF8C9BFF else t.darkPrimary).toInt()
+        } else {
+            (if (t == AppTheme.ELECTRIC) 0xFF3346D3 else t.lightPrimary).toInt()
+        }
         accentTexts.forEach { v.setTextColor(it, accent) }
         icons.forEach { v.setInt(it, "setColorFilter", accent) }
     }
@@ -155,9 +152,6 @@ class WeekWidget : AppWidgetProvider() {
             if (empty != null) v.setTextViewText(R.id.week_empty, empty)
             v.setOnClickPendingIntent(R.id.widget_root, Widgets.open(context, 12, SouNoteActivity.ACTION_OPEN_WEEK))
             Widgets.style(context, v, intArrayOf(R.id.widget_side), intArrayOf(R.id.week_dot0, R.id.week_dot1, R.id.week_dot2, R.id.week_dot3))
-            if (android.os.Build.VERSION.SDK_INT >= 31) {
-                v.setColorStateList(R.id.week_progress, "setProgressTintList", android.content.res.ColorStateList.valueOf(Widgets.theme(context).darkPrimary.toInt()))
-            }
             return v
         }
     }

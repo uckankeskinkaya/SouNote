@@ -8,7 +8,7 @@ interface Stroke { tool: Tool; color: string; width: number; pressure: boolean; 
 type Entry = Stroke | { clear: true };
 
 const COLORS: [string, string][] = [
-  ["#1a1f2e", "Siyah"], ["#2f5bd3", "Mavi"], ["#d64545", "Kırmızı"], ["#2e7d4f", "Yeşil"], ["#7048c8", "Mor"], ["#e07b16", "Turuncu"],
+  ["#1a1f2e", "Siyah"], ["#3346D3", "Mavi"], ["#d64545", "Kırmızı"], ["#2e7d4f", "Yeşil"], ["#7048c8", "Mor"], ["#e07b16", "Turuncu"],
 ];
 const MAX_ENTRIES = 400;
 
@@ -216,16 +216,8 @@ export function mountDrawing(host: HTMLElement): void {
     c.width = canvas.width;
     c.height = canvas.height;
     const g = c.getContext("2d")!;
-    g.fillStyle = "#fbfbfd";
+    g.fillStyle = "#F6F6F3";
     g.fillRect(0, 0, c.width, c.height);
-    g.strokeStyle = "rgba(47, 91, 211, 0.16)";
-    g.lineWidth = dpr;
-    for (let y = 40; y < cssH; y += 32) {
-      g.beginPath();
-      g.moveTo(0, y * dpr);
-      g.lineTo(c.width, y * dpr);
-      g.stroke();
-    }
     g.drawImage(canvas, 0, 0);
     c.toBlob((blob) => {
       if (!blob) return;

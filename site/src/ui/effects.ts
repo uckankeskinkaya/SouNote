@@ -84,8 +84,6 @@ export function initTilt(): void {
       card.classList.add("is-tilting");
       card.style.setProperty("--ry", `${(x - 0.5) * 7}deg`);
       card.style.setProperty("--rx", `${(0.5 - y) * 6}deg`);
-      card.style.setProperty("--gx", `${x * 100}%`);
-      card.style.setProperty("--gy", `${y * 100}%`);
     });
     card.addEventListener("pointerleave", () => {
       card.classList.remove("is-tilting");

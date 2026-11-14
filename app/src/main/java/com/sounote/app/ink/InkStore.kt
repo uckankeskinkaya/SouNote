@@ -48,9 +48,36 @@ class InkStore(context: Context) {
     /** Sayfa notlarının son değişme zamanı (yoksa 0): önbellek anahtarı için. */
     fun pageStamp(docId: String, page: Int) = File(dir(docId), "$page.bin").lastModified()
 
+    /** Eski sürümler, en yeni not zamanından en eskiye. */
+    fun history(docId: String, page: Int): List<Long> =
+        File(dir(docId), "history").listFiles()?.mapNotNull { file ->
+            if (file.isFile && file.name.startsWith("$page-") && file.name.endsWith(".bin")) {
+                file.name.removePrefix("$page-").removeSuffix(".bin").toLongOrNull()
+            } else null
+        }?.sortedDescending() ?: emptyList()
+
+    fun loadVersion(docId: String, page: Int, stamp: Long): PageContent =
+        read(File(File(dir(docId), "history"), "$page-$stamp.bin"))
+
     fun save(docId: String, page: Int, content: PageContent) {
         val d = dir(docId)
         val file = File(d, "$page.bin")
+        // Geçmişteki bir hata asıl notların kaydedilmesini engellememeli.
+        runCatching {
+            if (file.exists()) {
+                val historyDir = File(d, "history")
+                val stamps = history(docId, page)
+                val newest = stamps.firstOrNull()?.let { File(historyDir, "$page-$it.bin") }
+                // Dosya adı notun zamanını, değiştirilme zamanı yedeğin alınma zamanını tutar.
+                if (newest == null || System.currentTimeMillis() - newest.lastModified() > 3 * 60 * 1000L) {
+                    historyDir.mkdirs()
+                    file.copyTo(File(historyDir, "$page-${file.lastModified()}.bin"), overwrite = true)
+                }
+                history(docId, page).drop(15).forEach { stamp ->
+                    File(historyDir, "$page-$stamp.bin").delete()
+                }
+            }
+        }.onFailure { Log.w(TAG, "Not geçmişi saklanamadı", it) }
         if (content.isEmpty) {
             file.delete()
             return
@@ -85,6 +112,24 @@ class InkStore(context: Context) {
         for ((tmp, target) in moves) {
             if (!tmp.renameTo(File(d, "$target.bin"))) throw IOException("Notlar taşınamadı")
         }
+        val historyDir = File(d, "history")
+        val historyMoves = ArrayList<Pair<File, File>>()
+        for (file in historyDir.listFiles().orEmpty()) {
+            if (!file.isFile || !file.name.endsWith(".bin")) continue
+            val page = file.name.substringBefore('-').toIntOrNull() ?: continue
+            val stamp = file.name.substringAfter('-').removeSuffix(".bin").toLongOrNull() ?: continue
+            val target = map(page)
+            if (target == null) {
+                file.delete()
+            } else if (target != page) {
+                val tmp = File(historyDir, "$page-$stamp.move")
+                if (!file.renameTo(tmp)) throw IOException("Not geçmişi taşınamadı")
+                historyMoves += tmp to File(historyDir, "$target-$stamp.bin")
+            }
+        }
+        for ((tmp, target) in historyMoves) {
+            if (!tmp.renameTo(target)) throw IOException("Not geçmişi taşınamadı")
+        }
     }
 
     fun loadBookmarks(docId: String): Set<Int> = runCatching {
@@ -101,6 +146,14 @@ class InkStore(context: Context) {
     fun copyPage(docId: String, from: Int, to: Int) {
         val src = File(dir(docId), "$from.bin")
         if (src.exists()) src.copyTo(File(dir(docId), "$to.bin"), overwrite = true)
+        if (from == to) return
+        val historyDir = File(dir(docId), "history")
+        history(docId, to).forEach { File(historyDir, "$to-$it.bin").delete() }
+        history(docId, from).take(15).forEach { stamp ->
+            val version = File(historyDir, "$from-$stamp.bin")
+            version.copyTo(File(historyDir, "$to-$stamp.bin"), overwrite = true)
+                .setLastModified(version.lastModified())
+        }
     }
 
     fun hasInk(docId: String) = dir(docId).listFiles()?.any { it.name.endsWith(".bin") } == true

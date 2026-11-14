@@ -44,7 +44,7 @@ Test, ekran görüntülerini `site/tests/out/` içine yazar. `?intro=0` açılı
 ## Varlıklar
 
 - `public/screens/`: uygulamanın gerçek ekran görüntüleri (CI emülatörü, `screenshots` dalı; `week.webp` eski README görüntüsü).
-- `public/brand/`: "A. Dengeli" logosu. Kaynak `brand-src/logo-a-kaynak.png`; varyantlar `python3 site/brand-src/make_logo.py` ile üretilir
+- `public/brand/`: SouNote logosu (kıvrılıp S olan not kâğıdı). Kaynak `tools/art/logo_source.png`; uygulama simgeleri ve site varyantları `python3 tools/make_logo5.py` ile üretilir
   (karo, saydam simge, açılış için kâğıt/kalem katmanları, favicon boyutları).
 - `public/img/`, `public/video/`: eski sayfadan; README `docs/img/*.png` yollarını kullanır, bu yüzden aynı yolda kalırlar.
 

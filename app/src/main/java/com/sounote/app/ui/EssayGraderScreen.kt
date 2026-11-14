@@ -178,14 +178,14 @@ private fun EssayList(vm: LibraryViewModel, onBack: () -> Unit, onNew: (EssayTyp
                         .fillMaxWidth()
                         .appear(0)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(androidx.compose.ui.graphics.Brush.linearGradient(LocalSouColors.current.hero))
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(20.dp),
                 ) {
-                    Text("Yeni yazı", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Yeni yazı", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(
                         "Konu seç, süreyle yaz; asistan L4 yazma ölçütlerine göre 100 üzerinden puanlasın, hatalarını ve " +
                             "düzeltilmiş halini göstersin.",
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -193,7 +193,7 @@ private fun EssayList(vm: LibraryViewModel, onBack: () -> Unit, onNew: (EssayTyp
                             Button(
                                 onClick = { onNew(t) },
                                 colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                                    containerColor = Color.White,
+                                    containerColor = MaterialTheme.colorScheme.onPrimary,
                                     contentColor = MaterialTheme.colorScheme.primary,
                                 ),
                                 modifier = Modifier.pressScale(),
@@ -245,12 +245,20 @@ private fun EssayList(vm: LibraryViewModel, onBack: () -> Unit, onNew: (EssayTyp
                             .clip(RoundedCornerShape(14.dp))
                             .background((score?.let(::scoreColor) ?: MaterialTheme.colorScheme.outline).copy(alpha = 0.15f)),
                     ) {
-                        Text(
-                            score?.toString() ?: "✎",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = score?.let(::scoreColor) ?: MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        if (score != null) {
+                            Text(
+                                score.toString(),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = scoreColor(score),
+                            )
+                        } else {
+                            Icon(
+                                SouIcons.EditNote,
+                                contentDescription = "Taslak",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                         Text(e.topic, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -267,6 +275,7 @@ private fun EssayList(vm: LibraryViewModel, onBack: () -> Unit, onNew: (EssayTyp
     }
     deleting?.let { e ->
         AlertDialog(
+            tonalElevation = 0.dp,
             onDismissRequest = { deleting = null },
             title = { Text("Yazı silinsin mi?") },
             text = { Text(e.topic, maxLines = 3, overflow = TextOverflow.Ellipsis) },
@@ -371,8 +380,15 @@ private fun EssayEditor(vm: LibraryViewModel, start: Essay, onBack: () -> Unit, 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         TopBar(type.label, ::saveAndBack) {
             val over = seconds > type.minutes * 60
+            Icon(
+                SouIcons.Timer,
+                contentDescription = null,
+                tint = if (over) BAD else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(4.dp))
             Text(
-                "⏱ %d:%02d / %d dk".format(seconds / 60, seconds % 60, type.minutes),
+                "%d:%02d / %d dk".format(seconds / 60, seconds % 60, type.minutes),
                 style = MaterialTheme.typography.labelLarge,
                 color = if (over) BAD else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(end = 12.dp),
@@ -382,8 +398,7 @@ private fun EssayEditor(vm: LibraryViewModel, start: Essay, onBack: () -> Unit, 
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f))
+                    .card(16.dp)
                     .clickable { showTopic = !showTopic }
                     .padding(14.dp),
             ) {
@@ -446,7 +461,7 @@ private fun EssayEditor(vm: LibraryViewModel, start: Essay, onBack: () -> Unit, 
                         vm.saveEssay(essay)
                         scope.launch {
                             val r = runCatching {
-                                withContext(Dispatchers.IO) { AssistantClient.gradeEssay(vm.assistantConfig, essay.type, essay.topic, essay.text) }
+                                withContext(Dispatchers.IO) { AssistantClient.gradeEssay(AssistantClient.heavy(vm.assistantConfig), essay.type, essay.topic, essay.text) }
                             }
                             grading = false
                             r.onSuccess { fb ->

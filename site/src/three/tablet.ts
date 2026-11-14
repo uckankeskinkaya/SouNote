@@ -1,4 +1,4 @@
-// Prosedürel tablet: titanyum-lacivert gövde, ince çerçeve, cam ekran, arkada SouNote logosu.
+// Prosedürel tablet: mat titanyum gövde, ince çerçeve, cam ekran, arkada SouNote logosu.
 // Model dikey (portrait) kurulur; yatay duruş, ekran normali etrafında -90° döndürülerek elde edilir.
 import * as THREE from "three";
 import type { TIER_SETTINGS } from "../core/env";
@@ -36,15 +36,11 @@ function backLogoTexture(symbol: HTMLImageElement | null): THREE.CanvasTexture {
   if (symbol) {
     g.drawImage(symbol, 96, 40, 320, 320);
     g.globalCompositeOperation = "source-in";
-    const grad = g.createLinearGradient(96, 40, 416, 360);
-    grad.addColorStop(0, "#e6ecff");
-    grad.addColorStop(0.5, "#9fb2e6");
-    grad.addColorStop(1, "#c9b9ff");
-    g.fillStyle = grad;
+    g.fillStyle = "#D6D6D0";
     g.fillRect(0, 0, 512, 400);
     g.globalCompositeOperation = "source-over";
   }
-  g.fillStyle = "rgba(220,228,255,0.9)";
+  g.fillStyle = "#D6D6D0";
   g.font = '600 76px "Space Grotesk Variable", "Space Grotesk", sans-serif';
   g.textAlign = "center";
   g.fillText("SouNote", 256, 470);
@@ -76,20 +72,20 @@ export function createTablet(q: (typeof TIER_SETTINGS)["high"]): Tablet {
   bodyGeo.translate(0, 0, -depth / 2);
 
   const Std = q.physical ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial;
-  const chassis = keep(new Std({ color: 0x29324d, metalness: 0.92, roughness: 0.3 }));
-  if (chassis instanceof THREE.MeshPhysicalMaterial) { chassis.clearcoat = 0.5; chassis.clearcoatRoughness = 0.25; }
-  const backMat = keep(new Std({ color: 0x18213b, metalness: 0.7, roughness: 0.48 }));
+  const chassis = keep(new Std({ color: 0x77797d, metalness: 0.92, roughness: 0.5 }));
+  if (chassis instanceof THREE.MeshPhysicalMaterial) { chassis.clearcoat = 0.15; chassis.clearcoatRoughness = 0.25; }
+  const backMat = keep(new Std({ color: 0x45474c, metalness: 0.7, roughness: 0.48 }));
   const body = new THREE.Mesh(bodyGeo, [backMat, chassis]);
   root.add(body);
 
   // Ön cam (çerçeve dahil tek parça, siyah)
   const front = new THREE.Mesh(keep(new THREE.ShapeGeometry(roundedRect(DIM.w - 0.006, DIM.h - 0.006, DIM.r - 0.003), 12)),
-    keep(new THREE.MeshStandardMaterial({ color: 0x04060c, roughness: 0.18, metalness: 0.2 })));
+    keep(new THREE.MeshStandardMaterial({ color: 0x17181b, roughness: 0.18, metalness: 0.2 })));
   front.position.z = DIM.t / 2 + 0.0006;
   root.add(front);
 
   // Ön kamera
-  const cam = new THREE.Mesh(keep(new THREE.CircleGeometry(0.0085, 20)), keep(new THREE.MeshStandardMaterial({ color: 0x0b1226, roughness: 0.1, metalness: 0.6 })));
+  const cam = new THREE.Mesh(keep(new THREE.CircleGeometry(0.0085, 20)), keep(new THREE.MeshStandardMaterial({ color: 0x222328, roughness: 0.1, metalness: 0.6 })));
   cam.position.set(0, DIM.h / 2 - DIM.bezel / 2, DIM.t / 2 + 0.0012);
   root.add(cam);
 
@@ -100,7 +96,7 @@ export function createTablet(q: (typeof TIER_SETTINGS)["high"]): Tablet {
   // Cam yansıması: siyah, toplamalı karışım; sadece ortam yansımasını ekler (Fresnel ile kenarda güçlenir).
   if (q.glass) {
     const glass = new THREE.Mesh(keep(new THREE.ShapeGeometry(roundedRect(DIM.w - 0.006, DIM.h - 0.006, DIM.r - 0.003), 12)),
-      keep(new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.05, metalness: 0, envMapIntensity: 1.6, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
+      keep(new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.05, metalness: 0, envMapIntensity: 0.35, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
     glass.position.z = DIM.t / 2 + 0.0032;
     glass.renderOrder = 5;
     root.add(glass);
@@ -117,8 +113,8 @@ export function createTablet(q: (typeof TIER_SETTINGS)["high"]): Tablet {
   bump.rotation.y = Math.PI;
   bump.position.set(DIM.w / 2 - 0.17, DIM.h / 2 - 0.17, -DIM.t / 2);
   root.add(bump);
-  const lensMat = keep(new THREE.MeshPhysicalMaterial({ color: 0x050810, roughness: 0.05, metalness: 0.4, clearcoat: 1 }));
-  const ringMat = keep(new THREE.MeshStandardMaterial({ color: 0x9aa7c7, roughness: 0.25, metalness: 1 }));
+  const lensMat = keep(new THREE.MeshPhysicalMaterial({ color: 0x16171a, roughness: 0.05, metalness: 0.4, clearcoat: 1 }));
+  const ringMat = keep(new THREE.MeshStandardMaterial({ color: 0xa4a5a8, roughness: 0.25, metalness: 1 }));
   const lensGeo = keep(new THREE.CylinderGeometry(0.034, 0.034, 0.006, 28));
   const ringGeo = keep(new THREE.TorusGeometry(0.036, 0.004, 8, 28));
   for (const [x, y] of [[0.04, 0.04], [-0.04, -0.04]]) {

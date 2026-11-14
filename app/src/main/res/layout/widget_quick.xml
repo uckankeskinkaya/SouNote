@@ -25,7 +25,7 @@
             android:layout_height="26dp"
             android:id="@+id/quick_note_icon"
             android:src="@drawable/ic_w_note"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/quick_note_label"
@@ -36,7 +36,7 @@
             android:gravity="center"
             android:maxLines="1"
             android:text="Hızlı not"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -56,7 +56,7 @@
             android:layout_height="26dp"
             android:id="@+id/quick_doc_icon"
             android:src="@drawable/ic_w_doc"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/quick_doc_label"
@@ -67,7 +67,7 @@
             android:gravity="center"
             android:maxLines="1"
             android:text="Son belge"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -87,7 +87,7 @@
             android:layout_height="26dp"
             android:id="@+id/quick_canvas_icon"
             android:src="@drawable/ic_w_canvas"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/quick_canvas_label"
@@ -98,7 +98,7 @@
             android:gravity="center"
             android:maxLines="1"
             android:text="Tuval"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -118,7 +118,7 @@
             android:layout_height="26dp"
             android:id="@+id/quick_assistant_icon"
             android:src="@drawable/ic_w_assistant"
-            android:tint="#FF8DA6FF" />
+            android:tint="@color/widget_accent" />
 
         <TextView
             android:id="@+id/quick_assistant_label"
@@ -129,7 +129,7 @@
             android:gravity="center"
             android:maxLines="1"
             android:text="Asistan"
-            android:textColor="#F2FFFFFF"
+            android:textColor="@color/widget_text"
             android:textSize="12sp" />
     </LinearLayout>
 

@@ -21,14 +21,14 @@
         android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textColor="#B3DCE3FF"
+        android:textColor="@color/widget_text2"
         android:textSize="12sp" />
 
     <TextView
         android:id="@+id/widget_side"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#FF8DA6FF"
+        android:textColor="@color/widget_accent"
         android:textSize="12sp"
         android:textStyle="bold" />
 </LinearLayout>

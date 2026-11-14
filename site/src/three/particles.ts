@@ -1,3 +1,4 @@
+// 4.0: bu dekoratif sistem sahneye eklenmez; stage.ts parçacık oluşturmaz.
 // Aurora tozları: tek çizim çağrısı, hareket tamamen GPU'da (zaman + kaydırma).
 import * as THREE from "three";
 

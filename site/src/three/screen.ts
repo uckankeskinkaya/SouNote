@@ -34,6 +34,15 @@ export class TabletScreen {
   private shownId = "";
   private token = 0;
   private logo: HTMLImageElement | null = null;
+  private readonly theme = matchMedia("(prefers-color-scheme: dark)");
+  private readonly refreshTheme = () => {
+    for (const layer of this.layers) {
+      if (layer.id === "splash") {
+        this.drawSplash(layer.canvas.getContext("2d")!, this.cw, this.ch);
+        layer.tex.needsUpdate = true;
+      }
+    }
+  };
   private readonly cw: number;
   private readonly ch: number;
 
@@ -48,7 +57,7 @@ export class TabletScreen {
       const tex = new THREE.CanvasTexture(canvas);
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = this.anisotropy;
-      const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, transparent: true, color: 0xeef1fa });
+      const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, transparent: true, color: 0xffffff });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.z = i * 0.0004;
       mesh.renderOrder = 2 + i;
@@ -56,6 +65,7 @@ export class TabletScreen {
       return { canvas, tex, mat, mesh, id: "", rect: { x: 0, y: 0, w: 1, h: 1 } };
     });
     this.layers[1].mat.opacity = 0;
+    this.theme.addEventListener("change", this.refreshTheme);
   }
 
   get currentId(): string { return this.shownId; }
@@ -110,7 +120,7 @@ export class TabletScreen {
       const s = Math.min(W / img.width, H / img.height);
       const dw = img.width * s, dh = img.height * s;
       const dx = (W - dw) / 2, dy = (H - dh) / 2;
-      g.fillStyle = "#f4f6fb";
+      g.fillStyle = "#F6F6F3";
       g.fillRect(0, 0, W, H);
       g.imageSmoothingQuality = "high";
       // kenar uzatma: sol/sağ ve üst/alt şeritler görüntünün kenar pikselleriyle
@@ -126,7 +136,7 @@ export class TabletScreen {
       layer.rect = { x: dx / W, y: dy / H, w: dw / W, h: dh / H };
     } else {
       // Yatay içerik: tablet -90° dönünce düz görünsün diye görüntünün üstü tuvalin soluna gelecek şekilde çizilir.
-      g.fillStyle = "#f4f6fb";
+      g.fillStyle = "#F6F6F3";
       g.fillRect(0, 0, W, H);
       g.translate(0, H);
       g.rotate(-Math.PI / 2);
@@ -152,19 +162,16 @@ export class TabletScreen {
   }
 
   private drawSplash(g: CanvasRenderingContext2D, W: number, H: number): void {
-    const bg = g.createRadialGradient(W / 2, H * 0.42, 0, W / 2, H * 0.42, H * 0.7);
-    bg.addColorStop(0, "#132650");
-    bg.addColorStop(0.55, "#0a1430");
-    bg.addColorStop(1, "#050914");
-    g.fillStyle = bg;
+    const theme = getComputedStyle(document.documentElement);
+    g.fillStyle = theme.getPropertyValue("--bg").trim();
     g.fillRect(0, 0, W, H);
     const size = W * 0.46;
     if (this.logo) g.drawImage(this.logo, (W - size) / 2, H * 0.42 - size / 2, size, size);
     g.textAlign = "center";
-    g.fillStyle = "#f4f7ff";
+    g.fillStyle = theme.getPropertyValue("--text").trim();
     g.font = `600 ${Math.round(W * 0.105)}px "Space Grotesk Variable", "Space Grotesk", sans-serif`;
     g.fillText("SouNote", W / 2, H * 0.42 + size / 2 + W * 0.15);
-    g.fillStyle = "#a7b5d1";
+    g.fillStyle = theme.getPropertyValue("--text-2").trim();
     g.font = `400 ${Math.round(W * 0.038)}px "Geist Variable", "Geist", sans-serif`;
     g.fillText("Ders çalışmanın en sade hâli.", W / 2, H * 0.42 + size / 2 + W * 0.23);
   }
@@ -175,6 +182,7 @@ export class TabletScreen {
   }
 
   dispose(): void {
+    this.theme.removeEventListener("change", this.refreshTheme);
     this.layers.forEach((l) => { l.tex.dispose(); l.mat.dispose(); });
     (this.layers[0].mesh.geometry as THREE.BufferGeometry).dispose();
   }

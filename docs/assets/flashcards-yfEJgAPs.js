@@ -20,7 +20,7 @@ var e=[{q:`reluctant`,a:`isteksiz, gönülsüz`,ex:`She was reluctant to leave e
         <small>Mini test · ${r+1} / ${n.length}</small>
         <b>${a.q}</b>
         <div class="fc__opts">${d.map(e=>`<button type="button" class="fc__opt">${e}</button>`).join(``)}</div>
-      </div>`;let f=[...i.querySelectorAll(`.fc__opt`)];f[0].focus({preventScroll:!0}),f.forEach(e=>e.addEventListener(`click`,()=>{let i=e.textContent===a.a;f.forEach(e=>{e.disabled=!0,e.textContent===a.a&&e.classList.add(`is-ok`)}),i||e.classList.add(`is-bad`),i&&(o++,u+=20,_()),setTimeout(()=>{r++,r<n.length?s():E(o,n.length)},t()?300:900)}))};s()}function E(n,r){let a=[`#4a7dff`,`#8b6cf6`,`#60d7f7`,`#f4f7ff`],o=t()?``:Array.from({length:28},(e,t)=>{let n=t/28*Math.PI*2,r=90+t*37%70;return`<i style="--tx:${Math.cos(n)*r}px;--ty:${Math.sin(n)*r-30}px;--c:${a[t%4]};--rot:${t*47%360}deg;--dl:${t%5*40}ms"></i>`}).join(``);i.innerHTML=`<div class="fc__done">
+      </div>`;let f=[...i.querySelectorAll(`.fc__opt`)];f[0].focus({preventScroll:!0}),f.forEach(e=>e.addEventListener(`click`,()=>{let i=e.textContent===a.a;f.forEach(e=>{e.disabled=!0,e.textContent===a.a&&e.classList.add(`is-ok`)}),i||e.classList.add(`is-bad`),i&&(o++,u+=20,_()),setTimeout(()=>{r++,r<n.length?s():E(o,n.length)},t()?300:900)}))};s()}function E(n,r){let a=[`#3346D3`,`#5F626A`,`#8A8D94`,`#D6D6D0`],o=t()?``:Array.from({length:28},(e,t)=>{let n=t/28*Math.PI*2,r=90+t*37%70;return`<i style="--tx:${Math.cos(n)*r}px;--ty:${Math.sin(n)*r-30}px;--c:${a[t%4]};--rot:${t*47%360}deg;--dl:${t%5*40}ms"></i>`}).join(``);i.innerHTML=`<div class="fc__done">
       <div class="fc__burst" aria-hidden="true">${o}</div>
       <div class="fc__medal" aria-hidden="true">${n===r?`★`:`✓`}</div>
       <b>Deste bitti!</b>

@@ -6,8 +6,9 @@
 <title>SouNote · Ders çalışmanın en sade hâli</title>
 <meta name="description" content="SouNote; PDF'lerin üstüne kalemle yazmayı, sınav takvimini, bilgi kartlarını ve not ortalamasını tek bir Android uygulamasında toplar. Ücretsiz, kaynak kodu açık, hesap istemez.">
 <meta name="author" content="Uçkan Keskinkaya">
-<meta name="theme-color" content="#050814">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#F6F6F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111318" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="canonical" href="https://uckankeskinkaya.github.io/SouNote/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="tr_TR">
@@ -18,7 +19,7 @@
 <meta property="og:image" content="https://uckankeskinkaya.github.io/SouNote/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="SouNote logosu: kıvrık bir not kâğıdı ve dolma kalem">
+<meta property="og:image:alt" content="SouNote logosu: indigo kare içinde beyaz sayfa ve el yazısı S">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/png" sizes="32x32" href="brand/logo-a-32.png">
 <link rel="icon" type="image/png" sizes="64x64" href="brand/logo-a-64.png">
@@ -46,19 +47,17 @@
   "author": { "@type": "Person", "name": "Uçkan Keskinkaya", "url": "https://github.com/uckankeskinkaya" }
 }
 </script>
-  <script type="module" crossorigin src="./assets/index-D59nLS2m.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CfNDUJPa.css">
+  <script type="module" crossorigin src="./assets/index-CuAVGtk9.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-1AwYmiX2.css">
 </head>
 <body>
 <a class="skip-link" href="#icerik">İçeriğe geç</a>
 
 <!-- Açılış: logo birleşir, ışık geçer, logo tabletin ekranına iner. Gezinme ve indirme bu sırada da kullanılabilir. -->
 <div class="intro" id="intro" aria-hidden="true">
-  <div class="intro__aura"></div>
   <div class="intro__logo" id="intro-logo">
     <img class="intro__paper" src="brand/logo-a-paper.png" alt="" width="512" height="512">
     <img class="intro__pen" src="brand/logo-a-pen.png" alt="" width="512" height="512">
-    <span class="intro__sheen"></span>
   </div>
   <p class="intro__word">Sou<span>Note</span></p>
 </div>
@@ -115,7 +114,7 @@
   </div>
   <div class="explore-ui__row">
     <button type="button" class="chip" data-x="prev" aria-label="Önceki ekran">‹</button>
-    <span class="explore-ui__screen" id="explore-screen" aria-live="polite">Ana sayfa</span>
+    <span class="explore-ui__screen" id="explore-screen" aria-live="polite">Bugün</span>
     <button type="button" class="chip" data-x="next" aria-label="Sonraki ekran">›</button>
     <button type="button" class="chip" data-x="spots" aria-pressed="true">Bilgi noktaları</button>
     <button type="button" class="chip chip--close" data-x="close">Kapat ✕</button>
@@ -145,7 +144,7 @@
     <div class="hero__stage">
       <div class="slot" data-slot="hero" aria-hidden="true"></div>
       <figure class="tablet-fallback" data-fallback>
-        <div class="tablet-fallback__device"><img src="screens/home.webp" alt="SouNote ana sayfası: günün karşılaması, hızlı başla düğmeleri ve yaklaşan sınavlar" width="720" height="1600"></div>
+        <div class="tablet-fallback__device"><img src="screens/home.webp" alt="SouNote Bugün ekranı: günün karşılaması, hızlı başla düğmeleri ve yaklaşan sınavlar" width="720" height="1600"></div>
       </figure>
       <button class="btn btn--glass explore-open" type="button" data-explore>
         <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Zm0 0v9m0 0 8-4.5M12 12l-8-4.5"/></svg>
@@ -215,7 +214,6 @@
     <div class="developer__inner">
       <p class="kicker"><span>04</span>Geliştirici</p>
       <article class="dev-card" data-tilt>
-        <div class="dev-card__glare" aria-hidden="true"></div>
         <div class="dev-card__top">
           <div class="dev-card__mono" aria-hidden="true">UK</div>
           <div>
@@ -259,7 +257,7 @@
 
     <article class="feature" id="f-dersler" data-side="left">
       <div class="feature__visual"><div class="slot slot--sticky slot--wide" data-slot="f-dersler" aria-hidden="true"></div>
-        <figure class="feature__shot feature__shot--wide" data-fallback><img src="screens/courses-land.webp" alt="Dersler ekranı yatay: yan menü, ilerlemeli Grammar, Vocabulary, Reading ve Listening kartları" loading="lazy" width="1600" height="720"></figure></div>
+        <figure class="feature__shot feature__shot--wide" data-fallback><img src="screens/courses-land.webp" alt="Kütüphane ekranı yatay: yan menü, ilerlemeli Grammar, Vocabulary, Reading ve Listening kartları" loading="lazy" width="1600" height="720"></figure></div>
       <div class="feature__copy">
         <p class="feature__num">02</p>
         <h3>Haftanın kaynakları, konu konu.</h3>
@@ -270,12 +268,12 @@
 
     <article class="feature" id="f-sinavlar" data-side="right">
       <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-sinavlar" aria-hidden="true"></div>
-        <figure class="feature__shot" data-fallback><img src="screens/exams.webp" alt="Planlayıcı ekranı: aylık takvim, sınav ve ödev günleri işaretli" loading="lazy" width="720" height="1600"></figure></div>
+        <figure class="feature__shot" data-fallback><img src="screens/exams.webp" alt="Takvim ekranı: aylık takvim, sınav ve ödev günleri işaretli" loading="lazy" width="720" height="1600"></figure></div>
       <div class="feature__copy">
         <p class="feature__num">03</p>
-        <h3>Sınav, ödev, sunum: hepsi planlayıcıda.</h3>
+        <h3>Sınav, ödev, sunum: hepsi Takvim’de.</h3>
         <p>Liste, hafta, ay ya da zaman çizelgesi olarak gör; her sınavın kaç gün kaldığı ve hangi derste olduğu tek bakışta. Ödevlerini işaretle, öncelik ver, türe ve derse göre süz.</p>
-        <ul class="ticks"><li>Her sınavın türü simgeyle: sınav, Writing, Speaking, sunum, Listening, ödev</li><li>3 gün, 1 gün ve 2 saat önce hatırlatıcı</li><li>Widget'lar: sıradaki sınav, bugün, hafta listesi, hızlı işlemler</li><li>Ödev tamamlama ve öncelik</li><li>Asistandan sınav öncesi gün gün çalışma planı</li><li>Sınavdan önceki gün ana sayfada sınav kartı: konular, PDF'ler, deneme sınavı</li></ul>
+        <ul class="ticks"><li>Her sınavın türü simgeyle: sınav, Writing, Speaking, sunum, Listening, ödev</li><li>3 gün, 1 gün ve 2 saat önce hatırlatıcı</li><li>Widget'lar: sıradaki sınav, bugün, hafta listesi, hızlı işlemler</li><li>Ödev tamamlama ve öncelik</li><li>Asistandan sınav öncesi gün gün çalışma planı</li><li>Sınavdan önceki gün Bugün ekranında sınav kartı: konular, PDF'ler, deneme sınavı</li></ul>
       </div>
     </article>
 
@@ -303,7 +301,7 @@
 
     <article class="feature" id="f-gunluk" data-side="left">
       <div class="feature__visual"><div class="slot slot--sticky" data-slot="f-gunluk" aria-hidden="true"></div>
-        <figure class="feature__shot" data-fallback><img src="screens/week.webp" alt="Ana sayfa: haftalık görevler, ilerleme ve hızlı başla" loading="lazy" width="540" height="1200"></figure></div>
+        <figure class="feature__shot" data-fallback><img src="screens/week.webp" alt="Bugün: haftalık görevler, ilerleme ve hızlı başla" loading="lazy" width="540" height="1200"></figure></div>
       <div class="feature__copy">
         <p class="feature__num">06</p>
         <h3>Her gün biraz. Serin büyüsün.</h3>
@@ -315,10 +313,10 @@
     <div class="more" id="dahasi">
       <h3 class="more__title">Ve dahası</h3>
       <ul class="more__list">
-        <li><b>Yeni görünüm</b>Logodaki lacivert ve mavi-mor tonlar, sade simgeler</li>
+        <li><b>Sade görünüm · 4.0</b>Sıcak kâğıt zemini, beyaz yüzeyler, ince gri çizgiler ve tek indigo vurgu. Bugün, Kütüphane, Çalış ve Takvim ile düzenli bir çalışma alanı</li>
         <li><b>Defter kapakları</b>Kapak seç; haftalık plan, kelime defteri, renkli Cornell şablonları</li>
         <li><b>Sınav widget'ı</b>Ana ekranda geri sayım ve sıradaki sınav</li>
-        <li><b>Senin ana sayfan</b>Bölümleri sırala, gizle; favoriler ve hızlı erişim; son kullanılanları temizle</li>
+        <li><b>Senin Bugün ekranın</b>Bölümleri sırala, gizle; favoriler ve hızlı erişim; son kullanılanları temizle</li>
         <li><b>Okuma modu</b>Araç çubuğu gizlenir, kalem sayfayı kaydırır</li>
         <li><b>Her şeyde ara</b>Dersler, klasörler, belgeler, notlar, sınavlar ve PDF'lerin içi</li>
         <li><b>Yazılı notlar</b>Klavyeyle ya da kalemle, yapılacaklar ve çizim alanı</li>

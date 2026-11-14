@@ -7,7 +7,6 @@ import { lowerTier, motion, TIER_SETTINGS, type Tier } from "../core/env";
 import { onFrame, viewport } from "../core/scroll";
 import { SCREENS, screenById, type ScreenDef } from "../config";
 import { Choreography, fitPx, type Pose } from "./choreography";
-import { Particles } from "./particles";
 import { loadImage, TabletScreen } from "./screen";
 import { createTablet, DIM } from "./tablet";
 
@@ -17,22 +16,6 @@ const TAU = Math.PI * 2;
 
 type Num = Exclude<keyof Pose, "screen">;
 const NUM_KEYS: Num[] = ["cx", "cy", "px", "rx", "ry", "rz", "orient", "glow", "vis"];
-
-function glowTexture(): THREE.CanvasTexture {
-  const c = document.createElement("canvas");
-  c.width = c.height = 256;
-  const g = c.getContext("2d")!;
-  const r = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  r.addColorStop(0, "rgba(90,130,255,0.9)");
-  r.addColorStop(0.35, "rgba(110,92,240,0.45)");
-  r.addColorStop(0.7, "rgba(60,90,220,0.12)");
-  r.addColorStop(1, "rgba(0,0,0,0)");
-  g.fillStyle = r;
-  g.fillRect(0, 0, 256, 256);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
 
 export interface StageApi {
   enterExplore(): void;
@@ -68,16 +51,16 @@ export async function createStage(canvas: HTMLCanvasElement, startTier: Tier): P
     scene.environmentIntensity = 0.55;
     room.dispose();
   }
-  scene.add(new THREE.HemisphereLight(0x9db4ff, 0x050814, q.env ? 0.35 : 1.0));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x777777, q.env ? 0.8 : 1.4));
   const key = new THREE.DirectionalLight(0xffffff, q.env ? 1.4 : 2.2);
   key.position.set(3, 5, 7);
-  const rimBlue = new THREE.DirectionalLight(0x4a7dff, 3.2);
-  rimBlue.position.set(-6, 2.5, -3);
-  const rimViolet = new THREE.DirectionalLight(0x8b6cf6, 2.8);
-  rimViolet.position.set(6, -2, -4);
-  scene.add(key, rimBlue, rimViolet);
+  const fill = new THREE.DirectionalLight(0xffffff, 1.2);
+  fill.position.set(-6, 2.5, 3);
+  const edge = new THREE.DirectionalLight(0xffffff, 1.0);
+  edge.position.set(6, -2, -4);
+  scene.add(key, fill, edge);
 
-  // Sahne ağacı: rig (konum/ölçek) → tablet (dönüş) ; parıltı rig'de, tabletle dönmez.
+  // Sahne ağacı: rig (konum/ölçek) → tablet (dönüş).
   const rig = new THREE.Group();
   const tiltGroup = new THREE.Group();
   tiltGroup.rotation.order = "YXZ";
@@ -87,16 +70,6 @@ export async function createStage(canvas: HTMLCanvasElement, startTier: Tier): P
   tiltGroup.add(tablet.root);
   const screen = new TabletScreen(Math.min(q.texture, renderer.capabilities.maxTextureSize), Math.min(8, renderer.capabilities.getMaxAnisotropy()));
   tablet.screenMount.add(screen.group);
-
-  const glowMat = new THREE.MeshBasicMaterial({ map: glowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5 });
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), glowMat);
-  glow.position.z = -0.9;
-  glow.renderOrder = -2;
-  rig.add(glow);
-
-  const particles = new Particles(TIER_SETTINGS.high.particles, dpr);
-  particles.setCount(q.particles);
-  scene.add(particles.points);
 
   // Logolar (ekrandaki açılış görseli ve arka kapak)
   await document.fonts?.load('600 64px "Space Grotesk Variable"').catch(() => undefined);
@@ -337,8 +310,6 @@ export async function createStage(canvas: HTMLCanvasElement, startTier: Tier): P
       slowWindows = 0;
       dpr = Math.min(devicePixelRatio || 1, q.dpr);
       renderer.setPixelRatio(dpr);
-      particles.setPixelRatio(dpr);
-      particles.setCount(q.particles);
       document.documentElement.dataset.tier = tier;
       lastW = 0; // yeniden boyutlandır
     }
@@ -419,7 +390,6 @@ export async function createStage(canvas: HTMLCanvasElement, startTier: Tier): P
     const vis = state.vis * (1 - Math.sin(Math.PI * Math.min(1, dip)) * 0.85);
     const visible = vis > 0.004 || exploring || introP !== null;
     canvas.style.setProperty("--vis", vis.toFixed(3));
-    document.querySelector<HTMLElement>(".finale")?.style.setProperty("--glow", (state.glow * state.vis).toFixed(3));
     if (!visible) {
       if (wasVisible) { renderer.clear(); wasVisible = false; }
       return;
@@ -435,14 +405,9 @@ export async function createStage(canvas: HTMLCanvasElement, startTier: Tier): P
     const idle = reduced || exploring ? 0 : 1;
     rig.position.y += Math.sin(time * 0.9) * 0.02 * s * idle;
     tiltGroup.rotation.set(state.rx + Math.sin(time * 0.6) * 0.012 * idle, state.ry + Math.sin(time * 0.45) * 0.02 * idle, state.rz - (Math.PI / 2) * state.orient);
-    glowMat.opacity = Math.min(1, state.glow) * 0.55;
-    glow.scale.setScalar(1 + (state.glow - 0.6) * 0.3);
-    rimBlue.intensity = 2.2 + state.glow * 1.6;
-    rimViolet.intensity = 1.8 + state.glow * 1.6;
 
     if (screen.currentId !== state.screen) screen.set(state.screen, reduced);
     screen.update(dt);
-    particles.update(time, viewport.y, Math.min(1, 0.35 + state.glow * 0.65) * (introP !== null ? 0.6 : 1));
 
     renderer.render(scene, camera);
 

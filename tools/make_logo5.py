@@ -146,10 +146,10 @@ def main():
     R = 0.225  # karo köşe yarıçapı
     for name, shift in THEMES.items():
         render(coef, geo, sym, alpha, sbox, 512, 512 * 0.62, shift, rounded=R).save(os.path.join(RES, f"logo_{name}.webp"), lossless=False, quality=92)
-        render(coef, geo, sym, alpha, sbox, 432, 432 * 0.5, shift, with_symbol=False).convert("RGB").save(os.path.join(RES, f"ic_bg_{name}.webp"), quality=92)
-        render(coef, geo, sym, alpha, sbox, 432, 432 * 0.5, shift, with_bg=False).save(os.path.join(RES, f"ic_fg_{name}.webp"), quality=92)
+        render(coef, geo, sym, alpha, sbox, 432, 432 * 0.42, shift, with_symbol=False).convert("RGB").save(os.path.join(RES, f"ic_bg_{name}.webp"), quality=92)
+        render(coef, geo, sym, alpha, sbox, 432, 432 * 0.42, shift, with_bg=False).save(os.path.join(RES, f"ic_fg_{name}.webp"), quality=92)
     # Temalı simge: sadece kâğıt (zeminden açık kısımlar), beyaz + alfa
-    fg = np.asarray(render(coef, geo, sym, alpha, sbox, 432, 432 * 0.5, (0, 1.0, 1.0), with_bg=False)).astype(np.float64)
+    fg = np.asarray(render(coef, geo, sym, alpha, sbox, 432, 432 * 0.42, (0, 1.0, 1.0), with_bg=False)).astype(np.float64)
     lum = fg[..., :3].mean(2)
     mono = np.zeros_like(fg)
     mono[..., :3] = 255

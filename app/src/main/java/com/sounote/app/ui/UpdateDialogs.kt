@@ -28,19 +28,15 @@ import com.sounote.app.data.Updates
 
 /** Son ana sürümle gelenler ("Yenilikler" penceresi; eski sürümden güncelleyen bir kez görür). */
 private val WHATS_NEW = listOf(
-    SouIcons.Palette to "Baştan sade tasarım: logodaki lacivert ve mavi-mor tonlar, emoji yerine simgeler.",
-    SouIcons.InkPen to "14 kalem: ince uç, keçeli, pastel, jel, neon, noktalı, geniş uç, mürekkep fırçası…; her kalem kendi ayarını hatırlar.",
-    SouIcons.Draw to "Yazma desteği: el titremesini süzer, çizgileri yumuşak ve bağlantılı yapar.",
-    SouIcons.Straighten to "Cetvel ve açıölçer: kenarına yakın çizgi kenara oturur.",
-    SouIcons.Style to "Yeni bilgi kartı ekranı: dokun çevir, sağa bildim, sola bilemedim.",
-    SouIcons.StarShine to "Asistanla ders özeti: dersin bütün PDF'lerinden özet, kelimeler, sorular.",
-    SouIcons.LibraryBooks to "Defter kapakları; haftalık plan, kelime defteri ve renkli Cornell şablonları.",
-    SouIcons.Widgets to "Yeni sınav widget'ı ve tablette iki sütunlu ana sayfa.",
-    SouIcons.Event to "Sınav öncesi plan ve deneme sınavı: asistan gün gün plan ve konulardan test hazırlar.",
-    SouIcons.Mood to "Çıkartmalar; renk paleti son kullandığın renkleri hatırlar.",
-    SouIcons.Layers to "Katmanlar ve sonsuz tuval.",
-    SouIcons.Mic to "Speaking pratiği: konuş, asistan puanlasın.",
-    SouIcons.AccountTree to "Konu haritası: hangi konuda ne kadar hazırsın.",
+    SouIcons.Palette to "Yeni sade arayüz ve yeni logo: dört sekme (Bugün, Kütüphane, Çalış, Takvim), açık ve koyu tema.",
+    SouIcons.Event to "Takvim: her sınavın türü simgesiyle (quiz, writing, speaking, sunum, listening, ödev).",
+    SouIcons.InkPen to "Yeni kalem menüsü ve hızlı menü: sayfaya basılı tut; araçlar, favoriler, gökkuşağından renk, kalınlık.",
+    SouIcons.History to "Not geçmişi: sayfanın önceki hâline dön.",
+    SouIcons.Quiz to "Daha iyi deneme sınavı: denetlenmiş sorular, konu konu analiz, yanlış soruda kaynakta göster.",
+    SouIcons.Headphones to "Listening A–B tekrarı: bir bölümü işaretle, arada beklemeyle tekrar tekrar çalsın.",
+    SouIcons.School to "Bugün derste kartı: günün konuları ve PDF'leri tek yerde.",
+    SouIcons.Bookmarks to "Çalışma düzenini kaydet: belge, yan belge ve dinleme kaydı tek dokunuşla açılır.",
+    SouIcons.Widgets to "Widget'lar da yeni sade görünümde.",
 )
 
 /** Yeni sürüm ve "Yenilikler" pencereleri (ana ekranda). */

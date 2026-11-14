@@ -179,7 +179,7 @@ Drive'da gizli "SouNote yedekleri" (1YKfOGh3d6faxq5gPuW2wRTm897sBuhSG) klasörü
   gizli katman çizilmez/dışa aktarılmaz; sadece çizgiler, yazı/resim katmansız).
 - Sonsuz tuval: PaperSize.CANVAS 4800×4800 pt tek sayfa; PdfDocumentView canvasMode (genişlik ≥ CANVAS_MIN_PT): A4 ölçeğinde yerleşir,
   minZoom tamamını gösterir, kaldığın yer prefs canvasView_<id>.
-- Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3.
+- Ana sayfa: tablette (≥900dp) iki sütun. versionName 3.0.<run>, MAJOR = 3 (4.0'dan beri versionName 4.0.<run>, MAJOR = 4).
 - 3.0.1 (🧪, build-127+): kalemler yeniden yazıldı. Kullanıcı (ekran görüntüsü): uçlarda kocaman damla, ortada ince, boncuklu çizgi.
   Neden: basınç katsayısı 0.35–1.6 (çok geniş) + kalınlık 12 kademeye bölünüp her kademe ayrı yuvarlak uçlu yol. Şimdi ink/StrokeOutline.kt:
   basınçlı dolma/jel, fırça, kaligrafi tek parça doldurulan dış hat (yakın noktalar atılır, basınç ileri-geri yumuşatılır, penFactor 0.62–1.38,
@@ -234,7 +234,7 @@ Site yenilendi (🧪): kaynak site/ (Vite + TS + Three.js, çerçevesiz), `cd si
 çizim ve bilgi kartı denemeleri, kalite katmanları, WebGL'siz statik görünüm. Logo: "A. Dengeli" (site/brand-src, make_logo.py).
 Test: `cd site && npm test` (Playwright, /SouNote/ alt yolu). Ayrıntı: site/README.md. build.yml site/** değişikliğinde APK derlemez.
 
-## SouNote 4.0 arayüzü (🧪, build-171+; 13 Kasım)
+## SouNote 4.0 (yayın: 14 Kasım; arayüz build-171+, 13 Kasım)
 Kullanıcı: eski arayüz karışık, "AI slop" (parıltı, cam, açıklama yazıları). Onaylanan maket: scratchpad mock/ (HTML, açık kâğıt tonu).
 - Theme.kt: darkSchemeOf/lightSchemeOf düz nötr yüzeyler (açık #F6F6F3 zemin, beyaz yüzey, #E5E5E0 çizgi; koyu #111318/#1A1D24), tema sadece vurgu
   (ELECTRIC açıkta #3346D3, koyuda #8C9BFF). Components: card() = surface + 1dp outlineVariant, 14dp; souBackground() düz zemin. hero tek renk.

@@ -424,7 +424,7 @@ exams=[
  E("p3-topic","Presentation konu ataması · Grup 3","2026-11-23","09:00",["L4"],"task",topics=["presentation"]),
  E("mp1","Mini Presentation · Grup 1","2026-11-23","09:00",["L3"],"presentation","10. hafta (23–27 Kasım)",topics=["presentation"]),
  E("p1","Presentation · Grup 1","2026-11-23","09:00",["L4"],"presentation","10. hafta (23–27 Kasım)",topics=["presentation"]),
- E("quiz2","Quiz 2","2026-11-27","11:45",ALL,"exam","4. ders"),
+ E("quiz2","Quiz 2","2026-11-27","11:45",ALL,"exam","4. ders",notes="L4 konuları (Quiz 1'den sonraki 5–9. haftalar; kesin liste duyurulunca güncellenir): conditionals, modals, preferences, past plans, indirect questions, comparatives, clauses of purpose, causatives, Unit 3–5 kelimeler, reading ve listening",topics=["conditionals","modals","preferences","past-plans","indirect-questions","comparatives","purpose","causatives","vocab-u3","vocab-u4","vocab-u5","reading-strategies","reading-practice","listening-strategies"]),
  E("st1-sub-l12","Speaking Task 1 teslim","2026-11-30","17:00",["L1","L2"],"task","17:00'ye kadar",topics=["speaking-topics","speaking-tips"]),
  E("st2-topic-l12","Speaking Task 2 (Role-play) konu ataması","2026-11-30","09:00",["L1","L2"],"task",topics=["speaking-topics"]),
  E("mp2","Mini Presentation · Grup 2","2026-11-30","09:00",["L3"],"presentation","11. hafta (30 Kasım–4 Aralık)",topics=["presentation"]),
@@ -443,7 +443,7 @@ exams=[
 ]
 # Sadece L4: diğer kurların sınavları çıkarılır, kur bilgisi tutulmaz.
 exams=[{k:v for k,v in e.items() if k!="levels"} for e in exams if "L4" in e["levels"]]
-cat={"updated":"2026-11-14","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
+cat={"updated":"2026-11-20","termStart":"2026-09-21","note":"SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
      "courses":courses,"exams":exams,"weekItems":weekItems}
 json.dump(cat, open('app/src/main/assets/catalog.json','w'), ensure_ascii=False, indent=1)
 print(len(F), "dosya,", sum(len(t['resources']) for c in courses for t in c['topics']), "kaynak,", len(exams), "sınav/ödev")

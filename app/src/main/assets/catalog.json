@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-14",
+ "updated": "2026-11-20",
  "termStart": "2026-09-21",
  "note": "SouNote ortak ders kataloğu (Ankara Üniversitesi YDYO 2026-2027 Güz, L4). Uygulama bu dosyayı Drive'daki SouNote-katalog.json dosyasından okur; değişiklik herkesin uygulamasında görünür.",
  "courses": [
@@ -2236,8 +2236,23 @@
    "slot": "4. ders",
    "kind": "exam",
    "place": "",
-   "notes": "",
-   "topics": []
+   "notes": "L4 konuları (Quiz 1'den sonraki 5–9. haftalar; kesin liste duyurulunca güncellenir): conditionals, modals, preferences, past plans, indirect questions, comparatives, clauses of purpose, causatives, Unit 3–5 kelimeler, reading ve listening",
+   "topics": [
+    "conditionals",
+    "modals",
+    "preferences",
+    "past-plans",
+    "indirect-questions",
+    "comparatives",
+    "purpose",
+    "causatives",
+    "vocab-u3",
+    "vocab-u4",
+    "vocab-u5",
+    "reading-strategies",
+    "reading-practice",
+    "listening-strategies"
+   ]
   },
   {
    "id": "p2",

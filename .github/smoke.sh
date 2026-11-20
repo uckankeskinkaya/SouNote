@@ -5,6 +5,8 @@ set -x
 P=com.sounote.app
 mkdir -p shots
 # Yayındaki son sürümün (kullanıcıların tabletindeki, build-88 / 1.4) üstüne güncelleme olarak kurulmalı.
+# Emülatör önbelleğinde (AVD anlık görüntüsü) eski bir kurulum kalmış olabilir: önce kaldır.
+adb uninstall $P || true
 curl -sSL -o published.apk https://github.com/uckankeskinkaya/SouNote/releases/download/build-88/SouNote.apk
 adb install published.apk || { echo "HATA: yayındaki sürüm kurulamadı"; exit 1; }
 adb install -r a/SouNote.apk || { echo "HATA: yeni sürüm yayındaki sürümün (build-88) üstüne kurulamadı"; exit 1; }
